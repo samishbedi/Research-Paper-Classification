@@ -1,0 +1,3344 @@
+Journal of Machine Learning Research 16 (2015) 47-75
+
+Submitted 2/13; Revised 7/14; Published 1/15
+
+Simultaneous Pursuit of Sparseness and Rank Structures for
+Matrix Decomposition
+
+Qi Yan
+School of Statistics
+University of Minnesota
+Minneapolis, MN 55414, USA
+
+Jieping Ye
+Computer Science and Engineering
+Arizona State University
+Tempe, AZ 85287 USA
+
+Xiaotong Shen
+School of Statistics
+University of Minnesota
+Minneapolis, MN 55414, USA
+
+Editor: Aapo Hyvarinen
+
+yanxx195@umn.edu
+
+jieping.ye@asu.edu
+
+xshen@umn.edu
+
+Abstract
+
+In multi-response regression, pursuit of two diﬀerent types of structures is essential to battle
+the curse of dimensionality. In this paper, we seek a sparsest decomposition representation
+of a parameter matrix in terms of a sum of sparse and low rank matrices, among many
+overcomplete decompositions. On this basis, we propose a constrained method sub ject
+to two nonconvex constraints, respectively for sparseness and low- rank properties. Com-
+putationally, obtaining an exact global optimizer is rather challenging. To overcome the
+diﬃculty, we use an alternating directions method solving a low-rank subproblem and a
+sparseness subproblem alternatively, where we derive an exact solution to the low-rank
+subproblem, as well as an exact solution in a special case and an approximated solution
+generally through a surrogate of the L0 -constraint and diﬀerence convex programming, for
+the sparse subproblem. Theoretically, we establish convergence rates of a global minimizer
+in the Hellinger-distance, providing an insight into why pursuit of two diﬀerent types of de-
+composed structures is expected to deliver higher estimation accuracy than its counterparts
+based on either sparseness alone or low-rank approximation alone. Numerical examples are
+given to illustrate these aspects, in addition to an application to facial imagine recognition
+and multiple time series analysis.
+Keywords: blockwise decent, nonconvex minimization, matrix decomposition, structure
+pursuit
+
+1. Introduction
+
+In multivariate analysis, data as well as parameters are usually expressed in terms of a
+matrix form, as opposed to a vector representation in univariate analysis. This occurs fre-
+quently in multi-class classiﬁcation (Amit et al., 2007), matrix completion (Cai et al., 2010;
+Jain et al., 2010), collaborative ﬁltering (Srebro et al., 2005), computer vision (Wright,
+
+c(cid:13)2015 Qi Yan, Jieping Ye and Xiaotong Shen.
+
+Yan, Ye and Shen
+
+2009), among others.
+In situations as such, it essential to identify and employ certain
+lower-dimensional structures to battle the curse of dimensionality due to an increase in
+dimensionality from multivariate attributes. In this article, we explore rank and sparse-
+ness structures through matrix decomposition simultaneously in estimating large matrices
+through a novel notation of seeking a sparsest decomposition from a class of overcomplete
+decompositions.
+Statistically, diﬀerent structures have dramatically diﬀerent interpretations. A low rank
+property of a matrix describes global information across diﬀerent tasks, whereas sparseness
+concerns local information of speciﬁc task. For instance, for face images, the global infor-
+mation corresponds to the overall shape of a face, but the local information characterizes
+speciﬁc facial expression such as laugh and cry. In linear time-invariant (LTI) system, a low
+rank property corresponds to a low-order LTI system and a sparseness property captures an
+LTI system with a sparse impulse response (Porat, 1997). In a high-dimensional situation,
+betting on one type of structure may not be adequate to battle the curse of dimensionality.
+In this article, we seek a sparsest decomposition for the purpose of dimension reduction,
+from a class of overcomplete decompositions into simpler sparse and low-rank components.
+Speciﬁcally, a matrix Θ is decomposed as Θ1 + Θ2 , for a sparse Θ1 and low-rank Θ2
+components, where Θ1and Θ2 are chosen from many such decompositions, with a small-
+est eﬀective degrees of freedom, leading to high accuracy of parameter estimation. Our
+ob jective is to reconstruct the parameter matrix by identifying a sparsest decomposition
+consisting of simpler components. Such a decomposition can be used to provide a simpler
+and more eﬃcient description of a complex system in terms of its simpler components. This
+results in more eﬃcient structure representations leading to higher accuracy of parameter
+estimation in high-dimensional data analysis.
+In this paper, we consider a multi-response linear regression problem in which a random
+sample (ai , zi )n
+i=1 is observed with a k-dimensional response vector zi following
+
+zi = aT
+i Θ + i , E i = 0, C ov(i ) = σ2I ;
+
+i = 1, . . . , n,
+
+(1)
+
+where ai is a p-dimensional design vector, is independent of random error i , and I is
+the identity matrix. Model (1) reduces to the univariate case when k = 1, and becomes
+a multivariate autoregressive model when ai = zi−1 . Through matrix decomposition, we
+decompose a p × k regression parameter matrix Θ into a sum of a sparse matrix Θ1 and a
+low rank matrix Θ2 for structure exploration, that is, Θ = Θ1 +Θ2 . Model (1) is expressible
+in a matrix form
+
+Z = AΘ + e;
+(2)
+where Z = (z1 , · · · , zn )T ∈ Rn×k , A = (a1 , · · · , an )T is a n×p matrix, and e = (1 , · · ·, n )T ∈
+Rn×k are the data, design and error matrices. In (1), we estimate Θ based on n paired
+observation vectors (ai , zi )n
+i=1 , with prior knowledge that Θ1 is sparse in the number of its
+nonzero entries, and rank r(Θ2 ) is low relative to min(n, k , p). Our goal is to recover the
+parameter Θ by identifying Θ1 and Θ2 .
+In the literature, the simultaneous exploration of rank and sparseness structures through
+matrix decomposition has received some attention, yet has not been well-studied. For robust
+principal component analysis (RPCA) where A = In×p is the n × p identity matrix with its
+
+48
+
+Simultaneous Pursuit of Sparseness and Rank Structures for Matrix Decomposition
+
+diagonals and oﬀ-diagonals being one and zero, Yuan & Yang (2013) and Chandrasekaran
+et al. (2011) employed a linear combination of the L1 sparsity regularization and the nuclear-
+norm regularization, and Zhou & Tao (2011) used a randomized pro jections based low
+rank approximations and thresholding for sparsity pursuit. Moreover, Wright et al. (2013)
+recovers the sparse and low-rank components by minimizing a linear combination of the
+L1 -norm for sparsity and the nuclear-norm for low rank pursuit, while Waters et al. (2011)
+develops a greedy algorithm to pursue the sparse and low rank structures. For multiple
+task learning, Chen et al. (2010) studies sparse and low rank structures separately through
+convex regularization.
+In essence, most the existing literature focuses exclusively on a
+unique matrix decomposition of Θ with A = In×p or A to be a set of random linear
+measurements, and without noise or with small noise that is essentially ignorable. For
+instance, Chandrasekaran et al. (2011) provided suﬃcient conditions for exact recovery of
+a convex relaxation method without noise; Wright et al. (2013) proved that recovering a
+target matrix is possible from a small set of randomly selected linear measurements when the
+number of measurements is suﬃciently large. Among these, Agarwal et al. (2012) considered
+a general A and derived a theorem that bounds the Frobenius-norm error obtained through
+regularized convex relaxation under a ”spikiness” condition that the max-norm of the low
+rank component (cid:107)Θ2(cid:107)max is less than α√
+for some ﬁxed α > 0.
+pk
+In this paper, we consider a general design matrix A and parameter matrices (Θ1 , Θ2 ),
+for regression analysis, where A represents features of observations which is deterministic,
+and can be any matrix with n rows and p columns. Of particular interest is reconstruc-
+tion of Θ in a high-dimensional situation in which (p, k) may exceed the sample size n.
+Computationally, we use an alternating direction method separating low-rank pursuit from
+sparsity pursuit alternatively, where an exact solution to the low-rank problem and that to
+the sparsity pursuit problem when A = In×p or an approximated solution for a general A
+is obtained. In either case, the ﬁnal solution is shown to be stationary without and with
+maximum block improvement (Chen et al., 2012) for A = In×p and a general A. Theo-
+retically, we establish error bound for the proposed method in the Hellinger-distance for
+reconstruction of Θ, based on which rates of convergence are obtained. Numerically, the
+proposed method compares favorably against two strong competitors in simulations.
+The paper is organized as follows. Section 2 develops a computational method through
+the alternating directions method and a closed-form solution for a rank problem. Section
+3 investigates statistical properties of the proposed method, followed by simulation studies
+and a real data example in Section 4. Finally, technical proofs are contained in Section 5.
+
+2. Proposed Method
+
+In this section, we explore a structure decomposition of a parameter matrix in the form
+Θ = Θ1 + Θ2 under model (1), then develops computational methods in two situations and
+discuss their properties.
+
+2.1 Structure Decomposition
+
+Due to non-uniqueness of such a decomposition under model (1), we seek one decomposition,
+among many overcomplete decompositions, that minimizes the eﬀective degrees of freedom
+
+49
+
+Yan, Ye and Shen
+
+of Θ Efron (2004), deﬁned as
+
+(cid:107)Θ1(cid:107)0 + (p + k − r(Θ2 ))r(Θ2 ),
+
+Eﬀ(Θ) =
+
+min
+{Θ=Θ1+Θ2 :(cid:107)Θ1 (cid:107)0≤max(0,p+k−2r(Θ2 )−2)}
+where (cid:107) · (cid:107)0 is the L0 -norm of a matrix, or the number of nonzero entries of the matrix, and
+r(·) denotes the rank of a matrix. In other words, we identify a decomposition minimizing
+the eﬀective degrees of freedom Eﬀ(Θ), among all candidate decompositions. Lemma 1
+below says that the minimal of Eﬀ(Θ) is unique in ((cid:107)Θ1(cid:107)0 , r(Θ2 )) under the constraint
+that (cid:107)Θ1(cid:107)0 ≤ max(0, p + k − 2r(Θ2 ) − 2) ≤ 2 max(p, k).
+Lemma 1 The minimizer of Eﬀ(Θ) is unique with respect to ((cid:107)Θ1(cid:107)0 , r(Θ2 )) if (cid:107)Θ1(cid:107)0 ≤
+max(0, p + k − 2r(Θ2 ) − 2). Moreover,
+Eﬀ(Θ) ≤ min((p + k − r(Θ))r(Θ), (cid:107)Θ(cid:107)0 )).
+
+Model (1) is identiﬁable with respect to Θ but may not be so in (Θ1 , Θ2 ) even when A
+is of full rank, due to non-uniqueness of a decomposition Θ = Θ1 + Θ2 .
+
+2.2 Estimation
+
+To pursue structures of low-rank and sparsity through matrix decomposition simultaneously,
+we propose a constrained likelihood method sub ject to two nonconvex constraints:
+(cid:107)AΘ1 + AΘ2 − Z (cid:107)2
+r(Θ2 ) ≤ s2 ,
+sub ject to (cid:107)Θ1(cid:107)0 ≤ s1 ,
+F ,
+
+min
+Θ1 ,Θ2
+where (cid:107) · (cid:107)F is the Frobenius-norm deﬁned as the L2 -norm of all entries of a matrix, and
+s1 and s2 are integer-valued tuning parameters with 0 ≤ s1 ≤ max(p, k) and 1 ≤ s2 ≤
+min(n, k , p) based on the consideration that the rank function and the sparsity measure are
+integer-valued.
+When A = In×p , (3) is simpliﬁed as
+(cid:107)Z − Θ1 − Θ2(cid:107)2
+F
+
+min
+Θ1 ,Θ2
+where a special structure may be taken into account to solve this nonconvex minimization.
+When A (cid:54)= In×p is any matrix of full rank, the two constraints in (3) are either deﬁned
+eﬃcient algorithm to solve (3), we approximate the (cid:107)Θ1(cid:107)0 = (cid:80)
+putational surrogate—the truncated L1 -function (cid:80)
+by the L0 -function or the rank function, imposing computational challenges. To develop an
+i,j I (|θij | (cid:54)= 0) by its com-
+τ min(|θij |, τ ) Shen et al. (2012)
+1
+θij ∈Θ1
+as τ → 0+ . This leads to a computational surrogate of (3):
+(cid:88)
+i,j
+
+sub ject to (cid:107)Θ1(cid:107)0 ≤ s1 , r(Θ2 ) ≤ s2 ,
+
+min
+Θ1 ,Θ2
+
+f (Θ1 , Θ2 ), sub ject to
+
+min(|θij |, τ ) ≤ s1 , r(Θ2 ) ≤ s2 ,
+
+(5)
+
+(3)
+
+(4)
+
+1
+τ
+
+where f (Θ1 , Θ2 ) = (cid:107)A(Θ1 + Θ2 ) − Z (cid:107)2
+F and τ is a nonnegative tuning parameter.
+
+50
+
+Simultaneous Pursuit of Sparseness and Rank Structures for Matrix Decomposition
+
+2.3 Method for Nonconvex Minimization
+
+This section will develop computational strategies for (4) and (5) separately, based on block-
+wise coordinate decent as well as maximum block improvement (MBI, Chen et al., 2012).
+First, we separate the task of sparsity pursuit for Θ1 from that of rank minimization for
+Θ2 , where Θ1 and Θ2 correspond to two blocks for decent. Second, we apply MBI to
+assure that blockwise coordinate decent yields a stationary solution for nonconvex mini-
+mization, which would be otherwise impossible. In addition, for (5), we develop a gradient
+pro ject method to permit fast computation of a constrained problem through the means of
+unconstrained optimization.
+The strategy of blockwise coordinate decent proceeds as follows. For (4) and (5), we
+solve it in Θ2 given Θ1 and solve them in Θ1 given Θ2 , alternatively.
+In each step of
+alternating blocks, we proceed with the block giving the maximum block improvement.
+
+2.3.1 Nonconvex minimization (4): a special case
+For (4), when Θ2 is held ﬁxed, (4) has a global minimizer can be obtained through compo-
+(cid:111) · (zij − θ(2)
+(cid:110)|zij − θ(2)
+(cid:16)
+(cid:17)
+nentwise thresholding deﬁned by the L0 -function as follows:
+ij | > λ
+ij )
+where θ(2)
+is the ij th entry of Θ2 and λ is any number between the s1 th and (s1 + 1)th
+largest entries of |Z − Θ2 |.
+ij
+When Θ1 is held ﬁxed, a global minimizer of (4) is
+
+ˆΘ1 (Z , Θ2 ) =
+
+(6)
+
+I
+
+,
+
+p×k
+
+ˆΘ2 (Z , Θ1 ) = U Ds2 V T ,
+(7)
+where U and V are given by singular value decomposition (SVD) of Z − Θ1 = U DV T and
+Ds2 is a diagonal matrix retaining the largest s2 singular values of Z − Θ1 and truncating
+other singular values at zero.
+Our algorithm for computing (4) is summarized.
+1 , ˆΘ(0)
+Step 1.(Initialization) Supply a good initial estimate ( ˆΘ(0)
+2 ) in (4). Specify
+precision δ > 0.
+in (7) with Θ1 = ˆΘ(m−1)
+Step 2.(Iteration) At iteration m, update ˆΘ(m)
+2
+1
+in (6) with Θ2 = ˆΘ(m)
+update ˆΘ(m)
+.
+1
+2
+, ˆΘ(m−1)
+) − f ( ˆΘ(m−1)
+)| ≤ δ , where
+Step 3.(Stopping rule) Terminate if |f ( ˆΘ(m)
+, ˆΘ(m)
+2
+1
+2
+1
+f (Θ1 , Θ2 ) = (cid:107)Θ1 + Θ2 − Z (cid:107)2
+F . Let m∗ be the index at termination. The estimate is then
+, ˆΘ(m∗ )
+( ˆΘ(m∗ )
+).
+1
+2
+
+. Then
+
+2.3.2 Nonconvex minimization (5): A general case
+
+The problem of solving for Θ2 in (5) given Θ1 reduces to that of constrained rank mini-
+mization
+
+(cid:107)AΘ2 − (Z − AΘ1 )(cid:107)2
+F
+
+sub ject to r(Θ2 ) ≤ s2 ,
+
+min
+Θ2
+
+(8)
+
+51
+
+Yan, Ye and Shen
+
+provided that Θ1 satisﬁes the sparsity constraint in (5). Now write Θ2 ≡ C F , where C
+and F are p × r and r × k matrices with r ≤ s2 , consisting of a basis of the column space
+and that of the row space of Θ2 , respectively. Note that {Θ2 : r(Θ2 ) ≤ s2} = {Θ2 : Θ2 =
+C F , r ≤ s2}. Then solving (8) is equivalent to that
+(cid:107)A(C F ) − (Z − AΘ1 )(cid:107)2
+min
+F ,
+C ,F
+
+(9)
+
+An application of an argument of (Xing et al., 2012) yields a global minimizer of (9),
+which has an analytic form
+
+min
+Θ1
+
+ˆC = V D−1Uw ,
+ˆF = DwV T
+ˆΘ2 (Θ1 ) = ˆC ˆF ,
+(10)
+w ,
+where D is a r(A) × r(A) diagonal singular vector matrix based on SVD of A = U DV T ,
+Dw is also a diagonal matrix of s2 leading singular values of W ≡ U T (Z − AΘ1 ) and Uw ,
+Vw are matrices consisting of the corresponding right and left singular vectors.
+Note that computation involves only the ﬁrst s2 largest singular values. Therefore, we
+employ the randomized truncated SVD method (Halko et al., 2011), for eﬃcient computa-
+tion of a large problem. This amounts to a complexity of order O(pk log r), as compared to
+O(min(pk2 , p2k)) of a conventional SVD method (Golub & Van, 1996).
+Solving for Θ1 in (5) given Θ2 , on the other hand, becomes the problem of sparsity
+(cid:88)
+pursuit. In particular, we solve, assuming that r(Θ2 ) ≤ s2 ,
+(cid:107)AΘ1 − (Z − AΘ2 )(cid:107)2
+min(|θij |, τ ) ≤ s1 ,
+1
+F ,
+sub ject to
+(11)
+τ
+θij ∈Θ1
+(cid:80) max(|θij | − τ , 0)
+(cid:80) |θij | and S2 (Θ1 ) = 1
+which is solved iteratively by a diﬀerence of convex (DC) programming, constructing a
+convex set containing the original constrained set. The constraint in (5) is deﬁned by
+J (Θ1 ) = S1 (Θ1 ) − S2 (Θ1 ) with S1 (Θ1 ) = 1
+(cid:16) |θij |
+(cid:17)
+At iteration step m by J (m) (Θ1 ) = (cid:80)
+τ
+τ
+are convex in Θ1 . Then a sequence of upper approximations of J (Θ1 ) is constructed:
+| ≤ τ ) + I (| ˆθ(m−1)
+τ I (| ˆθ(m−1)
+| > τ )
+θij ∈Θ1
+. This
+ij
+ij
+yields a sequence of convex minimization subproblems with convex constraints: At iteration
+step m, we solve
+sub ject to J (m) (Θ1 ) ≤ s1 .
+minΘ1 (cid:107)AΘ1 − (Z − AΘ2 )(cid:107)2
+F ,
+For (12), we develop a gradient pro jection method. First, we generalize an l1 -ball result of
+(Liu & Ye, 2009) to (12).
+Lemma 2 (Projection) For any set K ⊆ {1, 2, · · · , n},
+x∈Rn :(cid:80)
+x∗ = TK,z (v) =
+1
+argmin
+i∈K |xi |≤z
+2
+where TK,z : Rn → Rn is a projection operator deﬁned by
+TK,z (v)i = sign(vi ) max(|vi | − λ∗ , 0)
+where λ∗ = 0 if (cid:80)
+(cid:80)
+(cid:80)
+|vi |−z
+i∈K |vi | ≤ z or i /∈ K and λ∗ =
+i∈K \K0
+|K |−|K0 |
+i∈K max(|vi | − |vj |, 0) − z > 0}.
+
+otherwise, and K0 = {j :
+
+(12)
+
+(cid:107)x − v(cid:107)2
+2 ,
+
+52
+
+Simultaneous Pursuit of Sparseness and Rank Structures for Matrix Decomposition
+
+Before solving (12), we simply extend the fast iterative shrinkage-thresholding (FISTA)
+algorithm (Beck & Teboulle, 2009) to solving (13).
+
+Lemma 3 For any set K deﬁned in Lemma 2, a global minimizer of
+x∈Rn :(cid:80)
+(cid:107)Ax − b(cid:107)2
+1
+min
+i∈K |xi |≤z
+2
+2
+(cid:16)
+(cid:17)
+can be obtained by FISTA iteratively: At iteration step t:
+1 + (cid:112)1 + 4ρ2
+AT (Ay (t) − b)
+y (t) − 1
+x(t) = TK,z
+2L
+(cid:18) ρt − 1
+(cid:19)
+t
+,
+2
+y (t+1) = x(t) +
+ρt+1
+where L is the largest singular value of A.
+
+(x(t) − x(k−1) ),
+
+ρt+1 =
+
+,
+
+(13)
+
+,
+
+(14)
+
+ˆΘ(m,t)
+1
+
+( ˆΘ(m,t)
+1
+I (| ˆθ(m−1)
+ij
+
+− ˆΘ(m,t−1)
+1
+| > τ )) and λmax (·)
+
+Next we solve (12) using Lemma 3, which yields an analytic updating formula in a
+matrix form.
+Then a global minimizer of (12) is computed using an iterative scheme with respect to
+t as follows:
+(cid:18)
+(cid:19)
+= ˆΘ(m−1)
+v (1) = ˆΘ(m,0)
+,
+ρ1 = 1,
+1
+1
+1 + (cid:112)1 + 4ρ2
+(cid:18) ρt − 1
+(cid:19)
+= TK (m) ,z (m)
+v (t) −
+AT [Av (t) − (Z − AΘ2 )]
+1
+2λmax (AT A)
+v (t+1) = ˆΘ(m,t)
+| ≤ τ }, z (m) = τ (s1 − (cid:80)
+t
+,
++
+ρt+1 =
+1
+ρt+1
+2
+where K (m) = {(i, j ) : | ˆθ(m−1)
+θij ∈Θ1
+ij
+denotes the largest eigenvalue of a matrix.
+The algorithm is summarized as follows.
+Algorithm 2:
+1 , ˆΘ(0)
+Step 1.(Initialization) Supply a good initial estimate ( ˆΘ(0)
+2 ) in (5). Specify
+precision δ > 0.
+Step 2.(Iteration) At iteration m, compute candidate ˆΘ2 in (10) with Θ1 = ˆΘ(m−1)
+1
+and candidate ˆθij ∈ ˆΘ1 in (14) with AΘ2 = A ˆΘ(m−1)
+.
+2
+Step 3.(Maximum block improvement) At each iteration m, determine which of the
+) and ( ˆΘ(m−1)
+two candidates ( ˆΘ1 , ˆΘ(m−1)
+, ˆΘ2 ) for updating according to the amounts of im-
+2
+1
+) ≤ f ( ˆΘ(m−1)
+) if f ( ˆΘ1 , ˆΘ(m−1)
+) = ( ˆΘ1 , ˆΘ(m−1)
+provement. That is, update ( ˆΘ(m)
+, ˆΘ(m)
+, ˆΘ2 );
+1
+2
+2
+2
+1
+) = ( ˆΘ(m−1)
+, ˆΘ(m)
+update ( ˆΘ(m)
+, ˆΘ2 ) otherwise.
+1
+2
+1
+, ˆΘ(m−1)
+) − f ( ˆΘ(m−1)
+Step 4.(Stopping rule) Terminate if |f ( ˆΘ(m)
+, ˆΘ(m)
+2
+1
+1
+2
+note by m∗ the index at termination. The ﬁnal estimate is
+ˆΘ1 = ˆΘ(m∗ )
+ˆΘ2 = ˆC ˆF ,
+1
+where ˆC and ˆF are deﬁned in (10) with Θ1 = ˆΘ1 .
+
+)| ≤ δ . De-
+
+),
+
+,
+
+53
+
+Yan, Ye and Shen
+
+2.4 Computational Properties
+
+This section discusses computational properties of Algorithms 1 and 2. For nonconvex
+minimization, our methods may not guarantee a global minimizer for (3). However, the
+following lemma says that our solution of Algorithms 1 and 2 yields a stationary point of
+the cost function. Note that the scheme of maximum block improvement is essential for the
+result of Lemma 5.
+
+Lemma 4 The minimal cost function f ( ˆΘ(m)
+, ˆΘ(m)
+) in Algorithm 1 is strictly decreasing
+2
+1
+in m before termination. Moreover, the solution is a stationary point of f (Θ1 , Θ2 ) in that
+θ(∗)
+2 ) \ θij ), where (Θ1 , Θ2 ) \ θij is the set of parameters of
+ij = argminθij ∈Θk ;k=1,2 f ((Θ∗
+1 , Θ∗
+(Θ1 , Θ2 ) without one component θij in Θ1 or Θ2 , and (Θ1 , Θ2 ) satisfy the constraints in
+(5).
+
+Lemma 5 If A is of ful l rank, then ˆΘ1 computed from Algorithm 2 satisﬁes the con-
+straints in (12). Moreover, the minimal cost function f ( ˆΘ(m)
+, ˆΘ(m)
+) is strictly decreasing
+1
+2
+in m before termination. Final ly, if the solution ( ˆΘ1 , ˆΘ2 ) satisﬁes (5) and it is a stationary
+point of f (Θ1 , Θ2 ) in that
+θ(∗)
+ij = argmin
+θij ∈Θk ;k=1,2
+where (Θ1 , Θ2 ) \ θij is the set of parameters of (Θ1 , Θ2 ) without one component θij in Θ1
+or Θ2 , and (Θ1 , Θ2 ) satisfy the constraints in (5).
+
+1 , Θ∗
+f ((Θ∗
+2 ) \ θij ),
+
+With regard to the computational complexity of Algorithms 1 and 2, the method of
+truncated SVD yields an approximated SVD with a complexity of O(pk log r + (p + k)r2 )
+operations (Halko et al., 2011). Sorting requires a complexity of O(pk log(pk)). For FISTA,
+the convergence rate is O(1/t2 ) (Beck & Teboulle, 2009), where t is the number of iterations.
+Overall, the computational complexity of Algorithm 1 is O(pk log(pk) + (p + k)r2 )I2 , while
+that of Algorithm 2 is O((pk log r + (p + k)r2 + I1/ε2 )I2 , where ε denotes the precision
+speciﬁed in Algorithm 2, and I1 and I2 is the number of DC iteration and blockwise iteration,
+respectively. Based on our experience, I1 and I2 are about between 3 and 20.
+
+3. Theory
+
+This section drives a ﬁnite-sample probability error bound for reconstruction of the true Θ0
+by ˆΘL0 , which is a global minimizer of (3) in that ˆΘL0 = ˆΘL0
+1 + ˆΘL0
+2 . Note that existence
+of a global minimizer is assured by the fact that the cost function (3) is bounded blow by
+zero. Moreover, we will provide an insight into simultaneous pursuit of the low rank and
+sparsity structures through matrix decomposition by contrasting the proposed method with
+(cid:80)
+(s1 , s2 ) against low rank approximation alone with (s1 = 0, s2 ) and sparsity pursuit alone
+with (s1 , s2 = 0).
+j |θij | and (cid:107)Θ(cid:107)max = maxij |θij | are the L∞ -norm and max norm
+Let (cid:107)Θ(cid:107)∞ = maxi
+respectively. Before proceeding, we deﬁne a parameter space Λ as {Θ = Θ1 +Θ2 : (cid:107)Θ1(cid:107)0 ≤
+s1 , (cid:107)Θ1(cid:107)max ≤ l1 , Θ2 = C F , max((cid:107)C (cid:107)∞ , (cid:107)F T (cid:107)∞ ) ≤ l2}, where l1 , l2 > 0 are constant, C
+is a p × s2 matrix, F is a s2 × k matrix, F T is the transport of F and s2 > 0 is an upper
+
+54
+
+Simultaneous Pursuit of Sparseness and Rank Structures for Matrix Decomposition
+
+bound of r(Θ2 ). Let g(Θ, Z ) be the probability density of Z with respect to dominating
+(cid:18)(cid:90)
+(cid:19)1/2
+measure ν on Λ. Deﬁne the Hellinger distance between two densities as
+
+(g1/2 (Θ, Z ) − g1/2 (Θ(cid:48) , Z ))2dν
+
+,
+
+(15)
+
+h(Θ, Θ(cid:48) ) =
+
+1
+2
+
+which will be used to measure estimation accuracy.
+The following technical assumptions are made.
+(cid:90)
+Assumption A: (Norm-relation) For any Θ, Θ(cid:48) ∈ Λ and any δ > 0,
+
+(g1/2 (Θ, y) − g1/2 (Θ(cid:48) , y))2dν (y) ≤ M 2 δ2 ,
+
+sup
+(cid:107)Θ−Θ(cid:48) (cid:107)max≤δ
+
+where M might depend on p, k , s1 , s2 and l1 , l2 .
+Assumption A speciﬁes a norm relation between the metric (cid:107) · (cid:107)max over parameters and
+the Hellinger distance over the corresponding densities. This can be veriﬁed given a speciﬁc
+form of g .
+Theorem 1 gives a probability error bound for ˆΘL0 under probability P under the true
+2 ) be the degree of sparsity and rank, as deﬁned in Eﬀ(Θ0 ) in Lemma 1.
+1 , s0
+Θ0 . Let (s0
+(cid:16)
+(cid:17) ≤ 5 exp(−c1n2 ),
+Theorem 6 Under Assumptions A, for any  ≥ n,p,k
+h( ˆΘL0 , Θ0 ) ≥ 
+(cid:113)
+(cid:115)
+log(
+(cid:18)
+(cid:113)
+s0
+1 log
+
+(p + k)s0
+2 + s0
+1 + c2
+(cid:113)
+If log(r(Θ0 )) ≤ ds0
+(cid:112)log(M )
+2 for some d > 0, then it can be simpliﬁed:
+(p + k − s0
+2 )s0
+Cp,k = c3
+2 ,
+where c1 − c3 are positive constants and M is deﬁned in Assumption A. Moreover, as
+n, p, k → ∞, h2 ( ˆΘL0 , Θ0 ) = Op (2
+n,p,k ), where Op (·) and E
+n,p,k ), and E h2 ( ˆΘL0 , Θ0 ) = O(2
+denote the stochastic order and the expectation under P .
+
+log(29M c4 (l3
+2 + l1 ))
+
+(p + k − r(Θ0 ))r(Θ0 )
+s0
+1
+
+e
+
+n,p,k = Cp,k√
+n
+
+√
+n
+Cp,k
+
+Cp,k = c2
+
+P
+
+) with
+
+(cid:113)
+
+.
+
+(16)
+
+(cid:19)
+
+Corollary 1 gives an order of n,p,k in three extreme situations with M held ﬁxed.
+Corollary 1 Suppose M in Assumptions A is a constant independent of (p, k , s1 , s2 ).
+(cid:16)(cid:112)(cid:107)Θ0(cid:107)0 log((p + k − r(Θ0 ))r(Θ0 )/(cid:107)Θ0(cid:107)0 )
+(cid:17)
+(i) When Θ0 is extremely sparse, that is, (cid:107)Θ0(cid:107)0 ≤ p + k − 2, Cp,k in (16) is no worse
+(cid:16)(cid:112)(p + k − r(Θ0 ))r(Θ0 )
+(cid:17)
+.
+than O
+(ii) When Θ0 is a low-rank matrix, Cp,k in (16) is no worse than O
+
+.
+
+55
+
+Yan, Ye and Shen
+
+(cid:16)
+)(cid:1)(cid:17)
+(cid:113)
+max (cid:0)(cid:112)(p + k − s0
+(iii) When Θ0 is dense, say (cid:107)Θ0(cid:107)0 ≥ cpk for a constant 0 < c ≤ 1, and of ful l rank, Cp,k
+1 log( pk
+(cid:16)(cid:112)(p + k − r(Θ0 ))r(Θ0 )
+(cid:17)
+2 )s0
+s0
+2 ,
+in (16) is O
+.
+s0
+1
+Then C L
+.
+p,k = O
+Corollary 2 and Theorem 2 give a similar result under the Hellinger distance and the
+Kullback-Leibler distance, respectively, assuming that i follows a normal distribution.
+Corollary 2 If i in (1) fol lows N (0, σ2 Ik×k ), (cid:107)A(cid:107)∞ is bounded, then the results in Corol-
+lary 1 continue to hold.
+(cid:16)
+K (Θ0 , ˆΘL0 ) ≥ 42(cid:17) ≤ 5 exp(−c1n2 ).
+Theorem 7 Under the same assumptions in Corol lary 2, we have, for any  ≥ n,p,k ,
+P
+where K (·, ·) is Kul lback-Leibler distance under normality and n,p,k and c2 remain to be
+the same as in Theorem 1. As n, p, k → ∞, K (Θ0 , ˆΘL0 ) = Op (2
+n,p,k ) and EK (Θ0 , ˆΘL0 ) =
+O(2
+n,p,k ).
+Theorem 3 gives an error bound for (cid:107) ˆΘL0 − Θ0(cid:107)2
+F under the normal assumption when
+A = In×p .
+
+Theorem 8 Assume that A = In×p with n = max(p, k). Under the same assumptions in
+1√
+), as n, p, k → ∞, (cid:107) ˆΘL0 − Θ0(cid:107)2
+F = Op (C (cid:48)
+(cid:16)
+(cid:17)
+p,k log( 1
+Corol lary 2 with σ = O(
+)),
+C (cid:48)
+max(p,k)
+p,k
+e (p+k−r(Θ0 ))r(Θ0 )
+log(max(p, k)) · [(p + k)s0
+2 + s0
+1 ] + s0
+1 log
+s0
+1
+max(p2 , k2 )
+
+C (cid:48)
+p,k =
+
+where
+
+4. Numerical Examples
+
+This section examines operating characteristics of the proposed method through simulations,
+and demonstrates its eﬀectiveness on applications in image reconstruction and in time series
+analysis.
+In the literature, it is known that the state-of-art methods are the low-rank
+approximation method sub ject to rank restriction as well as its regularized version, which
+outperforms the low-rank approximation method with the trace-norm (Xing et al., 2012;
+She, 2013; Zhou & Tao, 2011).
+In Section 4.1, we contrast our proposed method with
+pursuing low rank and sparsity structures through matrix decomposition simultaneously,
+with the former low rank approximation method sub ject to rank restriction (low-rank alone),
+as well as the method based on sparsity pursuit alone (sparsity alone). Here Algorithm 2 are
+used. Most importantly, in Section 4.2, we compare the proposed method using Algorithm 1
+with two strong competitors the method of Go Decomposition (GoDec, Zhou & Tao, 2011)
+and the method augmented Lagrange multipliers (ALM, Lin et al., 2009) when A = In×p
+in (2). In simulations, codes for ALM and GoDec are used at the authors’ website, and the
+initial values for Algorithms 1 and 2 are set to be the zero-matrix
+
+56
+
+Simultaneous Pursuit of Sparseness and Rank Structures for Matrix Decomposition
+
+(17)
+
+4.1 Simulation I: Operating Characteristics
+The simulated example is generated as follows. First, a n × p design matrix A is sampled
+with each entry being iid N (0, 1). Second, the true Θ1 is a p × k matrix with all diagonals
+one and two more non-zeros (2 and 2) being randomly chosen with equal probability, and
+the true Θ2 is generated by multiplying a p × r matrix with a r × k matrix with each entry
+following N (1, 1). Moreover, each entry of E is iid N (0, 0.25). Throughout the simulations,
+Θ1 and Θ2 are held ﬁxed with diﬀerent values of (n, p, k).
+The proposed method is trained with a training set, and the optimal tuning parameters,
+minimizing the prediction mean squares error over an independent tuning set, are obtained
+through a bisection search over integer values. Then a method’s performance is examined
+over a test set. The training, tuning and testing data sizes are n, 4n and 2n.
+For parameter estimation, we employ the mean squares error to evaluate performance
+(cid:107)A( ˆΘ − Θ0 )(cid:107)2
+F .
+
+1
+4n
+For rank recovery, we calculate the absolute diﬀerence between an estimated rank ˆr and
+the true rank r0 , that is |ˆr − r0 |. For sparsity pursuit, we deﬁne the true positive (TP) as a
+ratio of the true positive numbers of nonzero estimates over the number of nonzeros in the
+true model, and the false positive (FP) as a ratio of the false positive numbers of nonzero
+estimates over the number of zeros in the true model. Here “Low rank alone”, “Sparsity
+alone” and “Ours” indicate the low rank method sub ject to rank restriction, the sparsity
+pursuit method, and the proposed method
+As indicated in Table 1, the proposed method performs favorably against its counterpart—
+the low rank approximation method sub ject to rank restriction and sparsity pursuit alone,
+across all situations with diﬀerent values of n, p and k . Moreover, the proposed method
+enables to identify two structures through matrix decomposition simultaneously. In partic-
+ular, it recovers the true rank of the matrix with nearly zero |ˆr − r0 |-values as compared to
+relatively large |ˆr − r0 |-values, ranging from 6.7 to 29.6, for its low-rank counterpart. At
+the same time, the proposed method has high true positives ranging from .92 to 1.00 and
+low false positives between 0.00 and 0.01, as compared to true positives ranging 0.04 to .44
+and false positives between 0.03 and 0.20 of its counterpart based on sparsity pursuit. This
+suggests that pursuit of two types of structures is indeed advantageous than that of either
+one structure individually. This is mainly because these two structures are complementary
+to each other. As a result, higher parameter estimation accuracy, as measured by the MSE
+values, can be realized. In fact, the amount of improvement is large, which ranges from
+147% to 1185400%. To see how each method performs as (n, p) increases, we ﬁx k = 5.
+As suggested by Table 2, the proposed method yields more stable performance than
+its two counterparts whose performance deteriorates rapidly, as the level of diﬃculty of a
+problem escalates when p and k increase.
+
+4.2 Simulation II: Comparison
+
+To compare with ALM (Lin et al., 2009) and GoDec (Zhou & Tao, 2011) for RPCA, consider
+the case of A = In×p in (2) and p = k as in these papers. GoDec minimizes
+sub ject to card(Θ1 ) ≤ s1 , rank(Θ2 ) ≤ s2 ,
+(cid:107)Z − Θ1 − Θ2(cid:107)2
+F
+
+(18)
+
+min
+Θ1 ,Θ2
+
+57
+
+Yan, Ye and Shen
+
+p = 20, k = 10
+Low-rank alone
+|ˆr − r0 | MSE
+6.71
+1.68
+(0.28)
+(0.52)
+p = 30, k = 20
+Low-rank alone
+|ˆr − r0 | MSE
+7.79
+15.69
+(1.03)
+(2.41)
+16.94
+2.16
+(0.24)
+(0.18)
+p = 20, k = 30
+Low-rank alone
+|ˆr − r0 | MSE
+16.66
+5.06
+(0.62)
+(0.76)
+1.88
+16.99
+(0.10)
+(0.16)
+p = 40, k = 30
+Low-rank alone
+|ˆr − r0 | MSE
+1.88
+19.39
+(0.59)
+(1.57)
+p = 50, k = 20
+Low-rank alone
+|ˆr − r0 | MSE
+16.86
+5.05
+(0.40)
+(0.35)
+p = 200, k = 100
+Low-rank alone
+|ˆr − r0 | MSE
+54.24
+29.56
+(7.84)
+(0.81)
+
+MSE
+0.68
+(0.15)
+
+MSE
+1.54
+(0.30)
+0.51
+(0.08)
+
+MSE
+1.06
+(0.17)
+0.46
+(0.05)
+
+MSE
+4.08
+(1.21)
+
+MSE
+0.95
+(0.15)
+
+MSE
+8.26
+(0.86)
+
+n
+50
+
+n
+50
+
+100
+
+n
+50
+
+100
+
+n
+50
+
+n
+100
+
+n
+300
+
+|ˆr − r0 |
+0.00
+(0.00)
+
+Ours
+TP
+1.00
+(0.00)
+
+FP
+0.01
+(0.03)
+
+|ˆr − r0 |
+0.00
+(0.00)
+0.00
+(0.00)
+
+|ˆr − r0 |
+0.00
+(0.00)
+0.00
+(0.00)
+
+Ours
+TP
+1.00
+(0.00)
+1.00
+(0.00)
+
+FP
+0.00
+(0.00)
+0.00
+(0.00)
+
+Ours
+TP
+1.00
+(0.00)
+1.00
+(0.00)
+
+FP
+0.00
+(0.00)
+0.00
+(0.00)
+
+|ˆr − r0 |
+0.00
+(0.00)
+
+Ours
+TP
+1.00
+(0.00)
+
+FP
+0.00
+(0.00)
+
+|ˆr − r0 |
+0.00
+(0.00)
+
+Ours
+TP
+1.00
+(0.00)
+
+FP
+0.00
+(0.00)
+
+|ˆr − r0 |
+3.76
+(1.24)
+
+Ours
+TP
+0.92
+(0.23)
+
+FP
+0.00
+(0.00)
+
+Sparsity alone
+MSE
+FP
+0.07
+1367.03
+(173.50)
+(0.01)
+
+TP
+0.44
+(0.29)
+
+Sparsity alone
+FP
+MSE
+4650.35
+0.14
+(511.55)
+(0.02)
+4399.38
+0.05
+(0.01)
+(429.41)
+
+TP
+0.12
+(0.21)
+0.13
+(0.22)
+
+Sparsity alone
+MSE
+FP
+0.06
+4276.25
+(508.06)
+(0.01)
+4087.58
+0.06
+(0.01)
+(406.97)
+
+TP
+0.43
+(0.28)
+0.53
+(0.20)
+
+Sparsity alone
+MSE
+FP
+12018.68
+0.20
+(0.04)
+(1422.84)
+
+TP
+0.09
+(0.20)
+
+Sparsity alone
+MSE
+FP
+0.03
+11262.97
+(1003.69)
+(0.01)
+
+TP
+0.04
+(0.14)
+
+Sparsity alone
+
+–
+(–)
+
+–
+(–)
+
+–
+(–)
+
+Table 1: Results of Simulation I. Algorithm 2 is used for computation.
+
+min
+Θ1 ,Θ2
+
+(19)
+
+where card(·) denotes the cardinality, and sj ≥ 0 are tuning parameters as in our case.
+(cid:88)
+Similarly, ALM that focuses on the non-noisy situation minimizes
+|θij |,
+(cid:107)Θ2(cid:107)∗ + λ
+θij ∈Θ1
+where (cid:107) · (cid:107)∗ is the nuclear-norm of a matrix.
+Our simulation example remains the same as before except that the positions of nonzero
+elements in Θ2 are randomly sampled with equal probability, in particular, .1p and .3p
+nonzeros are randomly chosen without replacement. For tuning, grid search is employed for
+GoDec in (18), with 1 ≤ s1 ≤ (p + k) and 1 ≤ s2 ≤ min(p, k , 50); λ is ﬁxed at 1√
+p for (19).
+
+sub ject to Z = Θ1 + Θ2 ,
+
+58
+
+Simultaneous Pursuit of Sparseness and Rank Structures for Matrix Decomposition
+
+n
+50
+
+50
+
+50
+
+50
+
+p
+20
+
+30
+
+40
+
+50
+
+100
+
+20
+
+100
+
+30
+
+100
+
+40
+
+|ˆr − r0 |
+0.00
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.82
+(0.84)
+0.00
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+
+Ours
+FP
+0.002
+(0.006)
+0.01
+(0.01)
+0.001
+(0.003)
+0.01
+(0.01)
+0.01
+(0.03)
+0.01
+(0.01)
+0.01
+(0.02)
+
+TP
+1.00
+(0.00)
+0.57
+(0.17)
+1.00
+(0.00)
+0.36
+(0.38)
+1.00
+(0.00)
+0.71
+(0.25)
+0.98
+(0.10)
+
+MSE
+0.58
+(0.14)
+1.29
+(0.32)
+3.57
+(1.58)
+487.43
+(1081.68)
+0.23
+(0.05)
+0.36
+(0.05)
+0.53
+(0.08)
+
+Low-rank alone
+|ˆr − r0 | MSE
+0.84
+2.00
+(0.00)
+(0.18)
+1.98
+1.97
+(0.42)
+(0.17)
+5.43
+1.67
+(0.60)
+(1.73)
+12255
+0.82
+(79570)
+(0.81)
+0.32
+2.00
+(0.00)
+(0.05)
+0.54
+2.00
+(0.08)
+(0.00)
+0.83
+2.00
+(0.00)
+(0.11)
+
+Sparsity alone
+MSE
+FP
+570
+0.08
+(0.02)
+(73)
+3772.33
+0.08
+(542.38)
+(0.01)
+1998
+0.05
+(0.01)
+(257)
+3797
+0.03
+(539)
+(0.01)
+541
+0.08
+(0.02)
+(58)
+1461
+0.03
+(147)
+(0.01)
+1929
+0.03
+(0.01)
+(179)
+
+TP
+0.433
+(0.30)
+0.18
+(0.27)
+0.07
+(0.18)
+0.05
+(0.15)
+0.53
+(0.21)
+0.19
+(0.21)
+0.10
+(0.20)
+
+Table 2: Results for Simulation I with ﬁxed k = 5. Algorithm 2 is used for computation.
+
+From Tables 3, it is evidenced that the proposed method outperforms ALM uniformly
+in terms of the MSE while being comparable to GoDec, in all the situations with diﬀerent
+values of (p, k , σ). Moreover, it always recovers the true rank of the matrix perfectly with
+|ˆr − r0 | = 0. Although ALM has comparable high TP values, its FP values are high as well
+in that they are at least 0.6488. As a result, ALM never captures the true rank.
+
+4.3 AR Face Database 20pt Markup
+
+For face image reconstruction, we use a subset of AR Face Data for this experiment. The
+original image is available at http://www-prima.inrialpes.fr/FGnet/data/05-ARFace/
+markup_large.png, which is a colored one with size of 186 × 200 × 3. To enable detailed
+testing, the image has been labeled with 20 facial features on the face. We convert the
+image into black and white and reduce it to size 171 × 180. The target image is displayed
+in Figure 1.
+
+Figure 1: The converted AR face image with markup points.
+
+Twenty one markup points around eyes, nose, mouth and cheeks, which are used to test
+face recognition or veriﬁcation performance when the exact location of the face and features
+
+59
+
+Yan, Ye and Shen
+
+nonzeros
+
+p
+
+k
+
+σ Method
+Ours
+
+0.1p
+
+0.3p
+
+50
+
+30
+
+200
+
+100
+
+50
+
+30
+
+200
+
+100
+
+0.1
+
+1
+
+0.1
+
+1
+
+0.1
+
+1
+
+0.1
+
+1
+
+GoDec
+
+GoDec
+
+GoDec
+
+Ours
+
+GoDec
+
+GoDec
+
+Ours
+
+Ours
+
+|ˆr − r0 |
+0.0000
+(0.0000)
+ALM 13.0300
+(0.6735)
+0.0000
+(0.0000)
+0.0000
+(0.0000)
+ALM 13.3900
+(0.6651)
+0.0000
+(0.0000)
+0.0000
+(0.0000)
+ALM 54.3100
+(0.7745)
+0.0000
+(0.0000)
+0.0000
+(0.0000)
+ALM 54.2400
+(0.7264)
+0.0000
+(0.0000)
+0.0000
+(0.0000)
+ALM 13.0000
+(0.6195)
+0.0000
+(0.0000)
+0.0000
+(0.0000)
+13.37
+(0.6301)
+0.0000
+(0.0000)
+0.0000
+(0.0000)
+ALM 54.3500
+(0.6571)
+0.0000
+(0.0000)
+0.0000
+(0.0000)
+ALM 54.2200
+(0.6289)
+0.0000
+(0.0000)
+
+ALM
+
+Ours
+
+Ours
+
+GoDec
+
+Ours
+
+GoDec
+
+Ours
+
+GoDec
+
+TP
+0.9940
+(0.0343)
+1.000
+(0.0000)
+0.9940
+(0.0342)
+0.0320
+(0.0839)
+0.9280
+(0.1223)
+0.0300
+(0.0823)
+0.9770
+(0.0337)
+1.0000
+(0.0000)
+0.9755
+(0.0344)
+0.0075
+(0.0206)
+0.9456
+(0.0456)
+0.0085
+(0.0236)
+0.9933
+(0.0201)
+1.0000
+(0.0000)
+0.9953
+(0.0171)
+0.0373
+(0.0624)
+0.9407
+(0.0621)
+0.0327
+(0.0653)
+0.9867
+(0.0164)
+1.0000
+(0.0000)
+0.9882
+(0.0152)
+0.0080
+(0.0122)
+0.9467
+(0.0297)
+0.0075
+(0.0135)
+
+FP
+0.0000
+(0.0002)
+0.6488
+(0.0082)
+0.0000
+(0.0001)
+0.0000
+(0.0001)
+0.6540
+(0.0080)
+0.0001
+(0.0003)
+0.0000
+(0.0000)
+0.7034
+(0.0022)
+0.0000
+(0.0000)
+0.0000
+(0.0000)
+0.7059
+(0.0023)
+0.0000
+(0.0000)
+0.0002
+(0.0003)
+0.6472
+(0.0079)
+0.0001
+(0.0003)
+0.0000
+(0.0001)
+0.6531
+(0.0080)
+0.0001
+(0.0002)
+0.0001
+(0.0001)
+0.7030
+(0.0023)
+0.0000
+(0.0001)
+0.0000
+(0.0000)
+0.7054
+(0.0022)
+0.0000
+(0.0000)
+
+MSE
+0.2366
+(0.0251)
+1.5057
+(0.0576)
+0.2363
+(0.0245)
+2.5308
+(0.2418)
+15.0569
+(0.5758)
+2.5537
+(0.2523)
+0.2345
+(0.0169)
+4.9984
+(0.0510)
+0.2330
+(0.0160)
+2.4469
+(0.1387)
+49.9838
+(0.5095)
+2.4476
+(0.1395)
+0.2507
+(0.0277)
+1.5057
+(0.0576)
+0.2489
+(0.0271)
+2.8870
+(0.2410)
+15.0569
+(0.5758)
+2.8983
+(0.2504)
+0.2495
+(0.0198)
+4.9984
+(0.0510)
+0.2479
+(0.0191)
+2.8254
+(0.1402)
+49.9838
+(0.5095)
+2.8237
+(0.1409)
+
+Table 3: Results for Simulation II . Algorithm 1 is used for computation.
+
+60
+
+Simultaneous Pursuit of Sparseness and Rank Structures for Matrix Decomposition
+
+are known. To identify the locations, we extract sparse (Θ1 ) and low-rank (Θ2 ) structures
+for the face images as described by the matrix decomposition into Θ1 and Θ2 . For this
+purpose, A in (3) is set to be the identity matrix of size 171 × 171. Figures 2 and 3 display
+two decomposed structures for the AR face images by the proposed method with diﬀerent
+sparse and rank constraint parameters in (3).
+
+Figure 2: Extracted sparsity (ﬁrst),
+low-rank (second) structures as well as the recon-
+structed image by the proposed method for AR face images; where the tuning
+parameters are set to s1 = 2500, s2 = 5.
+
+Figure 3: Extracted sparsity (ﬁrst),
+low-rank (second) structures as well as the recon-
+structed image by the proposed method for AR face images; where the tuning
+parameters are set to s1 = 2100, s2 = 10.
+
+As indicated in Figures 2 and 3, the sparseness structure describes characteristics/detailed
+marks of the face, whereas the low-rank structure displays the rough outlook of the human
+face. This conﬁrms our discussion regarding local and global features in the Introduction.
+Visually, both the ﬁrst panels in Figures 2 and 3 preserve at least 60% markup points,
+especially the points around nose two sides of face and lip. In other words, the sparsity
+structure captures most of markup points. Similarly, the second panels retain the overall
+look of the face. Most interestingly, this decomposition tends to remove the glasses from
+the human face.
+
+61
+
+Yan, Ye and Shen
+
+4.4 Greek Letters Image Reconstruction
+Now consider a 26 × 31 black-white image of two Greek letters β and φ, where its noisy
+version is obtained by adding noise N (0, 1) after dividing the original matrix values by 100.
+The ratio of the maximum value of the image to the noise standard deviation is about 2.5.
+The images are displayed in Figure 4.
+
+Figure 4: Original image (left) versus its noisy version (right).
+
+Our goal is reconstruction of the original image from its noise version, with a focus on
+restoration of detailed structures of the letters. Towards this end, we apply the proposed
+method and contrast with its counterpart based on sparse pursuit alone and low-rank ap-
+proximations. Speciﬁcally, let A to be the identity matrix of size 31 × 31 and Θ be a
+31 × 26 parameter matrix in (3). For each method, grid search is performed for tuning, with
+s1 = (10, 20, 30, 50), 1 ≤ s2 ≤ min(p, k) = 26 and τ = (0.05, 0.1, 0.2). For each method, the
+10-f old cross-validation is employed. The reconstructed images are displayed in Figure 5.
+
+Figure 5: Reconstructed images based on sparsity alone (ﬁrst), low-rank alone (second) and
+our method (third). Algorithm 2 is used for computation.
+
+Visually, the ﬁrst two reconstructed images by the low-rank method and the sparsity
+method give the rough shape of two letters, but the letters β and φ not distinguishable with
+blurred segments in places, especially the right middle of β and the top of φ. By comparison,
+the third reconstructed image by our method enables to reconstruct the complete shape of
+these two letters, and yield the best quality of reconstruction.
+
+62
+
+Simultaneous Pursuit of Sparseness and Rank Structures for Matrix Decomposition
+
+4.5 US Macroeconomic Time Series
+
+This subsection examines multiple time series data described in (Stock & Watson, 2012).
+The data measures 143 US macroeconomic variables quarterly over a time span from Febru-
+ary 1, 1959 to November 1, 2008. These variables are categorized into 13 groups and are
+summarized in Table 4.
+
+Group Description
+GDP component
+1
+IP
+2
+Employment
+3
+4
+Unemployment rate
+Housing
+5
+Inventories
+6
+7
+Prices
+
+Examples of series
+GDP, consumption, investment
+IP, capacity utilization
+Sectoral&total employment and hours
+Unemployment rate, total and by duration
+Housing starts, total and by region
+NAPM inventories, new orders
+Price indexes, aggregate&disaggregate,
+commodity prices
+Average hourly earning, unit labor cost
+Treasuries, corporate, term spreads, public-
+private spreads
+M1, M2, business loans, consumer credit
+Money
+Average&selected trading partners
+Exchange rates
+Stock prices
+Various stock price indexes
+Consumer expectations Michigan consumer expectations
+
+Wages
+Interest rates
+
+8
+9
+
+10
+11
+12
+13
+
+# series
+16
+14
+20
+7
+6
+6
+
+37
+
+6
+
+13
+
+7
+5
+5
+1
+
+Table 4: Economic indicators collected for U.S. macroeconomic time series.
+
+For data analysis, we consider time series starting from August 1, 1959 to November
+1, 2008 due to incomplete initial observations. Our goal is one-step ahead forecasting, and
+contrast the proposed method with low-rank alone and sparsity alone in terms of forecasting
+accuracy. Using a multivariate autoregressive model, that is, yt = yT
+t−1Θ + i , we place it in
+the framework of (1), where yt is a vector that records the values of various macroeconomic
+variables at time point t, and i follows normal distribution. In the presence of multiplicity
+and non-stationarity for economics data like this, we consider some transformations. For
+instance, log growth rates for quantity variables are diﬀerenced, nominal interest rates are
+diﬀerenced, as well as the logarithms of changes in rates of inﬂation for price series are
+diﬀerenced. See (Stock & Watson, 2012) for processing the data set. For this data set,
+p = k = 143 in (1) and the design matrix A is speciﬁed by the time series, which can
+written as A = (yt0 , yt0+1 , . . . , yt0+d−1 )T .
+A one-step ahead K -fold cross validation (CV) criterion is used for tuning the time
+series (Arlot & Celisse, 2010). In particular, for design matrix A, at each fold i, we use
+observations i to n − K + i − 1 for training and the observation n − K + i for tuning, where
+K is a pre-assigned integer and K − 1 indicates the number of folds. Note that the values
+of p and k are close to the sample size n for this time series. We therefore choose K ≤ 20
+to maintain adequate training samples.
+For tuning, the CV is optimized over a set of grids for s1 = (10, 20, 50, 100, 200), 1 ≤
+s2 ≤ min(p, k) and τ = (0.02, 0.05, 0.1, 0.2). The results for K = 11 are reported in Table 5.
+The results for other K values are omitted due to similarity.
+As suggested by Table 5, the proposed method outperforms its counterparts pursuing
+sparseness and low-rank alone. The amount of improvement over the low rank method and
+
+63
+
+Yan, Ye and Shen
+
+K = 11
+
+Ours
+301.22
+
+Low-rank alone
+348.02
+
+Sparsity alone
+3111.89
+
+Table 5: Prediction errors of U.S. macroeconomic data for K = 11. Here “Low rank alone”,
+“Sparsity alone” and ”Ours” indicate our method for low rank pursuit only, for
+sparsity pursuit only and for simultaneous pursuit of low rank and sparsity. Algo-
+rithm 2 is used for computation.
+
+the sparsity method is 15% and 933%, respectively. The Q-Q plots in Figure 6 indicate
+that the model assumption is adequate although some departure from normality has been
+detected. Overall, the proposed method performs reasonably well.
+
+Acknowledgments
+
+We would like to acknowledge support for this pro ject from the National Science Founda-
+tion Grants IIS-0953662 and DMS-0906616, and National Institute of Health Grants R01
+LM010730, 2R01GM081535 and 1R01HL105397. The authors thank the editor, the action
+editor and three referees for their helpful comments and suggestions.
+
+Appendix
+Proof of Lemma 1: Let df (s, r) = s + (p + k − r)r. By deﬁnition of the eﬀective degrees
+of freedom, we obtain that
+Eﬀ(Θ) ≤ min(df (0, r(Θ0 )), df ((cid:107)Θ0(cid:107)0 , 0)).
+To prove uniqueness in terms of (s, r), suppose there exist (¯s, ¯r) (cid:54)= (¯s(cid:48) , ¯r (cid:48) ) such that
+df (¯s, ¯r) = df (¯s(cid:48) , ¯r (cid:48) ) = mins,r df (s, r). Without loss of generality, assume ¯r = ¯r (cid:48) − n0 < ¯r (cid:48) ,
+If n0 ≤ min(p, k) − ¯r and ¯r < min(p, k), then
+where n0 > 0 is a positive integer.
+¯s = ¯s(cid:48) + n0 (p + k − 2¯r − n0 ) ≥ n0 (p + k −
+¯s + (p + k − ¯r)¯r = ¯s(cid:48) + (p + k − ¯r (cid:48) )¯r (cid:48) implies that
+2¯r − n0 ) > p + k − 2¯r − 1, which contradicts with the assumption that s < p + k − 2r − 1.
+(cid:4)
+Otherwise, if ¯r = min(p, k), ¯s must be zero. This completes the proof.
+Proof of Lemma 2: Let xi = vi for i /∈ K . Then the problem reduces to the standard l1
+(cid:88)
+ball problem.
+(cid:80)
+argmin
+i∈K |xi |≤z
+i∈K
+The results follows by the proof of Theorem 1 of (Liu & Ye, 2009).
+
+(xi − vi )2 .
+
+1
+2
+
+(cid:4)
+
+Proof of Lemma 3: It suﬃces to derive the basic step of ISTA in (Amit et al., 2007) for
+(13). Consider the following quadratic approximation of problem (13) at a given point y :
+x∈Rn :(cid:80)
+2 + (cid:104)x − y , AT (Ay − b)(cid:105) +
+(cid:107)x − y(cid:107)2
+QL (x, y) = (cid:107)Ay − b(cid:107)2
+2 ,
+min
+i∈K |xi |≤z
+
+(20)
+
+L
+2
+
+64
+
+Simultaneous Pursuit of Sparseness and Rank Structures for Matrix Decomposition
+
+Figure 6: Q-Q plots for each-fold in U.S. macroeconomic time series data example, where
+points on a straight line indicates non-departure from normality.
+
+65
+
+100140180110130150170CV1Quantile100140180110130150170CV2Quantile100140180110130150170CV3Quantile100140180100120140160CV4Quantile100140180110130150170CV5Quantile100140180100120140160CV6Quantile100140180110130150170CV7Quantile100140180110130150170CV8Quantile100140180110130150170CV9Quantile100140180100120140160CV10QuantileYan, Ye and Shen
+
+where L is a Lipschitz constant of the function AT (Ax − b) with respect to x. Solving (20)
+AT (Ay − b)(cid:1)(cid:107)2
+(cid:107)x − (cid:0)y − 1
+is equivalent to that of
+x∈Rn :(cid:80)
+min
+2 .
+L AT (Ay − b)(cid:1). The basic step of ISTA thus can be
+(cid:0)y − 1
+i∈K |xi |≤z
+L
+(cid:0)x(t−1) − 1
+L AT (Ax(t−1) − b)(cid:1). Then, Lemma 3 follows by taking L to
+By Lemma 2, the solution is TK,z
+written as x(t) = TK,z
+be λmax (AT A), where λmax (·) denotes the largest singular value.
+(cid:4)
+Proof of Lemma 4: By (6) and (7), for any integer m ≥ 1,
+
+f ( ˆΘ(m)
+1
+
+, ˆΘ(m)
+2
+
+) ≥ f ( ˆΘ(m)
+1
+
+, ˆΘ(m+1)
+2
+
+) ≥ f ( ˆΘ(m+1)
+1
+
+, ˆΘ(m+1)
+2
+
+).
+
+Meanwhile, it follows from (6) that
+
+f ( ˆΘ(m)
+1
+
+, ˆΘ(m)
+2
+
+1 (cid:107)2
+F − (cid:107) ˆΘ(m)
+2 (cid:107)2
+) = (cid:107)Z − ˆΘ(m)
+F
+1 (cid:107)2
+− ˆΘ(m)
+≥ (cid:107)Z − ˆΘ(m+1)
+F
+2
+1 (cid:107)2
+≥ (cid:107)Z − ˆΘ(m+1)
+(cid:107)2
+F − (cid:107) ˆΘ(m)
+F .
+2
+
+Therefore (cid:107)Z − ˆΘ(m)
+2 (cid:107)2
+F is lower bounded and decreasing in m. Moreover, by the mono-
+F converges as m → ∞. Then there exists a
+), (cid:107) ˆΘ(m)
+1 (cid:107)2
+tone properties of f ( ˆΘ(m)
+, ˆΘ(m)
+1
+2
+, ˆΘ(m∗ )
+) → ( ˆΘ(m∗ )
+subsequence {mk } such that ( ˆΘ(mk )
+, ˆΘ(mk )
+).
+2
+1
+2
+1
+Let Rij (Θ1 , Θ2 ) ∈ argminθij ∈Θ1 or θij ∈Θ2 f ((Θ1 , Θ2 ) \ θij ). Let the cost function for θij
+) \ θij ), where other components of ( ˆΘ(m)
+, ˆΘ(m)
+to be fm (θij ) = f (( ˆΘ(m)
+, ˆΘ(m)
+) are held
+1
+2
+1
+2
+ﬁxed. Then
+(cid:17)
+(cid:16)
+fmk (Rij ( ˆΘ(m∗ )
+)) ≥ fmk (Rij ( ˆΘ(mk )
+, ˆΘ(mk )
+))
+1
+1
+2
+≥ min
+f (( ˆΘ(mk )
+, ˆΘ(mk+1)
+))
+1
+2
+≥ f (( ˆΘ(mk+1)
+, ˆΘ(mk+1)
+2
+1
+As m → ∞ , by continuity of f (·), f(m∗ ) (Rij ( ˆΘ(m∗ )
+, ˆΘ(m∗ )
+)) ≥ f ( ˆΘ(m∗ )
+, ˆΘ(m∗ )
+)) , where
+1
+2
+1
+2
+the equality holds by the deﬁnition of Rij . Hence, for each θij ∈ Θl ; l = 1, 2, ˆθ(m∗ )
+ij
+Rij ( ˆΘ(m∗ )
+, ˆΘ(m∗ )
+) is the optimal componentwise solution. The results of Lemma 4 then
+1
+2
+(cid:4)
+follow.
+
+)), f (( ˆΘ(mk )
+1
+
+, ˆΘ(m∗ )
+2
+
+, ˆΘ(mk )
+2
+
+)).
+
+=
+
+(cid:32) | ˆθ(m)
+Proof of Lemma 5: First we prove that ˆΘ(m)
+(cid:88)
+1
+ij
+τ
+θij ∈Θ1
+
+I (| ˆθ(m)
+ij
+
+|
+
+| ≤ τ ) + I (| ˆθ(m)
+ij
+
+satisﬁes
+
+(cid:33)
+
+| > τ )
+
+≤ s1 .
+
+(21)
+
+66
+
+Simultaneous Pursuit of Sparseness and Rank Structures for Matrix Decomposition
+
+|
+
++ Im ,
+
+(cid:17)
+
++
+
+I (| ˆθ(m)
+ij
+
+I (| ˆθ(m−1)
+ij
+
+| ≤ τ ) + I (| ˆθ(m)
+ij
+
+| ≤ τ ) − I (| ˆθ(m−1)
+ij
+
+(cid:33)
+(cid:32) | ˆθ(m)
+Toward this end, we rewrite the left side of (21) as
+(cid:88)
+|
+| ≤ τ ) + I (| ˆθ(m−1)
+I (| ˆθ(m−1)
+| > τ )
+(cid:32) | ˆθ(m)
+ij
+(cid:88)
+ij
+ij
+τ
+θij ∈Θ1
+|
+| > τ ) − | ˆθ(m)
+(cid:32) | ˆθ(m)
+(cid:33)
+ij
+ij
+(cid:88)
+τ
+τ
+θij ∈Θ1
+| ≤ τ ) + I (| ˆθ(m−1)
+I (| ˆθ(m−1)
+| > τ )
+ij
+=
+(cid:16)
+ij
+ij
+τ
+where Im = (cid:80)
+θij ∈Θ1
+| ˆθ(m)
+|−τ
+I (| ˆθ(m)
+ij
+θij ∈Θ1
+ij
+τ
+(cid:32) | ˆθ(m)
+the DC construction that(cid:88)
+ij
+τ
+θij ∈Θ1
+
+Thus, to establish (21), we only need to prove Im ≤ 0. Rewrite I as
+(cid:80)
+|, | ˆθ(m−1)
+|) > τ or max(| ˆθ(m)
+if min(| ˆθ(m)
+0
+ij
+ij
+ij
+− (cid:80)
+| ˆθ(m)
+|
+| ≤ τ and | ˆθ(m−1)
+| > τ ,
+if | ˆθ(m)
+τ − 1)
+ij
+θij ∈Θ1
+ij
+ij
+| ˆθ(m)
+|
+| > τ and | ˆθ(m−1)
+if | ˆθ(m)
+τ − 1)
+| ≤ τ ,
+ij
+θij ∈Θ1
+(
+ij
+ij
+implying that Im ≤ 0. Then, (21) follows.
+For stationarity, note that it follows from (21) that
+) ≥ f ( ˆΘ(m−1)
+, ˆΘ(m−1)
+f ( ˆΘ(m−1)
+, ˆΘ2 ) ≥ f ( ˆΘ(m)
+1
+2
+1
+1
+
+| ≤ τ ) + I (| ˆθ(m−1)
+ij
+
+I (| ˆθ(m−1)
+ij
+
+| ≤ τ )
+
+Im =
+
+, ˆΘ(m)
+2
+
+),
+
+|
+
+(
+
+|
+
+| ≤ τ ) − I (| ˆθ(m−1)
+ij
+
+(cid:33)
+
+| > τ )
+
+(22)
+
+. Note that it follows from
+(cid:33)
+| > τ )
+
+≤ s1 .
+
+|, | ˆθ(m−1)
+ij
+
+|) ≤ τ ,
+
+where ˆΘ2 is deﬁned in Step 2 of Algorithm 2.
+1 → ˆΘ(m∗ )
+Suppose that termination index m∗ is inﬁnite. Then we will prove that ˆΘ(m)
+1
+as m → m∗ = ∞. When m∗ = ∞, ˆΘ(m)
+1 must be updated inﬁnitely because ˆΘ(m)
+is
+2
+analytically solved. First consider, at step m, Θ1 is updated whereas Θ2 = ˆΘ(m)
+. Denote
+by Λ(Θ1 , Θ2 , λ∗ ) the dual problem of (12), where λ∗ is the optimal Lagrange multiplier and
+2
+Θ2 = ˆΘm
+2 . Then
+(cid:32) | ˆθ(m)
+(cid:33)
+, λ∗ ) − Λ( ˆΘ(m+1)
+) − f ( ˆΘ(m+1)
+− λ∗ (cid:88)
+, ˆΘ(m)
+, ˆΘ(m)
+) = Λ( ˆΘ(m)
+2
+1
+2
+1
+1
+|
+I (| ˆθ(m)
+| ≤ τ ) + I (| ˆθ(m)
+| > τ ) − s1
+ij
+ij
+ij
+τ
+θij ∈Θ1
+(cid:19)
+(cid:18) | ˆθ(m+1)
+ing at constraint boundaries, i.e (cid:80)
+The equality holds because ˆΘ(m+1)
+is the global minimizer of a convex problem (12), attain-
+1
+|
+| > τ ) − s1
+| ≤ τ ) + I (| ˆθ(m)
+I (| ˆθ(m)
+ij
+ij
+ij
+τ
+
+, ˆΘ(m+1)
+2
+
+f ( ˆΘ(m)
+1
+
+, ˆΘ(m)
+2
+
+, λ∗ )
+
+θij ∈Θ1
+
+= 0.
+
+67
+
+Yan, Ye and Shen
+
+, λ∗ ) at Θ1 = ˆΘ(m+1)
+1
+
+yields that
+
+An application of the Taylor expansion to Λ(Θ1 , ˆΘ(m)
+2
+) − f ( ˆΘ(m+1)
+, ˆΘ(m+1)
+, ˆΘ(m)
+f ( ˆΘ(m)
+)
+1
+2
+1
+2
+(cid:32) | ˆθ(m)
+= (cid:104) ∂Λ
+1 − ˆΘ(m+1)
+, λ∗ ), ˆΘ(m)
+, ˆΘ(m)
+( ˆΘ(m+1)
+− λ∗ (cid:88)
+1
+2
+1
+∂Θ1
+|
+ij
+τ
+θij ∈Θ1
+where (cid:104)·, ·(cid:105) denotes the inner product. The ﬁrst term in the right side of the equality is
+zero, because ˆΘ(m+1)
+is the global minimizer and the third term is no less than zero by
+1
+(21). Thus,
+
+(cid:33)
+(cid:104)A( ˆΘ(m)
+1 − ˆΘ(m+1)
+1
+
+1
+2
+| > τ ) − s1
+
+1 − ˆΘ(m+1)
+), A( ˆΘ(m)
+1
+
+| ≤ τ ) + I (| ˆθ(m)
+ij
+
+I (| ˆθ(m)
+ij
+
+(cid:105) +
+
+)(cid:105)
+
+,
+
+)(cid:105)
+
+(23)
+
+, ˆΘ(m)
+2
+
+f ( ˆΘ(m)
+1
+
+, ˆΘ(m+1)
+2
+
+) − f ( ˆΘ(m+1)
+1
+
+1 − ˆΘ(m+1)
+1 − ˆΘ(m+1)
+(cid:104)A( ˆΘ(m)
+) ≥ 1
+), A( ˆΘ(m)
+1
+1
+2
+≥ λmin (AT A)
+(cid:107)2
+1 − ˆΘ(m+1)
+(cid:107) ˆΘ(m)
+F ,
+1
+2
+where λmin(·) is the smallest eigenvalue of a matrix. Therefore f ( ˆΘ(m)
+, ˆΘ(m)
+) is lower
+1
+2
+) converges to some limit f ∗ as m →
+bounded and decreasing in m, implying f ( ˆΘ(m)
+, ˆΘ(m)
+1
+2
+1 → ˆΘ(m∗ )
+∞. By (23), convergence of ˆΘ(m)
+is established. Next consider the case in which
+1
+Θ2 is only updated ﬁnitely, say before step m0 , using the same notation with proof of
+Lemma 4, then for any m > m0
+, ˆΘ(m∗ )
+fm (Rij ( ˆΘ(m∗ )
+)) ≥ fm (Rij ( ˆΘ(m)
+, ˆΘ(m+1)
+)) = f (( ˆΘ(m+1)
+, ˆΘ(m)
+)).
+2
+1
+2
+1
+2
+1
+The second equality holds because the MBI is employed. As m → m∗ , by continuity of
+function f , f(m∗ ) (Rij ( ˆΘ(m∗ )
+, ˆΘ(m∗ )
+)) ≥ f ( ˆΘ(m∗ )
+, ˆΘ(m∗ )
+)) , where the equality holds by the
+1
+2
+1
+2
+deﬁnition of Rij . Finally, we consider the case in which Θ2 is updated inﬁnitely. Then there
+, ˆΘ(m∗ )
+. Similarly, fm∗ (Rij ( ˆΘ(m∗ )
+2 → ˆΘ(m∗ )
+is a subsequence {mk } such that ˆΘ(mk )
+)) =
+2
+1
+2
+, ˆΘ(m∗ )
+= Rij ( ˆΘ(m∗ )
+)). Hence, for each θij ∈ Θl , l = 1, 2, ˆθ(m∗ )
+, ˆΘ(m∗ )
+f ( ˆΘ(m∗ )
+) is the
+1
+2
+1
+2
+ij
+(cid:4)
+optimal componentwise solution. The results of Lemma 5 then follow.
+1 + Θ2 : r(Θ2 ) = r} ∩ Λ, a sub-parameter space with known sparsity
+Let BS,r = {Θ = ΘS
+structure S and rank r. Denote H (·, Λ) and H B (·, Λ) to be the L∞ entropy and bracketing
+Hellinger metric entropy for set Λ, respectively. The next two technical lemmas concern the
+size of the parameter space.
+
+Lemma 9 Suppose that Assumptions A is met.
+H B (t, BS,r ) ≤ |S | log(2M l1/t) + (p + k)r log(2M l3
+2 /t),
+where l1 , l2 are constant and M > 1 is deﬁned in Assumption A.
+Lemma 10 Suppose that Assumptions A is satisﬁed. If s1 = s0
+1 , s2 = s0
+2 , then
+(cid:18)
+(cid:19)
+H B (t, Λ) ≤2(p + k)s0
+2 log(2M l3
+2 /t) + s0
+1 log((1 + 2M l1 )/t)
+(p + k − r(Θ0 ))r(Θ0 )
+s0
+1
+
++ 2s0
+1 log
+
+e
+
+.
+
+68
+
+Simultaneous Pursuit of Sparseness and Rank Structures for Matrix Decomposition
+
+Proof of Lemmas 6 and 7: For Lemma 6, note that Λ = ∪|S |≤s0
+∪r≤s0
+BS,r . It suﬃces
+to calculate the entropy for each BS,r .
+1
+2
+Let Λ2 = {(Θ1 , Θ2 ) : Θ1 , Θ2 satisfy conditions deﬁned in Λ}. For Θ = Θ1 + Θ2 and
+(Θ1 , Θ2 ) ∈ Λ2 , deﬁne Bδ (Θ1 , Θ2 ) = {(Θ(cid:48)
+1(cid:107)max + (cid:107)Θ2 − Θ(cid:48)
+2 ) ∈ Λ2 : (cid:107)Θ1 − Θ(cid:48)
+2(cid:107)max ≤ δ}
+1 , Θ(cid:48)
+2 ) ∈ Bδ (Θ1 , Θ2 ),
+to be the neighborhood of (Θ1 , Θ2 ). For any Θ(cid:48) = Θ(cid:48)
+1 + Θ(cid:48)
+2 with (Θ(cid:48)
+1 , Θ(cid:48)
+by Assumption A, (cid:90)
+
+(g1/2 (Θ, y) − g1/2 (Θ(cid:48) , y))2dν (y) ≤ M 2 δ2 .
+
+sup
+Bδ (Θ1 ,Θ2 )
+
+Combined the above with Lemma 2.1 of (Ossiander, 1987), we have
+H B (t, BS,r ) ≤ H (M −1 t, BS,r ).
+(24)
+Since (cid:107)Θ1(cid:107)max is bounded by l1 , by constructing a 2t-net on BS,r through the outer product
+of the t-nets on ΘS
+1 and Θ2 deﬁned in the parameter space Λ, we can show that
+H (M −1 t, BS,r ) ≤ |S | log(2M l1/t) + Hr (M −1 t)
+(25)
+where |S | is the number of nonzeros in Θ1 and Hr (M −1 t) is the entropy for Θ2 with rank r.
+Let C be a basis of column of Θ2 , then there exists an k × r matrix F such that Θ2 = C F .
+Hence
+(cid:80)k
+(cid:107)Θ2 − Θ(cid:48)
+2(cid:107)max = (cid:107)C F − C (cid:48)F (cid:48)(cid:107)max ≤ (cid:107)C (cid:107)∞(cid:107)F − F (cid:48)(cid:107)max + (cid:107)F T (cid:107)∞(cid:107)C − C (cid:48)(cid:107)max .
+i=1 |θij | is the L∞ matrix-norm and (cid:107)Θ(cid:107)max = maxθij ∈Θ |θij |
+where (cid:107)Θp×k (cid:107)∞ = max1≤i≤p
+is the max norm. Note that (cid:107)C (cid:107)∞ and (cid:107)F T (cid:107)∞ are bounded by l2 . This yields
+2l3
+Hr (M −1 t) ≤ (p + k)r log
+2M
+t
+
+.
+
+=
+
+≤
+
+(cid:19)
+
+This, together with (24) and (25), implies Lemma 6.
+For Lemma 7, note that
+(cid:19)(cid:18)(p + k − r(Θ0 ))r(Θ0 ) − s0
+(cid:18)s0
+exp(H B (t, Λ)) ≤ exp(H (M −1 t, Λ))
+|S |(cid:88)
+2(cid:88)
+1(cid:88)
+s0
+s0
+(cid:19)  s0
+1
+1
+|S | − i
+(cid:19)
+(cid:18) s0
+(cid:18)(p + k − r(Θ0 ))r(Θ0 )
+i
+1(cid:88)
+|S |=0
+r=0
+i=0
+(2M l1/t)|S |
+(cid:19)
+(cid:18)(p + k − r(Θ0 ))r(Θ0 )
+1|S |
+s0
+|S |=0
+1
+× I × I I .
+≡
+(cid:1)ak bn−k = (a+b)n . Then I = (1+ 2M l1
+(cid:0)n
+Note that (cid:80)n
+s0
+1
+(cid:19)
+(cid:18)(p + k − r(Θ0 ))r(Θ0 )
+k=0
+k
+t
+Thus,
+H B (t, Λ) ≤ log
+s0
+1
+≤ 2(p + k)s0
+2 /t) + s0
+2 log(2M l3
+1 log(
+
+(cid:18)
+2 + 1) + s0
++ log(s0
+1 log(1 +
+
+1 + 2M l1
+t
+
+) + 2s0
+1 log
+
+e
+
+69
+
+exp(H (M −1 t, BS,r ))
+  s0
+2(cid:88)
+r=0
+
+
+2 /t)(p+k)r
+(2M l3
+(cid:16) 2M l3
+2 
+t
+
+1 and I I ≤ (s0
+)s0
+2+1)
+
+(cid:17)(p+k)s0
+2 .
+
+(cid:19)
+2M l3
+2M l1
+2
+) + (p + k)s0
+2 log(
+t
+t
+(p + k − r(Θ0 ))r(Θ0 )
+s0
+1
+
+,
+
+)
+
+Yan, Ye and Shen
+
+(Stanica & Montgomery, 2001) that (cid:0) b
+(cid:1) ≤
+where e is the natural number and 0 < t < 1. The last inequality follows Theorem 2.6 of
+2πaa+1/2 (b−a)b−a+1/2 ≤ exp((a + 1/2) log(b/a) +
+√
+bb+1/2
+a
+a) ≤ exp(2a log(b/a) + a) for any integer 0 < a < b. This completes the proof.
+(cid:4)
+
+Proof of Theorem 1: We apply a large deviation inequality in Theorem 2 of (Wong &
+(cid:90) 21/2 
+(cid:90) 21/2 
+(cid:113)
+Shen, 1995). To this end, we verify (1.2) there. By Lemma 7,
+(cid:0)H B (t/c4 , Λ)(cid:1)1/2
+(cid:115)
+(cid:19)
+(cid:18)
+(cid:90) 21/2 
+2 log(2M l3
+2(p + k)s0
+2 c4/t) + s0
+1 log((1 + 2M l1 )c4 /t)dt
+2 /28
+2 /28
+(p + k − r(Θ0 ))r(Θ0 )
+e
+s0
+2 /28
+1
+
+dt ≡ I1 + I2 ,
+
+2s0
+1 log
+
+dt ≤
+
++
+
+(cid:113)
+for some constant c4 > 0, say c4 = 10. Then, for  small,
+√
+(cid:114)
+(cid:113)
+I1 ≤
+2 log(29M l3
+2 c4/2 ) + s0
+2(p + k)s0
+1 log((1 + 2M l1 )28 c4/2 )
+2
+(cid:114)
+(cid:113)
+(cid:113)
+≤ 2
+1
+log(29M c4 (l3
+2 + s0
+(p + k)s0
+2 + l1 )) + 2 log
+1
+
+√
+≤ 2
+1 ·
+2 + s0
+(p + k)s0
+log(29M c4 (l3
+2 + l1 ))
+2
+(cid:115)
+(cid:18)
+I2 ≤ 2
+s0
+1 log
+
+log
+(cid:19)
+.
+
+(p + k − r(Θ0 ))r(Θ0 )
+s0
+1
+
+Similarly,
+
+1
+
+
+e
+
+.
+
+s0
+1 log
+
+2c−1
+5
+
+(cid:115)
+
+(cid:19)
+.
+
+(cid:18)
+e
+
+√
+Cp,k = 2
+
+1 + 2c−1
+(p + k)s0
+2 + s0
+5
+
+(p + k − r(Θ0 ))r(Θ0 )
+s0
+1
+
+Let n,p,k = Cp,k√
+n log( Cp,k√
+n ) where
+(cid:113)
+
+(cid:113)
+log(29M c4 (l3
+2 + l1 ))
+Then, for any  ≥ n,p,k and c5 = 512
+(cid:90) 21/2 
+(cid:0)H B (t/c4 , Λ)(cid:1)1/2dt ≤ c−1
+(2/3)5/12
+√
+n2 .
+(cid:16)
+(cid:17) ≤ 5 exp(−c1n2 ), which yields
+5
+2 /28
+h( ˆΘL0 , Θ0 ) ≥ 
+By Theorem 2 of (Wong & Shen, 1995), P
+n,p,k ) by using the fact that h( ˆΘL0 , Θ0 ) ≤ 1.
+E h2 ( ˆΘL0 , Θ0 ) = O(2
+Consider a special situation when log(r(Θ0 )) ≤ ds0
+2 for some constant d > 0 that is
+2 and p + k − r(Θ0 ) ≤ p + k − s0
+1 < p + k − s0
+(cid:16)
+(cid:16)
+(cid:17) ≤ (p + k − s0
+(cid:17)
+independent of p, k . Note that s0
+2 . Then
+(p + k − r(Θ0 ))r(Θ0 )
+(p + k − r(Θ0 ))r(Θ0 )
+p + k − s0
+e
+2 ) log
+s0
+1
+2
+2 ) log(er(Θ0 )) ≤ 2d(p + k − s0
+≤ (p + k − s0
+2 )s0
+2 .
+
+s0
+1 log
+
+e
+
+70
+
+Simultaneous Pursuit of Sparseness and Rank Structures for Matrix Decomposition
+
+(cid:114)
+
+(
+
+2
+
+√
+
+= O
+
+log
+
+1
+
+
+.
+
+Cp,k = O
+
+(cid:18)(cid:113)
+(cid:19) (cid:113)
+Thus, I1 + I2 is upper bounded by
+√
+√
+1 ·
+2 + s0
+log(29M c4 (l3
+(p + k)s0
+2 + l1 )) +
+d
+2
+(cid:17) (cid:112)(p + k)s0
+(cid:16)(cid:112)log(29 c4 (l3
+√
+2c−1
+2 + s0
+1 . The result then follows.
+2 + l1 )) +
+d
+Let c3 = 2
+5
+(cid:4)
+This completes the proof.
+Proof of Corollary 1: If Θ0 is sparse and (cid:107)Θ0(cid:107)0 ≤ p + k − 2, then by the deﬁnition of
+1 + (p + k − s0
+2 ≤ (cid:107)Θ0(cid:107)0 . This implies that
+(cid:1)(cid:19)
+(cid:18)(cid:113)(cid:107)Θ0(cid:107)0 log (cid:0)p + k − r(Θ0 ))r(Θ0 )/(cid:107)Θ0(cid:107)0
+(cid:16)(cid:112)(cid:107)Θ0(cid:107)0
+(cid:17)
+eﬀective degrees of freedom s0 = s0
+2 )s0
+(cid:18)(cid:113)(cid:107)Θ0(cid:107)0 log (cid:0)p + k − r(Θ0 ))r(Θ0 )/(cid:107)Θ0(cid:107)0
+(cid:1)(cid:19)
++ O
+.
+x and (cid:112)x log(a/x) in x for
+√
+The second inequality is because of nondecreasingness of
+x ≤ a/e.
+(cid:18)(cid:112)
+(cid:1)(cid:19)
+(cid:113)
+If Θ0 is low-rank, we have
+1 log (cid:0)(p + k − r(Θ0 ))r(Θ0 )/s0
+(p + k − r(Θ0 ))r(Θ0 ) +
+s0
+Cp,k = O
+.
+1 log (cid:0)(p + k − r(Θ0 ))r(Θ0 )/s0
+(cid:1) ≤ log (cid:0)(p + k − r(Θ0 ))r(Θ0 )/e(cid:1). The result
+1
+Note that s0
+1
+(cid:16)(cid:112)(p + k − s0
+(cid:17)
+(cid:113)
+follows.
+If Θ0 is dense and of full rank, then (p + k − r(Θ0 ))r(Θ0 ) is of order O(pk). Hence Cp,k
+(cid:4)
+1 log( pk
+2 )s0
+s0
+can be written as O
+2 +
+)
+. This completes the proof.
+s0
+2σ2 (y − µi )T (y − µi )(cid:1) for i = 1, 2. µ1 = aT Θ and µ2 = aT Θ(cid:48) . Then
+2πσ)k exp (cid:0)− 1
+1
+Proof of Corollary 2: It suﬃces to show the Assumption A is met. Let f (µi , y) =
+√
+1
+(cid:90)
+(f 1/2 (µ1 , y) − f 1/2 (µ2 , y))2dy
+(cid:33)
+(cid:32)
+(cid:90)
+sup
+(cid:107)Θ−Θ(cid:48) (cid:107)max≤δ
+− (cid:107)y − µ1+µ2
+√
+≤ 2 − 2
+(cid:18)
+(cid:19)
+2
+inf
+exp
+(cid:107)Θ−Θ(cid:48) (cid:107)max≤δ
+− (cid:107)µ1 − µ2(cid:107)2
+2
+4σ2
+≤ ((cid:107)a(cid:107)1 )2 δ2
+4σ2
+
+≤ 2 − 2
+exp
+inf
+(cid:107)Θ−Θ(cid:48) (cid:107)max≤δ
+≤ ((cid:107)a(cid:107)1 )2(cid:107)Θ − Θ(cid:48)(cid:107)2
+max
+4σ2
+
+2 + (cid:107)µ1 − µ2(cid:107)2
+(cid:107)2
+2/2
+2σ2
+
+1
+2πσ)k
+
+(
+
+dy
+
+.
+
+The second inequality follows from the invariance property of the normal distribution. Corollary 2
+follows when (cid:107)a(cid:107)1 is bounded. This completes the proof.
+(cid:4)
+
+71
+
+Yan, Ye and Shen
+
+(cid:33)
+
+= 2
+
+,
+
+(cid:19)
+
+(cid:19)
+
+≥ 2
+
+≤ P
+
+= P
+
+K (Θ0 , Θ) =
+
+h2 (Θ, Θ0 ) = 2
+
+When  < 1,
+P (K (Θ0 , ˆΘL0 ) ≥ 42 ) = P
+
+(cid:32)
+(cid:90)
+1 − n(cid:89)
+exp (cid:2) − 1
+i Θ0 (cid:107)2 )(cid:3)dy
+Proof of Theorem 2: After some calculations, we obtain that
+√
+i Θ(cid:107)2 + (cid:107)yi − aT
+4σ2 ((cid:107)yi − aT
+1
+(cid:33)
+(cid:32)
+1 − n(cid:89)
+exp (cid:2) − 1
+2πσ)k
+(
+i=1
+8σ2 (cid:107)aT
+i (Θ − Θ0 )(cid:107)2
+(cid:18)
+(cid:19)
+i=1
+1 − exp(− 1
+8σ2 (cid:107)A(Θ − Θ0 )(cid:107)2
+= 2
+F )
+2σ2 (cid:107)A(Θ − Θ0 )(cid:107)2
+1
+F .
+(cid:18) 1
+(cid:18) 1
+(cid:19)
+8σ2 (cid:107)A( ˆΘL0 − Θ0 )(cid:107)2
+F ≥ 2
+(cid:18)
+(cid:18)
+(cid:19)
+F ≥ − log(1 − 2
+8σ2 (cid:107)A( ˆΘL0 − Θ0 )(cid:107)2
+)
+2
+h2 ( ˆΘL0 , Θ0 ) ≥ 2(cid:17)
+(cid:16)
+1 − exp(− 1
+8σ2 (cid:107)A( ˆΘL0 − Θ0 )(cid:107)2
+2
+F )
+.
+= P
+For any  ≥ n,p,k , it follows from Theorem 1 and Corollary 2 that
+(cid:17)1/2
+(cid:17)1/2(cid:16)
+(cid:16)
+EK (Θ0 , ˆΘL0 ) ≤ EK (Θ0 , ˆΘL0 )I {K (Θ0 , ˆΘL0 ) ≤ 42} + EK (Θ0 , ˆΘL0 )I {K (Θ0 , ˆΘL0 ) > 42}
+≤ 42 +
+P (K 2 (Θ0 , ˆΘL0 ) > 42 )
+EK 2 (Θ0 , ˆΘL0 )
+.
+By the triangle inequality, (cid:107)AΘ0 − A ˆΘL0 (cid:107)F − (cid:107)(cid:107)F ≤ (cid:107)AΘ0 +  − A ˆΘL0 (cid:107)F . Note that ˆΘL0 is a
+global minimizer of (3). Then (cid:107)AΘ0 +  − A ˆΘL0 (cid:107)F ≤ (cid:107)(cid:107)F . Hence
+σ2 (cid:107)(cid:107)2
+2σ2 (cid:107)A(Θ0 − ˆΘL0 )(cid:107)2
+F ≤ 2
+1
+F .
+(cid:17)1/2
+(cid:16)
+P (cid:0)K 2 (Θ0 , ˆΘL0 ) > 42 (cid:1)
+σ4 (cid:107)(cid:107)4
+EK (Θ0 , ˆΘL0 ) ≤ 42 +
+4
+E
+√
+F
+≤ 42 + 10 exp(−c1n2 + log
+3nk).
+The results in Theorem 2 follow by letting  = n,p,k and using the fact that log k ≤ C 2
+p,k . This
+(cid:4)
+completes the proof.
+√
+Proof of Theorem 3: Without loss of generality, assume p ≥ k and n = p. When σ = O(1/
+by Theorem 2, we have
+(cid:32) C 2
+(cid:33)
+2
+(cid:107) ˆΘL0 − Θ0(cid:107)2
+n,p,k
+F = 2σ2K (Θ0 , ˆΘL0 ) = OP (
+p
+(cid:33)
+(cid:32) C 2
+p,k
+)
+p2 log(
+p,k
+)
+p2 log(
+
+K (Θ0 , ˆΘL0 ) =
+
+= OP
+
+= OP
+
+,
+
+(26)
+
+)
+
+√
+
+p
+Cp,k
+
+p2
+C 2
+p,k
+
+Thus,
+
+p),
+
+72
+
+Simultaneous Pursuit of Sparseness and Rank Structures for Matrix Decomposition
+
+(cid:115)
+
+where
+
+Cp,k = O
+
+(cid:18)
+
+e
+
+(cid:113)
+2 + s0
+(p + k)s0
+1 +
+
+(cid:32)(cid:112)log(p)
+(p + k − r(Θ0 ))r(Θ0 )
+s0
+1 log
+s0
+1
+(cid:33)
+(cid:32)
+(27) comes from the proof of Corollary 2 with M in Assumption A being O(
+C (cid:48)
+p,k log(
+)
+(cid:16)
+
+(cid:107) ˆΘL0 − Θ0 (cid:107)2
+F = OP
+
+1
+C (cid:48)
+p,k
+
+log(p) · [(p + k)s0
+2 + s0
+1 ] + s0
+1 log
+p2
+
+e (p+k−r(Θ0 ))r(Θ0 )
+s0
+1
+
+(cid:19)(cid:33)
+
+.
+
+(27)
+
+√
+
+p). Thus,
+
+(cid:17)
+
+.
+
+(cid:4)
+
+with
+
+C (cid:48)
+p,k =
+
+This completes the proof.
+
+References
+
+Agarwal, A., Negahban, S. and Wainwright, M. (2012). Noisy matrix decomposition via convex
+relaxation: optimal rates in high dimensions. The Annals of Statistics, Vol. 40, No. 2, 1171–1197.
+
+Amit, Y., Fink, M., Srebro, N., and Ullman, S. (2007). Uncovering shared structures in multiclass
+classiﬁcation. Proceedings of the 24th Annual International Conference on Machine learning, 17–
+24.
+
+Arlot, S. and Celisse, A. (2010). A survey of cross-validation procedures for model selection. Statist.
+Surv., 4, 40–79.
+
+Beck, Amir and Teboulle, Marc (2009). A fast iterative shrinkage-thresholding algorithm for linear
+inverse problems. SIAM Journal on Imaging Sciences, Vol. 2, No. 1, 183-202.
+
+Bunea, F., and She, Y. (2011). Optimal selection of reduced rank estimators of high-dimensional
+matrices. Annals of Statistics, 39(2), 1282-1309.
+
+Cai, J.F., Cand`es, E.J. and Shen, Z. (2010).A singular value thresholding algorithm for matrix
+completion. Arxiv preprint arXiv:0810.3286.
+
+Cai, T. T., Liu, W. and Luo, X. (2011). A constrained l1 minimization approach to sparse precision
+matrix estimation. J. Amer. Statist. Assoc., 106, 594-607.
+
+Candes, E., Li. X., Ma, U., and Wright, J. (2009). Robust principal component analysis. Journal of
+ACM, 58(1), 1-37.
+
+Candes, E.J. and Recht, B. (2009). Exact matrix completion via convex optimization. Found of
+Comput. Math., 9, 717-772.
+
+Chandrasekaran, V., Sanghavi, S., Parrilo, P.A., and Willsky, A.S. (2011). Rank-sparsity incoherence
+for matrix decomposition, SIAM J. Optim., 21, 572-596.
+
+Chen, B. , He, S., Li, Z. and Zhang, S. (2012). Maximum block improvement and polynomial
+optimization., SIAM Journal on Optimization, 22, 87-107.
+
+Chen, J., Liu, J., and Ye, J. (2010). Learning incoherent sparse and low-rank patterns from multiple
+tasks. The Sixteenth ACM SIGKDD International Conference On Know ledge Discovery and Data
+Mining. (SIGKDD 2010).
+
+73
+
+Yan, Ye and Shen
+
+Efron, B. (2004). The estimation of prediction error: Covariance penalties and cross-validation.
+Journal of the American Statistical Association, 99, 619-642. (with discussion).
+
+Ganesh, A., Min, K., Wright, J. and Ma, Y. (2012). Principal component pursuit with reduced linear
+measurements. International Symposium on Information Theory.
+
+Golub, G. and Van Loan, C. (1996). Matrix Computations. Third edition. London: The Johns
+Hopkins University Press.
+
+Halko, N., Martinsson P. G. and Tropp, J. A.. (2011). Finding structure with randomness: stochastic
+algorithms for constructing approximate matrix decompositions. SIAM Rev., 53(2), 217-288.
+
+Jain, P., Meka, R. and Dhillon, I. (2010). Guaranteed rank minimization via singular value pro jec-
+tion. Advances in Neural Information Processing Systems, 23, 937–945.
+
+Kolmogorov, A.N. and Tihomirov, V.M. (1959). -entropy and -capacity of sets in function spaces.
+Uspekhi Mat. Nauk. 14 3-86. [In Russian. English translation, Ameri. Math. Soc. Transl. 2, 17,
+277-364.(1961)].
+
+Lin, Z., Chen, M., Wu, L. and Ma, Y. (2009). The augmented Lagrange multiplier method for exact
+recovery of corrupted low-rank matrices. UIUC Technical Report UILU-ENG-09-2215.
+
+Liu, J., and Ye, J. (2009). Eﬃcient Euclidean pro jections in linear time. The Twenty-Sixth Interna-
+tional Conference on Machine Learning.
+
+Negahban, S. and Wainwright, M.J. (2011). Estimation of (near) low-rank matrices with noise and
+high-dimensional scaling. Annals of Statistics, 39(2), 1069-1097.
+
+Ossiander, M. (1987). A central limit theory under metric entropy with L2 bracketing. Ann. Probab.
+15 897-919.
+
+Porat, B. (1997). A Course in Digital Signal Processing, New York: John Wiley.
+
+She, Y. (2013). Reduced rank vector generalized linear models for feature extraction. Statistics and
+Its Interface, Vol 6, 197-209.
+
+Shen, X., Pan, W., and Zhu, Y. (2012). Likelihood-based selection and sharp parameter estimation.
+Journal of the American Statistical Association, 107, 223-232.
+
+Srebro, N., Rennie, J.D.M., and Jaakkola, T.S. (2005). Maximum-margin matrix factorization. Ad-
+vances in Neural Information Processing Systems, 17, 1329–1336.
+
+Stanica, P., and Montgomery, A.P. (2001). Good lower and upper bounds on binomial coeﬃcients.
+J. Ineq. in Pure. Appl. Math., 2, art 30.
+
+Stock, J. H. and Watson, M. W. (2012). Generalized shrinkage methods for forecasting using many
+predictors. Journal of Business and Economic Statistics.
+
+Zhou, T. and Tao, D. (2011). GoDec: Randomized low-rank & sparse matrix decomposition in noisy
+case. Proceedings of the 28th International Conference on Machine Learning, Bellevue, WA, USA.
+
+Waters, A.E., Sankaranarayanan, A.C. and Baraniuk, R.G.(2011). SpaRCS: Recovering low-rank
+and sparse matrices from compressive measurements. Neural Information Processing Systems,
+Granada, Spain.
+
+74
+
+Simultaneous Pursuit of Sparseness and Rank Structures for Matrix Decomposition
+
+Wong, W.H., and Shen, X. (1995). Probability inequalities for likelihood ratios and convergence
+rates of sieve MLEs. Ann. Statist., 23, 339-362.
+
+Wright, J., Ganesh, A., Min, K., and Ma, Y. (2013). Compressive principal component pursuit.
+Information and Inference.
+
+Wright, J., Ganesh, A., Rao, S., and Ma, Y. (2009). Robust principal component analysis: Exact
+recovery of corrupted low-rank matrices via convex optimization. Advances in Neural Information
+Processing Systems.
+
+Xing, S., Zhu, Y., Shen, X., and Ye, J. (2012). Optimal exact rank minimization for noisy data. Pro-
+ceeding the 18th ACM SIGKDD Conference on Know ledge Discovery and Data Mining, Beijing,
+China.
+
+Yuan, X. and Yang, J. (2013). Sparse and low-rank matrix decomposition via alternating direction
+methods. Paciﬁc Journal of Optimization, 9(1), 167-180.
+
+75
+
+

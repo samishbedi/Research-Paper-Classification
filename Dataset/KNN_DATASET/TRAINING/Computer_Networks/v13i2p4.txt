@@ -1,0 +1,608 @@
+CLEI ELECTRONIC JOURNAL, VOLUME 13, NUMBER 2, PAPER 4, AUGUST 2010 
+ 
+Design, Implementation and Use of a Remote Network Lab with Multiple 
+Users Support as an Aid Teaching Computer Networks 
+
+Marco Aravena 
+Universidad de Valparaíso, Departamento de Computación, 
+Valparaíso, Chile, 
+marco.aravena@uv.cl 
+and 
+
+Cristian Rodriguez 
+Universidad de Valparaíso, Departamento de Computación, 
+Valparaíso, Chile, 
+cristianjrs@gmail.com 
+and 
+
+Andres Ramos 
+Universidad de Valparaíso, Departamento de Computación, 
+Valparaíso, Chile, 
+ andres.ramos@uv.cl  
+ 
+
+Abstract 
+This article presents  the design,  implementation and use of a remote network  lab with multiple users support 
+as  an  aid  to  teaching  computer  networks.  The  purpose  is  to  enable  multiple  students  complement  their 
+theoretical  learning  with  practical  experimentation  in  networking  devices  which  can  be  carried  out 
+synchronously  to  theoretical  classes  and  from  any  room  with  internet  access.  Unlike  the  current  solutions 
+based on mainly software emulation and simulation,  the students  interact remotely with commercial network 
+devices,  such  as  cutting-edge  and  widely  used  switches,  routers  and      firewalls  at  the  workplace.  This 
+proposal  reduces  the  expenses  or  installing  new  laboratories  in  all  the  campuses where  lectures  are  held  and 
+also  moving  the  students  to  laboratories  that  are  not  located  near  their  classrooms.  The  use  of  the  remote 
+laboratory  has  been  tested  with  senior  students  majoring  information  technology  engineering.  The  results 
+shows  that  a  remote  network  lab  is  an  effective  aid  for  teaching  computer  networks  in  a  remote  and  secure 
+way. 
+Keywords: Aid tool, Remote lab, Teaching networks, Information and Communication Technologies. 
+
+1   Introduction 
+The  Computing  Engineering  Curriculum  consists  of  a  group  of  areas  that  develop  basic  skills  to  be  used when 
+the  graduated  engineer works.   These  topics  are  divided  into  5  specialized  disciplines: Computing Engineering, 
+Computer  Science,  Information  Systems,  Information  Technologies  and  Software  Engineering.    The  study 
+program of an engineer should comprise all these disciplines. 
+ 
+The ACM IEEE in [1] shows each of the topics that should be taught in each discipline along the years of study.  
+In  this  document,  the  importance  of  the  network  and  connectivity  teaching  can  be  appreciated  for  each  of  them 
+in  the  study  plan  of  a  computer  science  engineer.    Then  the  arising  questions  are:  what  are  the  most  relevant 
+topics that should be taught? Is it necessary to do lab practices or is it enough with the theoretical approaches?. 
+ 
+The  answers  to  these  questions  are  found  in  the  document  called  “Guidelines  to  computer  support  in  a  network 
+environment”  ACM  [2],  where  some  content  areas  and  the  topics  associated  to  them  are  identified,  such  as, 
+organization environment, documentation and  technical reference, hardware and software, among others. In  this 
+document,  it  is  remarked  the  need  to  have  the  necessary  elements  to  allow  the  student  to  interact with  different 
+devices  of  connectivity.  The  above  is  reinforced  by Workshop  on  Computer  Networking:  Curriculum  Designs 
+and Educational Challenges [3], where the participants agree on the need to have laboratories implemented with 
+connectivity elements, to teach networks. 
+
+ 
+Moreover,  IEEE  ACM  in  [1-2],  as  well  as  in  the  different  organizations  participating  in  the  Workshop  on 
+Computer  Networking  [4]  agree  with  the  idea  that  teaching  computer  networks  should  be  divided  into  60% 
+theory and 40% practice. 
+ 
+Therefore,  it can be concluded  that  it  is  important  to  teach  theory and practice    to engineer students, being more 
+relevant  in  Information  and  Communications  Technologies  (ICT),  the  engineer    has  to  deal  directly  with  both  
+network  software and hardware. 
+
+2   Use of Laboratories as a Teaching Aid 
+A  network  lab  consists  of  a  room  that  has  network  equipment  such  a  switch,  router,  firewall  and  computers.  
+With  this  equipment  the  students  can  put  into  practice  the  knowledge  learned  from  theory  about  computer 
+network.  However,  the  purchase  of  these  devises  and  lab  maintenance  is  expensive.  The  implementation  and 
+maintenance of a  laboratory  like  this  is around US$ 50,000 and  the maintenance about US$1,000 per year. This 
+laboratory can be used by several courses like Networking Lab, Digitals Systems and System Administration. 
+In  Table  1  is  listed,  as  example,  the  equipment  of  the  Network  Laboratory  of  the  Computer  Department,  of 
+Universidad de Valparaiso, Chile. 
+ 
+ 
+ 
+
+Table 1:  Network Lab Equipment of Computer Science at Universidad de Valparaíso 
+Quantity 
+Item 
+Description 
+1 
+13 
+Computers 
+Router Cisco 2600 :12.x, 2 Seriales ports, 2 Ethernet ports 
+2 
+4 
+4 
+3 
+Switch Cisco Catalyst 2950-24 : 24 x 10/100 ports 
+Switch 3com 4500  26 x 10/100, 2 x 10/100/1000 ports 
+4 
+4 
+Firewall Cisco PIX 506E, 2 Ethernet ports, 1 console port, 
+5 
+4 
+32MB RAM memory, 8MB FLASH memory. 
+Racks, 19” wide : glass doors 
+2 
+6 
+Patch Panel 48 ports 
+7 
+4 
+
+ 
+ 
+Due  to  the  high  costs,  it  is  not  possible  to  implement  a  network  laboratory  in  all  physical  locations where  they 
+are teaching computer networks. 
+ 
+The  traditional  approach  to  teach  network  computers,  that  includes  theory  and  practice,  consists  of 
+implementing a network lab, lecturing network in a classroom and later taking the students to a network lab (see 
+Fig. 1) 
+ 
+ 
+
+ 
+
+Fig. 1: Traditional Teaching in Networks Computers 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+ 
+ 
+
+The approach showed in Fig. 1has the following problems: 
+ 
+a)    A  teacher  or  assistant,  to  monitor  the  activities  achieved  by  the  students,  is  always  required  at  the  lab. 
+This reduces the availability of the lab to the students. 
+b) Lab activities can only be done face to face. There is no option of distance working. 
+ 
+In case teaching is done away from the lab: 
+ 
+d)  Students  can  not  be  transferred  from  the  classroom  to  the  place  where  the  lab  is  located  because  of 
+student´s availability or because of geographic distances. 
+e) Labs can not be carried to the teaching place. 
+f) It s not possible to implement a lab in each room where teaching is held because it is very expensive. 
+
+ 
+
+3 Existing Methods and Tools to Remote Support for Teaching 
+There  are  several  solutions  to  meet  the  requirements  of  equipment  to  support  network  teaching.  Some  of 
+them are shown in Table 2. 
+ 
+ 
+ 
+
+	  
+
+	  
+
+	  
+Project 
+
+	  
+
+Creator 
+
+Table 2: Solutions to support computer networks teaching. 
+	  
+
+IMUNES [5] 
+
+NO 
+
+EMULATOR 
+
+Yes 
+
+ 
+ 
+However,  none  of  these  tools  is  a  teaching  aid  system  based  on  interaction  and  configuration  of  commercial 
+network equipment as the equipment of Universidad de Valparaíso described here. 
+ 
+In  [15]  the  authors  presented  a  new  methodology  for  a  remote  network  lab  as  a  tool  to  support  teaching  of 
+computer  network.  That  proposal  allows  the  student  to  complement  the  learning  of  the  theory  and  practical 
+(hands-on) experimenting in network devices simultaneously, but it has the following disadvantages: 
+ 
+• There can be only one student using the application. However there are many devices in the lab. 
+• It doesn´t have a secure communication channel between server (system) and client (student). 
+
+“The Open Network Laboratory” 
+[6] 
+“Didactical Issues of a Remote 
+Network Laboratory” [7] 
+“Remote Real Laboratory” [8] 
+Remote Lab for teaching TCP 
+/IP Networks  [9] 
+Model for interactive 
+technologies based  remote lab 
+education [10] 
+Real Access 
+Laboratory [11] 
+CCNA Network Visualizer 5.0 
+[12] 
+Network Simulator [14] 
+
+Universidad de 
+Washington 
+Universidad de 
+Bern Alemania 
+Universidad de Génova 
+Universidad de Girona, 
+España 
+Universidad de 
+Massachussets Amherst 
+
+HP invent 
+
+CISCO 
+
+UC Berkeley, LBL, 
+USC/ISI, and Xerox 
+PARC. 
+University of Zagreb 
+
+Remote 
+Access 
+Yes 
+
+Yes 
+
+Yes 
+Yes 
+
+Yes 
+
+Yes 
+
+NO 
+
+NO 
+
+Approach 
+
+Real Devices 
+
+Real Devices 
+
+Real Devices 
+Real Devices 
+
+Real Devices 
+
+Real Devices 
+
+EMULATOR 
+
+SIMULATOR 
+
+Allow 
+Configuration 
+NO 
+
+Yes 
+
+Yes 
+NO 
+
+Yes 
+
+Yes 
+
+Yes 
+
+Yes 
+
+4 Proposal: Remote Network Lab with Multiple Users Support 
+ 
+This  article  presents  the  design,  implementation  and    use  of    a    remote  network  laboratory  with  multiple  users 
+support  to  aid  teaching  computer  networks.  The main  objective  is  that  the multiple  students  simultaneously  be 
+able  to  complement his/her  theoretical  learning  through practical  experiences with network devices  located  in  a 
+network laboratory using a secure channel communication (see Fig. 2). 
+ 
+
+(multiple users) 
+
+Secure  Channel 
+
+(Real Devices) 
+
+ 
+Figure 2:  Remote networks laboratory as an aid to teaching computer networks. 
+ 
+ 
+The proposal of using a remote laboratory presents the following advantages: 
+ 
+•  It  reduces  the  costs  of  implementation.  It  only  requires  installing  a  network  lab  to  be  shared  by  different 
+lecturers simultaneously form any place with Internet access. 
+ 
+• It increases the schedule availability of the laboratory. The students can access to the lab simultaneously with 
+the network lecture, anytime and from anywhere. 
+ 
+•  It  increases  the  geographic  availability.    A  network  course  with  theoretical  and  practical  classes,  can  be 
+taught from anywhere with internet connection. 
+ 
+•  There  is  independence  to  choose  any  make  and  model  devices.  Any  brand  name  or  type  of  device  can  be 
+useful for interacting. 
+ 
+ 
+• It increases the security using an encrypted channel to communicate server and client. 
+
+5 Implementing the Proposal 
+The  setting  up  is  a  system  that  allows  the  access  to  a  remote  lab  from  Internet.    The  student  plays  the  role  of 
+clients  who  accesses  via  Internet  to  a  connectivity  server.  This  server  lets  the  students  interact  with  the 
+equipment  located  in  the  network  lab  (router,  firewall,  switch,  computers,  etc)  since  this  is  connected  with  the 
+laboratory devices. This system consists of  the elements  indicated  in Table 3 and  their  interconnection  is shown 
+in Fig 3. 
+ 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+
+Element 
+A: Remote Clients, 
+students in a classroom. 
+B: Server  
+
+C: Real Network Devices 
+D: Labs Computers  
+E: Circuit  
+
+Table 3:  Components of the remote network lab. 
+Implementation 
+Web Browser, Internet Explorer / Mozilla. 
+Internet Connection using a secure channel. 
+FreeBSD Operating System, JBoss Aplications 
+Server, Postgres SQL DBMS, Java JDK 1.5., 
+Serial Multiport Card, Parallel Port Connection, 
+J2EE Application Developed. 
+CISCO Firewalls, CISCO Routers, CISCO and 
+3COM Switches 
+FreeBSD Live CD with serial console. Available 
+serial port . 
+ULN2803 integrated circuit to turn on the computers 
+in a remote way. 
+
+ 
+
+Local Network Lab. 
+ 
+
+Devices 
+Network 
+
+SERVER 
+
+Connections: 
+      
+Seria l 
+ 
+ 
+Para lle l 
+ 
+Ethernet (RJ-45) 
+ 
+E lectrica l 
+WEB + ssh 
+tunne l 
+     
+ 
+
+C ircuit 
+
+Remote C lient 
+
+Remote C lient 
+
+Remote C lient 
+
+Remote C lient 
+
+ 
+ 
+The design pattern used in the web application development is Model–view–controller (Fig. 4): 
+•  View:  JavaScript  (user  input  validation)  and  JSP  (user  interface  and  communication  with  application 
+server) 
+•  Controller: Servlets (model-view communication) 
+•  Model:  Service (database connection and business logic) and JavaBean (data persistence)   
+
+ 
+Fig. 3:  Interconnection of components of the remote network lab. 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+ 
+ 
+ 
+
+Fig. 4: Model–view–controller design pattern. 
+
+ 
+
+ 
+Using JAVA APPLET and TCP/IP protocol makes the interaction between client (client socket) and networking 
+equipment  (server  socket)  through  Internet  using  an  encrypted  channel  (Fig.  5).  There  are  4  sets  (2  host  +  1 
+Firewall  +  1  Router  +  1  switch  each  one)  connected  to  server  using  serial  port  (RS-232)  in  the  network 
+laboratory and a thread for each device. 
+ 
+ 
+
+Fig. 5: Client and network equipment communication. 
+
+ 
+
+6 Testing and Results 
+
+The development was based on the fundamentals of three-tier architecture, applying the Model-View-Controller 
+design pattern, which allows to separate the user´s view from the business logic. 
+ 
+Being  a  new  implementation,  it  is  necessary  to  perform  testing  of  software  to  detect  errors  or  defects  that may 
+exist during development, the main activities of this phase are: unit, integration and acceptance tests. 
+ 
+The unit tests were made using the followings open source tools (see Fig. 6 for example): 
+•  Selenium IDE [16]: Firefox browser plugin used to capture a unit test sequence. 
+•  Selenium Remote Control [17]: selenium derivated used to make test in others browsers besides Firefox. 
+•  JUnit [18]: Libraries used to unit testing. 
+•  Apache ANT [19]: Java tool for task automatization. 
+
+ 
+ 
+ 
+ 
+ 
+
+ 
+
+ 
+a) 
+ 
+
+ 
+
+b) 
+ 
+Fig. 6: a) Selenium IDE running example screenshot, b) Unit test results example screenshot. 
+The integration tests were made using the methodology showed in Fig. 7. 
+ 
+
+ 
+
+Fig. 7: Integration test methodology. 
+
+ 
+
+  
+
+ 
+ 
+ 
+ 
+ 
+
+In both, unit and integration tests, the results are excellent and the objectives are reached at 100%. 
+In  the  acceptance  tests,  the  users  (10  students)  are  consulted  about  reliability,  correctness/consistence  and 
+subjective  satisfaction.  In Table 4  is  showed  the percentage of users who  responds  from 1  (very bad)  to 5  (very 
+good) for each kind of test. 
+Table 4:  Acceptance test results. 
+ 
+4 
+3 
+2 
+1 (Very Bad) 
+27% 
+0% 
+0% 
+0% 
+0% 
+0% 
+0% 
+10% 
+0%  13%  30% 
+0% 
+
+Test 
+Reliability 
+Correctness/consistence 
+Subjective satisfaction 
+
+5 (Very Good) 
+73% 
+90% 
+57% 
+
+ 
+ 
+The students are consulted too about the software use. The results are showed in Table 5. 
+ 
+ 
+
+ 
+
+Table 5:  Software use results. 
+Test 
+1 (Very Bad) 
+2 
+3 
+4 
+5 (Very Good) 
+System autentification 
+13% 
+3% 
+0% 
+0% 
+84% 
+Users managment 
+0% 
+0% 
+0% 
+10% 
+90% 
+Reservation managment 
+0% 
+3%  17%  13% 
+67% 
+Remote experienece 
+2% 
+0% 
+0% 
+0% 
+98% 
+General acceptance 
+0% 
+1% 
+4% 
+13% 
+82% 
+ 
+As  we  can  see,  the  results  are  more  than  satisfactory  in  almost  every  test,  especially  in  reliability  and  general 
+acceptance. The results show the proposal is accepted for the users (students). 
+
+6 Conclusions 
+In  this  article,  is  presented  the  design,  implementation  and  use  of  a  remote  network  lab  with  multiple  users 
+support  as  an  aid  to  teaching  computer  networks.  This  proposal  allows  multiple  students  to  complement  the 
+learning  of  the  theory  and  practical  (hands-on),  experimenting  in  real  network  devices  simultaneously  with 
+theoretical  classes  from  any  room  with  Internet  access  using  a  secure  channel  communication.  Unlike  the 
+current  solutions,  this  proposal  allows  the  interaction  with  cutting  edge  commercial  devices  widely  used  at  the 
+workplace. 
+The  implementation  of  the  proposal  is  based  in  a  3-layer  JAVA  web  developing  model,  allowed  to  keep  the 
+business logic separated from the view, thus the development of the necessary objects was simpler and problems 
+could  be  detected  beforehand.  Open  source  tools  are  used  to  automatization  of  testing,  including  unit, 
+integration and acceptance tests. 
+The  use  of  the  remote  laboratory  has  been  tested  with  senior  students  majoring  information  technology 
+engineering. The  results  show  a  great  acceptance  of  the  proposal demonstrating  that  a  remote network  lab  is  an 
+effective aid for teaching computer networks in a remote and secure way. 
+
+References 
+1.  Shackelford. R., Cross  II,  J., Davies, G.,  Impagliazzo,  J., Kamali, R., LeBlanc, R., Lunt, B., McGettrick, A., 
+Sloan,  R.,  Topi,  H.  :  Computing  curricula  2005.  ACM  IEEE  Computer  society,  the  Computing  Curricula 
+Series 2005. 
+2.  Chair,  K.,  Austing,  R.,    Campbell,  R.,    Cover,  C.,  Currie,  J.  :  Guidelines  for  associate  degree  programs  to 
+support computing in a networked environment. ACM Association for Computing Machinery, March 2000. 
+3.  Abraham,  J.,  l-Shaer,  R.,  Brewster,  G.:    Workshop  on  computer  networking:  Curriculum  designs  and 
+educational challenges. ACM SIGCOMM, August 2002. 
+4.  Burroughs,  A.  :  Laboratory  courses.  Humboldt  State  University,  August  2002.  Workshop  on  Computer 
+Networking: Curriculum Designs and Educational Challenges. 
+
+5. University of  Zagreb. Imunes 2006.  http://www.tel.fer.hr/imunes/  
+6.  Dehart,  J.,  Kuhns,  F.,  Parwatikar,  J.,  Turner,  J.,  Wong,  W.:  The  open  network  laboratory.  Washington 
+University, St. Louis. 
+7.  Steinemann,  M.,  Zimmerli,  S.,    Jampen,  T.,  Braun,  T.:  Qrchitectural  issues  of  a  remote  network  laboratory. 
+Institut Fäur Informatik and Angewandte Mathematik, Universität Bern Neubrückstr. 
+8.  Diop. A., Berqia. A.: Remote real laboratory. Universidad de Genova, 2003. 
+9.  Fábrega,  L.,  Massaguer,  J.,  Jove,  T.,  Fabregat,  R.:  Laboratorio  remoto  para  la  enseñanza  de  redes  TCP/IP. 
+Instituto de Informática y Aplicaciones. Universidad de Girona. 
+10.  Ganz,  A.,  Hua,  J.:  A  new  model  for  remote  laboratory  education  based  on  next  generation  interactive 
+technologies. Universidad de Massachussets Amherst, 2005.  
+11. HP Invent. http://h30095.www3.hp.com.  
+12. Cisco Systems. Routers Sims. Dirección: http://www.routersim.com.  
+13.   Steinemann, M., Braun, T.:   Remote  versus  traditional  learning  in  a  computer  networks  laboratory.  Institut 
+Fáur Informatik und Angewandte Mathematik, Universität Bern Neubräuckstr, 2002.  
+14. UC Berkeley, LBL, USC/ISI, and Xerox PARC. 
+15. Aravena, M.,  Ramos, A.: Uso  de  un  laboratorio  de  redes  remoto  como  herramienta  de  apoyo  a  la  docencia 
+en redes de computadores. CIESC2007 
+16. Selenium IDE:  http://seleniumhq.org/projects/ide/. 
+17. Selenium Remote Control:  http://seleniumhq.org/projects/remote-control/ . 
+18. JUnit: http://www.junit.org/. 
+19. Apache ANT: http://ant.apache.org/. 
+ 
+
+

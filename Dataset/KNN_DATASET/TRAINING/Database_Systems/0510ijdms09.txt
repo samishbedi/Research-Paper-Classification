@@ -1,0 +1,1121 @@
+International Journal of Database Management Systems ( IJDMS ) , Vol.2, No.2, May 2010
+
+A DBMS FOR MOB ILE TRAN SACT ION S U S ING
+B I -STATE -TERM INAT ION
+
+Sebastian Obermeier1 and Stefan Böttcher2
+
+1 ABB Corporate Research, Industrial Software Systems, Segelhofstr. 1K, Baden, Switzerland
+sebastian.obermeier@ch.abb.com
+2 University of Paderborn, Fürstenallee 11, 33102 Paderborn, Germany
+stb@uni-paderborn.de
+
+ABSTRACT
+Whenever distributed transaction processing in MANETs or other unreliable networks has to guarantee
+atomicity and isolation, a major challenge is how long-term blocking of resources can be avoided in case
+the mobile device looses connection to other participants of the transaction. We present a new technique
+for treating blocked data of transaction participants that wait for a coordinator’s commit decision. Our
+technique, Bi-State-Termination (BST), gives participants that have moved during transaction execution the
+possibility to continue transaction processing before they know the coordinator’s decision on transaction
+commit. The key idea of our technique is to consider both possible outcomes (commit and abort) of unknown
+transaction decisions. Within this paper, we describe a fast implementation of the fundamental relational
+database operations for a DBMS supporting the BST transaction synchronization protocol that avoids long-
+term transaction blocking.
+
+KEYWORDS
+Mobile Database Transaction Processing, Transaction Blocking, Bi-State-Termination
+
+1 .
+INTRODUCT ION
+With growing interest in mobile ad-hoc networks and increasing capabilities regarding processing power
+and connectivity, an interesting and important challenge is to combine database technology with mobile
+devices. However, a transfer of traditional research results to mobile devices is hindered by problems like
+message loss, unpredictable disconnections of mobile devices, and network partitioning. When applying
+database technology that was designed for traditional ﬁxed-wired networks in such mobile environments,
+the problem of long or even inﬁnitely long blocking times for commonly accessed resources arises. For
+instance, a message that releases blocked resources may never reach its destination and leads to blocking of
+resources longer than intended.
+It would
+Traditional transaction processing is unsuitable for such a scenario for the following reason.
+prevent participants that have moved during the atomic commit protocol execution and therefore have not
+received the transaction’s commit decision from using parts of their own data in concurrent transactions.
+In mobile networks, there is no guarantee that these moved participants will ever receive the transaction’s
+decision. Therefore, traditional transaction processing would cause resources to be unusable for an inﬁnitely
+long period of time.
+
+1.1. Problem Description
+Atomic commit protocols (ACPs) like 2-Phase-Commit (2PC, [9]), 3-Phase-Commit (3PC, [22]), and con-
+sensus based protocols (Paxos Consensus, [10]) are used to guarantee an atomic execution of distributed
+
+10.5121/ijdms.2010.2209
+
+141
+
+International Journal of Database Management Systems ( IJDMS ) , Vol.2, No.2, May 2010
+
+transactions in ﬁxed wired networks. However, when transaction support is required for mobile ad-hoc
+environments, problems like network partitioning, node disconnection, and node movement may lead to the
+case where databases do not receive the atomic commit protocol decision and block. According to [18], we
+can distinguish two kinds of blocking:
+
+Deﬁnition 1 Atomic commit protocol blocking occurs, if during an execution of an atomic commit protocol
+for a transaction T , an arbitrary sequence of failures leads to a situation where the atomic commit protocol
+instance cannot terminate with a unique commit or abort decision d.
+
+Several proposals, e.g. [10, 20], tackle the problem of atomic commit protocol blocking by using multiple
+coordinators. Therefore, we do not focus on the problem of protocol blocking.
+
+Deﬁnition 2 Transaction Blocking: A transaction T is blocked, after a database proposed to execute T (e.g.
+by sending a voteCommit message) and waits for the ﬁnal commit decision, but is not allowed to abort or
+to commit T unilaterally on its own.
+
+Transaction blocking summarizes the unilateral impossibility to abort or commit a transaction, but does
+not mean that a transaction U waits to obtain locks from a concurrent transaction, since in this case U can
+be aborted by the database itself. Even time-out based approaches (e.g. “my commit vote is valid until
+3:23:34”) cannot solve the problem of transaction blocking, since this would fulﬁll the requirements of the
+coordinated attack scenario [9], in which a commit decision is not possible under the assumption of message
+loss.
+The problem of inﬁnite transaction blocking for a transaction T occurs, if a database has sent a voteCommit
+message on T , but will never receive the ﬁnal commit decision, e.g. due to disconnection, movement, or
+network partitioning. Whenever the database can still communicate, e.g. with the user, the blocked data of
+T will prevent concurrent and conﬂicting transactions U from being processed.
+
+1.2. Contributions
+The main contributions of this paper are:
+• It describes BST, a transaction termination mechanism for mobile transactions in unreliable environ-
+ments that solves the inﬁnite transaction blocking problem, i.e. each database maintains control of
+its resources during the whole transaction execution.
+• It outlines how and proves that BST in combination with 2-Phase-Locking [8] guarantees serializ-
+ability and atomicity.
+• We give experimental results that demonstrate the feasibility of Bi-State-Termination in environ-
+ments where the commit decision may get lost.
+Beyond our previous contributions [18, 19], this paper further
+• outlines how recovery from database main memory failures can be done with BST, and how BST
+can be used as a log book,
+• describes three BST implementations, one being a complete in-memory solution, one being a disk-
+base solution, and one focusing on processing speed,
+• outlines implementation details of the fastest variant regarding read and write operations,
+• describes an evaluation comparing the presented BST implementations regarding transaction pro-
+cessing time in case of blocked transactions.
+
+2 . TRAN SACT ION MODEL
+BST is a protocol that can be applied to databases that participate in an atomic commit protocol independent
+of whether or not the other databases that also participate in the same global transaction use the same BST
+protocol.
+During the execution of a transaction, a database enters the following phases: the read-phase, the commit
+decision phase, and, in case of successful commit, the write-phase. While executing the read-phase, each
+transaction invokes necessary sub-transactions and carries out write operations on its private transaction
+storage only. During the commit decision phase, the participating databases use an atomic commit protocol
+to decide on the transaction’s commit decision. During the atomic commit protocol, participants vote for
+
+142
+
+International Journal of Database Management Systems ( IJDMS ) , Vol.2, No.2, May 2010
+
+voteRequest
+
+doCommit
+
+result /
+locks acquired
+
+read
+phase
+abor t possible
+
+voteCommit
+
+write
+phase
+time
+
+BST possible
+
+Figure 1. 2PC Transaction Execution
+
+“commit” or “abort”. A database that voted for “commit” is not allowed to abort or commit the transaction
+on its own until it has received the coordinator’s commit decision. A participant that voted for “abort” can
+immediately abort the transaction, which means, the database must restore a state that is equal to a situation
+in which the transaction has never been executed, i.e. all changes caused by the aborted transaction must be
+rolled back.
+If the transaction’s outcome commit decision, which can be either commit or abort, is commit, the database
+executes the sub-transaction’s write phase. During this phase, the private transaction storage is transferred
+to the durable database storage, such that the changes done throughout the read-phase become visible to
+other transactions after completion of the write-phase. If the outcome is abort, all involved databases abort
+their corresponding sub-transactions.
+Deﬁnition 3 Two operations Oi and Oj conﬂict ⇐⇒ ∃ tuple t ∃ attribute a : (Oi accesses t.a
+∧ Oj accesses t.a ∧ ((Oi writes t.a) ∨ (Oj writes t.a)))
+
+Deﬁnition 4 A transaction Tj depends on Ti if and only if on a database D at least one operation Oi of Ti
+conﬂicts with an operation Oj of Tj , and Oi precedes Oj .
+
+Deﬁnition 5 The serialization graph of a set of transactions contains the transactions as nodes and a di-
+rected edge Ti → Tj for each pair (Ti , Tj ) of transactions for which Tj depends on Ti .
+
+Deﬁnition 6 Serializability requires the serialization graph of all committed transactions to be acyclic.
+
+Deﬁnition 7 Assume a database in state S0 executes a transaction Ti . Then, we call ResultTi (S0 ) the
+result value that the databases returns after ﬁnishing the read phase of Ti .
+
+Above the time line, Figure 1 shows the standard application of 2PC for a distributed transaction Ti when a
+locking mechanism like 2-Phase-Locking [8] is used for transaction synchronization. Below the time line,
+Figure 1 illustrates the possible database reactions in case the database does not receive expected messages
+after a timeout. As long as the database has not voted for commit, it can still abort Ti and release the locks.
+Different from traditional 2PC, Bi-State-Termination (BST) allows a database to terminate a transaction
+even after the commit vote has been sent and before a doCommit or doAbor t command has been received.
+The transaction execution shown in Figure 1 involves two messages showing that the so-called lock point
+was reached: Both the voteRequest message and the doCommit message indicate that all databases have
+obtained all necessary locks. However, for the purpose of ensuring serializability, it is only necessary to
+reach this lock point once, as atomic commit protocol optimizations like “unsolicited vote optimization”
+[23] show.
+As the transaction sequence is ﬁxed after the voteRequest message has been received by each database,
+serializability is guaranteed. In other words, serializability does not require to hold any lock longer than
+until the database receives the voteRequest command. However, for ensuring strictness, i.e. to guarantee
+recoverability and to avoid cascading aborts, each database must hold all locks until the doCommit message
+is received and the write phase has been ﬁnished. Unfortunately, if the doCommit message is lost or cannot
+reach a database, the database must hold the locks and cannot abort the transaction on its own, which
+however, is possible before the vote for commit message has been sent.
+In the remainder of this section, we develop a solution that not only unblocks and processes concurrent and
+depending transactions if the commit decision cannot be received by a database for a longer period of time.
+Our solution, which is called Bi-State-Termination (BST) of a transaction Ti , also guarantees atomicity.
+
+143
+
+International Journal of Database Management Systems ( IJDMS ) , Vol.2, No.2, May 2010
+
+The main idea of BST is that if the coordinator’s decision for a transaction Ti is delayed, a concurrent
+transaction Tc depending on Ti can be processed by transferring the required locks from Ti to Tc , and then
+by executing Tc on two database states: one state having Ti committed, the other state having Ti aborted.
+However, it is the database’s choice whether or not and after which timeout it applies BST.
+We want to achieve that all transactions belonging to a distributed global transaction are executed in an
+atomic fashion, and that each concurrent execution of different distributed global transactions is serializable,
+i.e. the execution produces the same output and has the same effect on the databases as some serial execution
+of the same distributed global transactions.
+
+Deﬁnition 8 Assume that a database is in a state S0 that has been created by some previous transactions
+before the write phase of Ti is executed. Assuming no concurrent transaction has changed the database state
+while Ti is executed, we call the database state that is caused by the write phase of Ti the state STi . Let
+Ti consist of the sequence of operations Oi1 , Oi2 , . . . , Oin . When this sequence of operations is applied to
+the database, we call the changes that have been made by the operations the delta of the transaction Ti . We
+write ∆Ti (S0 ) if the sequence of operations Oi1 , . . . , Oin is applied on the database state S0 . When Ti has
+been committed, the result of applying ∆Ti to the database state S0 becomes visible for other transactions,
+thus we get the new database state STi , for which we write STi = S0 ⊕ ∆Ti (S0 ).
+
+Note, that when a transaction Ti , which, for example, increments integer values, is executed on two different
+database states S0 and S1 , the transaction execution can lead to different deltas ∆Ti (S0 ) and ∆Ti (S1 ).
+However, when Ti does not include branches or loops, the sequence of operations remains the same for all
+executions.
+
+Lemma 9 Assume a database is in state S0 , a transaction Ti is executed, and a concurrent transaction Tj is
+started, but Ti does not depend on Tj and vice versa. Therefore, the changes of transaction Tj do not affect
+the execution of the transaction Ti . The equations
+
+∆Tj (S0 ) = ∆Tj (STi ) and ∆Ti (S0 ) = ∆Ti (STj )
+
+hold, which means that the modiﬁcations of a transaction Tj are independent of any previous modiﬁcation
+of a non-dependent transaction Ti and vice versa.
+
+Proof Assume the database state before the execution of Ti and Tj is S0 .
+
+Tj does not depend on Ti and
+Ti does not depend on Tj
+⇐⇒ ∀ tuple t ∀ attribute a (¬Oi accesses t.a
+∨¬Oj accesses t.a ∨ (Oi reads t.a ∧ Oj reads t.a))
+(follows from Def. 3 and 4)
+=⇒ S0 ⊕ ∆Ti (S0 ) ⊕ ∆Tj (STi )
+= Ojn (. . . Oj2 (Oj1 (Oin (. . . Oi1 (S0 )))))
+= Oin (. . . Oi2 (Oi1 (Ojn (. . . Oj1 (S0 )))))
+=⇒ (cid:0)∆Tj (S0 ) = ∆Tj (STi )(cid:1) ∧ (∆Ti (S0 ) = ∆T (STj ))
+(since operations do not conﬂict)
+= S0 ⊕ ∆Tj (S0 ) ⊕ ∆Ti (STj )
+Therefore, whenever a set BT of transactions is blocked, the result of a transaction T may only be inﬂu-
+enced by those transactions DBT ⊆ BT on which T is dependent.
+
+3 . SOLUT ION
+In the following, we focus on the question:
+
+What can a database D executing a transaction Ti that is blocked do, when a concurrent
+transaction Tc requests access to data tuples accessed by Ti in a conﬂicting way.
+
+One proposed solution to answer this question can be found in standard literature for databases, and is quite
+simple: Let Tc wait until Ti has released its locks and is completed. However, during the waiting, the
+
+144
+
+International Journal of Database Management Systems ( IJDMS ) , Vol.2, No.2, May 2010
+
+S0
+WWWWWWWWWWWWWWWWWWWW
+gggggggggggggggggggg
+Ti aborts
+Ti commits
+S0 ⊕ ∆Ti (S0 )
+S0
+OOOOOOOOOOO
+OOOOOOOOOOO
+ooooooooooo
+ooooooooooo
+Tc commits
+Tc aborts
+Tc commits
+Tc aborts
+S0 ⊕ ∆Tc (S0 )
+S0 ⊕ ∆Ti (S0 ) S0 ⊕ ∆Ti (S0 ) ⊕ ∆Tc (STi )
+S0
+Figure 2. Possible database states if Tc depends on Ti , and Ti blocks
+
+Level 0
+
+Level 1
+
+Level 2
+
+number of transactions that wait concurrently may increase if the blocking continues. Furthermore, if Tc is
+a distributed transaction too, this may cause further transactions to wait on other databases, too. Another
+possibility is to abort the concurrent transaction Tc . Although correct, this behavior is not satisfying.
+Our solution called Bi-State-Termination is based on the following observation: Whenever transaction
+blocking occurs, the database does not know whether a transaction Ti waiting for the commit decision will
+be aborted or committed. However, only if the transaction is committed, the database state changes. Let S0
+denote the database state before Ti was executed. Although the database does not know the commit deci-
+sion for Ti , it knows for sure that either S0 or S0 ⊕ ∆Ti (S0 ) is the correct database state, depending on the
+commitment of Ti . Figure 2 shows these two possible states in the tree. With this knowledge, the database
+can try to execute a concurrent transaction Tc that depends on Ti on both states S0 and S0 ⊕ ∆Ti (S0 ).
+Whenever the two executions of Tc on S0 and on S0 ⊕ ∆Ti (S0 ) return the same results to the Initiator,
+i.e. ResultTc (S0 ) = ResultTc (STi ), Tc can be committed regardless of Ti , even though Tc depends on
+Ti . Otherwise, it is the application’s choice whether it handles two possible transaction results. However,
+since Tc depends on Ti , we might have ∆Tc (S0 ) (cid:54)= ∆Tc (STi ). Therefore, the database must store both
+deltas ∆Tc (S0 ) and ∆Tc (STi ), and if Tc commits before Ti is committed or aborted, the database knows
+that either the state S0 ⊕ ∆Tc (S0 ) is valid, or the state S0 ⊕ ∆Ti (S0 ) ⊕ ∆Tc (STi ) is valid.
+Figure 2 shows the execution tree different of a different situation, i.e. with both Ti and Tc being blocked.
+The leaves represent the database states that may be valid depending on the decisions for the blocked
+transactions Ti and Tc .
+
+3.1. Bi-State-Termination
+Let Σ = {S0 , . . . , Sk } be the set of all legal possible database states for a database D . A traditional
+transaction Ti is a function Ti : Σ (cid:55)→ Σ, Sa → Sb , which means the resulting state Sb of Ti depends only
+on the state Sa on which Ti is executed.
+A Bi-State-Terminated transaction Ti is a function BST : 2Σ (cid:55)→ 2Σ ,
+(cid:123)(cid:122)
+(cid:125)
+(cid:124)
+(cid:123)(cid:122)
+(cid:125)
+(cid:123)(cid:122)
+(cid:125)
+(cid:124)
+(cid:124)
+→ {Si , . . . , Sj }
+∪ {Ti (Si ), . . . , Ti (Sj )}
+{Si , . . . , Sj }
+Initial States
+Ti commits
+Ti aborts
+that maps a set ΣInitial ⊆ Σ of Initial States to a super set ΣInitial ∪ {Ti (Sx )|Sx ∈ ΣInitial } of new states,
+where Ti (Sx ) is the state that is reached when Ti is applied to Sx .
+This concept of Bi-State-Termination leads to the following commit decision rules for the transaction exe-
+cution of a transaction Ti on a database DB :
+DB checks Ti ’s dependencies on concurrent blocking transactions. The following situations may occur: Ti
+is independent of all currently blocked transactions. Then, Ti can be executed immediately.
+Otherwise, Ti depends on a set {T1 . . . Tn} of blocked transactions. As Ti depends on each of the trans-
+actions {T1 . . . Tn}, each of them has reached its lock point before Ti . Thus, for any concurrent execution
+of {T1 . . . Tn}, there is an equivalent serial execution ESE of {T1 . . . Tn}. As ESE only has to reﬂect the
+order in which transactions leave the lock point, ESE can always be constructed, as described below. Thus,
+serializability is guaranteed for {T1 . . . Tn}. Then, DB can Bi-State-Terminate the transactions {T1 . . . Tn},
+i.e. DB can execute the transaction Ti on all possible combinations of abort and commit decisions of the
+transactions {T1 . . . Tn} in ESE .
+The serializable sequence ESE of the transactions {T1 . . . Tn}, on which Ti is executed, must obey the
+following conditions. For each pair (Tj , Tk ) of the transactions for which a dependency Tj → Tk exists, Tj
+left its lock point before Tk left its lock point. However, in order to execute the transaction Tk that depends
+
+145
+
+International Journal of Database Management Systems ( IJDMS ) , Vol.2, No.2, May 2010
+
+on the blocked transaction Tj , the transaction Tj must have been Bi-State-Terminated. In this case, Tj has
+completed all of its operations before Tk has started. Thus, Tj is executed before Tk within ESE .
+Note that if there is no dependency Tj → Tk , and no dependency Tk → Tj , the execution sequence of
+the blocked transactions (Tj , Tk ) does not matter since the transactions are independent of each other, cf.
+Lemma 9.
+This means, the transaction Ti must at most be executed on all combinations of commit and abort decisions
+for the blocked transactions T1 . . . Tn , but only on one sequence (permutation) of the transactions T1 . . . Tn .
+If Ti is executed on multiple database states, this might yield to different results. Let S1 . . . S2n be the states
+that can be reached by any combination of commit/abort decisions on the n transactions {T1 . . . Tn} that
+are Bi-State-Terminated. If ResultTi (S0 ) = . . . = ResultTi (S2n ) holds, transaction Ti can be committed
+since it has a unique result. Otherwise, the application that initiated Ti can choose whether
+• it aborts Ti completely,
+• it commits Ti and deals with multiple possible results,
+• it aborts or commits Ti only for some commit/abort combinations of Bi-State-Terminated trans-
+actions, called execution branches. For example, the application may specify that Ti should only
+commit when Tk aborts, and that Ti should abort otherwise,
+• it waits.
+When Ti or a single execution branch of Ti commits, the database merges the corresponding delta of Ti
+with the possible branch state.
+
+Example 10 Assume Tc depends on Ti , but, different from Figure 2, Tc shall only commit when Ti
+commits and otherwise abort. As illustrated in Figure 3, a commit of Tc would only involve the left-
+most and rightmost branches of Figure 2. Therefore, ∆Ti (S0 ) in Level 1 of Figure 2 is replaced with
+(∆Ti (S0 ) ⊕ ∆Tc (STi )) in Level 1 of Figure 3 since, in this case, a commit of Ti automatically means a
+commit of Tc . Note that in this example, the commit decision for Tc is made before the decision of Ti ,
+but the execution sequence is the other way round, namely Ti < Tc . Furthermore, the tree of Figure 3 is
+ﬂattened one level compared to Figure 2 since only Ti is yet blocked.
+
+S0
+RRRRRRRRRRRRR
+lllllllllllll
+Ti commits
+Ti aborts
+S0 ⊕ ∆Ti (S0 ) ⊕ ∆Tc (STi ) Level 1
+S0
+Figure 3. Tc should commit only if Ti commits
+
+Level 0
+
+3.2. Complexity
+lt can be seen that the complexity of the Bi-State-Termination of Ti depends on the number of blocked
+transactions b, and that BST has a complexity of O(2b ) database states. However, our implemented solution
+uses a compact data structure and optimizes read and write operations in such a way that each transaction
+operation must only be executed once, regardless of the number of blocked transactions. Although, in the
+worst case, the number of tuples may grow exponentially, standard database query optimization techniques
+can be fully applied. Furthermore, a transaction still can wait instead of being executed on too many states.
+
+3.3. Correctness
+Theorem 11 Bi-State-Termination in combination with 2-Phase-Locking guarantees serializability.
+
+Proof As our solution uses Two-Phase Locking (2PL) and 2PL is proven to guarantee serializability accord-
+ing to [5], we show that Bi-State-Termination does not change the order of pairs of conﬂicting operations of
+transactions given by 2PL and therefore guarantees serializability, too: Our transaction execution involves
+one point, namely the lock point, where each transaction that belongs to a global transaction must hold
+all locks. This means that the request to vote on a transaction T ’s commit status can only be sent by the
+coordinator after all databases acquired the necessary transaction locks for their sub-transactions T1 . . . Tn
+
+146
+
+International Journal of Database Management Systems ( IJDMS ) , Vol.2, No.2, May 2010
+
+of T , which each database indicates by sending the sub-transaction’s result. The sequence of transactions
+is ﬁxed at that time when each transaction enters its lock point and is not changed by BST. Although Bi-
+State-Termination may release locks after this lock point, the release of locks does not change the order of
+comitted transactions for the following reason. A transaction Tc that gets locks from a Bi-State-Terminated
+transaction Ti is either executed after Ti has been committed (Ti < Tc ) or Ti is aborted.
+
+Note that although the commit command for Tc may be issued before the commit command of Ti , the order
+of applying the transactions on the database is still Ti < Tc .
+
+4 . BST REWR ITE RULE S
+Our BST rewrite rule system modiﬁes each database relation in such a way that it gets an extra column
+“Conditions” that describes for each database tuple the condition under which it is regarded as being true.
+Furthermore, the database contains a single table “Rules’’ storing rules that relate these conditions to each
+other.
+Whenever currently active transactions insert, delete or update tuples in a relation R, whether or not a tuple
+t will ﬁnally belong to R depends on the commit or abort decision of these transactions. We use a condition
+in order to express which of the active transactions must commit and which must abort, such that a tuple t
+ﬁnally belongs to a relation R. In our implementation, each relation R is augmented by an extra column
+“Conditions” that, for each tuple t, stores the condition under which it ﬁnally belongs to R.
+This can be implemented by the following rewrite rule that modiﬁes the create table command for database
+relations:
+create table R ( <column deﬁnitions> )
+⇒ create table R’( <column deﬁnitions, string conditions>)
+
+4.1. Status Without Active Transactions
+When all transactions are completed either by commit or by abort, the column “Conditions” contains the
+truth value “true” for each tuple in each relation of the database. The truth value “true” represents the fact
+that the tuple belongs to the relation without any further condition about the commit status of an active
+transaction.
+
+4.2. Write Operations on the BST Model
+
+4.2.1.
+Insertion
+Whenever a tuple t = (value1 , . . . , valueN ) is inserted into a relation R by a transaction with transaction
+identiﬁer Ti , we implement this by inserting t(cid:48) = (value1 , . . . , valueN , Ti ) into the relation R(cid:48) , i.e.
+the
+database system implementation applies a rewrite rule:
+inser t into R values (value1 ,. . .,valueN )
+⇒ inser t into R’ values (value1 ,. . .,valueN , Ti ).
+The idea behind the value Ti stored in the condition column of R(cid:48) is to show that the tuple t belongs to the
+database relation R if and only if transaction Ti will be committed.
+
+4.2.2. Deletion
+Whenever a tuple t = (value1 , . . . , valueN ) is deleted from a relation R by a transaction with transaction
+identiﬁer Ti , we look up the tuple t(cid:48) = (value1 , . . . , valueN , C ) ∈ R(cid:48) representing the tuple t ∈ R, where
+C is the condition under which t belongs to the database relation R.
+We implement the deletion of t from R by the transaction Ti by replacing the condition C found in t(cid:48) with a
+condition C2 and by adding a logical rule to the table Rules stating that C2 is true if and only if C is true and
+Ti is aborted. For this purpose, the database system applies the following rewrite rule, where A1 , . . . , AN
+denote the values (value1 , . . . , valueN ) for the attributes of R:
+
+delete t from R where t.A1=value1 , . . .,t.AN =valueN
+⇒ update t’ in R’ where t.A1=value1 , . . .,t.AN =valueN set condition=C2 ;
+inser t into rules values ( C2 , C1 and not Ti )
+
+147
+
+International Journal of Database Management Systems ( IJDMS ) , Vol.2, No.2, May 2010
+
+The idea behind this rewriting is the following. (not Ti ) represents the condition that transaction Ti will
+be aborted. The inserted rule states that C2 is true if C1 is true and Ti will be aborted. After the update
+operation, we have a tuple t(cid:48) = (value1 , . . . , valueN , C2 ) in R(cid:48) which represents the fact that t belongs to
+R if and only if C2 is true, i.e. if C is true and Ti is aborted.
+
+4.2.3. Update
+An update of a single tuple is simply executed as a delete operation followed by an insert operation.
+
+4.2.4. Set-Oriented Write Operations
+When a transaction inserts, updates, or deletes multiple tuples within a single operation, this can be imple-
+mented by a collection of individual insert, update, or delete operations.
+
+4.2.5. Completion of a Transaction
+When transaction Ti is completed with commit, the condition Ti is replaced with true in each rule in the
+Rules table and in each value found in the column “Conditions” of a relation R(cid:48) . However, when Ti is
+completed with abort, Ti is replaced with false in each rule found in the Rules table, and each tuple of R(cid:48)
+containing the value Ti in the column “Conditions” is deleted.
+Furthermore, rules that contain the truth value true or false are simpliﬁed. Whenever this results in a rule
+(C , true) or in a rule (C , false), then C itself is replaced with the value “true” or “false” respectively. Other
+rules that contain C are simpliﬁed as well. Furthermore, all tuples t(cid:48) in which C occurs are treated as
+follows. If the rule is (C , true), the value C is replaced with true in each tuple t(cid:48) in which C occurs in
+the column “Conditions”. However, if the rule is (C , false), each tuple t(cid:48) in which C occurs in the column
+“Conditions” is deleted. Finally, rules (C , true) or (C , false) are deleted from the relation Rules.
+
+Example
+Consider a database with a relation R that only consists of the attribute “Name” and initially stores only
+a single data record with the value “Mitch”. On R, the database executes the sequence T1 < T2 < T3 of
+transactions:
+T1 : insert "Miller"
+T2 : delete "Mitch"
+T3 : change "M" to "R" in each name
+Line Name Condition
+Mitch
+1
+Mitch
+2
+3
+Miller C1
+Mitch C2
+4
+Miller C1
+5
+Mitch C3
+6
+7
+Miller C4
+Ritch
+8
+C5
+9
+Riller C6
+
+Comment
+(cid:40)
+Initial
+(cid:40)
+Content after BST
+of T1
+ Content after BST
+Content after BST
+of T1 , T2
+of T1 , T2 , T3
+Table 1. Content after Bi-State-Terminating T1 , T2 , and T3
+Line 1 of Table 1 represents the initial database state S0 of R(cid:48) , lines 2-3 show the content of R(cid:48) after BST of
+T1 , lines 4-5 represent the table content after BST of T1 and T2 , while lines 6-9 show the table after BST of
+T1 , T2 , and T3 . The conditions Ci in the column “Condition” of Table 1 are linked to the “Rules” column
+of Table 2. Table 2 deﬁnes for each condition Ci by a boolean formula composed of other conditions and/or
+elementary conditions Tj , Tk , where Tj in the column “Deﬁnition” of Table 2 represents that transaction Tj
+will commit and Tk represents that Tk will abort. When Ci is valid, the row (<t>, Ci ) of Table 1 represents
+that the tuple <t> is in R. The condition C4 , for example, is fulﬁlled when T1 commits and T3 aborts. In
+this case, line 7 of Table 1 becomes valid.
+
+148
+
+International Journal of Database Management Systems ( IJDMS ) , Vol.2, No.2, May 2010
+
+Condition Deﬁnition
+–
+–
+T1
+C1
+C1
+T1
+T2
+C2
+T2T3
+C3
+C4
+T1T3
+C5
+T2T3
+C6
+T1T3
+
+Comment
+Initial
+(cid:40)
+Content after BST of T1
+ Content after BST
+Content after BST
+of T1 , T2
+of T1 , T2 , T3
+Table 2. Rules Table after Bi-State-Terminating T1 , T2 , and T3
+
+4.3. Read Operations on the BST Model
+Whenever a read operation on R is implemented by a read operation on R(cid:48) , the conditions are kept as part
+of the result. The relational algebra operations are implemented as follows.
+
+4.3.1. Selection
+Each selection with selection condition SC that a query applies to a relation R, will be applied to R(cid:48) , i.e.
+the database system applies the following rewrite rule to each selection:
+SC(R) ⇒ SC(R’)
+
+4.3.2. Duplicate Elimination
+Duplicate elimination is an operation that is used to implement projection and union. When duplicates
+occur, their conditions are combined with the logical OR operator. That is, given the relation R(cid:48) contains
+two tuples t(cid:48)
+1 = (value1 , . . . , valueN , C1 ) and t(cid:48)
+2 = (value1 , . . . , valueN , C2 ) these two tuples are deleted
+and a single tuple t(cid:48) = (value1 , . . . , valueN , CC 12 ) is inserted into R, and a rule (CC 12 , C1 or C2 ) is inserted
+into the Rules table.
+
+4.3.3. Set Union
+Set union of two relations R1 and R2 is implemented by applying duplicate elimination to the set union of
+R(cid:48)
+1 and R(cid:48)
+2 . The database system applies the following rewrite rule:
+R1 ∪ R2 ⇒ removeDuplicates(R1 ’ ∪ R2 ’)
+
+4.3.4. Projection
+Projection of a relation R1 on its attributes A1 , . . . , AN is implemented by applying duplicate elimination
+to the result of applying the projection to R(cid:48)
+1 including the column “Conditions”. The database system
+applies the following rewrite rule:
+P(A1 , . . .,An ) (R1 ) ⇒ removeDuplicates(P(A1 , . . .,An , conditions) (R(cid:48)
+1 ))
+
+4.3.5. Cartesian Product
+Whenever the cartesian product R1 × R2 of two relations R1 and R2 must be computed, this is implemented
+1 = (value1 , . . . , valueN , C1 ) of R(cid:48)
+2 ) of tuples t(cid:48)
+1 , t(cid:48)
+2 as follows. For each pair (t(cid:48)
+1 and R(cid:48)
+using R(cid:48)
+1 and
+2 , a tuple t(cid:48)
+1 = (value21 , . . . , value2N , C2 ) of R(cid:48)
+t(cid:48)
+12 = (value1 , . . . , valueN , value21 , . . . , value2N , CC 12 )
+is constructed and stored in (R1 × R2 )(cid:48) . The database system applies the following rewrite rule:
+R1× R2 ⇒ (R1 × R2 )’
+where (R1× R2 )’ can be derived by computing the set
+{ (t1 ,t2 ,CC 12 ) | (t1 ,C1 ) ∈ R1 ’ and (t2 ,C2 ) ∈ R2 ’ }
+and by adding a rule ( CC 12 , C1 and C2 ) for each pair of C1 and C2 to the Rules table.
+
+149
+
+International Journal of Database Management Systems ( IJDMS ) , Vol.2, No.2, May 2010
+
+4.3.6. Set Difference
+Whenever the set difference R1 − R2 of two relations R1 and R2 must be computed, this is implemented
+2 as follows. The set difference contains all tuples t(cid:48)
+1 = (value1 , . . . , valueN , C1 ) of R(cid:48)
+using R(cid:48)
+1 and R(cid:48)
+1
+for which no tuple t(cid:48)
+2 = (value21 , . . . , value2N , C2 ) of R(cid:48)
+2 exists, and furthermore, it contains a tuple
+t(cid:48)
+12 = (value1 , . . . , valueN , CC 12 ) for each tuple t(cid:48)
+1 = (value1 , . . . , valueN , C1 ) of R(cid:48)
+1 for which a tuple
+2 = (value21 ,. . . , value2N , C2 ), C2 (cid:54)= C1 , of R(cid:48)
+t(cid:48)
+2 exists. The condition CC 12 is true if and only if (C1 and
+not C2 ) is true. The database system applies the following rewrite rule:
+R1 - R2 ⇒ R1 ’ - R2 ’
+where ( R1 ’ - R2 ’ ) can be derived by computing the union of the following sets S1 and S2 :
+S1 = { (t1 ,C1 ) | exists (t1 ,C1 ) ∈ R1 ’ and not exists C2 such that (t1 ,C2 )∈ R2 ’ }
+S2 = { (t1 ,CC 34 ) | exists (t1 ,C3 )∈ R1 ’ and exists (t1 , C4 )∈ R2 ’ such that C3 (cid:54)= C4 }
+and by adding a rule (CC 34 , C3 and not C4 ) for each pair of C3 and C4 used in S2 to the Rules
+table.
+
+4.3.7. Other Algebra Operations
+Other operations of the relational algebra like join, intersection, etc. can be constructed by combining
+the implementation of the basic operations. Of course, query optimization of operations like join etc. is
+possible.
+
+5 . DATABA SE CON STRA INT S
+We classify two kinds of constraints: integrity constraints and consistency constraints. Following [3], in-
+tegrity constraints are deﬁned as data tuple characteristics that are independent of other data tuples. Thus,
+integrity constraints can be checked row-by-row. Consistency constraints, as deﬁned in [8], specify rela-
+tionship characteristics of two or more data tuples. Thus, consistency constraints can be formulated as read
+queries that return boolean values. We assume that before a constraint check is performed, the database is
+in a valid state, i.e. it’s integrity and consistency constraints are fulﬁlled. Thus, a transaction converts the
+database from one valid state to another valid state, and we only have to check whether the changes of a
+transaction violate the deﬁned constraints.
+
+5.1.
+Integrity Constraints
+One characteristics of BST is that the data accessed by write operations is already present in the database
+before the transaction is committed, and that the data accessed by pending delete operations is still present.
+Furthermore, each commit/abort combination of Bi-State-Terminated transactions is possible. Thus, in-
+tegrity constraints can be checked for each database row without obeying the conditions relation. When-
+ever a data item violates an integrity constraint, the transaction must be aborted, otherwise the database can
+vote for commit.
+
+5.2. Consistency Constraints
+Consistency constraints formulated as boolean queries are checked as follows. The query is evaluated and
+eventually returns different result values including conditions representing validity, for example RQ =((true),
+Ck ), whereas Ck can be composed of different condition formulas. Whenever a consistency constraint may
+be violated, i.e. we get a result value ((false), Ck ), we furthermore check whether the composed condition
+formula Ck is a contradiction. If Ck is not a contradiction, the consistency constraint may be violated and
+the database votes for abort. If the database gets ((true), Ck ) and ((false), Cl ) values and all Cl are a con-
+tradiction, the database votes for abort since the consistency constraint is fulﬁlled and cannot be violated.
+
+Referential Integrity Constraints
+For referential integrity, we join the primary and foreign key, eliminate duplicates, and derive the corre-
+sponding condition formulas for each joined data item. Then, we check for each joined tuple whether the
+formulated referential integrity constraint may be violated.
+
+Example 12 Assume the relation Order contains IDs of tuples of the relation Customer. A referential
+integrity constraint C assures that each order contains an ID of a customer listed in relation Customer, i.e.
+
+150
+
+International Journal of Database Management Systems ( IJDMS ) , Vol.2, No.2, May 2010
+
+ID Attributes
+1
+α1
+2
+α2
+
+(1)
+(2)
+
+Conditions
+
+Table 3. R” is derived from the table R by adding the column “Conditions”
+
+∀o ∈ Order ∃c ∈ Customer: o.CID = c.CID. Assume, a referential integrity constraint RC results in the
+constraint value Rt =((true), C1 ∧ C6 ⇒ (C 3 ∧ C 2) ∨ C6 ) for a certain data item, which indicates that
+the referential integrity is fulﬁlled when the formula Rt is true. Since Rt is a tautology, the constraint is
+fulﬁlled regardless of which Bi-State-Terminated transactions commit or abort.
+
+Whenever a database constraint may be violated by a transaction, the transaction cannot vote for commit
+and thus is aborted.
+
+6 . FA ILURE RECOVERY
+The use of the Rules table allows implementing failure recovery in the following different way. A log
+book for log-based failure recovery is not necessarily required for undoing or redoing a transaction for the
+following reason. Whether or not a transaction is committed or aborted or currently running can be checked
+by investigating the Rules table. An atomic write of the commit record to a log book can be replaced by an
+atomic write operation on the Rules table which adds a rule (‘Ti ‘, true) if transaction Ti commits or (‘Ti ‘,
+false) if transaction Ti aborts, before the entries ‘Ti ‘ are replaced with true or false respectively elsewhere.
+After all simpliﬁcation steps have been applied to the Rules table and to the augmented relations Ri ’ and
+after the distributed commit decision has been acknowledged by all transaction partners, the rule entry (‘Ti ‘,
+true) or (‘Ti ‘, false) is not needed anymore and can be deleted from the Rules table. This approach is as
+safe against power supply failures as log book-based approaches, because whether or not a transaction ‘Ti ‘
+is completed can be seen by looking for an entry (‘Ti ‘, . . . ) in the Rules table, and all the derivation steps
+on the Rules table and in the database relations R(cid:48)
+i can be reconstructed from a given entry (‘Ti ‘, true) or
+(‘Ti ‘, false) in the Rules table.
+
+7 .
+IM PLEMENTAT ION
+We have implemented BST in three versions and have compared their performance using a stress test. The
+ﬁrst implementation, called BST-Disk, uses the Rules table and rewrite rules as stated in Section 4, and
+stores the Rules table as a separate database table on disk.
+A modiﬁcation of this concept, the BST-RAM implementation, stores the Rules table completely within
+main memory. This makes the Rules table management faster but also susceptible to failures like power
+failure.
+The third implementation, called Fast-BST, does not use a separate Rules table anymore. Instead, Fast-BST
+adds an additional column “Condition” of type string to each table, which stores the conditions under which
+the corresponding data row becomes valid. Thus, conditions need not be derived from the Rules table; each
+tuple contains its conditions within the “Condition” column. Thus, Fast-BST makes Rules table lookups
+to derive the conditions under which a tuple becomes valid superﬂuous, and Fast-BST speeds up write
+operations that operate on many tuples for the following reason: The database does not need to generate
+and associate unique IDs to replaced conditions, it can update the “Condition” column in one pass by
+concatenating its value with the transaction ID. Furthermore, Fast-BST is not susceptible to power failures
+as BST-RAM as it does not hold the Rules table in its main memory.
+In the following, we describe the Fast-BST implementation that is used in the evaluation.
+
+7.1. Fast-BST – Write Operations
+Fast-BST implements the concept of BST as follows. Fast-BST stores the before image and the after image
+of tuples that have been modiﬁed by BST transactions. For this purpose, the Fast-BST adds the column
+“Conditions” to each table R that it uses to construct the relation R”, cf. Table 3.
+The step of Algorithm 1 is executed for each insert statement INSERT INTO R <data> of a transaction
+Ti . Two equal insert statements are executed twice and are not mixed.
+
+151
+
+International Journal of Database Management Systems ( IJDMS ) , Vol.2, No.2, May 2010
+
+Algorithm 1 Implementing Inserts
+1. Insert the tuple (<data>,Ti ) into the corresponding table R”, and add Ti to the column
+“Conditions” of the newly inserted tuples.
+
+For each delete statement DELETE ...
+rithm 2 is required.
+
+Algorithm 2 Implementing Deletes
+
+WHERE <X> of a transaction Ti , the rewriting shown by Algo-
+
+1. Add the substring Ti to each entry in the column “Conditions” of each row where <X>
+evaluates to true. Simplify the Conditions, if Ti wants to delete a tuple that Ti has just
+inserted before.
+
+Algorithm 3 describes the update operation for the update statement UPDATE ...
+
+WHERE <X>.
+
+Algorithm 3 Implementing Updates
+1. Copy the tuples for which <X> evaluates to true into new data tuples, and concatenate Ti to
+the existing entries of the “Conditions” attribute of the new tuples. Update the newly copied
+tuples according to the update statement.
+
+2. Add Ti to each entry in the column “Conditions” of each row where <X> evaluates to true
+and that was not copied and updated in Step 1.
+
+Example 13 Assume that we execute the following sequence of three transactions T1 , T2 , and T3 , each
+containing one update statement, on Table 3.
+T1:
+UPDATE Table1 SET Attributes=α3 WHERE ID=1
+T2:
+UPDATE Table1 SET Attributes=α4 WHERE ID=2
+T3:
+UPDATE Table1 SET Attributes=α2
+WHERE (Attributes=α3 ∨ Attributes=α4)
+Table 4 shows the result when all of the distributed transactions T1 . . . T3 block and Bi-State-Terminate.
+Fast-BST marks all tuples changed by transaction T1 as before image (line (1)), copies them to line (3), and
+executes the update (on line (3)). Note that Table 4 shows the result when all transactions T1 , T2 , and T3
+block, therefore it already contains the entry for T3 in line (3). The same algorithm is applied for T2 . When
+T3 is executed and both transactions T1 and T2 block, T3 depends on T1 and T2 . However, FAST-BST
+does not explicitly check for this dependency. In our example, T3 only modiﬁes data when either T1 or T2
+commit. This dependency is maintained automatically by Step 1 of Algorithm 3 since the <condition>
+of the update statement of T3 is only true in lines (3) and (4). Then, these two rows are copied to the rows
+in line (5) and line (6), and T3 is added to the “Conditions” column of each of these rows.
+
+7.2. Fast-BST – Read-Operations
+Read operations are modiﬁed in the following way: Each value of the returned result additionally contains
+the corresponding value of the “Conditions” column. Thus, each read operation must be processed by the
+database only once, regardless of the number of depending blocked transactions. However, the result R is
+not directly returned to the application, Fast-BST ﬁrst checks whether the result R contains any entries in
+the “Conditions” column. If this is the case, it is the application’s choice whether it handles these multiple
+uncertain results, or whether the application delays the read operation until the transactions listed in the
+“Conditions” column of R have been committed or aborted. If the application can handle multiple results,
+we can reduce the amount of transferred data by returning an object that represents the different possible
+valid database states directly within the application by means of the “Conditions” column.
+
+152
+
+International Journal of Database Management Systems ( IJDMS ) , Vol.2, No.2, May 2010
+
+ID Attributes
+1
+α1
+2
+α2
+1
+α3
+2
+α4
+1
+α2
+2
+α2
+
+Conditions
+T1
+T2
+T1 , T3
+T2 , T3
+T1 , T3
+T2 , T3
+
+(1)
+(2)
+(3)
+(4)
+(5)
+(6)
+
+Table 4. Content of Table 1 after Bi-State-Terminating T1 , T2 , and T3
+
+7.3. Commit and Abort
+The following rules apply when a blocked transaction Ti commits or aborts:
+Ti commits: Delete all rows that contain Ti in the column ”Conditions”. Delete the string Ti from all
+entries within the “Conditions” column of the table.
+Ti aborts: Is treated as Ti commits.
+
+Example 14 Assume T3 commits. In this case, lines (3) and (4) are deleted from Table 4. Furthermore, the
+string T3 must be deleted in Lines (5) and (6) from the attribute values for the column “Conditions”, since
+a commit of T1 or T2 automatically implies that the changes of T3 become valid.
+Note that the data set increases only temporarily and collapses to the original size when the commit decision
+for the Bi-State-Terminated transactions is known. For example, when the database receives the commit
+decisions for T1 and T3 , the database knows the exact unique value for the data tuple with ID 1, which
+corresponds to Line (5) in case T3 and T1 commit, to Line (3) in case T1 commits and T3 aborts, and to
+Line (1) in case T1 aborts.
+
+8 . EX PER IMENTAL EVALUAT ION
+We choose the TPC-C benchmark [14] for generating the test data and transactions. The following questions
+motivate our experimental evaluation: Which BST implementation is faster? How many transactions can be
+Bi-State-Terminated until the execution time or the database size for following transactions is unacceptably
+high? How does BST affect the overall transaction throughput and transaction execution time, when a
+certain percentage of transactions block?
+
+8.1. BST Stress Test
+Having a data hotspot, the used BST implementation may have great inﬂuence on the transactions execution
+times since in this case a lot of transactions depend on each other. As this results in a growth of database
+states, we have compared the three BST implementations and determined how many blocked transactions
+per tuple each BST implementation can handle in a stress test. For this stress test, we have generated
+a database table consisting of a single data tuple. We have sequentially executed a number of database
+transactions on this table that do not ﬁnish, i.e.
+the transactions do not get a commit decision and thus
+block. Each of these blocked transactions has incremented or decremented the same data that is initially
+present. In order to be able to process further transactions, we have used our three BST implementations
+to terminate each blocked transaction. For this reason, each blocked transaction has doubled the number of
+possible database states, and thus the number of possible values for the initial tuple grows exponentially for
+the number of blocked transactions. We have measured the time for processing the (n + 1)th transaction
+when n transactions are blocked and terminated by BST for each BST implementation.
+The y -axis of Figure 4 indicates the required time to process a single update transaction when the number
+of transactions indicated on the x-axis is terminated by BST. As all of these blocked transactions depend
+on each other, and all of them are coded to modify the initial tuple, the resulting growth in time and space
+is exponential. However, as the test indicates, the processing of a transaction when 10 blocked transactions
+have been terminated by BST does not take a large overhead for the Fast-BST implementation.
+Both implementations that use a separate “Rules” table, i.e. BST-Disk and BST-RAM, are signiﬁcantly
+slower than the Fast-BST implementation. The reason is that when transactions update a lot of data tuples,
+
+153
+
+International Journal of Database Management Systems ( IJDMS ) , Vol.2, No.2, May 2010
+
+Figure 4. BST Stress Test – Performance
+
+the corresponding condition must be derived from the Rules table for each updated data tuple, and a new
+condition ID must be generated and assigned separately to each data tuple. In comparison, Fast-BST only
+adds the transaction’s ID to the “Conditions” column of all updated tuples, which can be done much faster.
+On the y -axis, Figure 5 shows the number of tuples that are generated by BST for a single update operation,
+while the number of transactions indicated on the x-axis has been terminated by BST. Note that our BST
+implementations do not differ in the number of resulting tuples. Although the database’s size grows expo-
+nentially each time a blocked transaction is terminated by BST, it is the database’s decision to use BST for
+a transaction Ti or to wait until the decision for transactions on which Ti depends is known.
+As we have seen, using the Fast-BST implementation allows the database to terminate more blocked trans-
+actions without a signiﬁcant loss of performance. For this reason, we use the Fast-BST implementation in
+the following TPC-C benchmark test.
+
+8.2. BST TPC-C Test
+The TPC-C benchmark [14], an online transaction processing benchmark test, simulates an online-shop-
+like environment in which users execute order transactions against a database. The transactions addition-
+ally include recording payments, checking the status of orders, and monitoring the level of stock at the
+warehouses.
+We used a TPC-C “scaling factor” of 2, which results in 139 MB of data and a total amount of 294 trans-
+actions, 41,8% of them containing update operations. Characteristic for our implementation of the TPC-C
+benchmark is that the involved update transactions operate on a set of data tuples whose cardinality is low
+(i.e. 2 tuples), so we can expect a lot of depending write transactions. In order to simulate transaction block-
+ing, a separate coordinator instance coordinates each transaction and delays the commit command based
+on different parameters in order to simulate blocked distributed transactions. For example, to simulate a
+transaction blocking of 1% of all transactions, we delayed the commit command of each 100th transaction.
+Figure 6 shows the sum of all successfully committed transactions on the y -axis. On the x-axis, the overall
+time is shown. The different curves indicate whether BST was enabled, and they vary in the percentage of
+blocked transactions. Note that due to our simulated hotspot, a huge amount of transactions depend on each
+other. We can see that BST-enabled transaction processing is able to commit a lot more transactions than
+BST disabled transaction processing.
+
+154
+
+02468101214161820123456789101112Time (s)No. of blocking transactionsTime for processing a single transaction when x depending transactions blockBST-DiskBST-RAMFast-BSTInternational Journal of Database Management Systems ( IJDMS ) , Vol.2, No.2, May 2010
+
+Figure 5. BST Stress Test – Space
+
+Note that the additional space used by BST is rather low, i.e., in our TPC-C experiments, BST requires only
+about 2% more space.
+
+8.3. Evaluation Summary
+We have run a stress test to compare three implementations for BST. While the BST-Disk and BST-RAM
+implementation use a separate Rules table in order to manage the dependencies of the before- and after-
+images of the transactions, the Fast-BST implementation directly annotates the rule under which each data
+tuple becomes valid to the data row. The Fast-BST implementation is able to cope with 10 blocked trans-
+actions that all write on the same tuple without causing a loss of performance, while the BST-Disk and
+BST-RAM implementations can only handle 5 to 7 blocked transactions accessing the same tuple within
+reasonable time.
+When setting up a transaction scenario, two extreme scenarios are possible that inﬂuence the outcome of
+BST: In the ﬁrst scenario, each transaction operates on different tuples that are not accessed by any other
+transaction. In the second scenario, each transaction operates on the same tuples. As transaction blocking
+in the ﬁrst scenario does not have any inﬂuence on other transactions, enabling BST does not commit more
+transactions than disabling BST. In the second scenario, a blocked transaction would immediately prevent
+all following transactions from being processed. In this scenario, BST would allow the commitment of
+almost all transactions, while disabling BST would result in a total blocking situation.
+Due to these two possible extreme scenarios, we used the TPC-C benchmark that simulates a typical ware-
+house environment to get an impression of how BST enhances transaction processing in a real-world sce-
+nario. We have preferred the Fast-BST implementation, which is able to enhance the amount of committed
+transactions in our TPC-C benchmark by 40 to 70%, depending on the number of blocked transactions.
+Finally, note that if no more space is available or the required processing time grows, the database can decide
+for each individual transaction whether to use BST or to wait for the commit decision as in 2PC. In other
+words, our solution does not force the database to accept long execution times, and BST-enabled transaction
+processing never blocks more transactions than traditional transaction processing. Our approach can be
+regarded as a generalization of traditional 2PC in the sense that for each individual transaction executed on
+a local database, BST is possible but not required.
+
+155
+
+050010001500200025003000350040004500123456789101112No. of TuplesNo. of blocking transactionsNumber of tuples accessed by a single transaction updating one tuple of R when x depending transactions blockBi-State-TerminationInternational Journal of Database Management Systems ( IJDMS ) , Vol.2, No.2, May 2010
+
+Figure 6. BST evaluation on the TPC-C benchmark
+
+9 . RELATED WORK
+Concurrency control like multiversion concurrency control [4, 24], timestamp-based concurrency control
+[17], or optimistic concurrency control [12, 16] omit the use of locks. However, these approaches do not
+solve the inﬁnite transaction blocking problem on concurrent transactions since each database that has sent
+the voteCommit message proposes that it will commit the transaction regardless of the used concurrency
+control mechanism. Therefore, without Bi-State-Termination, the database cannot process a transaction U
+that is depending on a transaction T , while T waits for the ﬁnal commit decision, even if the database uses
+locking-free concurrency control. This motivates the use of BST, which is a termination mechanism that
+supports the actually used concurrency control mechanism.
+Other approaches rely on compensation of transactions. [15], for instance, proposes a timeout-based proto-
+col especially for mobile networks, which requires a compensation of transactions. However, inconsisten-
+cies may occur when some databases do not immediately receive the compensation decision or when the
+coordination process fails.
+In order to enhance the availability of the coordination process, some proposals rely on multiple coordina-
+tors. [10], for instance, proposes a consensus-based commit protocol that involves multiple coordinators.
+However, the problem of transaction blocking in the sense of Deﬁnition 2, which occurs when the executing
+database disconnects from the network after sending the voteCommit message, has, to the authors’ knowl-
+edge, not been studied yet. Even 1PC [1, 2], which does not require a vote message but acknowledges each
+
+156
+
+010203040506070809010000,511,522,533,544,555,566,577,588,5Time (Minutes)% of committedTransactionsBST enabled, 1% blockingBST enabled, 5% blockingBST enabled, 10% blockingBST disabled, 1% blockingBST disabled, 5% blockingBST disabled, 10% blocking138,71 MB Data; 294 Transactions (41,8% Update, 58,2% Select)                                                 International Journal of Database Management Systems ( IJDMS ) , Vol.2, No.2, May 2010
+
+operation, encounters the problem of transaction blocking since each acknowledged operation that accesses
+a data tuple must block this data tuple until the transaction is successfully completed.
+Our solution relates to three ideas that are used in different contexts: Escrow locks [11], speculative locking
+[21], and multiversion databases [6, 7, 13].
+Escrow locks are a reﬁnement of ﬁeld calls, which are used in environments where data hotspots are fre-
+quently accessed. The escrow lock calculates an interval [i, k ] for an attribute a by means of the currently
+processed updates. The interval indicates the actual upper and lower boundary that the attribute a may take.
+When a further transaction relies on a precondition for a, the database checks whether the precondition
+evaluates to true for each value of a that is contained in the interval [i, k ]. In contrast to the escrow locking
+technique, Bi-State-Termination, is a transaction termination mechanism. BST neither relies on numerical
+values, nor assumes that an attribute value must lie in a given interval. BST always knows the exact values
+that an attribute can actually have and even allows an application to decide that a transaction Ti may only
+be committed in a certain constellation of commit and abort decisions of transactions on which Ti depends.
+Another related locking mechanism is Speculative Locking (SL) [21]. SL was proposed to speed up trans-
+action processing by spawning multiple parallel executions of a transaction that waits for the acquisition
+of required locks. SL has in common with Bi-Sate-Termination that SL also allows a transaction Tc to
+access the after-image of a transaction Ti while Ti is waiting for its commit decision. However, unlike
+Bi-State-Termination, SL does not allow committing Tc before the ﬁnal commit decision for Ti has been
+received. This means, SL cannot successfully terminate Tc while the commit vote for Ti is missing. For
+this reason, SL cannot be used to solve the inﬁnite transaction blocking problem that may occur in mobile
+networks. Furthermore, our Fast-BST implementation can execute read-operations in one pass even if they
+return multiple result values due to transactions that wait for the commit decision.
+Multiversion database systems [6, 7, 13] are used to support different expressions of a data object. They
+are used for CAD modelling and versioning systems. However, compared to BST, multiversion database
+systems allow multiple versions to be concurrently valid, while BST allows only one valid version, but
+lacks the knowledge which of the multiple versions is valid due to the atomic commit protocol. Whenever
+BST requires multiple transaction executions that all return the same result, BST is even transparent to the
+application. Furthermore, multiversion database systems are mostly central embedded databases that are
+not designed to deal with distributed transactions. Instead, the user explicitly speciﬁes on which version he
+wants to work.
+Complementing this contribution, [19] describes how arbitrary database constraints beyond functional de-
+pendencies and referential integrity constraints, can be checked on the BST implementation. Further-
+more, [19] suggests a different treatment for row-based integrity constraints and general consistency con-
+straints.
+
+10 . SUMMARY AND CONCLU S ION
+Transaction blocking occurs very frequently, i.e. a sub-transaction has voted for commit, but has not re-
+ceived the commit decision, yet. We argue that the risk of inﬁnite transaction blocking, which can occur if
+the database moves or disconnects, is not appropriately solved by other approaches to distributed transac-
+tion processing. We have explained the concept of Bi-State-Termination that is useful to terminate blocked
+transactions without violating atomicity, even without knowing the explicit coordinator decision on commit
+or abort. We have described three different implementations and have experimentally evaluated them.
+Our experimental results have shown that Bi-State-Termination enhances the number of committed trans-
+actions and that BST is able to deal with a large number of depending blocked transactions without expe-
+riencing signiﬁcant performance loss. This justiﬁes using BST in mobile ad-hoc networks that are exposed
+to the risk of transaction blocking.
+To summarize, we consider Bi-State-Termination as a useful option that is usable for mobile networks in
+order to terminate a transaction instead of just waiting for the commit decision for a long time.
+
+157
+
+International Journal of Database Management Systems ( IJDMS ) , Vol.2, No.2, May 2010
+
+RE FERENCE S
+[1] M. Abdallah, R. Guerraoui, and P. Pucheral. One-phase commit: Does it make sense? In ICPADS ’98: Proceed-
+ings of the 1998 International Conference on Parallel and Distributed Systems, page 182, Washington, DC, USA,
+1998. IEEE Computer Society.
+[2] Y. J. Al-Houmaily and P. K. Chrysanthis. 1-2pc: the one-two phase atomic commit protocol. In Proceedings of
+the 2004 ACM Symposium on Applied Computing (SAC), Nicosia, Cyprus, March 14-17, pages 684–691, 2004.
+[3] R. Bayer, H. Heller, and A. Reiser. Parallelism and recovery in database systems. ACM Trans. Database Syst.,
+5(2):139–156, 1980.
+[4] P. A. Bernstein and N. Goodman. Multiversion concurrency control - theory and algorithms. ACM Trans.
+Database Syst., 8(4):465–483, 1983.
+[5] P. A. Bernstein, V. Hadzilacos, and N. Goodman. Concurrency Control and Recovery in Database Systems.
+Addison-Wesley, 1987.
+[6] W. Cellary and G. Jomier. Consistency of versions in object-oriented databases. In D. McLeod, R. Sacks-Davis,
+and H.-J. Schek, editors, 16th International Conference on Very Large Data Bases, August 13-16, 1990, Brisbane,
+Queensland, Australia, Proceedings, pages 432–441. Morgan Kaufmann, 1990.
+[7] I.-M. A. Chen, V. M. Markowitz, S. Letovsky, P. Li, and K. H. Fasman. Version management for scientiﬁc
+In P. M. G. Apers, M. Bouzeghoub, and G. Gardarin, editors, Advances in Database Technology
+databases.
+- EDBT’96, 5th International Conference on Extending Database Technology, Avignon, France, March 25-29,
+1996, Proceedings, volume 1057 of Lecture Notes in Computer Science, pages 289–303. Springer, 1996.
+[8] K. P. Eswaran, J. N. Gray, R. A. Lorie, and I. L. Traiger. The notions of consistency and predicate locks in a
+database system. Commun. ACM, 19(11):624–633, 1976.
+[9] J. Gray. Notes on data base operating systems. In M. J. Flynn, J. Gray, A. K. Jones, et al., editors, Advanced
+Course: Operating Systems, volume 60 of Lecture Notes in Computer Science, pages 393–481. Springer, 1978.
+[10] J. Gray and L. Lamport. Consensus on transaction commit. ACM Transactions on Database Systems (TODS),
+31(1):133–160, 2006.
+[11] J. Gray and A. Reuter. Transaction Processing: Concepts and Techniques. Morgan Kaufmann, 1993.
+[12] T. Haerder. Observations on optimistic concurrency control schemes. Inf. Syst., 9(2):111–120, 1984.
+[13] R. H. Katz. Toward a uniﬁed framework for version modeling in engineering databases. ACM Comput. Surv.,
+22(4):375–409, 1990.
+[14] W. Kohler, A. Shah, and F. Raab. Overview of TPC Benchmark C: The Order-Entry Benchmark. Technical report,
+http://www.tpc.org, Transaction Processing Performance Council, 1991.
+[15] V. Kumar, N. Prabhu, M. H. Dunham, and A. Y. Seydim. Tcot - a timeout-based mobile transaction commitment
+protocol. IEEE Transactions on Computers, 51(10):1212–1218, 2002.
+[16] H. T. Kung and J. T. Robinson. On optimistic methods for concurrency control. ACM Trans. Database Syst.,
+6(2):213–226, 1981.
+[17] P.-J. Leu and B. K. Bhargava. Multidimensional timestamp protocols for concurrency control. In Proceedings of
+the Second International Conference on Data Engineering, pages 482–489, Washington, DC, USA, 1986. IEEE
+Computer Society.
+In Proceedings of the 11th
+[18] S. Obermeier and S. Böttcher. Avoiding inﬁnite blocking of mobile transactions.
+International Database Engineering & Applications Symposium (IDEAS), Banff, Canada, 2007.
+[19] S. Obermeier and S. Böttcher. Constraint checking for non-blocking transaction processing in mobile ad-hoc net-
+works. In Proceedings of the 12th International Conference on Enterprise Information Systems (ICEIS), Funchal,
+Madeira - Portugal, 2010.
+[20] P. K. Reddy and M. Kitsuregawa. Reducing the blocking in two-phase commit with backup sites. Inf. Process.
+Lett., 86(1):39–47, 2003.
+[21] P. K. Reddy and M. Kitsuregawa. Speculative locking protocols to improve performance for distributed database
+systems. IEEE Transactions on Knowledge and Data Engineering, 16(2):154–169, 2004.
+[22] D. Skeen. Nonblocking commit protocols. In Y. E. Lien, editor, Proceedings of the 1981 ACM SIGMOD Inter-
+national Conference on Management of Data, Ann Arbor, Michigan, pages 133–142. ACM Press, 1981.
+In
+[23] M. R. Stonebraker. Concurrency control and consistency of multiple copies of data in distributed ingres.
+Distributed systems, Vol. II: distributed data base systems, pages 193–199, Norwood, MA, USA, 1986. Artech
+House, Inc.
+[24] G. Weikum and G. Vossen. Transactional information systems: theory, algorithms, and the practice of concur-
+rency control and recovery. Morgan Kaufmann Publishers Inc., San Francisco, CA, USA, 2001.
+
+158
+
+International Journal of Database Management Systems ( IJDMS ) , Vol.2, No.2, May 2010
+
+Authors
+Sebastian Obermeier works as a Scientist at ABB Cor-
+porate Research. He holds a PhD and Diploma in Com-
+puter Science from the University of Paderborn, Ger-
+many. His research areas include the use of database
+transaction technology within mobile ad-hoc networks
+and security for critical infrastructures.
+
+Stefan Böttcher is a Professor of Computer Science at
+the University of Paderborn. His research areas cover
+query optimization and compression in XML databases,
+transactions in mobile ad-hoc networks, security and pri-
+vacy. Before he joined the University of Paderborn, he
+worked for several years at the German research labs of
+IBM and Daimler Benz.
+
+159
+
+

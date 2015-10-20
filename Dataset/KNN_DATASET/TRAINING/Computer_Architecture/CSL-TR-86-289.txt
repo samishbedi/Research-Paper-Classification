@@ -1,0 +1,5371 @@
+MIPS -X   INSTRUCTION   SET
+and
+PROGRAMMER’S   MANUAL
+
+PAUL  CHOW
+
+Technical  Report  No.  CSL-86-289
+
+MAY 1988
+
+The   M IPS -X   p ro jec t   ha s   been   suppo r ted   by   the   De fen se   Advanced   Re sea rch
+P ro jec t s   Agency   unde r   con t rac t  MDAO03-83-C-0335.  Pau l   Chow   was   pa r t ia l ly
+s u p p o r t e d   b y   a   P o s t d o c t o r a l   F e l l o w s h i p   f r o m   t h e   N a t u r a l   S c i e n c e s   a n d
+Engineering  Research  Council  of  Canada.
+
+MIPS-X   Instruction   Set
+and  Programmer’s Manual
+
+Paul  Chow
+
+Technical Report No. 86-289
+May 1986
+
+Computer Systems Laboratory
+Departments  of  Electrical  Engineering  and  Computer  Science
+Stanford University
+Stanford, California  94305
+
+__
+
+Abstract
+
+MIPS-X  is  a  high  performance  second  generation  reduced
+instruction set microprocessor. This document describes the visible
+architecture  of  the  machine,  the  basic  timing  of  the  instructions,  and
+the instruction set.
+Keywords: MIPS-X  processsor,  RISC,  processor  architecture,
+streamlined  instruction  set.
+
+Copyright   0  1986   Stanford  University
+
+e
+
+Table   of Contents
+
+1. Introduction
+2. Architecture
+2.1.   Memory  Organization
+2.2.   General  Purpose  Registers
+2.3.   Special  Registers
+2.4.   The  Processor Status Word
+2.4.1.   Trap   on Overflow
+2.5.   Privilege  Violations
+3. Instruction Timing
+3.1.  The   Instruction  Pipeline
+3.2.  Delays  and  Bypassing
+3.3.  Memory   Instruction  Interlocks
+3.4.  Branch   Delays
+3.5.  Jump  Delays
+3.6.  Detailed  Instruction  Timings
+3.6.1.   Notation
+3.6.2.   A  Normal  Instruction
+3.6.3.   Memory  Instructions
+3.6.4.   Branch   Instructions
+3.6.5.   Compute  Instructions
+3.6.5.1.   Special  Instructions
+3.6.6.   Jump  Instructions
+3.6.7.   Multiply Step   - ms?ep
+3.6.8.   Divide  Step   -  dstep
+4. Instruction Set
+4.1.  Notation
+4.2.  Memory   Instructions
+4.2.1.   Id  -  Load
+4.2.2.   st  - Store
+4.2.3.   Idf  -  Load   Floating  Point
+4.2.4.   stf  -  Store   Floating Point
+4.2.5.   Idt  -  Load  Through
+4.2.6.   stt  - Store  Through
+4.2.7.  movfrc  -  Move   From  Coprocessor
+4.2.8.  movtoc  - Move  To  Coprocessor
+4.2.9.   aluc  - Coprocessor ALU
+4.3.  Branch   Instructions
+4.3.1.   beq  -  Branch   If  Equal
+4.3.2.  bge  - Branch   If Greater  than  or Equal
+4.3.3.   bhs  - Branch   If  Higher Or Same
+4.3.4.   blo  - Branch   If Lower  Than
+4.3.5.   blt  - Branch   If  Less   Than
+4.3.6.   bne  - Branch   If Not Equal
+4.4.  Compute  Instructions
+4.4.1.   add  - Add
+4.4.2.  dstep  - Divide Step
+4.4.3.  mstart   - Multiply Startup
+4.4.4.  mstep  -  Multiply Step
+4.4.5.   sub  - Subtract
+
+3
+
+i
+
+1
+3
+3
+3
+4
+4
+5
+5
+7
+7
+8
+9
+9
+10
+10
+10
+12
+13
+14
+15
+16
+17
+18
+19
+21
+21
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+33
+34
+35
+36
+37
+38
+39
+40
+41
+42
+43
+44
+
+ii
+
+4.4.6.   subnc  - Subtract with No Carry   In
+4.4.7.   and  -‘Logical And
+4.4.8.  bit  - Bit Clear
+4.4.9.   not  -  Ones Complement
+4.4.10.  or  - Logical Or
+4.4.11.   xor  - Exclusive Or
+4.4.12.  mov  - Move  Register  to Register
+4.4.13.   asr  - Arithmetic Shift Right
+4.4.14.   rotlb   -  Rotate  Left  by  Bytes
+4.4.15.   rotlcb  -  Rotate   Left  Complemented  by Bytes
+4.4.16.   sh  - Shift
+4.4.17.   nop  -  No Operation
+4.5.  Compute  Immediate  Instructions
+4.5.1.   addi  -  Add  Immediate
+4.5.2.   jpc  -  Jump PC
+4.5.3.   jpcrs  -  Jump PC  and Restore State
+4.5.4.   jspci  -  Jump  Indexed  and Store PC
+4.5.5.  movfrs  - Move   from  Special Register
+4.5.6.  movtos  - Move  to Special Register
+4.5.7.   trap  - Trap Unconditionally
+4.5.8.   hsc  - Halt  and  Spontaneously Combust
+Appendix I. Some Programming Issues
+Appendix II. Opcode Map
+11.1.   OP   Field  Bit  Assignments
+11.2.   Comp   Func  Field  Bit  Assignments
+11.3.   Opcode Map  of All  Instructions
+Appendix Ill. Floating Point Instructions
+111.1.  Format
+111.2.  Instruction  Timing
+111.3.  Load   and  Store   Instructions
+111.4.  Floating  Point   Compute  Instructions
+111.5.  Opcode  Map  of  Floating  Point  Instructions
+Appendix IV. Integer Multiplication and Division
+IV.l.  Multiplication  and  Division Support
+IV.2.   Multiplication
+lV.3.  Division
+Appendix V. Multiprecision Arithmetic
+Appendix VI. Exception Handling
+VI.l.   Interrupts
+Vl.2.  Trap On Overflow
+Vl.3.  Trap   Instructions
+Appendix VII. Assembler Macros and Directives
+VII.1.   Macros
+VII.1   .I. Branches
+VII.l.2. Shifts
+Vll.l.3.   Procedure  Call  and Return
+Vll.2.   Directives
+Vll.3.  Example
+Vll.4.   Grammar
+
+45
+46
+47
+48
+49
+50
+51
+52
+53
+54
+55
+56
+57
+58
+59
+60
+61
+62
+63
+64
+65
+67
+69
+69
+69
+71
+73
+73
+73
+73
+73
+74
+75
+75
+75
+76
+81
+83
+83
+84
+84
+87
+87
+87
+87
+87
+87
+88
+88
+
+__
+
+List   of Figures
+FiIgure  2-l  :  Word  Numbering  in  MeGory
+Fi ,gure 2-2: Bit  and Byte Numbering  in  a Word
+Fi gure  2-3: The  Processor Status Word
+Fi gure   3-l  :  Pipeline  Sequence
+Fi,gure  Ill-l:  Floating  Point  Number  Format
+Fi gure  IV-1 : Signed  Integer Multiplication
+Fi gure   IV-2:   Signed  Integer  Division
+FiIgure  VI-I  :  Interrupt  Sequence
+Fiigure  VI-2:  Trap  Sequence
+
+. . .
+111
+
+3
+3
+5
+7
+73
+77
+79
+84
+86
+
+List  of Tables
+Table 3-l : MIPS-X  Pipeline Stages
+Table  3-2: Delay  Slots  for  MIPS-X  Instruction Pairs
+Table  4-l  : Branch   Instructions
+Table   IV-I  : Number  of Cycles Needed  to  do  a Multiplication
+Table   IV-2: Number  of Cycles Needed  to do a Divide
+
+V
+
+7
+9
+32
+78
+78
+
+1
+
+1.  Introduction
+This manual describes the visible architecture of the MIPS-X processor and
+execute correct programs. MIPS-X  is a pipelined processor  that has no hardware
+system  is  responsible  for  keeping  track  of  the  timing  of  the  instructions.
+
+the  timing  information  required  to
+interlocks.  Therefore,  the  software
+
+The processor has a  load/store architecture and supports a very small number of  instructions. The  instruction set of
+the processor will be described.
+
+The  processor  supports  two  types  of  coprocessor  interfaces. One  interface  is  dedicated  to  the  floating  point  unit
+(FPU) and the other will support up to 7 other coprocessors.  These instructions will also be described.
+
+3
+
+2.   Architecture
+
+2.1.  Memory  Organization
+The memory  is composed of 32-bit words and  it  is a uniform address space starting at 0 and ending at  232-1.  Each
+memory  location  is a byte. Load/store addresses are manipulated as 32-bit byte addresses on-chip but only words can
+be read from memory (ie., only the top 30 bits are sent to the memory system). The numbering of words in memory is
+shown in Figure 2-l. Bytes (characters) are accessed by sequences of instructions that can do insertion or extraction of
+characters  into  or  from  a word.  (See Appendix  I).  Instructions  that  affect  the  program  counter,  such  as  branches  and
+jumps, generate word addresses. This means that the offsets used for calculating load/store addresses are byte offsets,
+and displacements for branches and jumps are word displacements. The addressing is consistently Big Endian [I].
+
+I
+
+I
+
+I
+
+Word  0
+
+Word  1
+
+Word  2
+
+1
+
+. . . 11
+word  23o-1
+
+Figure  2-1: Word Numbering in Memory
+
+Bytes are numbered starting with  the most significant byte at  the most significant bit end of  the word  The.bits   in a
+word  are  numbered  0  to  31  starting  at  the most  significant  bit  (MSB)   and  going  to  the  least  significant  bit  (LSB).  Bit
+and byte numbering are shown in Figure 2-2.
+
+0
+
+2
+
+,
+
+,
+
+,
+
+,
+
+,
+
+Byte  0  (MSB  end)
+
+8
+
+7
+
+,
+
+,
+
+,
+
+,
+
+,
+
+I
+
+,
+
+,
+
+15 16
+
+,
+
+9
+
+,
+
+,
+
+,
+
+,
+
+,
+
+23 24
+
+Byte 1
+
+Byte  2
+
+31
+
+3
+
+,
+
+,
+
+,
+
+,
+
+,
+
+3
+
+Byte 3 (LSB end)
+
+Figure  2-2: Bit  and  Byte  Numbering  in  a  Word
+
+The address space is divided into system and user space. An address with the high order bit (bit 0) set to one (1) will
+access user space. If the high order bit is zero (0) then a system space address is accessed. Programs executing in user
+space cannot access system space. Programs executing in system space can access both system and user space.
+
+2.2.  General  Purpose  Registers
+There are 32 general purpose registers (GPRs)  numbered 0 through 31. These are the registers named in the register
+fields  of  the  instructions.  All  registers  are  32  bits.  Of  these  registers,  one  register  is  not  general  purpose.  Register  0
+(r-0) contains the constant 0 and thus cannot be changed. The constant 0 is used very frequently so it is the value that is
+
+4
+
+stored in the constant register. A constant  register has one added advantage. One  register  is  needed  as  a  void
+destination for instructions that do no writes or instructions that are being noped because they must be stopped for some
+reason. This is implemented most easily by writing to a constant location.
+
+2.3. Special Registers
+There are several special registers that can be accessed with the Move SpeciaZ  instructions. They are:
+The processor status word. This is described in more detail in Section 2.4.
+PSW
+Locations in the PC chain used for saving and restoring the state of the PC chain.
+PC-4,  PC-1
+The mul/cliv  register. This is a special register used during multiplication and division.
+MD
+
+2.4.   The  Processor  Status Word
+The Processor Status Word (PSW)  holds some of the information pertaining to the current state of the machine. The
+PSW  actually  contains  two  sets  of  bits  that  are  called  PSWcurrenf   and  PSWother.  The  current  state  of  the  machine  is
+always  reflected  in  PSWcurrent. When  an  exception  or  trap  occurs,  the  contents  of  PSWcurrent  are  copied  into
+PSWofher.   The  e bit  is  not  saved  PSWother  then  contains  the  processor  state  from  before  the  exception  or  trap  so  that
+it  can  be  saved.  Interrupts  are  disabled,  PC  shifting  is  disabled,  overflows  are  masked  and  the  processor  is  put  into
+system state. The  I bit  is cleared  if  the exception was an  interrupt. A  jump PC and restore state  instruction  (ipcrs)
+causes  PSWother  to  be  copied  into  PSWcurrent. After the ALU cycle of the jpcrs instruction, the interrupts are enabled
+and  the  processor  returns  to  user  state  with  its  state  restored.  Appendix  VI  describes  the  trap  and  interrupt  handling
+mechanisms.
+
+The  PSW  can  be  both  read  and written while  in  system  space,  but  a write  to  the  PSW while  in  user  space  has  no
+effect. To change  the current state of  the machine via  the PSW, a move  to  special (movros)   instruction must be used  to
+write the bits in PSWcurrent. Before restoring the state of the machine, a lllove  to special instruction must be used to
+change  the bits in PSWother. All the bits are writable  except the  e bit and  the E-bit shift chain.
+
+M m
+
+u,  u
+
+The  assignment  of  bits  is  shown  in  Figure  2-3. The  bits  corresponding  to  PSWcurrent are  shown  in  upper  case  and
+those  in  lower  case  correspond  to  the  bits  in  PSWother. The  bits  are:
+The  I bit should be checked by  the exception handler.
+It  is  set  to 0 when  there  is  an  interrupt
+I, i
+request, otherwise it will be set to a 1. This bit never needs to be written but the value will be
+retained until the next interrupt or exception. The i bit contains the previous value of the I bit but in
+general has no meaning since only the I bit needs to be looked at when an exception occurs.
+Interrupt mask. When set to 1, the processor will not recognize interrupts. Can only be changed by
+a  system  process,  an  interrupt  or  a  trap  instruction.
+When  set  to 1,  the processor  is executing  in user  state. Can only be changed by a  system process,
+an  interrupt  or  a  trap  instruction.
+Set to 1 when shifting of the PC chain is enabled.
+Clear when doing an exception or trap return sequence. Used to determine whether state should be
+saved  if  another  exception  occurs  during  the  return  sequence.  This  bit  only  changes  after  an
+exception has occurred so the exception handler must be used to inspect this bit. See Appendix VI.
+The E bits make up a shift  chain that is used to determine whether the e bit needs to be cleared when
+an exception occurs. The E bits and the e bit are visible to the programmer but  cannot  be  written.
+
+s  s
+e
+
+E
+
+Processor Status Word
+
+v9 v
+09 0
+
+The overflow mask bit. Traps on overflows are prevented when this bit is set. See Section 2.4.1.
+This bit gets set or cleared on every exception. When a trap on overflow occurs, the 0 bit is set to 1
+as seen by the exception handler. This bit never needs to be written. The o bit contains the previous
+value of the 0 bit but in general has no meaning.
+
+5
+
+U 
+
+u  010  
+
+’ 
+
+’ 
+
+’ 
+
+’ 
+
+’ 
+
+’ 
+
+’ 
+
+’ 
+
+’ 
+
+’ 
+
+’ 
+
+’ 
+
+’ 
+
+’ 
+
+jEIEIEIE!eIvIVImIMji 
+
+II 
+
+Is 
+
+ISI
+
+Figure  2-3: The  Processor  Status  Word
+
+2.4.1. Trap on Overflow
+If the overflow mask bit in PSWcurrent  (V)  is cleared, then the processor will trap to location 0 (the start of all
+exception and interrupt handling routines) when an overflow occurs during ALU or multiplication/division operations.
+The  exception  handling  routine  should  begin  the  overflow   trap  handling  routine  if  the  ovefflow  bit  (0)  is  set  in
+PSWcurrent.
+
+The  V bit can only be changed while  in  system  space  so a  system call will have  to be provided  for user  space
+programs  to  set  or  clear  this  bit.
+
+2.5.  Privilege  Violations
+__
+User  programs  cannot  access  system  space. Any  attempt  to  access  system  space  will  result  in  the  address  being
+mapped to user space. Bit 0 of the address will always be forced to 1 (a user space address) in user mode.
+
+Attempting to write to the PSW while in user space will be the same as executing a rwp  instruction. The PSW is not
+changed and no other action is taken.
+
+There are no illegal instructions, just strange results.
+
+Processor Status Word
+
+Instruction  Timing
+
+3.   Instruction   Timing
+This chapter describes the MIPS-X instruction pipeline and the effects that pipelining has on the timing sequence for
+various instructions. A section is also included that describes in detail the timing of the various types of instructions.
+
+3.1.  The  Instruction  Pipeline
+MIPS-X has a S-stage pipeline with one instruction in each stage of the pipe once it has been filled. The clock is a
+two-phase  clock with  the phases  called  phase  I  (4~)  and  phase 2  (Q2).  The  names  of  the  pipe  stages  and  the  actions  that
+take place in them are described in Table 3- 1. The pipeline sequence is shown in Figure 3-l.
+
+Abbreviation
+
+Name
+
+Action
+
+IF
+
+RF
+
+Instruction  Fetch
+
+Fetch  the  next  instruction
+
+Register Fetch
+
+The instruction is decoded.
+The register file is accessed during the second half
+of  the  cycle  (Phase  2).
+
+ALU
+
+ALU Cycle
+
+An  ALU  or  shift  operation  is  performed.
+Addresses go to memory at the end of the cycle.
+
+MEM
+
+Memory Cycle
+
+Waiting for the memory (external cache) to come back on read.
+_-
+Data output for memory write.
+
+Write Back
+
+The instruction result is written to the register
+file during the first half of the cycle (Phase 1).
+
+Table  3-1: MIPS-X  Pipeline  Stages
+
+1.
+2 .
+3 .
+4 .
+5 .
+
+IF
+
+RF
+IF
+
+ALU 
+RF
+IF
+
+MEM 
+ALU 
+RF
+IF
+
+WB
+MEM  
+ALU 
+RF
+IF
+
+WB
+MEM 
+ALU 
+RF
+
+WB
+MEM 
+ALU 
+
+WB
+MJZM  
+
+WB
+
+Figure 3-1: Pipeline Sequence
+
+Instruction  Timing
+
+I
+
+8
+
+3.2.  Delays  and  Bypassing
+A delay occurs because the result of a previous instruction is not available to be used by the current instruction. An
+example is a compute instruction that uses the result of a  load instruction.
+If in Figure 3-1, instruction 1 is a  load
+instruction,  then  the  result  of  the  load  is  not  available  to  be  read  from  the  register  fde  until  the  second  half  of  WB  in
+instruction 1. The first instruction that can access the value just loaded in the registers is instruction 4 because the
+registers  are  read  on  phase  2  of  the  cycle. This means  that  there  is  a  delay of  two  instructions  from  a  load  instruction
+until the result can be used as an operand by the ALU. An instruction &lay can also be called a d&y slot where an
+instruction that does not depend on the previous instruction can be placed. This should be a nop if no useful instruction
+can be found. Delays between instructions can sometimes be reduced or eliminated by using bypassing.
+
+Bypassing allows an instruction to use the result of a previous instruction before it is written back to the register file.
+This  means  that  some  of  the  delays  can  be  reduced. Table  3-2  shows  the  number  of  delay  slots  that  exist  for  various
+pairs of instructions in MIPS-X. The table takes into account bypassing on both the results of a compute instruction and
+a  load  instruction.  For  example,  consider  the  load-address  pair  of  instructions.  This  can  occur  if  the  result  of  the  first
+load is used in the address calculation for the second load instruction. Without bypassing, there would be 2 delay slots.
+Table 3-2 shows only 1 &lay slot because bypassing will take place.
+
+The possible  implementations  for bypassing are bypassing only  to Source 1 or  to both Source 1 and Source 2. The
+implementation  of  bypassing  in MIPS-X  uses  bypassing  to  both  sources. Bypassing  only  to  Source  1 means  that  the
+benefits of bypassing can only be achieved if the second instruction is accessing the value from the previous instruction
+via  the Source I register. If the second instruction can only use the value from the previous instruction as the Source 2
+register, then 2 delay slots are required. Bypassing to both Sources eliminates this asymmetry. The asymmetry is most
+noticeable  in  the  number  of &lay  slots  between  compute  or  load  instructions  and  a  following  instruction  that  tries  to
+store the results of the compute or load instruction. Branches are also a problem because the comparison is done with a
+subtraction of Source I - Source 2. Not all branch types have been implemented because it is assumed that the operands
+can  be  reversed.  This means  that  it  will  not  always  be  possible  to  bypass  a  result  to  a  branch  instruction.  This
+asymmetry  could  be  eliminated  by  taking  one  bit  from  the  displacement  field  and  using  it  to  decide  whether  a
+subtraction  or  a  reverse  subtraction  should  be  used. The  tradeoff  between  the  two  types  of  bypassing  is  the  ability  to
+generate  more  efficient  code  in  some  places  versus  the  hardware  needed  to  implement  more  comparators.  Table  3-2
+shows  the delays  incurred  for both  implementions of bypassing.  It  is  felt  that bypassing  to both Sources  is preferable
+and the necessary hardware has been implemented
+
+Instructions  in the slot of bud  instructions  should not use  the same  register as  the one  that  is  the destination of  the
+load  instruction. Bypassing  will  occur  and  the  instruction  in  the  load  slot will  get  the  address  being  used  for  the  load
+instead of the value from the desired register.
+
+One  other  effect  of  bypassing  should  be  described.  Consider  Figure  3-1.  If  instruction  1  is  a  load  to  rl   and
+instruction 2 is a compute instruction that puts its result also in rl,  then there is an apparent conflict in instruction 3 if it
+wants  to use  rl as its Source  I register. Both  the results from  instructions 1 and 2 will want  to bypass  to  instruction 3.
+This  conflict  is  resolved  by  using  the  result  of  the  second  instruction. The  reasoning  is  that  this  is  how  sequential
+instructions will behave. Therefore, in this example instruction 3 will use the result of the compute instruction.
+
+Instruction  Timing
+
+9
+
+Instruction Pair
+(Inst 1  -  Inst  2)
+
+Delay Slots with
+Bypassing  Only
+to Source  1
+
+Delay  Slots  with
+Src llSrc2
+Bypassing
+
+Comment
+
+Load  - Compute
+Load - Address
+Load - Data
+Load - Branch
+Compute - Compute
+Compute - Address
+Compute - Data
+Compute - Branch
+
+1
+1
+2
+1
+0
+0
+2
+0
+
+1
+1
+1
+1
+0
+0
+0
+0
+
+Loaded value used as address
+Loaded value used for store data
+
+Computed  value  used  as  address
+Compute  result  used  for  store  data
+
+Table  3-2: Delay Slots for MIPS-X  Instruction Pairs
+
+3.3.  Memory  Instruction  Interlocks
+There  are  several  instruction  interlocks  required  because  of  the  organization  of  the  memory  system.  The  external
+cache is a write-back cache so it requires two memory cycles to do a store operation, one to check that the location is in
+the cache and one to do the store. This means that a store instruction must be followed by a non-memory instruction so
+that there can be two memory cycles available. For example, a store followed by a compute instruction is okay because
+the  compute  instruction  does  not  use  its MEM  cycle.  The  software  should  try  to  schedule  non-memory  instructions
+after all stores. If this is not possible, the processor will stall until the store can complete. Scheduling a nop instruction
+is not sufficient because an instruction cache miss will also generate a load cycle. This cannot be predicted so the
+hardware  must  be  able  to  stall  the  processor.
+
+There are no restrictions for instructions after a load instruction. There is a restriction that a load instruction cannot
+have  as  its  destination  the  register  being  used  to  compute  the  .address   of  the  load.  The  reason  is  that  if  the  load
+instruction misses  in  the external cache,  it will still overwrite  its destination  register. This occurs because a  late miss
+detect scheme is used in the external cache. The load instruction must be restartable.
+
+3.4.  Branch  Delays
+Besides  the  delays  that  can  occur  because  one  instruction must wait  for  the  results  of  a  previous  instruction  to  be
+stored  in a  register or be bypassed,  there are also delays because  it  takes  time  for a branch  instruction  to compute  the
+destination  for  a  taken  branch.  These are  called  branch delays  or  branch slots.  MIPS-X  has  two  branch  slots  after
+If  instruction 1  is a branch  instruction,  then  it  is not until
+-every  branch  instruction. Again, consider Figure 3-l.
+instruction 4 when the processor can decide that the branch is to be taken or not to be taken.
+
+Instruction  Timing
+
+10
+
+The  branch  slots  can  be  filled with  two  types  of  instructions. They  can  either  be  ones  that  are  always  executed  or
+ones  that must be  squashed if  the branch does not go  in  the predicted direction. Squashing means  that  the  instructions
+are  converted  into  nops by  preventing  their write  backs  from  occurring. This  is  used  if  the  branch  goes  in  a  direction
+different from the one that was predicted This mechanism is described in more detail in Section 4.3.
+
+3.5. Jump Delays
+The computation of a  jump destination address means  that  there are  two delay slots after a  jump  instruction before
+the program can begin executing at  the new address. The computation uses  the ALU  to compute  the  jump address so
+the  result  is  not  available  to  the  PC  until  the  end  of  the ALU  cycle. Unlike  branches  however,  the  instructions  in  the
+delay slots are always executed and never squashed.
+
+3.6.  Detailed  Instruction  Timings
+This section describes the timing of the instructions as they flow through the data path. It does not describe the
+controls of  the  datapath   and  the  timing  required  to  set  them  up. These  timing  descriptions  are  intended  to make more
+clear the programmer’s view of how each instruction is executed. The description of each instruction given in the later
+sections is generally insufficient when it is necessary to know the possible interactions of various instructions.
+
+The  timing  for  what  happens  during  an  exception  is  not  described  here. Appendix  VI  discusses  the  handling  of
+exceptions.
+
+The notation that will be used to describe the instruction timings will be shown first and then the execution of a
+normal  instruction will be given. The  timing  for. each  type of  instruction  is  then described  in more detail. Finally,  the
+timing for mstep and dstep are  treated separately. These are  the multiply and divide step  instructions. They do not fit  in
+with the other types of compute instructions because they use the MD register.
+
+IF-1
+$1
+$2
+rSrc1, rSrc2
+
+3.6.1.  Notation
+The description of each  type of  instruction will show what parts of  the  datapath  are active and what  they are doing
+for the instruction during each phase of execution. The notation that is used is:
+IF,RF,ALX,MEM,WB
+These  are  the  names  of  the  pipestages  as  described  in  Table  3-  1.
+This is the clock cycle before the IF cycle of the instruction being considered.
+Phase 1 of the clock cycle.
+Phase 2 of the clock cycle.
+Register values on  the Srcl and Src2 buses, corresponding  to  the Source 1 and Source 2 addresses
+specified in the instruction.
+Value to be written into the destination register specified by the Destination field of the instruction.
+The Srcl bus is used.
+aluSrc1, aluSrc2 ALU latches corresponding to the values on the Srcl and Src2 buses, respectively.
+IR
+The “instruction register.
+Memory data register for values coming onto the chip.
+MDRil-i
+Memory data register for values going off chip.
+MDRout
+
+rDes t
+
+Instruction  Timing
+
+11
+
+rResult
+PC sow
+
+The  result  register.
+The PC  source to be used for this instruction. It will be one of: the displacement adder, the trap
+vector, the incrementer,  the ALU or from the PC chain.
+The value from the PC incrementer.
+FCinc
+The last value in the PC chain.
+PC-4
+Regcn>, Regcn..m>
+Bit n or Bits n to m of register Reg.
+Reg  is  shifted  left  n.bits.
+Either rResult  or MDRin
+The onchip  instruction cache.
+Reserved  for  Stanford.
+
+Reg<<  n
+Bypass  source
+Icache
+RFS
+
+P
+
+Instruction  Timing
+
+12
+
+3.6.2.  A  Normal  Instruction
+This section will show what each part  of the datapath  is doing during each phase of  the execution of an  instruction
+The description of specific instruction types in the following sections will only describe the action of the relevant parts
+of the datapath  pertaining to the instruction in question.
+
+3
+
+3  
+
+$1
++2
+
+RFS
+PC  bus  c=   PC,,,
+Precharge tag comparators, valid bit store
+
+Do tag compare
+Valid  bit  store  access
+Icache address decoder e= FCc26..31>
+Detect Icache hit
+Precharge Icache
+Do incrementer (calculate next sequential instruction address)
+Do Icache access
+IR e= Icache
+
+RF 
+
+91
++2
+
+Do  bypass  comparisons
+aIuSrc1  c=  r&cl
+or aluSrc1~  Bypass source
+aluSrc2 c== rSrc2
+or aluSrc2 C=  Bypass source
+or aluSrc2 e= Offset value
+Displacement adder latch = Displacement value
+MDRout c= rSrc2
+or MDRout - Bypass source
+
+ALU  
+
+$1
+
+$2
+
+Do ALU, do displacement adder (for branch and jump targets)
+Frecharge Result bus
+Result bus c=  ALU
+rResult c= Result bus
+Memory address pads c= Result bus (There may be a latch here)
+
+MEM 
+
++1  
+02
+
+RFS
+MDRin = rResult
+or MDRin e= Memory data pads
+or Memory data pads e= MDRout
+
+WB  
+
+4~
+$2
+
+rDest e= MDRin
+RFS
+
+Instruction  Timing
+
+13
+
+3.6.3. Memory Instructions
+These  instructions do accesses  to memory  in  the  form of  loads  and  stores. The  coprocessor  and  floating  point
+instructions have exactly the same timings. The only difference is that the processor may not always source an operand
+or  use  an  operand  during  a  coprocessor  instruction.
+
+The MDRout   register  is  implemented  as  a  series  of  registers  to  correctly  time  the  output of  data  onto  the memory
+data pads. These registers are labelled MDRout.RF@,, MDRoutALU$,,  MDRout.ALU$,  and MDRout.MEM$,  ~
+
+IF-1  
+
+IF
+
+RF 
+
+$1
+$2
+
+$1
+
+$2
+
+$1
+$2
+
+ALU  0,
+
+$2
+
+MEM 
+
+$1
+
+RFS
+PC  bus  ti  PC,,,
+Precharge tag comparators, valid bit store
+
+Do  tag  compare
+Valid  bit  store  access
+Icache address decoder c= PC<26..3  l>
+Detect Icache hit
+Precharge Icache
+Do incrementer (calculate next sequential instruction address)
+Do Icache access
+IR   e=  Icache
+
+Do  bypass  comparisons
+aluSrc1 =  rSrc1
+or aluSrc1 e= Bypass source
+aluSrc2 (= Offset value
+MDRou~.RF~~   e=  rSrc2  (For  stores)
+or MDRou~.RF$~  = Bypass source (For stores)
+
+Do  ALU(add)
+Precharge  Result  bus
+MDRoutALU$,  e= MDRout.RF$,  (For stores)
+Result bus e ALU
+rResult e Result bus
+Memory address pads e Result bus
+MDRoutALU~, = MDRout.ALU~,  (For stores)
+
+MDRoutMEM~,  c= MDRout.ALU+2  (For stores)
+MDRin e Memory data pads (For loads)
+or Memory data pads  c= MDRou~.MEM~~  (For  stores)
+
+WB  
+
++1
+02
+
+rDest  e= MDRin (For loads)
+RFS
+
+. .
+
+Instruction  Timing
+
+14
+
+3.6.4. Branch Instructions
+These  instructions do a compare  in  the ALU. The PC value  is  taken  from  the displacement ad&r when a branch  is
+taken and from the incrementer when a branch is not taken.
+
+I
+
+IF-1  
+
+IF
+
+RF 
+
+$1
+$2
+
+$1
+
+$2
+
++1
+4 2
+
+$2
+
+RFS
+PC  bus  e=   PC,,,
+Precharge tag comparators, valid bit store
+
+Do tag compare
+Valid  bit  store  access
+Icache address decoder = PC<26.‘.3 l>
+Detect Icache hit
+Precharge Icache
+Do incrementer (calculate next sequential instruction address)
+Do Icache access
+IR e Icache
+
+Do  bypass  comparisons
+aluSrc  1 e= rSrc  1
+or aluSrc1 e= Bypass source
+aluSrc2 e= rSrc2
+or aluSrc2  t=  Bypass source
+Displacement adder = Displacement value
+
+Do ALU(Src1  - Src2),  do displacement adder (for branch target)
+Precharge Result bus
+Evaluate condition at the end of $r  before the rising edge of e2
+PC  bus e= Displacement adder (Branch taken)
+or PC  bus e= Incrementer (Branch not taken)
+Tag compare latch e= PC bus
+rResult e= Result bus
+
+MEM 
+
+WB  
+
++1 
++2
+
+$1
+$2
+
+RFS
+MDRin   c=  rResult
+
+RFS
+RFS
+
+Instruction  Timing
+
+3.65 Compute  Instructions
+These instructions are mostly 3-operand instructions that use the ALU to do an operation. Some of them do traps or
+jumps. These are treated separately in Section 3.6.6. The timing for instructions that access the speciaZ  registers is
+described  in  Section  3.6.5.1.
+
+3
+
+15
+
+IF-1  
+
+IF 
+
+RF 
+
+$1
+$2
+
+@l
+
+$2
+
+@l
+$2
+
+RFS
+PC  bus  e=  PC,,,
+Precharge  tag  comparators,  valid  bit  store
+
+Do tag compare
+Valid  bit  store  access
+Icache address decoder e= FC<26..31>
+Detect Icache hit
+Precharge Icache
+Do incrementer (calculate next sequential instruction address)
+Do Icache access
+IR  e=  Icache
+
+Do  bypass  comparisons
+aluSrc1 e= rSrc  1
+or aluSrc1 = Bypass source
+aluSrc2 e rSrc2
+or aluSrc2 = Bypass source
+or aluSrc2 c= Immediate value (for Compute Immediate Instructions)
+
+Do  ALU
+Precharge  Result  bus
+Result bus = ALU
+rResult c= Result bus
+
+MEM 
+
+wB  
+
+4~  
++2
+
+$1
+$2
+
+RFS
+MDRin + rResult
+
+rDest e= MDRin
+RFS
+
+Instruction  Timing
+
+i
+
+16
+
+3.651. Special Instructions
+These  instructions  (mvtos  and mvfrs)  access the  special registers described  in Section 2.3.
+
+IF-1  
+
+IF 
+
+RF 
+
+ALJJ  
+
+%
++2
+
+$1
+
+$2
+
+$1
+42
+
+$1
+
++2
+
+RFS
+PC  bus  e=   PC,,,
+Precharge tag comparators, valid bit store
+
+Do tag compare
+Valid  bit  store  access
+Icache address decoder e= PC<26..31>
+Detect Icache hit
+Recharge   Icache
+Do incrementer (calculate next sequential instruction address)
+Do Icache access
+IR e Icache
+
+Do  bypass  comparisons
+aluSrc  1 e= rSrc  1 (For movtos)
+or aluSrc1 t=  Bypass source (For mvt~s)
+
+Do ALU(pass  Srcl)
+Recharge Result bus
+Result bus C=  alu Srcl (For movtos)
+or Result bus e= Special Register (For movfrs)
+Special Register c= Result bus (For movtos)
+rResult C=  Result bus
+
+MEM 
+
+WB 
+
++1 
+$2
+
+91
++2
+
+RFS
+MDRin  =  rResu.lt
+
+rDest e= MDRin (For movfkr)
+RFS
+
+Instruction  Timing
+
+17
+
+3.6.6. Jump Instructions
+
+IF-1  
+
+IF 
+
+RF 
+
+ALU 
+
++1
+$2
+
+$1
+
+$2
+
+$1
+$2
+
+$1
+
+$2
+
+RFS
+PC  bus  e=  PC,,,
+Precharge  tag  comparators,  valid  bit  store
+
+Do tag compare
+Valid  bit  store  access
+Icache address decoder (=  P&26.-3  l>
+Detect Icache hit
+Precharge Icache
+Do incrementer (calculate next sequential instruction address)
+Do Icache access
+IR (z Icache
+
+b
+
+Do  bypass  comparisons
+aluSrc1 * rSrc  1
+or aluSrc1 = Bypass source
+aIuSrc2 * Immediate value (For jspci)
+
+Do ALU(add)
+Precharge  Result  bus
+Result bus  c= PCinc  (Forjspci)
+PC bus C=  ALU (For jspci)
+or PC bus e= PC-4,  shift PC chain (For@  andjpcrs)
+or PC bus e Trap vector (For  trap)
+PSWcurrent  (= PSWother  (Forjpcrs)
+rResult c= Result bus
+
+MEM 
+
++I 
+Q2
+
+WB 
+
+$1
+
+RFS
+MDRin  =  rResult
+
+rDes  t c MDRin (For jspci)
+
+Instruction  Timing
+
+18
+
+3.6.7. Multiply Step - mstep
+The  MD   register  is  implemented  as  a  series  of  q2-e1   registers. They  are  called  MDresult.+2,   MDresult.$l,
+MDmdrin.@2,  and MDwb.Q,. The names reflect the names of the bypass registers used when bypassing to the register
+file. The  special register  that  is visible for reading and writing  is MDresult.+2. This chain of registers is necessary for
+restarting  the  sequence  after  an  exception. MDwb.el contains the true value of MD. When an interrupt occurs, the
+write-back  into this register is stopped just like write-backs to a register in the register file. The value in this register is
+needed to restart the  sequence. One  cycle  after  an  interrupt  is  taken,  the  contents  of MDwb.$r   are  available  in
+h4Dresult.Q2.  This value has to be saved if the interrupt routine does any multiplication or division.
+
+The mstart  instruction has similar timing with a different ALU operation.
+
+There must be one instruction between the instruction that loads the h4D  register and the first instruction that uses the
+MD register. This occurs when starting a multiplication or division routine and when restarting after an interrupt.
+
+--
+
+IF-1  
+
+IF
+
+RF 
+
+$1
+$2
+
+41
+
+$2
+
+$1
+
+ALU 
+
+4+
+
+$2
+
+4~
+
+$2
+
+WB 
+
+RFS
+PC bus = F’C,,,
+Precharge tag comparators, valid bit store
+
+Do tag compare
+Valid  bit  store  access
+Icache address decoder C=  PC<26..3  l>
+Detect Icache hit
+Precharge Icache
+Do incrementer (calculate next sequential instruction address)
+Do Icache access
+IR e=  Icache
+
+Do  bypass  comparisons
+aluSrc1 = rSrcl<< 1
+or  aluSrc1  e= Bypass  source<< 1
+aluSrc2 e=  rSrc2
+
+Do ALU(add)
+Latch aluSrc  1
+Precharge  Result  bus
+Result bus (= ALU (MSB (MDresult.@r)  is 1)
+or Result bus e= aluSrc1  (MSB (MDresult~$+)  is 0)
+rResult = Result bus
+MDresult.$2  c== MDres~lt.~~<c  1
+
+MDresult.$r  = MDresult.$2
+MDRin (= rResult
+MDmdrin.$2  c= MDresult.+,
+
+rDest = MDRin
+MDwb.Ql  = MDmdrin.$
+RFS
+
+Instruction  Timing
+
+3.6.8. Divide Step  - dstep
+The  MD  register  is  also  used  for  this  instruction. See Section 3.6.7 for a description of its implementation and the
+notation  used
+
+19
+
+IF-1  
+
+IF
+
+RF 
+
+$1
+$2
+
+01
+
+$2
+
+$1
++2
+
+ALU 
+
+$1
+
+RFS
+PC bus e= PC,,,
+Precharge  tag  comparators,  valid  bit  store
+
+Do tag compare
+Valid  bit  store  access
+Icache address decoder * PC<26..31>
+Detect Icache hit
+Recharge  Icache
+Do incrementer (calculate next sequential instruction address)
+Do Icache access
+IR   e=  Icache
+
+Do  bypass  comparisons
+ah&cl (= rSrcl<< 1 + MSB(MDresult.~l)
+or aluSrc1 e= Bypass  source<<  1 + MSB(MDresult.$,)
+aluSrc2 e= rSrc2
+
+Do ALU(sub)
+Precharge  Result  bus
+Result bus = ALU (MSB (ALU result) is 0)
+or Result bus c= aluSrc1 (MSB (ALU result) is 1)
+rResult e Result bus
+MDresult.$,  (= MDres~lt.~~<c  1 + Complement of MSB(ALU result)
+
+_ _
+
+MEM  @,
+$2
+
+WB 
+
+4+
+
+$2
+
+MDresult.+l   c= MDres~lt$~
+MDRin  =  rResult
+MDmdrin.$  * MDresult.$
+
+rDest = MDRin
+MDwb.+l  e= MDmdrin.@,
+RFS
+
+Instruction  Timing
+
+Instruction  Timing
+
+4.  Instruction  Set
+There  are  four  different  types  of  instructions. They  are memory  instructions,  branch  instructions,  compute
+instructions, and compute immediate instructions. Coprocessor instructions are part of the memory instructions.
+
+21
+
+4.1. Notation
+This  section  explains  the  notation  used  in  the  descriptions  of  the  instructions.
+The  most  significant  bit  of  x.
+MSB(x)
+x  is  shifted  left  by  y  bits.
+x<< y
+x  is  shifted  right  by  y  bits.
+x>> y
+x  is  a  number  represented  in  base  y
+X#Y
+x is concatenated with y.
+x  II Y
+Address of the instruction being fetched during the ALU cycle of an instruction
+PCcurrent
+Address  of  the  next  instruction  to  be  fetched.
+PCnext
+The contents of CPU register n.
+WsO-0
+The contents of register n in the floating point unit (FPU).
+FM&Q
+Reg<n>,  Reg<n..m>
+Bit n or Bits n to M of register Reg.
+The contents of memory at the location addr.  The value accessed is always a word of 32 bits.
+The value of n sign extended to 32 bits. The size of n is specified by the field being sign extended.
+The register number used as the Source 1 operand
+The register number used as the Source 2 operand
+The register number used as the Destination location.
+The register number used as the Source 1 floating point operand.
+The  register  number  used  as  the  Source  2  floating  point  operand.
+The  register  number  used  as  the  Destination  floating  point  register.
+Coprocessor  instruction.
+The memory address  register. The  contents  of  this  register  are  placed  on  the  address  pins  of  the
+processor.
+The memory  data  register. The  address  pads  of  the  processor  always  reflect  the  contents  of  this
+register.
+
+Memory[addr]
+S i g nE x t e n d
+rSrc  1
+rSrc2
+rDes t
+fSrc  1
+fSrc2
+fDest
+cop1
+MAR
+
+MDR
+
+4.2.  Memory  Instructions
+The memory  instructions  are  the  ones  that  do  an  external memory  cycle. The most commonly used memory
+instructions  are  load  and  store. The  other  instructions  that  are  part  of  the  memory  instructions  are  the  coprocessor
+instructions. They do not always generate a memory cycle that is recognized by memory. Instead the coprocessor uses
+the cycle. This is explained in more &tail in the individual instruction descriptions.
+
+22
+
+4.2.1. Id - Load
+
+3
+
+Dest
+Srcl
+TY 
+OP
+l(),()(-)O, ““I ““I D 9,
+
+9
+
+9
+
+9
+
+Offset(17)
+,s 9
+
+9
+
+9
+
+9 ,,,,
+
+Assembler
+Id Offset[rSrcl],rDest
+Operation
+Reg@est)   c= Memory[SignExtend(Offset)   -t Reg(Srcl)J
+Description
+The  offset  field  is  sign  extended  and  added  to  the  contents  of  the  register  specified  by  the  Srcl  field  to  compute  a
+memory address. The contents of that memory location is put into Reg@est).
+
+Note: An  instruction  in  the slot of a  loud  instruction  that uses  the same  register as  the  load instruction  is  loading  is
+not guaranteed to get the correct result. Do not try to use the loud slots in this manner.
+
+Id
+
+Load
+
+Id
+
+4.2.2. st - Store
+
+i
+
+23
+
+TY 
+OP
+1 o,* 10,
+
+Srcl
+9 “9, 9
+
+Src2
+Offset(17)
+9
+9 ‘, ” ,9 ,,s ,I,) 9 ,,,s
+
+Assembler
+st  Offset[rSrcl]JSrc2
+Operation
+Memory[SignExtend(Offset) + Reg(Src  l)] e= Reg(Src2)
+Description
+The  offset  field  is  sign  extended  and  added  to  the  contents  of  the  register  specified  by  the  Srcl  field  to  compute  a
+memory address. The contents of Reg(Src2) are stored at that memory location.
+
+This  instruction  requires 2 memory cycles, one  to  read  the cache and  then one  to do  the store. To obtain maximum
+performance,  instructions  that do not  require a memory cycle should be scheduled after a store  instruction  if possible.
+Otherwise, the processor may stall for one cycle.
+
+-_
+
+st
+
+Store
+
+st
+
+24
+
+4.2.3. Idf - Load Floating Point
+
+Srcl
+TY 
+OP
+1(),1()(-J,‘,’ ,, P
+
+Dest
+9 ,, 9
+9
+
+9
+
+8
+
+9
+
+9
+
+9
+
+Offset(  17)
+9
+9
+9
+
+9
+
+P
+
+9
+
+9
+
+9
+
+,9
+
+Assembler
+ldf Offset [rSrc  l] ,fDes t
+Operation
+FReg@est)   c= Memory[SignExtend(Offset)  + Reg(Srcl)J
+Description
+The  offset  field  is  sign  extended  and  added  to  the  contents  of  the  register  specified  by  the  Srcl  field  to  compute  a
+memory address. The contents of  that memory  location  is put  into  the  register specified by Dest  in  the  floating point
+unit (FReg(Dest)). The CPU  ignores the data returned in the memory cycle.
+
+Note: An  instruction  in  the slot of a  load  instruction  that uses  the same  register as  the  load  instruction  is  loading  is
+not guaranteed to get the correct result. Do not try to use the loud slots in this manner.
+
+Note:  If a processor configuration does not have an FPU  then different code must be generated  to-emulate  the
+floating point instructions. Any code that tries to use FPU instructions when there is no FPU will not execute correctly.
+
+Idf
+
+Load Floating Point
+
+ldf
+
+4.2.4. stf - Store Floating Point
+
+25
+
+Src2
+TY 
+OP
+Srcl
+I(),1 I*,,,,,,” 9
+
+9,
+
+9
+
+9
+
+9
+
+9
+
+9
+
+9
+
+Offset(  17)
+,9 9
+9
+9
+
+9
+
+9
+
+9
+
+9
+
+9
+
+Assembler
+stf  Offset[rSrcl],fSrc2
+Operation
+Memory[SignExtend(Offset) + Reg(Srcl)]  (=  FReg(Src2)
+Description
+The  offset  field  is  sign  extended  and  added  to  the  contents  of  the  register  specified  by  the  Srcl  field  to  compute  a
+memory address. The contents of the floating point register specified by Src2  are stored at that memory location. The
+CPU does not put out any data during this write memory cycle.
+
+Note:  If a processor configuration does not have an FPU  then different code must be generated  to emulate  the
+floating point instructions. Any code that tries to use FPU instructions when there is no FPU wiIl not execute correctly.
+
+stf
+
+Store Floating Point
+
+stf
+
+26
+
+4.25. ldt - Load Through
+
+3
+
+OP
+TY 
+Dest
+Srcl
+Offset(  17)
+10*()11,999,9999,9999999999999999
+
+Assembler
+Idt Offset[rSrc  I],rDest
+Operation
+Reg(Dest) e= Memory[SignExtend(Offset)  + Reg(Srcl)]
+Description
+This  instruction  is  the same as  Id  except  that  it  is guaranteed  to bypass  the cache. There is no  check  to  see whether
+the location being accessed currently exists in the cache.
+
+The  offset  field  is  sign  extended  and  added  to  the  contents  of  the  register  specified  by  the  Srcl  field  to  compute  a
+memory address. The contents of that memory location is put into Reg@est).
+
+Note: An  instruction  in  the  slot  of  a  load  instruction  that  uses  the  same  register  as  the  load  instruction  is  loading  is
+_.”
+not guaranteed to get the correct result. Do not try to use the load slots in this manner.
+
+idt
+
+Load  Through
+
+ldt
+
+4.2.6. stt - Store Through
+
+27
+
+TY 
+Jl
+0 10
+
+OP
+1
+
+11
+
+9
+
+Srcl
+’
+
+9
+
+9
+
+I
+
+9
+
+Src2
+,
+9
+
+,
+
+,
+
+,
+
+9
+
+,
+
+9
+
+9
+
+Offset(  17)
+,
+9
+9
+
+,
+
+9
+
+,
+
+,
+
+9
+
+9
+
+9
+
+Assembler
+stt  Offset[rSrcl],rSrc2
+Operation
+Memory[SignExtend(Offset) + Reg(Src l)] e= Reg(Src2)
+Description
+This  instruction  is  the same as  st  except  that  it  is guaranteed  to bypass  the cache. There  is no check  to see whether
+the location being accessed currently exists in the cache.
+
+The  offset  field  is  sign  extended  and  added  to  the  contents  of  the  register  specified  by  the  Srcl  field  to  compute  a
+memory address. The contents of Reg(Src2) are stored at that  memory location
+
+--
+
+stt
+
+Store Through
+
+stt
+
+28
+
+4.2.7. movfrc - Move From Coprocessor
+
+I
+
+CS2lCD
+CSl
+Func
+COP#
+Dest
+Srcl(r0)
+OP
+TY 
+10101()o()()(),9999,99,99999,999,999
+
+I
+
+cop1
+
+I
+
+Assembler
+movfrc  CopI,rDest
+Operation
+MAR = SignExtend(Cop1)  + Reg(Src 1)
+Reg(Dest) * MDR
+Description
+This  instruction  is  used  to  do  a  Coprocessor  register  to  CPU  register  move.
+
+The Cop1  field  is sign extended and added  to  the contents of  the  register specified by  the Srcl field. The Srcl field
+should be Register 0 if the Cop1 field is to be unmodified (hackers take note). The Cop1 field will appear on the address
+lines of the processor where it can be read by the coprocessor. The coprocessor will place a value on the data bus that
+*-
+will be stored in Reg@est)  of the CPU. The memory system will ignore this memory cycle.
+
+The Cop1 field is decoded by the coprocessor-s to fmd the coprocessor being addressed (COP#)  and the function to be
+performed. A  possible  format  is  shown  above. The  fields  C’S1 and  CS2ICD   show  possible  coprocessor  register  fields.
+The format is flexible except that all coprocessors  should fmd  the COP#  in the same place.
+
+No&:  An instruction in the slot of a movfic  instruction that uses the same register that the mo#rc  instruction is
+loading is not guaranteed to get the correct result. Do not try to use the slots in this manner.
+
+movfrc
+
+Move  From  Coprocessor
+
+movfrc
+
+4.2.8. movtoc - Move To Coprocessor
+
+29
+
+TY 
+0 1 1
+
+Jl
+
+OP
+1
+
+Srcl(r0)
+110 0
+0
+0 01
+
+Src2
+’
+’
+
+’
+
+9
+
+COP#
+,
+9
+
+Func
+9
+
+9
+
+,
+
+9
+
+I
+
+I
+
+9
+
+cop1
+
+CSl
+9
+
+9
+
+9
+
+CS2lCD
+,
+,
+9
+
+I
+
+Assembler
+movtoc  CopI,rSrc2
+Operation
+MAR * SignExtend(CopI) + Reg(Src1)
+MDR = Reg(Src2)
+Description
+This  instruction  is  used  to  do  a  CPU  register  to  Coprocessor  register  move.
+
+The Cop1  field  is sign extended and added  to  the contents of  the  register specified by  the Srcl  field. The Srcl  field
+should be Register 0 if the Cop1  field is to be unmodified (hackers take note). The  Cop1  field  will  appear  on  the  address
+lines of the processor where it can be read by the coprocessor. The contents of register Src2 are placed on the data lines
+so that the coprocessor can access the value. The memory system will ignore this memory cycle.
+__
+
+The Cop1 field is decoded by the coprocessors to find the coprocessor being addressed (COP#) and the function to be
+performed. A  possible  format  is  shown  above. The  fields  CSI and  CS2ICD   show  possible  coprocessor  register  fields.
+The format is flexible except that all coprocessors should find  the COP# in the same place.
+
+movtoc
+
+Move  To  Coprocessor
+
+movtoc
+
+30
+
+4.2.9.  aluc  - Coprocessor  ALU
+
+COP#
+Srcl (rQ)
+TY 
+OP
+J1011011000001000001 9
+9
+
+1
+
+9
+
+Func
+9
+
+9
+
+9
+
+CSl
+9
+
+9
+
+9
+
+I
+
+CS2KD
+9
+9
+9
+
+[
+
+9
+1
+cop1
+
+Assembler
+aluc  Cop1
+Operation
+MAR = SignExtend(Cop1)  + Reg(Src1)
+Description
+This  instruction  is used  to execute a coprocessor  instruction  that does not require  the  transfer of data  to or from  the
+CPU.
+
+This instruction is actually implemented as:
+movfrc  CopI,rO   1
+
+The Cop1  field  is sign extended and added  to  the contents of  the  register specified by  the Srcl  field. The Srcl  field
+should be Register 0 if the Cop1 field is to be unmodified (hackers take note). The Cop1 field will appear on the address
+lines of the processor where it can be read by the coprocessor. The memory system will ignore this memory cycle.
+
+The  Cop1  field  is  decoded  by  the  coprocessor’s  to find   the  coprocessor  being  addressed  (COP#)  and  the  function  to  be
+performed. A  possible  format  is  shown  above. The fields CSI and CS2ICD  show possible coprocessor  register  fields.
+The  format  is  flexible  except  that  all  coprocessor-s  should  find   the  COP#  in  the  same  place.
+
+Note  that  this  instruction  is needed  to perform floating point ALU operations. Only floating point loads and stores
+have  special  FPU  instructions.
+
+aluc
+
+Coprocessor  ALU
+
+aluc
+
+31 
+
+.
+
+4.3.  Branch  Instructions
+As described previously  in Section 3.4, all branch  instructions have  two delay slots. The  instructions placed  in  the
+slots can be either ones  that must always execute or ones  that should be executed  if  the branch  is taken. There are  two
+flavours of branch instructions that must be used depending on the type of instructions placed in the slots. They are:
+The instructions in the slots are always executed. They are never squashed (turned into nops).
+No  squash:
+All  branches  are  statically  predicted  to  go  (be  taken). This means  that  the  instructions  in  the
+Squash  if  don’t  go:
+branch slots should be instructions from the  target instruction stream. If the branch is not
+taken, then the instructions in the slots am squashed.
+The instructions in the slots must be both of the same type. That is, they should both always execute or both be from
+the target instruction stream. If squashing takes place, both instructions in the slots are treated equally.
+
+Note  that  for best performance, it  is  best  to  try  to  find  instructions  that  can  always  execute  and  use  the  no  squash
+branch  types.
+
+Branch instructions can be put in the slot of branches that can be squashed
+
+The branch conditions are established by testing the result of
+Reg(Src 1)  -  Reg(Src2)
+where  Srcl and  Src2  are  specified  in  the  branch  instruction. The  condition  to  be  tested  is  specified  in  the COND  field
+of the branch instruction, The expressions used to derive the conditions use the following notation:
+Bit 0 of the result is a 1. The result is negative.
+N
+The  result  is  0.
+Z
+32-bit 2’s-complement overflow has occurred in the result.
+V
+A  carry  bit  was  generated  from  bit  0  of  the  result  in  the  ALU.
+C
+Exclusive-Or
+$
+Some branch conditions that are usually found on other machines do not exist on MIPS-X. They can be synthesized
+by  reversing  the  order  of  the  operands  or  comparing with  kg(O)  in Source 2  (Src2=0).   These  branches  are  shown  in
+Table  4-1  along  with  the  existing  branches.
+
+--
+
+32
+
+Branch
+
+Description
+
+Expression
+
+beq
+ke
+w
+bhi
+bhs
+ble
+blo
+blos
+blt
+bne
+bP1
+bmi
+bra
+
+Branch if equal
+Branch if greater than or equal
+Branch  if  greater  than
+Branch if higher
+Branch if higher or same
+Branch if less than or equal
+Branch if lower than
+Branch if lower or same
+Branch  if  less  than
+Branch  if  not  equal
+Branch  if  plus
+Branch  if  minus
+Branch  always
+
+z
+N@V
+(N@V)+Z
+c+z
+C
+(N@V)+Z
+c
+c+z
+N@V
+z
+3
+N
+
+Table  4-1:  Branch  Instructions
+
+Branch  To  Use
+If Synthesized
+
+blt  (rev  ops)
+blo (rev ops)
+
+bge  (rev  ops)
+
+bhs  (rev  ops)
+
+bge (cmp to Src2=0)
+blt (cmp to Src2=0)
+beq fl,fi
+
+I
+
+33
+
+4.3.1. beq - Branch If Equal
+
+SQ
+Src2 
+Srcl
+TY
+Cond
+oo,ooI,,,,,,“9 91s,
+s = 1 a Squash  if don’t go
+s = 0 3  No  squashing
+
+9
+
+9
+
+9
+
+9
+
+9
+
+9
+
+Disp(16)
+9
+9
+9
+
+9
+
+9
+
+9
+
+9
+
+9 9,
+
+;  No  squashing
+;  Squash  if  don’t  go
+
+Assembler
+h rSrc  1 ,rSrc2,Label
+beqsq rSrc  1 ,rSrc2,Label
+Operation
+If  [Reg(Src  1) - Reg(Src2)]  3  Z
+then
+PCnext  = PCcuxrent  + SignExtend@isp)
+Description
+If  Reg(Src1)   equals  Reg(Src2)  then  execution  continues  at  Label  and  the  two  delay  slot  instructions  are  executed.
+The value of Label is computed by adding PCcutrent + the signed displacement.
+
+If Reg(Src1)  does not equal Reg(Src2),  then the delay slot instructions are executed for beq and squashed  for beqsq.
+
+beq
+
+Branch  If Equal
+
+34
+
+4.3.2. bge - Branch If Greater than or Equal
+
+3
+
+Srcl
+9   9,
+9  
+
+TY
+Cond
+(-)(),I 11,  
+s = 1 3  Squash ifdon’tgo
+s = 0 * No  squashing
+
+9
+
+Src2 
+9
+9
+
+9
+
+9
+
+SQ
+Is,
+
+9
+
+9
+
+9
+
+9
+
+9
+
+9
+
+Disp(l6)
+9
+9
+9
+
+9
+
+9
+
+9
+
+9
+
+9
+
+9
+
+; No  squashing
+;  Squash  if  don’t  go
+
+Assembler
+rSrc  1 ,rSrc2,Label
+bge
+bgesq rSrc  1 ,rSrc2,Label
+Operation
+If [Reg(Srcl)  - Reg(Src2)]  * N $  V
+then
+PCnext  (z  PCcurrent + SignExtend(Disp)
+Description
+This  is  a  signed  compare.
+
+If  Reg(Src1)   is  greater  than  or  equal  to  Reg(Src2)  then  execution  continues  at  Label  and   the  two  delay   slot
+instructions are executed. The value of Label is computed by adding PCcurrent + the signed displacement.
+
+If Reg(Src1)  is less than Reg(Src2),  then the delay slot instructions are executed for bge and squashed for bgesq.
+
+Branch  If  Greater  Than  Or  Equal
+
+3
+
+35
+
+4.3.3.  bhs - Branch If Higher Or Same
+
+Disp(16)
+SQ
+Src2  
+Srcl
+TY
+Cond
+()(),01(),   9999(9999,s(999999999999799
+
+s = 1 3  Squash  if don’t go
+s = 0 + No squashing
+
+; No  squashing
+;  Squash  if  don’t  go
+
+Assembler
+rSrc  1 ,rSrc2,Label
+bhs
+bhssq rSrc  l,rSrc2,Label
+Operation
+If PReg(Srcl)  - Reg(Src2)]  3  C
+then
+PCnext  e= PCcurrent + SignExtend@isp)
+Description
+This is an unsigned compare.
+
+If  Reg(Src1)   is  higher  than  or  equal  to  Reg(Src2)  then  execution  continues  at  Label   and  the  two  delay  slot
+instructions are executed. The value of Label is computed by adding PCcurrent + the signed displacement.
+
+If Reg(Src 1) is lower than Reg(Src2),  then the delay slot instructions are executed for bhs  and squashed for bhssq.
+
+bhs
+
+Branch  If Higher Or Same
+
+bhs
+
+36
+
+4.3.4. blo - Branch If Lower Than
+
+Disp(l6)
+SQ
+Src2 
+Srcl
+Cond
+TY
+oo,110,9999,9999,s,999999999999999
+
+s = 1  =B  Squash  if don’t go
+s = 0 * No squashing
+
+; No  squashing
+;  Squash  if  don’t  go
+
+Assembler
+rSrc  1 ,rSrc2,Label
+blo
+blosq rSrc  1 ,rSrc2,Label
+Operation
+If  [Reg(Srcl)  - Reg(Src2)]  3  C
+then
+PCnext  e PCcurrent + SignExtend@isp)
+Description
+This  is  an  unsigned  compare.
+
+If  Reg(Src1)   is  lower  than Reg(Src2)  then  execution  continues  at  Label   and  the  two  delay  slot  instructions  are
+_.
+executed. The value of Label  is computed by adding PCcurrent + the signed displacement.
+
+If Reg(Src1)  is higher than or equal to Reg(Src2) or if there was a carry generated, then the delay slot instructions are
+executed for blo  and squashed for blosq.
+
+blo
+
+Branch  If  Lower  Than
+
+blo
+
+4.35 blt - Branch If Less Than
+
+37
+
+TY
+Cond
+(),() 11,
+()
+
+Srcl
+, 
+9
+
+, 
+
+,
+
+,
+
+,
+
+Src2 
+,
+,
+
+9
+
+SQ
+Is,
+
+9
+
+9
+
+9
+
+Disp(l6)
+,
+9 9,) 3
+
+,
+
+,
+
+,
+
+,
+
+,
+
+,
+
+s = 1 3  Squash  if don’t go
+s = 0  3  No squashing
+
+;  No  squashing
+;  Squash  if  don’t  go
+
+Assembler
+rSrc  1 ,rSrc2,Label
+blt
+bltsq  rSrc   l,rSrc2,Label
+Operation
+If [Reg(Src  1) - Reg(Src2)]  * N $  V
+then
+PCnext  (= PCcurrent + SignExtend@isp)
+Description
+This  is  a  signed  compare.
+
+If  Reg(Src1)   is  less  than  Reg(Src2)  then  execution  continues  at  Label   and  the  two  delay  slot  instructions  are
+__
+executed. The value of L-ubeZ  is computed by adding P&u-rent  + the signed displacement.
+
+If Reg(Src1)   is greater  than or equal  to Reg(Src2),   then  the delay slot  instructions are executed for  bit  and squashed
+for  bltsq.
+
+blt
+
+Branch If Less Than
+
+blt
+
+38
+
+4.3.6. bne - Branch If Not Equal
+
+TY
+0 Oil
+
+Cond
+0
+
+l,
+
+Srcl
+,
+
+,
+
+9 9,
+
+,
+
+Src2 
+, 9,
+
+SQ
+Is,
+
+,
+
+9
+
+9
+
+9
+
+9,
+
+Disp(l6)
+9
+9
+9
+
+9 9,) 9
+
+9
+
+s = 1 + Squash  if don’t go
+s = 0 * No squashing
+
+;  No  squashing
+;  Squash  if  don’t  go
+
+Assembler
+rSrc  l,rSrc2,Label
+bne
+bnesq rSrc  1 ,rSrc2,Label
+Operation
+If  [Reg(Srcl)  - Reg(Src2)]  * z
+then
+PCnext  = PCcurrent + SignExtend@isp)
+Description
+If Reg(Src1)  does not equal Reg(Src2) then execution continues at Label and the two delay slot instructions are
+executed. The value of Label  is computed by adding PCcurrent + the signed displacement.
+
+If Reg(Src1)  equals Reg(Src2),  then the delay slot instructions are executed for bne and squashed for bnesq.
+
+bne
+
+Branch If Not Equal
+
+bne
+
+4.4.  Compute  Instructions
+Most of the compute instructions are 3-operand  instructions that use the ALU or the shifter to perform an operation
+on  the  contents  of  2  registers  and  store  the  result  in  a  third  register.
+
+i
+
+39
+
+40
+
+4.4.1. add - Add
+
+TY 
+0
+
+1
+
+OP
+1
+
+0
+
+0
+
+Comp Func(  12)
+Dest
+Src2
+Srcl
+  ““I  99s’~““looooooollool~
+
+Assembler
+add rSrc  1 ,rSrc2,rDest
+Operation
+Reg(Dest) e= Reg(Src1)  + Reg(Src2)
+Description
+The sum of the contents of the two source registers is stored in the destination register.
+
+add
+
+Add
+
+add
+
+I
+
+41
+
+4.4.2, dstep  - Divide Step
+
+Camp  Func(  12)
+Dest
+Src2
+Srcl
+TY 
+OP
+01~0~~J”“~““1”“1000101100110[
+
+Assembler
+dstep  rSrcl,rSrc2,rDest
+Operation
+Srcl should be the same as Dest.
+
+ALUsrcl  c= Reg(Srcl)cc  1 + MSB(Reg(MD))
+ALUsrc2 c= Reg(Src2)
+ALUoutput   e= ALSJsrcl  - ALUsrc2
+
+If MSB(ALUoutput)  is 1
+then
+Reg@est)   e= ALUsrcl
+Reg(MD)  e= Reg(MD)c< 1
+else
+Reg@est)   e= ALUoutput
+Reg(MD)  (z Reg(MD)<c 1 + 1
+Description
+This is one step of a l-bit restoring division algorithm. The division scheme is described in Appendix IV.
+
+. .
+
+dstep
+
+Divide Step
+
+dstep
+
+42
+
+4.4.3. mstart - Multiply Startup
+e
+
+i
+
+TY 
+OP
+Srcl
+Comp Func(l2)
+Dest
+Src2
+Jolroooloooool”“i99’91000011100110~
+
+Assembler
+ms tart rSrc2,rDest
+Operation
+If MSB(Multiplier loaded in Reg(MD))  is 1
+then
+Reg(Dest) (= 0 - Reg(Src2)
+Reg(MD)  e= Reg(MD)ce  1
+else
+Reg(Dest) e= 0
+Reg(MD)  e= Reg(MD)cc  1
+Description
+This  is  the  first  step  of  a  l-bit  shift  and  add multiplication  algorithm  used when  doing  signed multiplication.  If  the
+most  significant  bit  of  the  multiplier  is  1,  then  the  multiplicand  is  subtracted  from  0’  and  the  result  is  stored  in
+Reg(Dest). The multiplication scheme is described in Appendix IV.
+
+mstart
+
+Multiply  Startup
+
+mstart
+
+4.4.4. mstep - Multiply Step
+
+3
+
+43
+
+TY 
+OP
+Src2
+Srcl
+Dest
+Comp Func(  12)
+01l0001   ““1”“1”9  ‘1 0 0 0 0 1 0 0 1 1 0 0 1~
+
+Assembler
+mstep rSrc  1 ,rSrc2,rDes  t
+Operation
+Srcl should be the same as Dest.
+
+If  MSB(Reg(MD))  is  1
+then
+Reg@est)  = Reg(Srcl)c<  1 + Reg(Src2)
+Reg(MD)  e= Reg(MD)c< 1
+else
+Reg@est)  = Reg(Srcl)<<  1
+Reg(MD)  = Reg(MD)c< 1
+Description
+This  is  one  step  of  a  l-bit  shift  and  add  multiplication  algorithm. The multiplication scheme  is described  in
+Appendix  IV.
+
+m s t ep
+
+Multiply  Step
+
+mstep
+
+44
+
+4.4.5.  sub  - Subtract
+
+Comp Func(  12)
+Dest
+Src2
+Srcl
+TY 
+OP
+01~100   ““1”“I’9’91000001100110[
+
+Assembler
+sub rSrc  1 ,rSrc2,rDest
+Operation
+Reg(Dest) * Reg(Src1)  - Reg(Src2)
+Description
+The Source 2 register is subtracted from the Source 1 register and the difference is stored in the Destination register.
+
+sub
+
+Subtract
+
+sub
+
+4.4.6. subnc - Subtract with No Carry In
+
+45
+
+TY 
+OP
+0111OOl   “
+
+Srcl
+“
+
+I
+
+src2
+  “
+
+“
+
+Dest
+Camp  Func(  12)
+I  ““1000000100110[
+
+Assembler
+subnc rSrc  1 ‘rSrc2,rDest
+Operation
+Reg(Dest) e Reg(Src1)  + Reg(Src2)
+Description
+The  l’s  complement  of  the  Source  2  register  is  added  to  the  Source  1  register  and  the  result  is  stored  in  the
+Destination register. This instruction is used when doing multiprecision subtraction.
+
+The following  is an example of double precision subtraction. The operation required  is C  = A - B,  where A, B and
+C are double word values.
+subnc
+rAhi,rBhi,rChi
+rAlo,rBlo,ll
+bhssq
+
+addi
+nw
+sub
+
+rChi,#l,rChi
+
+rAlo,rBlo,Clo
+
+11:
+
+;subtract high words
+;check if subtract of low
+-words
+generates  a  carry
+I
+;branch if carry set
+;add  1  to  high  word  if  carry
+
+;subtract low words
+
+subnc
+
+Subtract with No Carry  In
+
+subnc
+
+46
+
+4.4.7. and - Logical And
+
+Src2
+Srcl
+TY 
+OP
+OllOOl   “ “ I  ‘)  ‘)  I  9  “‘1
+
+0
+
+Dest
+0
+0
+
+0
+
+0
+
+0
+
+1
+
+Comp Func(  12)
+0
+0
+0
+1
+
+1~
+
+Assembler
+and rSrc  1 ,rSrc2,rDest
+Operation
+Reg(Dest) = Reg(Src1)   bitwise  and Reg(Src2)
+Description
+This is a bitwise  logical and of the bits in Source 1 and Source 2. The result is placed in Destination.
+
+and
+
+Logical  And
+
+and
+
+4.4.8.  bit   -  Bit  Clear
+
+47
+
+Comp Func(  12)
+Dest
+src2
+Srcl
+TY 
+OP
+o111oo1”“1”“l”“loooooooo1o11[
+
+Assembler
+bit   rSrcl,rSrc2,rDest
+Operation
+Reg@est)  c=  Reg(Srcl)  bitwise  and Reg(Src2)
+Description
+Each bit that is set in Source 1 is cleared in Source 2. The result is placed in Destination.
+
+bit
+
+Bit Clear  .
+
+bit
+
+I
+
+49
+
+4.4.10.  or  -  Logical  Or
+
+TY 
+OP
+Func(  12)
+01]100~““1”“1”“1000000111011[
+
+Assembler
+or rSrc  1 ,rSrc2,rDest
+Operation
+Reg(Dest) e= Reg(Src1)  bitwise  or Reg(Src2)
+Description
+bitwise  logical or of the bits in Source 1 and Source 2. The result is placed in Destination.
+
+or
+
+Logical  Or
+
+This is a 
+or
+
+50
+
+4.4.11.  xor  -  Exclusive  Or
+
+OP
+TY 
+JO 1 1 10
+
+01
+
+9
+
+Srcl
+9
+9
+
+Src2
+9
+9
+
+Dest
+9
+9
+
+9
+
+I
+
+9
+
+9
+
+I
+
+9
+
+9
+
+IO 0
+
+0
+
+Comp Func(  12)
+0 0 0
+0 1 10
+
+1
+
+l[
+
+Assembler
+xor rSrc  1 ,rSrc2,rDes  t
+Operation
+Reg(Dest) e Reg(Src1)  bitwise  exclusive-or Reg(Src2)
+Description
+This  is  a  bitwise   exclusive-or  of  the  bits  in  Source  1  and  Source  2.  The  result  is  placed  in  Destination.
+
+xor
+
+Exclusive  Or
+
+xor
+
+4.4.12.  mov  -  Move  Register  to  Register
+
+51
+
+Comp Func(  12)
+Dest
+Srcl
+TY 
+OP
+Jol~loo~““~oooool”“loooooco11ool~
+
+Assembler
+mov rSrc  1 ,rDes t
+Operation
+Reg(Dest) (= Reg( Srcl)
+Description
+This is a register to register move. It is implemented as
+add  rSrc  l,rO,rDest .
+This mnemonic is provided for convenience and clarity.
+
+mov
+
+Move  Register  to  Register
+
+mov
+
+52
+
+4.4.13.  asr  -  Arithmetic  Shift  Right
+
+TY 
+OP
+j0 110 0
+
+11
+
+’
+
+Srcl
+’
+
+’
+
+’
+
+IO 0
+
+0
+
+0 01
+
+’
+
+Dest
+’
+’
+
+’
+
+IO 0
+
+0
+
+Comp Func(  12)
+1 Olb b
+b
+
+d d d d[
+
+Assembler
+asr  rSrcl,rDest,#shift  amount
+Operation
+Reg(Dest)  e  Reg(Srcl)>>   shift amount  (See  below  for  explanation  of  shifr   amount)
+The high order bits are sign extended.
+Description
+The  contents  of  Source  1  are  arithmetically  shifted  right  by  shift  amount. The  sign of  the  result  is  the  same as  the
+sign of Source 1 s The result is stored in Destination. The range of shifts is from 1 to 32.
+
+To determine  the encoding  for  the shift amount,  first  subtract  the  shift amount  from  32. The  result  can  be  encoded  as
+5 bits. Assume the 5-bit encoding is bbbef, where bbb is used in the final encoding. The bottom two bits (&I  are fully
+decoded to yield &i&f  in the following way:
+ef
+00
+01
+10
+1 1
+
+dddd
+0001
+0010
+0100
+1000
+
+__
+
+For example, to determine the bits required to specify the shift amount for the shift instruction
+asr r4s3,#5
+first  do  (32-5)  to  get  27  and  then  encode  27  according  to  the  above  to  get  1101000.
+
+asr
+
+Arithmetic  Shift  Right
+
+asr
+
+4.4.14.  rotlb  -  Rotate  Left  by  Bytes
+
+i
+
+53
+
+Comp Func( 12)
+Dest
+Src2
+TY 
+Srcl
+OP
+011001I”“I”“I”“1000011000000[
+
+Assembler
+rotlb  rSrcl,rSrc2,rDest
+Operation
+Reg@est)  = Reg(Src1)  rotated left by Reg(Src2)<30..31>  bytes
+Description
+This  instruction  rotates  left  the  contents  of  Source  1  by  the  number  of  bytes  specified  in  bit  30  and  bit  31  of  Source  2.
+For  example,
+Reg(Src1)  = ABOlCD23#16
+Reg(Src2) = 51#16
+
+rotlb rSrc  1 ,rSr&Dest
+
+Reg(Dest) = OlCD23AB#16
+
+rotlb
+
+Rotate  Left  by  Bytes
+
+rotlb
+
+54
+
+4.4.15.  rotlcb  -  Rotate  Left  Complemented  by  Bytes
+
+3
+
+TY 
+0 
+
+OP
+1100 
+
+Srcl
+11  ” 
+
+Src2
+I 
+
+Dest
+”  ” 
+
+Comp Func(  12)
+I  ”  ” 
+10000 
+
+’ 
+
+* 
+
+10000000~
+
+Assembler
+rotlcb rSrc  1 ,rSrc2,rDest
+Operation
+Reg(Dest) c==  Reg(Src1)  rotated left by BitComplement[Reg(Src2)<30..31>]  bytes
+Description
+This instruction rotates left the contents of Source 1 by the number of bytes specified by using the bit complement of
+bits 30 and 31 in Source 2. For example,
+Reg(Src1)  = ABOlCD23#16
+Reg(Src2) = 51#16
+
+rotlcb rSrc  1 ,rSrc2,rDest
+
+Rotate amount is Bit-Complement of 01#2  = 10#2  = 2.
+Reg(Dest) = CD23AB01#16
+
+rotlcb
+
+Rotate  Left  Complemented  by  Bytes
+
+rotlcb
+
+56
+
+4.4.17. nop  - No Operation
+
+TY 
+JO 111
+
+OP
+9 0 10
+
+0
+
+00
+
+0 10
+
+0
+
+0
+
+0 0 10
+
+0
+
+0
+
+0 010 0
+
+0
+
+0
+
+Camp Func(  12)
+1
+0
+0
+0
+
+10
+
+0
+
+noP
+Operation
+t= Reg(0) + Reg(0)
+Description
+This instruction does do not much except take time and space. It is implemented as
+add rO,rO,rO
+
+noP
+
+4.5. Compute  Immediate  Instructions
+The compute  immediate  instructions have one source and one destination  register. They provide a means  to  load a
+17-bit  constant that is stored as part of the instruction. Some of the instructions are used to access the special registers
+described in Section 2.3. In general, instructions that do not fit in with any of the other groups are placed here.
+
+e
+
+57
+
+4.51.  addi  -  Add  Immediate
+
+I
+
+Assembler 
+_
+addi Src 1 ,#Immed,Dest
+Operation
+Reg@est)  C= SignExtend(Immed) + Reg(Src1)
+Description
+The value of the signed immediate constant is added to Source 1 and the result is stored in Destination.
+
+addi
+
+Add  Immediate
+
+addi
+
+i
+
+59
+
+4.5.2.   jpc   -  Jump PC
+
+TY 
+Jl
+111
+
+OP
+0 110 0
+
+0
+
+0 010 0
+
+0
+
+0 0 10
+
+0
+
+0
+
+0 010 0 0
+
+Camp  Func(  12)
+0 0
+0
+0
+0
+
+0
+
+0
+
+1
+
+l(
+
+Assembler
+jpc
+Operation
+PCnext e= PC-4
+Description
+The PC chain should have been loaded with the 3 return addresses. PCnext is loaded with the contents of PC-4
+which should contain a return address used for returning from an exception to user space.
+
+This instruction should be the second and third of 3 jumps using the addresses in the PC chain. The first jump in the
+sequence should be jpcrs  which also causes some state bits to change.
+
+jpc
+
+Jump PC
+
+.iPc
+
+60
+
+4.53.  jpcrs   -  Jump PC  and   Restore  State
+
+i
+
+Jl  111   1  110  6  0  0  010  0  0  0  010   0  0  0  010  0  0  0  0  0  0  0  0  0  1  11
+
+Assembler
+jpcrs
+Operation
+PC shifting enabled
+PSWcurrent = PSWother
+PCnext = PC-4
+Description
+The PC chain should have been loaded with the 3 return addresses. PCnext  is loaded with the contents of PC-4
+which should contain the frost  return address when returning from an exception to user space.
+
+This instruction should be the fast  of 3 jumps using the addresses in the PC chain. The next two instructions should
+be jpcs to jump to the 2 other instructions needed to restart the machine.
+
+The machine  changes  from  system  to  user  state  at  the  end  of  the ALU  cycle  of  the  jpcrs  instruction.  -The  PSW  is
+changed at this time as well.
+
+When this instruction is executed in user state, the PSW is not changed The effective result is a jump using the
+contents  of  PC-4  as  the  destination  address.
+
+jpcrs
+
+Jump PC and Restore State
+
+jpcrs
+
+4.54.   jspci   -  Jump  Indexed   and  Store  PC
+
+61
+
+Immed(  17)
+TY 
+Dest
+Srcl
+OP
+~,loo()l,,,,I,“‘I  v,,,,*,,,,,,,,,,
+
+Assembler
+jspci  rSrcl,#Imme&rDest
+Operation
+PC c= Reg(Src1)  + SignExtend(Immed)
+Reg(Dest) e= PCcment + 1
+Description
+This  instruction  has  two  delay  slots. The  address  of  the  instruction  after  the  two  &lay  slots  is  stored  in  the
+Destination register. This is the return location. The immediate value is sign extended and added to the contents of
+Source  1.  This  is  the  jump  destination  so  it  is  jammed  into  the  PC. The displacement is a 17-bit signed word
+displacement.
+
+This instruction provides a fast linking mechanism to subroutines that are called via a trap vector.
+
+jspci
+
+Jump Indexed and Store PC
+
+jspci
+
+62
+
+4.5.5. movfrs   - Move  from   Special  Register
+
+TY 
+11
+110
+
+OP
+1
+
+110 0
+
+0
+
+0 01
+
+9
+
+Dest
+’
+’
+
+’
+
+10
+
+0
+
+0
+
+0 010 0
+
+0 0
+
+Camp Func(  12)
+0 0 0
+0 01
+
+s
+
+s
+
+[
+
+Assembler
+movfrs  SpecialReg,rDest
+Operation
+Reg@est)   c= Reg(Spec)
+Description
+This instruction is used to copy the special registers described in Section 2.3 into a general register. The contents of
+the special register are put in the destination register. The value used in the Spec  field for each of the special registers is
+shown in the table below along with the assembler mnemonic.
+
+SpecialReg
+
+Psw
+md
+pcm4
+
+spec
+
+001
+010
+100
+
+__
+
+The PW  (psw)  can be read in both system and user state.
+
+A move from pcm4 causes the PC chain to shift after the move.
+
+movfrs
+
+Move  from  Special  Register
+
+movfrs
+
+4.5.6.  movtos   - Move  to   Special  Register
+
+63
+
+TY 
+OP
+110 101 ’
+11
+
+Srcl
+’
+
+’
+
+’
+
+IO 0
+
+0
+
+0 0 10
+
+0
+
+0
+
+0 010 0
+
+0 0
+
+Camp Func(  12)
+0
+0 0
+0 01
+
+[
+
+’
+9
+spec
+
+Assembler
+movtos rSrc  1 ,SpecialReg
+Operation
+Reg( Spec)  G=  Reg( Src 1)
+Description
+This instruction is used to load the special registers described in Section 2.3. The contents of the Source 1 register is
+put in the special register. The value used in the Spec  field for each of the special registers is shown in the table below
+along with the assembler mnemonic.
+
+SpecialReg
+
+Psw
+md
+pcml
+
+spec
+
+001
+010
+100
+
+._
+
+Accessing the PSW  (pw)  requires the processor to be in system state. Otherwise the instruction is a nop in user
+state.
+
+A move topcml causes the PC chain to shift after the move.
+
+After a move to md,  one cycle may be needed before an mstart  or mstep  instruction to settle some control lines to the
+ALU.
+
+movtos
+
+Move  to Special Register
+
+movtos
+
+64
+
+4.5.7.  trap   - Trap Unconditionally
+
+TY 
+111
+
+Jl
+
+OP
+1 0 10
+
+0
+
+0
+
+0 010 0 0
+
+0 010 0 0
+
+0 0 01
+
+9
+
+9
+
+Vector(8)
+9
+9
+9
+
+’
+
+9
+
+IO 1
+
+11
+
+Assembler
+trap  Vector
+Operation
+Stop  PC  shifting
+PC * Vector << 3
+PSWother = PSWcurrent
+Description
+The shifting of  the PC chain  is stopped and  the PC  is  loaded with  the contents of  the Vector  field shifted  left by 3
+bits. The PSW of the user space is saved.
+
+This  is an unconditional  trap. The  instruction  is used  to go  to a  system  space  routine  from user  space. The  state of
+.-
+the machine changes from  user to system after the ALU cycle of the trap instruction.
+
+The trap instruction cannot be placed in the first delay slot of a branch, jspci, jpc, or jpcrs  instruction. See  Appendix
+VI  for  more  details.
+
+The  assembler  should  convert  Vector  to  its  one’s  complement  form  before  generating  the machine  instruction.  ie.,
+the machine instruction contains the one’s complement of the vector.
+
+trap
+
+Trap  Unconditionally
+
+trap
+
+3
+
+65
+
+4.58.  hsc   -  Halt   and  Spontaneously  Combust
+
+TY 
+OP
+110 0
+11
+
+111
+
+1
+
+1
+
+1
+
+1 10
+
+0
+
+0
+
+0 010 0
+
+0
+
+0
+
+0
+
+0
+
+0 0 0
+
+0
+
+0
+
+0
+
+0
+
+0 0 0 01
+
+Assembler
+hsc
+Operation
+Reg(31) e= PC
+The  processor  stops  fetching  instructions  and  self  destructs.
+Note  that  the  contents  of  Reg(31)  are  actually  lost.
+Description
+This is executed by the processor when a protection violation is detected. It is a privileged instruction available only
+on the -NSA  versions of the processor.
+
+hsc
+
+Halt  and  Spontaneously Combust
+
+hsc
+
+Halt  and  Spontaneously Combust
+
+hsc
+
+I
+
+67
+
+Appendix   I
+Some  Programming   Issues
+This appendix contains some programming  issues  that must be stated but have not been  included elsewhere  in  this
+document.
+1. Address 0 in both system and user space should have a nop instruction. When an exception occurs during
+a  squashed  branch,  the  PCs  for  the  instructions  that  have  been  squashed  are  set  to  0  so  that when  these
+instructions are restarted  they will not affect any state. The  nop at address 0  is also convenient for some
+sequences when it is necessary to load a null instruction into the PC chain.
+2. The instruction cache contains valid bits for each of the 32 buffers. There is also a bit to indicate whether
+the buffer contains  system or user  space  instructions. When  it  is  necessary  to  invalidate  the  instruction
+cache entries for a context switch between user processes, a system space routine is executed that jumps to
+32 strategic locations to force all of the system bits to be set in the tags. Thus when the new user process
+begins, the cache is flushed of the previous user process. An example code sequence is shown at the end
+of  this  appendix.
+3.  After  an  interrupt  occurs,  no  registers  should  be  accessed  for  two  instructions  so  that  the  tags  in  the  bypass
+registers can be flushed. If a register access is done, then it is possible that the instruction will get values
+out of the bypass registers written by the previous context instead of the register file. This should not be a
+problem because  the PCs must be saved first anyways. Since this happens in system space, the interrupt
+handler  can  just  be  written  so  that  the  improper  bypassing  does  not  occur.
+4. There is no instruction that can be used to implement synchronization primitives such as test-and-set. The
+proposed method  is  to use Dekker’s algorithm or some other software scheme [3]  but if this proves to be
+insufficient  then  a  load-locked  instruction  can be  implemented  as  a  coprocessor  instruction  for  the cache
+controller.  This  instruction  will  lock  the  bus  until  another  coprocessor  instruction  is  used  to  unlock  id
+This can be used to implement a read-modify-write cycle.
+5. A long constant can be loaded with the following sequence:
+.data
+labell:
+. word
+.text
+Id
+
+labell[rO],r5
+
+OxABCD1234
+
+r5 now contains ABCD1234816
+6. If a privileged instruction is executed in user space none of the state bits can be changed This means that
+writing the PSW becomes a nop. Reading  the  PSW  returns  the  correct  value. Trying  to  execute  a  jpcrs
+only does a  jump  to  the address  in PC-4 and does not change  the PSW. There  is no  trap  taken  for a
+privilege violation.
+7. Characters can be inserted and extracted with the following sequences:
+For each of these examples, assume
+r2  initially  contains  stuv
+r3  initially  contains  wxyz
+where  s,  t,  u,  v,  w,  x, y and z are byte values.
+
+I
+; Byte  insertion - byte u gets replaced by w
+;
+
+addi
+rotlb
+sh
+rotlcb
+
+rO,#2,rl
+r2,rl,r2
+r3,r2,r2,#24
+r2,rl,r2
+
+; r2  <--  uvst
+;  r2  <--  vstw
+; r2 <-- stwv
+
+;
+i Extract byte  - extract byte u from r2 and place it in r3
+I
+
+addi
+rotlb
+sh
+
+r0,#2,rl
+r2,rl,r3
+r3,rO,r3,#24
+
+; r3  <--  uvst
+; r3 <-- u
+
+Programming  Issues
+
+2&,&q  2!J@b
+:_   :
+.
+. 
+. 
+.‘.‘. 
+
+jspcl  
+
+ro,xoKleaqrt-l
+
+10x187@ -  1’
+* 
+)spcl 
+lo,KMwJo
+
+10x1880-  -  l5
+* 
+jspcl 
+lo,#oxl94Qla
+
+IoIl8do:
+
+slakenop IS
+Jspcl 
+lo,#oKl88q!0
+
+3
+
+69
+
+Appendix  II
+Opcode   Map
+This  is a summary of how  the bits  in  the  instruction opcodes have been assigned. The first sections will show howI
+the  bits  in  the  OP  and  Comp  Func   fields  are  assigned.  Then  the  opcode  map  of  the  complete  instruction  set  will  be
+given.
+
+11.1. OP Field Bit Assignments
+The OP  bits  are  bits  24   in  all  instructions.  For  memory  type  instructions  the  bits  have  no  particular  meaning  by
+themselves. For branch type instructions the bits in the OP field (also known as the Corui field) are assigned as follows:
+Set to 0 if branch on condition true, set to 1 if branch on condition false
+Bit 2
+Condition upon which the branch decision is made. 00 = unused, 01 = Z, 10 = C, 11 = N @  V
+Bits  3-4
+For  compute  type  instructions  the  bits  are  assigned  as  follows:
+Set  to  1  if  the ALU  always  drives  the  result  bus  for  the  instruction
+Bit  2
+Set  to  0
+Bit  3
+Set  to  1  if  the  shifter  always  drives  the  result  bus  for  the  instruction
+Bit  4
+For  compute  immediate  type  instructions  the  bits  are  assigned  as  follows:
+Set  to  1  if  the ALU  always  drives  the  result  bus  for  the  instruction
+Bit  2
+These bits have no particular meaning by themselves
+Bits  3-4
+
+11.2.   Comp  Func  Field  Bit  Assignments
+The  Camp   Func   bits  are  bits  20  through  31  in  the compute  and  compufe   immediate  type  instructions.  The  bits  are
+_-
+assigned according to whether they are being used by the ALU or the shifter. The bits for the ALU are assigned in the
+following way:
+Bits  20-22
+Bit 23
+Bit 24
+Bit 25
+Bits  26-29
+
+Unused
+Set  to  1  for  dstep,  0  otherwise
+Set to 1 for multiply instructions (mstart,  mstep), 0 otherwise
+CarryintotheALU
+Input to the P function block.
+
+3its  30-31
+
+Srcl * Src2
+Bit  26
+Srcl  .  Src2
+Bit  27
+Srcl  l Src2
+Bit  2%
+--
+Srcl 0 Src2
+Bit  29
+Input  to  the  G  function  block.
+0  for  ALU  add  operation,  1  otherwise
+Bit  30
+0  for  ALU  subtract  operation,  1  otherwise
+Bit 31
+The  bits  for  the  shifter  are  assigned  as  follows:
+Unused
+Bits  20-21
+Set  to  1  for  funnel  shift  operation  (sh  instruction)
+Bit  22
+Set  to  1  for  arithmetic  shift  operation  (asr  instruction)
+Bit  23
+Set  to  1  for  byte  rotate  instructions  (rotlb,  rotlcb)
+Bit  24
+
+Opcode  Map
+
+70
+
+Bit  25
+Bits 2531
+
+For byte rotate instructions, set to 1 if rotlb,  0 if rotlcb
+Shift amount  for  funnel and arithmetic shift operations  (sh and asr  instructions). The  range  is 0  to
+31  bits.  Although  this  can  be  encoded  in  five  bits,  the  two  low-order  bits  are  fully  decoded;
+therefore, the field is seven bits. The two low-order bits are decoded as follows: 0 = bit 31, 1 = bit
+30, 2  =  bit  29,  3  =  bit  28.  For  example,  a  shift  amount  of  30 would  become  1110100  in  this
+seven-bit encoding scheme.
+
+Opcode Map
+
+Comments
+*
+*
+*
+
+OF
+000
+010
+100
+110
+001
+011
+101
+111
+101
+
+11.3. Opcode Map of All Instructions
+Memory Instructions
+TY
+Instruction
+Id
+10
+st
+10
+ldf
+10
+stf
+10
+ldt
+10
+stt
+10
+movfrc
+10
+movtoc
+10
+aluc
+10
+Branch  Instructions
+TY
+Instruction
+00
+beq
+he
+00
+bhs
+00
+blo
+00
+00
+blt
+bne
+00
+
+COND
+001
+111
+010
+110
+011
+101
+
+Srcl=O, *
+Srcl=O
+Srcl=O, Dest=O, *
+
+Comments
+
+Srcl=O
+
+Src2=0
+Src2=0
+
+OP
+100
+000
+000
+000
+100
+100
+100
+100
+100
+100
+100
+100
+001
+001
+001
+001
+100
+
+Comp Func
+000000011001
+000101100110
+000011100110
+000010011001
+000001100110
+000000100110
+000000100011
+000000001011
+000000001111
+000000111011
+000000011011
+000000011001
+OOOlObbbdddd
+000011000000
+000010000000
+OOlOObbbdddd
+000000011001
+
+Compute  Instructions
+TY
+Instruction
+add
+01
+dstep
+01
+mstart
+01
+mstep
+01
+sub
+01
+subnc
+01
+a nd
+01
+bit
+01
+not
+01
+or
+01
+xor
+01
+mov
+01
+asr
+01
+rotlb
+01
+rotlcb
+01
+sh
+01
+nap
+01
+Compute Immediate Instructions
+OP
+TY
+Instruction
+100
+11
+addi
+000
+11
+jspci
+101
+11
+jpc
+111
+11
+jpcrs
+11
+011
+movfrs
+010
+11
+movtos
+110
+11
+trap
+unused
+001
+11
+A star (*)  indicates an  instruction  that has  its Desf  field  in  the position where  the  Src2  field normally sits. This can
+also be determined by decoding the MSB of the type field and the middle bit of the OP field.
+
+Comp Func
+Immed
+Immed
+000000000011
+000000000011
+OOOOOOOOOrrr
+OOOOOOOOOrrr
+0vvvvvvvv011
+
+Comments
+* (Immed is a 17-bit
+*
+signed  constant)
+*
+
+rrr =  special  register
+rrr = special register
+Srcl-0, vvvvvvvv=vector
+
+Src2=0
+Src2=0, bbbdddd=rotate
+
+amount
+
+bbbdddd=rotate  amount
+Srcl=O,  Src2=0,  Dest=O
+
+Opcode   Map
+
+Opcode Map
+
+i
+
+7 3
+
+Appendix   Ill
+Floating  Point  Instructions
+This  describes  the  floating  point  opcodes  and  formats  of  the  instructions  implemented  in  the MIPS-X  Instruction
+Level Simulator (milsx).
+
+111.1.   Format
+All  floating  point  numbers  are  represented  in  one  32-bit word  as  shown  in  Fig.  III-l.  The  fields  represent  the
+following floating point number:
+(-1)”  x 2exp-  12’ x (1 + fraction) q
+This  is  an  approximate  IEEE  floating  point  format.
+
+exp (8 bits)
+,
+,
+9
+
+,
+
+,
+
+,
+
+,
+
+S
+
+I 
+
+I
+
+,
+
+,
+
+,
+
+,
+
+,
+
+,
+
+,
+
+,
+
+fraction  (23  bits)
+,
+,
+,
+,
+
+9
+
+,
+
+,
+
+,
+
+,
+
+,
+
+1
+
+,
+
+9
+
+,
+
+Figure  III-l: Floating  Point  Number  Format
+
+111.2. Instruction Timing
+All floating point instructions are assumed to take one cycle to execute. More  realistic  timing- numbers  can be
+derived by multiplying the number output by mifs  by an appropriate constant
+
+111.3.  Load  and  Store  Instructions
+There are 16 floating point registers. They are loaded and stored using the Zq and stf  instructions defined in the
+instruction set. Moves between  the  floating point  registers and  the main processor are done using  the movif and movfi
+instructions. These use the movtoc and movfrc formats defined in the instruction set. Note that only 4 of the 5 bits that
+specify a floating point register in the ldf, stf, movif and movfi  instructions are used
+
+111.4. Floating Point Compute Instructions
+The  format  of  the  floating  point  compute  instructions  is  the  one  shown  in  the  description  of  the  aZuc   coprocessor
+instruction. The coprocessor number  (COP#)   is 0  for  the  floating point coprocessor. The  Func   field specifies  the
+floating  point  operation  to  be  performed.
+
+Floating  Point
+
+111.5. Opcode Map of Floating Point Instructions
+In  the  following  table:
+rl,r2  are cpu registers from rO..r31
+fl,f2  are floating point registers from  fO..flS
+n is an integer expression
+Operation
+Func
+TY  OP
+Instruction
+f2 = fl + f2
+000000
+10 101
+fl,f2
+fadd
+f2 e= fl - f2
+000001
+10 101
+fl,f2
+fsub
+f2 * fl x f2
+000010
+10 101
+fl,f2
+fmul
+f2 * fl / f2
+000011
+10 101
+fl,f2
+fdiv
+f2 e= float(f1)
+000100
+10 101
+fl,f2
+cvtif
+10  101  000101  f2  e=  int(f1)
+fl,f2
+cvtfi
+000110 f2 = fl x f2
+10  101
+fl,f2
+imul
+10 101 000111 f2 e= fl / f2
+fl,f2
+idiv
+10 101 001000 f2  e=  fl  mod  f2
+fl,f2
+mod
+fl c= rl
+001001
+10 111
+rl,fl
+movif
+rl * fl
+10 101
+001010
+fl,rl
+movfi
+10 100
+ldf  n[rl],fl
+10 110
+n[rl],fl
+stf
+
+Comments
+Srcl=O,  Dest=O
+Srcl=O, Dest=O
+Srcl-0, Dest-0
+Srcl-0,   Dest-0
+Srcl-0,  Dest=O
+Convert  int  to  float
+Srcl-0, Dest-0
+Convert  float  to  int
+Srcl=O, Dest-0
+Integer  multiplication
+Srcl-0,  Dest=O
+Integer  division
+Srcl=O, Dest=O
+Integer  mod
+Srcl-0,  CSl-0
+Srcl-0, CS2=0
+See  instruction  page
+See  instruction  page
+
+Floating  Point
+
+7 5
+
+Appendix   IV
+Integer  Multiplication   and  Division
+This appendix describes the multiplication and division support on MIPS-X. The philosophy behind why the current
+implementation was  chosen  is  described  first  and  then  the  instructions  for  doing multiplication  and  division  are
+described.
+
+WI.  Multiplication  and  Division  Support
+The goal of the multiplication and division support in MIPS-X is to provide a reasonable amount of support with the
+smallest  amount  of  hardware  possible.  Speed  ups  can  be  obtained  by  realizing  that  most  integer  multiplications  are
+used to obtain a 32-bit  result, not a 64-bit  result. The result is usually the input to another operation, or it is the address
+of  an  array  index.  In  either  case  a  number  larger  than  32  bits would  not make  sense.  Since  the  result  is  less  than  32
+bits, one of  the operands  is most  likely  to be  less  than 16 bits or  there will be an overflow.  In general  this means  that
+only about 16 l-bit multiplication or division steps are required to generate the final answer. For very small constants,
+instructions can be generated  inline   instead of using a general multiplication or division routine. Therefore,  it was felt
+that  there was no great advantage  to  implement a  scheme  that could do more  than 1 bit at a  time  such as Booth
+mu1  tiplication.
+
+The other advantage of only generating a 32-bit  result is that it is possible to do multiplication starting at the MSB of
+the multiplier meaning that the same hardware can be used for multiplication and division. The required hardware is a
+single register, the MD register, that can shift left by one bit each cycle, and an additional multiplexer at the source 1
+input  of  the  ALU,  that  selects  the  input  or  two  times  the  input  for  the  source  1  operand.
+
+IV.2. Multiplication
+Multiplication  is done with  the simple  l-bit shift and add algorithm except  that  the computation  is started  from  the
+most significant bit instead of the least significant bit of the multiplier. The instruction that implements one step of the
+algorithm  is called  rnstep.   For
+mstep rSrc  1 ,rSrc2,rDest
+the  operation  is:
+If the MSB of the MD  register is 1
+then
+rDest   e=  2 x rSrc1 + rSrc2
+else
+rDest  = 2 x rSrc1
+
+Shift  left  MD
+
+For signed multiplication, the first step is different from the rest. If the MSB of the multiplier is 1, the multiplicand
+should be subtracted from 0. The instruction called mturt is provided for this purpose. For
+mstart  rSrc2,rDes  t
+the  operation  is
+
+*  Multiplication  and  Division
+
+76
+
+If  the MSB  of  the MD  register  is  1
+then
+rDest  e= 0 - rSrc2
+else
+rDest  C= 0
+
+Shift  left  MD
+
+To show the simplest implementation of a multiplication routine assume that the following registers have been
+assigned  and  loaded
+rMer  is the multiplier,
+rMund  is the multiplicand,
+rDest  is the result register
+rLink  is the jump linkage register.
+Then,
+m o v t o s
+nw
+mstart
+mstep
+jspci
+
+;Move  the multiplier
+;Needed  for hardware
+;Do   the  first  mstep.
+;Repeat  31 times
+;Return
+
+into  MD
+timing  reason s--see  movtos
+Result  goes into rDest
+
+rMer,rMD
+
+rMand,rDest
+rDest,rMand,rDest
+rLink,#O,rO
+
+It is possible to speed up the routine by using the assumption described previously that the numbers will not both be
+a full 32 bits long. The simplest scheme is to check to see if the multiplier is less than 8 bits long. Some statistics
+indicate  that  this  occurs  frequently.
+
+The routine shown in Figure IV-1 implements multiplication with less than 32 msteps  on average. It will actually do
+a full 32 msteps  if it is necessary. In this case it is most likely that overflow will occur and this can be detected if the V
+bit in the PSW is clear so that a trap on overflow will occur. Assume that the registers rMer,  rMand  anii  rDest  have
+been assigned and loaded as in the previous example. Two temporary registers, rTemp1  and rTemp2 are also required
+
+The number of cycles  required, not  including  the  instructions needed  for  the call sequence  is shown  in Table  IV-l.
+Compare  this with  the simple  routine using  just 32 steps which  requires 35  instructions  to do  the multiplication and a
+Booth  2-bit  algorithm  that will need about 19  instructions.  It can be observed  that  if most multiplications  require 8 or
+less rnsteps,  then this routine will be faster than just doing 32 msteps all the time.
+
+IV.3.  Division
+For division, the same set of hardware is used, except the ALU is controlled differently. The algorithm is a restoring
+division algorithm. Both of the operands must be positive numbers. Signed division is not supported as it is too hard to
+do for the hardware required [2].
+
+The dividend  is  loaded  in  the MD  register and  the register  that will contain  the remainder  (&em)   is  initialized  to 0.
+The divisor is loaded into another register called (rDor).  The result of the division (quotient) will be in MD. For
+ds  tep  rRem,rDor,rRem
+the  operation  is:
+
+Multiplication and  DiGsion
+
+I
+
+7 7
+
+;i
+;
+;
+;
+;
+;
+;
+r’
+i
+
+MUL
+
+.  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  . .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .
+i;;;ii;;i;;;;i;iirrr,~~~**,,,*,,,,*,,,,,~,,.*,,,,,,**,~*,,,,*,,,*,*,.**
+.,
+i
+;
+;
+;
+i
+:
+:
+;
+i
+
+fast, unchecked, signed  multiply
+rLink = link
+rMand  =  src2
+rDest   =  rMer   =  srcl/dest
+rTemp1  =  temp
+rTemp2  =  temp
+
+Note:
+
+This code has been reorganized
+
+MUL:
+
+asr
+bne
+sh
+movtos
+mstart
+mstep
+lmul8bit:
+mstep
+mstep
+mstep
+mstep
+jspci
+mstep
+mstep
+
+lnot8:
+
+rMer,rTemp2,#7
+rTemp2, rO,lnot8
+rO,rMer,rTempl,#24
+rTempl,md
+rMand,rDest
+rDest,rMand,rDest
+
+rDest   ,rMand,rDest
+rDest,rMand,rDest
+rDest,rMand,rDest
+rDest,rMand,rDest
+rLink,#O,rO
+rDest   ,rMand,rDest
+rDest,rMand, rDest
+
+rTemp2,#l,rTemp2
+rTemp2,rO,lmul8bit
+rMand, rDest
+rDest,rMand,rDest
+rDest,md
+rMand,rDest
+rDest,rMand,rDest
+rDest,rMand,rDest
+rDest,rMand,rDest
+rDest,rMand,rDest
+
+; Test  for  positive  8-bit  number
+
+;  assume  8  bit
+
+; may  need  nop  before  this
+
+; 8  bit  negative
+
+;  do  full  32  bits
+; may  need  nop  before  this
+
+addi
+beqsq
+mstart
+mstep
+movtos
+mstart
+mstep
+mstep
+mstep
+mstep
+
+24  msteps
+
+mstep
+jspci
+mstep
+mstep
+
+rDest,rMand,rDest
+rLink,#O,rO
+rDest,rMand,rDest
+rDest,rMand,rDest
+
+Figure  IV-l: Signed  Integer  Multiplication
+
+Multiplication  and  Division
+
+78
+
+Number of msteps needed
+
+Number of cycles with positive multiplier
+Number of cycles with negative multiplier
+
+8
+
+13 
+15 
+
+32
+
+42
+42
+
+Table  IV-l: Number of Cycles Needed to do a Multiplication
+Set ALUsrcl input to 2 x rRem + MSB(rMD)
+Set ALUsrc2 input to rDor
+ALUoutput  * ALUsrcl   - ALUsrc2
+
+If  MSB(ALUoutput)  is  1
+then
+rRem = ALUsrcl
+rMDr-2xrMD
+else
+rRem  (= ALUoutput
+rMD~2xrMD+l
+
+At the end of 32 dsteps  the quotient will be in the MD register, and the remainder is in rRem.
+
+A  routine  for  doing  division  is  shown  in Figure  IV-2. The  dividend  is  passed  in  rDend   and  the divisor  in  rDor.  At
+the end, the quotient is in MD and rQuot  and the remainder is in rRem. Note  that  rDend   and  rRem   can  be  the  same
+register, and rDor  and rQuot  can be the same register. The  dividend  and  divisor  are  checked  to  make  sure  they  are
+positive. This routine does a 32-bit by 32-bit division so no overflow can occur.
+
+The number of cycles needed, not including the calling sequence and assuming the operands are positive, is shown in
+Table  IV-2.
+
+Number of dsteps  needed
+
+Number of cycles needed
+
+8
+
+34 
+
+32
+
+60
+
+Table IV-2: Number of Cycles Needed to do a Divide
+
+Multiplication  and  Division
+
+.  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  . .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .
+,~,,,,*,*,**,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,*,,*,,,,,,,,,,,,,,,,,,,*,
+
+79
+
+0
+
+fast, unchecked, signed  divide  (should  check  for  zero  divide)
+rLink  =  link
+rDend,rRem = srcl
+rDor  =  rQuot   =  src2/dest
+(trashed)
+rTemp1  =  temp
+(trashed)
+rTemp2  = temp
+
+;
+;
+; DIV
+i
+;
+i
+:
+i
+(dividend)
+;
+;
+( d i v i s o r / q u o t i e n t )   ;
+;
+;
+i
+;
+;
+;
+;
+This code has been reorganized
+Note:
+;
+;
+;
+;
+. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .
+;;;;;;*l*,,**,*,,,,*,,,*,,*,,,,,,,,,*,,***~~*,,**,,~,~~~~~*,,**,,~~~,~,*,
+DIV:
+
+rDend,rTemp2
+rDend,rO,lcinitl
+
+; dividend  >  0  ?
+
+lcinitl:
+
+mov
+he
+nap
+nw
+sub
+
+M-q
+addi
+nw
+sub
+sub
+addi
+
+lcinit2:
+
+bltsq
+movtos
+mdv
+sh
+movtos
+beq
+mov
+addi
+ldivfull:
+addi
+ldivloop:
+dstep
+dstep
+ldivloopr:
+dstep
+dstep
+dstep
+dstep
+dstep
+addi
+dstep
+bnesq
+dstep
+dstep
+movfrs
+Jw=
+nap
+nap
+sub
+
+lcinit3:
+
+jspci
+nw
+nap
+
+rO,rDend,rDend
+
+rDor,rO,lcinit2
+rO,#Oxff,rTempl
+
+rO,rTemp2,rTemp2
+rO,rDor,rDor
+rO,#Oxff,rTempl
+
+rTempl,rDend,ldivfull
+rDend,md
+r0 ,rRem
+rO,rDend,rDend,#8
+rDend,md
+rO,rO,ldivloop
+rO,rRem
+rO,#8,rTempl
+
+'rO,#32,rTempl
+
+rRem,rDor,rRem
+rRem,rDor,rRem
+
+rRem,rDor,rRem
+rRem,rDor,rRem
+rRem,rDor,rRem
+rRem,rDor,rRem
+rRem,rDor,rRem
+rTempl,#-8,rTempl
+rRem,rDor,rRem
+rTempl,rO,ldivloopr
+rRem,rDor,rRem
+rRem,rDor,rRem
+md,rQuot
+rTemp2,rO,lcinit3
+
+; make dividend > 0
+
+;  divisor  >  0  ?
+;  check  for  8-bit  dividend
+
+; rTemp2 > 0 if positive result
+; make divisor  >  0
+
+;  do  8-bit  check
+;  start  32-bit  divide
+
+; shift  up  divisor  to  do  8  bits
+;  start  8-bit  divide
+
+; loop  counter
+
+; do  full  32  dsteps
+
+; decrement  loop  counter
+
+: get  result
+; check  if  need  to  adjust  sign  of  result
+
+rO,rQuot,rQuot
+
+rLink,#O,rLink
+
+; adjust sign  of result
+; return
+
+Figure W-2: Signed  Integer  Division
+
+Multiplication  and  Division
+
+Multiplication  and  Division
+
+i
+
+81
+
+Appendix  V
+Multiprecision   Arithmetic
+Multiprecision  arithmetic  is  not  a  high  priority  but  it  is  desirable  to  make  it  possible  to  do.  The  minimal  support
+necessary will be provided. The most straightforward way to do this would seem to be the addition of a carry bit to the
+PSW. However, this turns out to be extremely difficult.
+
+The  following  program  segments  are  examples  of  doing  double  precision  addition  and  subtraction.  The  only
+addition required to the instruction set is the Subtract with No Carry (subnc) instruction. This is only an addition to the
+assembly language and not to the hardware.
+
+Assume that there are 2 double precision operands (A and B) and a double precision result to be computed (C).
+Assume that the necessary registers have been loaded.
+;Double  precision  addition
+
+add
+sub
+bhssq
+
+addi
+nw
+add
+
+rAhi,rBhi,rChi
+rO,rBlo,rClo
+rAlo,rClo,ll
+
+rChi,#l,rChi
+
+rAlo,rBlo,rClo
+
+11:
+
+*Double   precision  subtraction
+I
+
+subnc
+bhssq
+
+rAhi,rBhi,rChi
+rAlo,rBlo,ll
+
+addi
+nap
+sub
+
+rChi,#l,rChi
+
+rAlo,rBlo,Clo
+
+11:
+
+;add  high  words
+;get -rBlo;   branch  does  subtract
+;check  to see if carry generated
+;branch if carry set
+;add  1  to  high  word  if  carry
+
+;add  low  words
+
+;subtract high words
+;check if subtract of low
+*words  generates a carry
+I
+;branch  if  carry  set
+;add  1  to  high  word  if  carry
+
+;subtract low words
+
+Multiprecision  Arithmetic
+
+82
+
+Multiprecision  Arithmetic
+
+83
+
+Appendix  VI
+Exception   Handling
+An exception  is defined as either an event  that causes an  interrupt or a  trap  instruction  that can be  thought of as a
+software interrupt. The two sequences cause similar actions in the processor hardware. Because there is a branch delay
+of 2, three PCs from the PC chain must be saved and restarted on an interrupt. Three PCs are needed in the event that a
+branch has occurred and fallen off the end of the chain. The two branch slot instructions and the branch destination are
+saved for restarting. Restarting a trap is slightly different and is explained later. See Section 2.4 for a description of the
+PSW  during  interrupts,  exceptions,  and  traps.
+
+VIA.  Interrupts
+Interrupts are asynchronous events  that  the programmer  has no control over. Because  there are several  instructions
+executing at the same time, it is necessary to save the PCs of all the instructions currently executing so that the machine
+can be properly restarted after an interrupt. The PCs are held in the PC chain. When an interrupt occurs, the PC chain
+is frozen (stops shifting in new values) to allow the interrupt routine to save the PCs of the three instructions that need
+to be restarted These are the PCs of the instructions that are in the RF, ALU and MEM cycles of execution. This
+means  that  no  further  exceptions  can  occur  while  the  PCs  are  being  saved. When  the  interrupt  sequence  begins,  the
+interrupts  are  disabled,  PSWcwrent   is  copied  into  PSWother  and  the  machine  begins  execution  in  system  state.  The
+contents of PSWother  should be saved if interrupts are to be enabled before the return from the interrupt. The contents
+of the MD register must also be saved and restored if any multiplication or division is done.
+If the interrupt routine is
+very short and interrupts can be left off, it is possible to just leave the PC chain frozen, otherwise the three PCs must be
+saved. To save the PCs use movfrs  with PC-4 as the source. The PC chain shifts after each read of PC-4.
+_-
+
+The interrupt routine will start execution at location 0.
+It must  look at a  register  in  the  interrupt controller  to
+determine how to handle the interrupt. This sequence is yet to be specified.
+
+To  return  from  an  interrupt,  interrupts must  first  be  disabled  to  allow  the  state  of  the machine  to  be  restored. The
+PSW must be  restored and  the PC chain  loaded with  the  return addresses. The PC chain  is  loaded by writing  to PC-l
+and  it  shifts  after  each  write  to  PC-l.  The  instructions  are  restarted  by  doing  three  jumps  to  the  address  in  PC-4   and
+having  shifting  of  the  PC  chain  enabled  This means  that  the  addresses will  come  out  of  the  end  of  the  chain  and  be
+reloaded at the front in the desired order.
+
+It will cause PSWother to be copied to PSWcurrent with
+The first of the three jumps should be a jpcrs  instruction.
+the interrupts turned on and the state returned to user space. The machine state changes after the ALU cycle of the first
+jump. The last two instructions of the return jump sequence should bejpc instructions.
+
+A  problem  arises  because  an  exception  could  occur  while  restarting  these  instructions.  The  PC  chain  is  now  in  a
+state  that  it  is not possible  to  restart  the sequence again using  the standard sequence of  first saving  the PC chain. The
+start of an exception sequence should fust  check the e bit in the PSW to see whether it is cleared. The e bit will be set
+only when the PC chain is back in a normal state. If it is clear, then the state of the machine should not be resaved. The
+state  to use  for  restart  should  still be available  in  the process descriptor  for  the process being  restarted when  the
+
+Exception  Handling
+
+84
+
+lret:
+
+inst
+;:
+inst
+inst
+C
+--- interrupt ---
+d
+inst
+e
+inst
+
+;Instructions  a, b and c are restarted
+
+save:
+
+inthlr:  bra  to  save  if  e  bit  set
+Do necessary fixes
+bra  nosave
+Save  PSWother
+Save  MD
+movfrs  pcm4,rA
+pcm4,rB
+movfrs
+movfrs  pcm4,rC
+nosave: Enable interrupts
+.
+Process interrupts
+.
+Disable interrupts
+Restore  MD
+Restore PSWother
+rA,pcml
+movtos
+rB,pcml
+movtos
+rC,pcml
+movtos
+jpcrs
+jpc
+jpc
+execution begins at label lret
+
+;Start  of interrupt handler
+;e  bit  clear  so  don't  save  PC  chain
+
+;do  save  if  interrupts  to  be  enabled
+*if  necessary
+isave  PCs if necessary
+
+;if  necessary  and  above  saving  done
+
+*if  necessary
+I
+-if  necessary
+I
+;restore  PCs
+
+-This
+changes  the  PSW  as  well
+I
+;Doesn't  touch  PSW
+
+Figure  VI-l:  Interrupt  Sequence
+exception occurred. The sequence for interrupt handling is shown in Figure VI-l.
+
+Vl.2.  Trap On Overflow
+A trap on overflow (See Section 2.4.1) behaves exactly like an interrupt except that it is generated on-chip instead of
+externally. This interrupt can be masked by setting the V bit in the PSW.
+
+When a  trap on overflow occurs,  the 0 bit  is set  in  the PSW. The exception handling  routine must check  this bit  to
+see if an overflow is the cause of the exception.
+
+V1.3.   Trap  Instructions
+Besides the Trap on Overflow,  there is only one other type of trap available. It is an unconditional vectored trap to a
+system space routine in low order memory. After the ALU cycle of the trap instruction the processor goes into system
+state  with  the  PC  chain  frozen.  The  instruction  before  the  trap  instruction  will  complete  its WB  cycle.  The  PSW  is
+saved by copying PSWcurrent to PSWother as described in Section 2.4. PSWcurrent  is  loaded as  if  this were an
+interrupt.
+
+Exception  Handling
+
+8 5
+
+Before interrupts can be turned on again, some processor state must be saved. The return PCs are currently in the PC
+chain. Three PCs must be read from the PC chain and the third one saved in the process descriptor. It is the instruction
+that is in the RF cycle. The instruction corresponding to the PC in MEM completes so it need not be restarted. The PC
+in the ALU cycle should not be restarted because it is the trap instruction. PSWother must be saved so that the state of
+the prior process is preserved. If PSWother is not saved before interrupts are enabled, then another interrupt will smash
+the PSW of the process that executed the trap before it can be saved
+
+All trap instructions have an g-bit  vector number attached to them. This provides 256 legal trap addresses in system
+space.  These  addresses  are  8  locations  apart  to  provide  enough  space  to  store  some  jump  instructions  to  the  correct
+handler.  If  this  is not enough vectors, one of  the  traps can  take a  register as an argument  to determine  the action
+required.
+
+The return sequence must disable interrupts, restore the contents of PSWother and MD if they were saved and then
+disable PC shifting so that the return address can be shifted into the PC chain. Two more addresses must be shifted in
+as well so that the restart will look the same as an interrupt. This can be done by loading the addresses of two nop
+instructions into the PC chain ahead of the return address. Three jumps to the addresses in the PC chain are then
+executed using jpcrs and twojpcs. The first jump will copy the contents of PSWother into PSWcurrent and turn on PC
+shifting. The processor state changes after the ALU cycle of the jpcrs.  The change of state also enables interrupts and
+puts  the  processor  in  user  space.
+
+If an interrupt occurs during the return sequence then
+determine whether the state should be saved.
+
+the  interrupt handler will look at the  e  bit  in  the PSW  to
+
+The flow of code for taking a trap and returning is shown in Figure VI-2.
+
+Exception  Handling
+
+86
+
+.
+
+trap
+
+vecnum
+
+lret:
+
+pcm4,rO
+vecnum:  movfrs
+movfrs  pcm4,rO
+movfrs  pcm4,r31
+Save PSWother
+Save  MD
+Enable interrupts
+
+iinstruction  before trap
+-trap  instruction
+#
+;save  this one to restart
+;if  necessary
+*if  necessary
+I
+*if necessary and above saving done
+,
+
+Process  requested  trap
+.
+Disable interrupts
+Restore MD
+Restore  PSWother
+rO,pcml
+movtos
+rO,pcml
+m o v t o s
+r31,pcml
+m o v t o s
+jpcrs
+jpc
+jpc
+execution begins at label lret
+
+;movtos  x,pswc   where  x  has  M  bit  set
+-if  necessary
+,
+*if  necessary
+,
+;assume a nop at 0
+
+*instruction
+I
+
+after  trap
+
+Figure VI-2: Trap Sequence
+
+Exception  Handling
+
+3
+
+87
+
+Appendix  VII
+Assembler   Macros  and  Directives
+This appendix’  describes the macros and directives used by the MIPS-X assembler. Also provided is a full grammar
+of the assembler for those that need more detail.
+
+*
+
+VII.1. Macros
+Several  macros  are  provided  to  ease  the  process  of  writing  assembly  code. These allow low level details to be
+hidden, and ease the generation of code for both compilers and assembly language programmers.
+
+VII.1  .I. Branches
+The assembler synthesizes these instructions by reversing the operands and using a bit  or a bge
+bgt,  ble
+instruction.
+
+VII.1.2.  Shifts
+lsr, Is1
+
+These instructions are synthesized from the sh instruction. For example:
+lsr rl,r2,#4
+shifts rl four bits right and puts the result in r2.
+
+VII.1.3.  Procedure  Call and Return
+pjsr subroutine,#expl,reg2 A simple procedure call. The stack pointer is decremented by expl.  The return address is
+stored on the stack. On return, the stack pointer is restored. Reg2 is used as a temporary.
+No  registers  are  saved.
+
+ipjsr reg 1 ,#exp 1 ,reg2
+ipj sr exp2,reg  1 ,#expl ,reg2 A call to a subroutine determined at run time. The particular subroutine address must be
+in a register (regl) or be addressable off a register (exp2  + regl). The stack pointer and
+the return address handling is identical to pjsr.  Reg2 is used as a temporary.
+Jump  to  the  return  address  stored  by  a  pjsr   or  ipjsr  macro.
+
+ret
+
+.data
+
+.end
+.eop
+
+Vll.2.  Directives
+Signals  the beginning or  resumption of  the  text segment. This allows code  to be grouped  into one
+.text
+area. Labels in the text segment have word values.
+Signals the beginning or resumption of the data segment. Labels in the data segment have byte
+values. Ordering within the data segment is not changed.
+Signals the end of the module.
+Signals the end of a procedure. No branches are allowed to cross procedure boundaries. This
+directive was  added  to  reduce  the memory  requirements  of  the  assembler. Reorganization  can  be
+done by procedure instead of by module.
+Allows  a  string  literal  to  be  put  in  the  data  segment..
+Initializes a word of memory.
+
+.ascii  “xxx”
+.word exp
+
+‘Provided  by  Scott McFarling
+
+Assembler Macros  and  Directives
+
+88
+
+.float number
+id = exp
+
+.def id = exp
+.noreorg
+xeorgon
+.comnmi~n
+*glob1  id
+
+Jit rl,r2,...
+.lif r5,rlO,...
+
+Initializes  a  floating  point  literal.
+Sets  an  assembly-time  constant. This allows a code generator  to emit co& before  the value of
+certain offsets  and  literals  are  known. The  assembler will  resolve  expressions  using  this  identifier
+for aliasing calculations etc.
+Sets a link-time constant The identifier will be global.
+Allows reorganization to be turned off in local areas.
+Turns reorganization back on.
+Defines a labeled common area of n words. Common area names are always global.
+Makes an  identifier global or accessible outside  the module. The  .globl  statement must  appear
+before  the  id  is  otherwise  used.  All  procedure  entry  points  should  be  made  global,  otherwise  the
+code may be removed as dead.
+
+Give a list of registers that are live for the following branches. lit is for registers live if the branch
+is taken and  .lif is for registers live if the branch is not taken. Liveness information is used for
+interblock reorganization and branch scheduling.
+
+Vll.3. Example
+;program   1+1  =  2?
+.data
+labell:
+. word 1
+.text
+.globl  -main
+main:
+-
+
+error:
+
+.end
+
+trap
+ret
+
+1
+
+Id
+addi
+addi
+bne
+ret
+
+labell[rO],rl
+rl,#l,rl
+r0,#2,r2
+rl,r2,error
+
+{ comment = ;.*  1
+
+statement
+
+Vll.4. Grammar
+.
+file
+i file line
+: 
+\n
+line
+1 COMMENT \n
+I statement COMMENT \n
+1  statement  \n
+:  label
+1  binALUState
+1  monALUState
+I  specstate
+I  nopstate
+I  addistate
+I  jspcistate
+I  shiftstate
+I  loadstate
+I  storestate
+I  branchstate
+I  copstate
+I  miscstate
+I  directstate
+
+Assembler Macros  and  Directives
+
+-_
+
+i
+
+89
+
+label
+binALUState
+binALUOp
+
+monALUState
+monOp
+specstate
+specialReg
+
+nopstate
+addistate
+jspcistate
+shiftstate
+
+loadstate
+
+storestate
+
+branchstate
+
+branchOp
+
+branchSqOp
+
+copstate
+
+I  macrostate
+..
+{ ID must be in column 1  )
+ID  :
+..
+binALUOp  reg,reg,reg
+.
+ADD
+i
+SUB
+I
+OR
+I
+XOR
+I
+ROTLB
+I
+ROTLCB
+I
+MSTEP
+I
+DSTEP
+I
+SUBNC
+I
+BIC
+I.
+monOp reg,reg
+i.
+MSTART reg,reg
+NOT
+i.
+MOV
+MOVTOS reg,specialReg
+i.
+MOVFRS   specialReg,reg
+MD
+i
+PSW
+PCM4
+I
+PCMl
+I..
+NOP
+..
+ADDI   reg,#exp,reg
+..
+JSPCI  reg,#exp,reg
+.
+ASR  reg,reg,#exp
+i
+SH  reg,reg,reg,#exp
+LSR  reg,reg,#exp
+I
+LSL  reg,reg,#exp
+I.
+LD  exp[reg],reg
+i
+LD  #exp,reg
+{ adds constant to literal pool and loads it  1
+I LDT exp[reg],reg
+I LDF exp[reg],freg
+.
+i ST  exp[reg],reg
+STT exp[reg],reg
+I STF exp[reg],freg
+.
+i branchop  reg,reg,ID
+branchSqOp reg,reg,ID
+I BRA  ID
+.
+i BEQ
+BNE
+I BGE
+I BGT
+I BHI
+I BHS
+I BLE
+I BLO
+I BLS
+I BLT
+.
+i BEQSQ
+BNESQ
+I BGESQ
+I BGTSQ
+I BHISQ
+I BHSSQ
+I BLESQ
+I BLOSQ
+I BLSSQ
+I BLTSQ
+.. MOVTOC exp,reg
+
+Assembler Macros  and Directives
+
+.-
+
+( string:  ,re*m  )
+
+I MOVFRC exp,reg
+I ALUC exp
+I  floatBinOp   freg,freg
+I  floatMonOp   freg,freg
+I  MOVIF  reg,freg
+MOVFI freg,reg
+FADD
+FSUB
+FMUL
+FDIV
+IMUL
+IDIV
+MOD
+CVTIF
+CVTFI
+TRAP  exp
+JPC
+JPCRS
+TEXT
+DATA
+END
+EOP
+ASCII STRING
+WORD exp
+FLOAT FLOATCONSTANT
+ID = exp
+=  exp
+DEF  ID
+REORGON
+NOREORG
+COMM ID,INT
+GLOBL  ID
+LIT liveList
+LIF liveList
+r-3
+liveList,reg
+PJSR ID,#exp,reg
+li
+IPJSR  reg,#exp,reg
+IPJSR  exp,reg,#exp,reg
+I
+RET
+I.
+exp addOp term
+i
+- factor
+term
+I.
++
+i.
+term multOp factor
+i
+factor
+*
+.
+:  ( exp )
+I  ID
+1 INT
+I  HEXINT
+: REG
+:  FREG
+
+90
+
+floatBinOp
+
+floatMonOp
+miscstate
+
+directstate
+
+liveList
+
+macrostate
+
+ew
+
+addOp
+term
+multOp
+factor
+
+reg
+freg
+
+notes:
+
+( like C:  Oxl2fc   )
+{  rO..r31  )
+{  fO..f15  1
+
+1) only labels and directives may start in column 1
+2) Keywords are shown in upper case just to make them
+In reality, they  MUST  be  lower  case.
+stand out.
+3) directives begin with a  ' Of
+
+Assembler Macros  and  Directives
+
+91
+
+References
+
+PI
+
+PI
+
+131
+
+Cohen, Danny.
+On Holy Wars and a Plea for Peace.
+IEEE Computer  14(  10):48-54,  October, 1981.
+Gill, J., Gross, T., Hennessy, J., Jouppi, N., Pxzybylski, S. and Rowen,  C.
+Summary   of  MIPS  Instructions.
+Technical  Note  83-237,  Stanford  University,  November,  1983.
+Lamport,  Leslie.
+A  Fast  Mutual  Exclusion  Algorithm.
+Technical  Report  7,  DEC  Systems  Research  Center,  November,  1985.
+
+

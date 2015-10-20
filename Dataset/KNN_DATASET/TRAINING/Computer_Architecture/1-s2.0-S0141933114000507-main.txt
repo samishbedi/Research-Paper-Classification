@@ -1,0 +1,3957 @@
+Microprocessors and Microsystems 38 (2014) 826–842
+
+Contents lists available at ScienceDirect
+
+Microprocessors and Microsystems
+
+j o u r n a l h o m e p a g e : w w w . e l s e v i e r . c o m / l o c a t e / m i c p r o
+
+Protecting QDI interconnects from transient faults using
+delay-insensitive redundant check codes
+Guangda Zhang a,⇑
+, Wei Song a, Jim Garside a, Javier Navaridas a, Zhiying Wang b
+a School of Computer Science, University of Manchester, Manchester M13 9PL, UK
+b School of Computer, National University of Defense Technology, Changsha 410073, China
+
+a r t i c l e
+
+i n f o
+
+a b s t r a c t
+
+Article history:
+Available online 18 April 2014
+
+Keywords:
+Asynchronous circuits
+Quasi-delay-insensitive (QDI) interconnects
+Fault tolerance
+Transient fault
+1-of-n
+Error-correcting code
+
+Asynchronous circuit design is a promising technology for large-scale multi-core systems. As a family of
+asynchronous circuits, Quasi-delay-insensitive (QDI) circuits have been widely used to build chip-level
+long interconnects due to their tolerance to delay variations. However, QDI interconnects are vulnerable
+to faults. Traditional fault-tolerant techniques for synchronous circuits cannot be easily used to protect
+QDI interconnects. This paper focuses on protecting QDI interconnects from transient faults. The ﬁrst con-
+tribution of this paper is a fault-tolerant delay-insensitive redundant check code named DIRC. Using DIRC
+in 4-phase 1-of-n QDI pipelines, all 1-bit and some multi-bit transient faults are tolerated. The DIRC and
+basic pipeline stages are mutually exchangeable. Arbitrary basic stages can be replaced by DIRC ones to
+strengthen fault-tolerance. This feature permits designers to use DIRC ﬂexibly according to the practical
+design requirement. The second contribution is a redundant technique protecting the acknowledge wires
+(RPA). Experimental results indicate that DIRC pipelines have moderate area and speed overheads. Com-
+pared with unprotected basic pipelines, the average speed decrease of DIRC pipelines is less than 50%,
+with the 128-bit 1-of-2 DIRC pipeline only 28% slower. In severe environments with multi-bit transient
+faults, the fault-tolerance capability of DIRC pipelines increases thousands-fold.
+Ó 2014 The Authors. Published by Elsevier B.V. This is an open access article under the CC BY license
+(http://creativecommons.org/licenses/by/3.0/).
+
+1. Introduction
+
+The advancing semiconductor manufacturing technology con-
+tinuously increases the number of transistors and wires integrated
+in a single chip, bringing a multi-core or many-core era. However,
+the reduced transistor dimensions, the increase of clock frequency
+and the decrease of critical charge intensify the frailty of electronic
+devices to environmental variations, which consequently acceler-
+ates the occurrence of transient faults [1,2]. The vulnerability of
+circuits to faults is aggravated [2]. For these reasons, fault-toler-
+ance becomes an essential design objective for critical digital sys-
+tems, especially those in highly specialized ﬁelds such as
+aerospace, military and medical equipment.
+Coming along with the multi-core era, it is increasingly difﬁcult
+to distribute a high-speed clock signal over a very-large-scale inte-
+gration circuit with acceptable clock skews, which is a challenge
+for traditional synchronous designs. Asynchronous circuits provide
+a fundamental solution to problems caused by clocks [3] due to
+their clockless nature. They also present potential advantages in
+
+⇑ Corresponding author.
+E-mail addresses: zhangga@cs.man.ac.uk, zhanggd.nudt@gmail.com (G. Zhang).
+
+power consumption, modularity, composability and robustness,
+which has attracted many researches in recent years [3,4].
+Networks-on-chip (NoCs) [5] are the state-of-the-art infrastruc-
+tures for scalable and efﬁcient on-chip communications [4]. Imple-
+menting a NoC using asynchronous circuit has the potential of
+simplifying timing closure, reducing power and resolving chip-
+level synchronization issues. Consequently, asynchronous NoCs
+are thought to be better candidates than their synchronous coun-
+terparts for current and future multi-core systems [4,6–8].
+As an important issue in the design of asynchronous NoCs, the
+large number of long wires, which are exposed to environmental
+noises and faults, may lead to delay variations and glitches [9].
+Quasi-delay-insensitive (QDI) circuits [3] are a family of asynchro-
+nous circuits that tolerate all delay variations but they are vulner-
+able to glitches. Occasionally, an erroneous transition may be
+accepted as a valid signal, producing a fault in QDI circuits.
+This paper proposes a new coding scheme that signiﬁcantly
+improves the tolerance of 4-phase 1-of-n QDI interconnects to
+transient faults, namely the delay-insensitive redundant check
+(DIRC) code [10]. The DIRC coding scheme tolerates all 1-bit tran-
+sient faults and some multi-bit transient faults. Furthermore, it can
+be easily adopted in all existing 1-of-n QDI pipelines to provide
+
+http://dx.doi.org/10.1016/j.micpro.2014.04.002
+0141-9331/Ó 2014 The Authors. Published by Elsevier B.V.
+This is an open access article under the CC BY license (http://creativecommons.org/licenses/by/3.0/).
+
+G. Zhang et al. / Microprocessors and Microsystems 38 (2014) 826–842
+
+827
+
+fault-tolerance. Since the DIRC code is systematic, it allows the
+DIRC stages to be placed arbitrarily in an unprotected QDI pipeline,
+thus some certain pipeline segments can be protected. According
+to the practical fault-tolerance requirement, the DIRC pipeline
+using different construction patterns can provide enough fault-tol-
+erance for the communication infrastructure with a moderate and
+reasonable hardware overhead, making DIRC especially attractive
+to large-scale communication-centered fabrics such as NoCs and
+buses.
+Another fault-tolerant technique, RPA (redundant protection of
+acknowledge wires), is proposed to protect the acknowledge wires
+from 1-bit transient faults. It has extremely low area overhead and
+can be used independently of DIRC.
+The QDI pipeline using DIRC and RPA provides both timing-
+robustness and fault-tolerance. A 128-bit DIRC 1-of-2 pipeline is
+only 28% slower than an unprotected basic pipeline, while the
+fault-tolerance capability increases thousands-fold.
+This paper is organized as follows: Section 2 introduces some
+necessary background of asynchronous circuits and the impact of
+transient faults on QDI interconnects. Section 3 presents related
+works. Section 4 describes the DIRC coding scheme and Section 5
+demonstrates the hardware implementation of the DIRC pipeline.
+Section 6 evaluates the hardware overhead of DIRC pipelines and
+studies different DIRC construction patterns. Section 7 reveals
+detailed experimental results of DIRC pipelines. Finally this paper
+is concluded in Section 8.
+
+2. QDI pipelines and the impact of transient faults
+
+2.1. Asynchronous protocols and 4-phase QDI pipelines
+
+Asynchronous communication is controlled by handshake pro-
+tocols, including 4-phase and 2-phase ones [3]. 4-phase protocols
+are level-triggered protocols which require a reset (or return-to-
+zero) phase (Fig. 1a). 2-phase protocols are edge-triggered where
+each transition of the acknowledge signal starts a new data trans-
+mission (Fig. 1b). In a 4-phase pipeline, valid data are separated by
+spacers while in a 2-phase pipeline, data symbols are transmitted
+consecutively. In general, 4-phase protocols are more widely used
+than 2-phase ones for their implementation simplicity.
+QDI circuits assume that both the delays of gates and wires are
+arbitrary, positive and bounded. No delay assumption other than
+the isochronic-forks [3] is used. As a result, QDI circuits are robust
+
+phase
+
+1st  handshake
+set
+reset
+
+2nd  handshake
+set
+
+data
+
+Data
+
+Data
+
+ack
+
+(a) 4-phase
+
+phase
+
+1st  handshake 2nd  handshake
+set
+set
+
+data
+
+Data
+
+Data
+
+...
+set
+
+Data
+
+ack
+
+(b) 2-phase
+
+Fig. 1. Handshake protocols.
+
+to delay variations. For these requirements, QDI circuits use delay-
+insensitive (DI) codes (or unordered codes [11–13]) to encode data,
+whose arrival can be detected using a completion detector (CD).
+The 1-of-n code is one of the most utilized DI codes due to its sim-
+plicity [4,6–8]. As the two extensively used 1-of-n codes, 1-of-2
+and 1-of-4 codes are presented in Fig. 2. This paper focuses on
+improving the fault-tolerance of 4-phase QDI interconnects using
+1-of-n codes.
+Fig. 3 shows an unprotected 4-phase 1-of-n QDI pipeline, which
+contains S parallel sub-pipelines. Each sub-pipeline contains n data
+wires transmitting one 1-of-n code. To latch incoming data, each
+pipeline stage is divided into S slices, each of which contains n C-
+elements acting as asynchronous latches. Acting as a sub-CD, an
+OR-gate notiﬁes the arrival of a 1-of-n code. To synchronize the
+data transmission of all sub-pipelines, the CDs of all slices are con-
+nected to a multi-input C-element producing a common acknowl-
+edge signal (ack), whose positive transition denotes a full data
+word is latched. The inverse of this common acknowledge signal
+(iack) is then used to drive the previous stage. The OR-gates and
+the multi-input C-element are usually regarded as the CD of a pipe-
+line stage. On long interconnects, buffers are often inserted to
+increase signal strength.
+
+2.2. Impact of transient faults on QDI pipelines
+
+Transient faults, including positive (‘0’ ? ‘1’ ? ‘0’) and negative
+(‘1’ ? ‘0’ ? ‘1’) ones, can be provoked by noise [14], electromag-
+netic interference, electrostatic discharge [2] or radiation [15]. A
+transient fault usually lasts for a short period and causes an error
+when it is captured by a memory component (such as a C-ele-
+ment). The typical phenomenon of a transient fault is a bit-ﬂip, also
+known as a glitch.
+This paper concentrates on protecting the long wires between
+two pipeline stages from 1-bit transient faults (Fig. 3). Multi-bit
+faults rarely occur although they result in more severe damage
+than 1-bit faults.
+In the presence of transient faults, QDI pipelines behave differ-
+ently from synchronous ones due to their clockless nature. A fun-
+damental difference between QDI and synchronous circuits is the
+timing reference of data words. In synchronous circuits, the clock
+signal acts as a timing reference controlling the data transmission.
+Each bit of a data word typically has a constant latency require-
+ment which can be agreed between the transmitter and the recei-
+ver. Faults are therefore only able to corrupt the value of some data
+words. QDI circuits have no such timing reference. Data-validity is
+implicitly encoded within the data word, which controls its own
+transmission. As a result, the corrupted data words caused by
+faults can disorder the data transmission. In other words, faults
+on QDI pipelines may produce fake data-validity or remove the
+correct data-validity, resulting in erroneous data insertions or data
+removals. Conventional fault-tolerant techniques used in synchro-
+nous circuits cannot be easily adopted in QDI pipelines.
+A fault model is built to analyse the impact of 1-bit transient
+fault. Fig. 4 shows two adjacent pipeline slices. The fault may occur
+on any of the n data wires. To identify the position of a fault, the
+
+Binary 
+1-of-2 codes 
+Spacer 
+00
+0 
+01 
+1 
+10 
+(a) 1-of-2codes
+
+Binary 
+1-of-4 codes 
+Spacer 
+0000 
+00 
+0001 
+01 
+0010 
+10 
+0100 
+1000 
+11 
+(b) 1-of-4codes
+
+Fig. 2. 1-of-n codes.
+
+828
+
+G. Zhang et al. / Microprocessors and Microsystems 38 (2014) 826–842
+
+data_in0,0
+
+data_in0,n-1
+
+data_in
+
+data_in1
+
+n
+
+data_inS-1
+
+n
+
+iacki
+
+acki-1
+
+Stagei
+
+C
+.
+.
+C
+.
+
+...
+
+Slice1
+
+.
+.
+.
+SliceS-1
+
+Stagei-1
+C
+.
+.
+C
+.
+latch
+
+...
+
+Slice1
+
+.
+.
+.
+SliceS-1
+
+fault
+
+...
+
+...
+
+sub-CD
+
+...
+
+...
+
+...
+C
+
+iacki+1
+
+...
+acki
+
+...
+
+...
+
+...
+C
+
+...
+iacki+2
+...
+acki+1
+
+Stagei+1
+
+Slice0
+
+Slice1
+
+.
+.
+.
+SliceS-1
+
+Fig. 3. A 4-phase 1-of-n QDI asynchronous pipeline.
+
+data_out0
+
+data_out
+
+data_out1
+
+data_outS-1
+
+...
+C
+
+acki+2
+
+Stagei-1
+C
+.
+.
+.
+C
+acki-1
+
+victim wire
+...
+data_in
+...
+
+.
+.
+.
+
+fault
+data_in0
+
+data_inn-1
+
+iack
+
+...
+acki
+
+Stagei
+C
+.
+.
+.
+C
+
+data_out0
+data_out
+.
+.
+.
+data_outn-1
+
+CD
+acki+1
+
+Fig. 4. Fault happens on a sub-pipeline for one 1-of-n code.
+
+wire that should carry the correct ‘1’ is deﬁned as the ‘‘active’’ wire
+while the others are ‘‘inactive’’ wires (Fig. 5). The wire affected by a
+fault is denoted as the ‘‘victim’’ wire (Fig. 4).
+Not every transient fault causes an error. Some transient faults
+are masked automatically during their propagation by intrinsic
+masking factors of the circuit [15]. For the asynchronous latch built
+from C-elements (Fig. 6), when iack is low, positive faults at the
+input are masked. When iack is high, negative faults are masked.
+However, if the transition of a fault is the same as the level of iack,
+the fault may be latched, resulting in a transient error. The key
+issue of fault-tolerant QDI pipelines is to prevent faults from being
+incorrectly latched. To analyse all the fault occasions of a sub-pipe-
+line stage, the proposed fault model divides one handshake period
+into two intervals (iackþ and iack ).
+
+2.2.1. Fault with a positive iack
+When iack is high, the pipeline is susceptible to positive faults.
+Both active and inactive wires can be the victim, leading to an inva-
+lid 1-of-n code insertion or 2-of-n code insertion.
+
+1.
+
+Invalid 1-of-n code insertion: A positive fault on an inactive
+wire may be latched and outputted before the arrival of the
+next valid code, producing an invalid 1-of-n code insertion
+and an early drop of iack. As shown in Fig. 7a, if the valid
+code comes so late that a full reset phase of the invalid code
+
+a handshake period
+set
+reset
+
+data_in0
+
+data_inn-1
+
+.
+.
+.
+
+ack
+
+active wire
+
+inactive wires
+
+Fig. 5. Active and inactive wires.
+
+in
+
+out='0'
+
+C
+iack='0'
+(a) Masked positive fault
+
+out='1'
+
+in
+
+C
+iack='1'
+
+(b) Masked negative fault
+
+Fig. 6. Faults masked by C-elements.
+
+has ﬁnished, the invalid code is inserted into the code
+sequence. Otherwise, if the valid code overlaps with the
+reset phase (iack ) caused by the invalid code (Fig. 7b), it
+may be erased as the previous stage is mistakenly reset
+by the wrong iack.
+A positive fault on the active wire may also lead to cases of
+Fig. 7a and b when the fault makes iack go low earlier than
+the arrival of the valid data. The difference is the inserted 1-
+of-n code by the fault is valid. Therefore, the situation of
+Fig. 7b will not make errors while the situation of Fig. 7a
+will output one valid code twice, which can be taken as
+an invalid spacer insertion.
+Invalid 2-of-n code insertion: As shown in Fig. 7c, a positive
+fault on one of the inactive wires is latched and outputted,
+causing an overlap period between the invalid ‘1’ (fault)
+and the valid ‘1’ (original), resulting in an invalid 2-of-n
+code at the output.
+
+2.
+
+2.2.2. Fault with a negative iack
+When iack is low, all positive faults are masked and the pipeline
+is only vulnerable to negative faults happening on the active wire.
+
+2.
+
+1. Early spacer (not errors): A negative fault happening on the
+active wire may cause an early spacer (Fig. 8a), which is tol-
+erated by QDI pipelines.
+Invalid 1-of-n code insertion: A negative fault may lead to a
+premature reset phase. If iack already goes high when the
+transient fault elapses, as shown in Fig. 8b, the original
+valid code will be outputted twice, leading to an invalid
+code insertion.
+
+2.2.3. Deadlocks caused by transient faults
+Invalid code insertions may cause deadlocks when considering
+a full pipeline with multiple sub-pipelines. As an example, Fig. 9a
+depicts the correct operation of two adjacent pipeline stages
+(Stagei-1 and Stagei), each of which contains two 1-of-n slices. d0
+
+G. Zhang et al. / Microprocessors and Microsystems 38 (2014) 826–842
+
+829
+
+positive fault
+
+data_in
+
+1-of-n
+
+1-of-n
+
+iack
+
+data_out
+
+1-of-n
+
+1-of-n
+
+(a) Invalid 1-of-n code insertion (valid code is outputted later)
+
+positive fault
+
+data_in
+
+1-of-n
+
+1-of-n
+
+iack
+
+data_out
+
+1-of-n
+
+(b) Invalid 1-of-n code insertion (valid code is erased)
+
+positive fault
+
+data_in
+
+1-of-n
+
+2-of-n 1-of-n
+
+iack
+
+data_out
+
+1-of-n
+
+2-of-n
+
+(c) Invalid 2-of-n code insertion
+
+Fig. 7. Transient faults happen when iack is high.
+
+negative fault
+
+data_in
+
+1-of-n
+
+1-of-n
+
+iack
+
+data_out
+
+1-of-n
+
+(a) Early spacer
+
+negative fault
+
+data_in
+
+1-of-n
+
+1-of-n
+
+iack
+
+data_out
+
+1-of-n
+
+1-of-n
+
+(b) Invalid 1-of-n code insertion
+
+Fig. 8. Transient faults happen when iack is low.
+
+and d1 are two 1-of-n codes. A positive fault at the input of Stagei
+creates a false 1-of-n code fd1 on data ini which is mistakenly
+latched and sets the acknowledge signal acki high (Fig. 9a). Conse-
+quently, the valid d1 which arrives late at Stagei-1 cannot be latched
+due to the high acki . Stagei-1 keeps waiting for a low acki to latch d1
+and then the data can be removed from data ini in the next reset
+
+data_ini-1
+
+d0
+
+(d0, d1)
+
+acki-1
+
+data_ini
+
+acki
+
+d0
+
+(d0, d1)
+
+(a) Correct situation
+
+data_ini-1
+
+d0
+
+(d0, d1)
+
+positive fault
+fd1
+(d0,fd1)
+
+d0
+
+acki-1
+
+data_ini
+
+acki
+
+(b) Deadlocked situation
+
+Fig. 9. Deadlock caused by transient faults on data wires.
+
+phase while Stagei keeps waiting for the removal of data ini , lead-
+ing to a deadlock.
+
+2.2.4. Transient faults on acknowledge wires
+Fault-tolerance of acknowledge wires is a serious issue which
+has been ignored by many existing fault-tolerant designs. Faulty
+acknowledge signals may lead to faulty situations similar to the
+above ones. An example is shown in Fig. 10 where data out i 1
+and data out i are outputs of Stagei-1 and Stagei respectively. acki
+is the acknowledge signal of Stagei. Fig. 10a shows the correct sit-
+uation of these signals. Fig. 10b shows the faulty situation where a
+positive fault happens on acki indicating that a valid code has been
+latched by Stagei, causing Stagei-1 to reset. When the fault disap-
+pears, Stagei-1 starts a new transmission of ‘‘0100’’, which may be
+latched with the ﬁrst data word, leading to an invalid 2-of-n code
+(‘‘0101’’) insertion.
+
+data_outi-1
+
+0001
+
+0100
+
+0001
+
+0100
+
+(a) Correct situation
+
+0001
+
+0100
+
+positive fault
+
+0001
+
+0101  
+
+data_outi
+
+acki
+
+data_outi-1
+
+data_outi
+
+acki
+
+(b) Incorrect situation
+
+Fig. 10. Transient faults on acknowledge wires.
+
+830
+
+2.3. Summary
+
+G. Zhang et al. / Microprocessors and Microsystems 38 (2014) 826–842
+
+In summary, a 1-bit transient fault on QDI pipelines may cause
+an invalid 1-of-n code insertion or an invalid 2-of-n code insertion,
+which may even lead to a deadlock, resulting in a failure of the
+pipeline. Acknowledge signals are equally critical to the handshake
+process. Faults on acknowledge wires also cause various errors.
+This paper tries to use separate methods to protect both data wires
+and acknowledge wires from transient faults.
+
+3. Background and related work
+
+Fault-tolerance can be achieved by redundancy, including spa-
+tial, temporal and information redundancy. These fault-tolerant
+techniques can be classiﬁed into two categories: code redundancy
+and circuit redundancy techniques. Code redundancy uses error-
+detecting codes or error-correcting codes to detect or correct
+errors. The others belong to circuit redundancy using special hard-
+ware designs to achieve fault-tolerance.
+
+is able to tolerate transient and permanent errors but introduces
+large area overhead due to the extra de-interleaving and Hamming
+decoding processes.
+Another unordered systematic code named Zero-Sum [13,23]
+provides both 1-bit error correction and 2-bit error detection for
+asynchronous links. Its extensions [13] provide more fault-toler-
+ance with the price of a larger hardware overhead. A time-out
+mechanism is required to constrain the bit arrival intervals.
+For circuit redundancy technique, Ogg et al. [24] proposed a
+technique utilizing the phase relationships between data symbols
+and a redundant reference symbol to achieve transient-fault-
+tolerance. An asynchronous interfacing scheme using parity check
+codes has been proposed for globally asynchronous locally syn-
+chronous (GALS) systems [20]. TMR has been used in a GALS sys-
+tem to achieve fault-tolerance [25].
+Although these techniques seem promising, none of them can
+be easily used in QDI interconnects. This paper focuses on provid-
+ing fault-tolerance for QDI interconnects with code redundancy
+while keeping the timing-robust nature.
+
+3.1. Systematic codes
+
+3.4. QDI designs
+
+Using code redundancy, the original data words are encoded
+into systematic or non-systematic codes [13,16]. A non-systematic
+code has only one inseparable ﬁeld so that extra decoders are
+required to extract the original data.
+A systematic code, on the other hand, comprises of an informa-
+tion ﬁeld and a check ﬁeld. The information ﬁeld contains the ori-
+ginal data while the check ﬁeld is a redundant check word used to
+correct errors. One of the beneﬁts of using systematic codes is that
+the original data words are untouched during their transmission so
+that no extra data extraction is needed. This feature allows gener-
+ating check words and correcting errors at discontinuous pipeline
+stages, the pipeline segment between which is protected. Com-
+pared with the pipeline using non-systematic codes where the
+check word generation and error-correction operations are usually
+executed at adjacent stages (including the data extraction), the
+pipeline using systematic codes can be constructed in a more ﬂex-
+ible way to protect some speciﬁc pipeline segments according to
+the practical fault-tolerance requirement. As a result, the area
+overhead can be largely reduced (Section 6.2).
+
+3.2. Traditional fault-tolerance methods
+
+Belonging to systematic codes, parity check codes, cyclic redun-
+dancy check codes [17] and Hamming codes [18] have been widely
+used for fault-tolerance purposes. However, using them along with
+DI codes, the generated check word and the original data must be
+DI as well, which is a big challenge. Most existing asynchronous
+designs [19,20] that use these traditional error-detecting or
+error-correcting codes are (partly) bundled-data designs rather
+than QDI, which are similar to synchronous circuits.
+Triple Modular Redundancy (TMR) is another well-known tech-
+nique. Using TMR, all components (usually including the voter
+[21]) are tripled, making the circuit more than three times larger.
+A synchronization among the three replicas is also required, which
+compromises the speed. TMR is expensive and often used in special
+ﬁelds with an extremely high requirement on fault-tolerance.
+
+3.3. Non-QDI designs
+
+For code redundancy techniques, an unordered systematic code
+[22] using parity check codes can correct 1-bit error and detect
+completion simultaneously on 4-phase asynchronous links. Using
+several fault-tolerant methods [19], a self-timed bundled-data link
+
+As for QDI designs, Bainbridge and Salisbury [9] proposed a ser-
+ies of fault-tolerant techniques which increase the robustness of
+the circuits but not enough for fault-immunity. Jang and Martin
+[21] proposed a duplicated double-checking technique which tol-
+erates 1-bit faults and some multi-bit faults. The fault-tolerant buf-
+fer using this technique is three times larger and runs twice slower
+than the normal one. Some circuit redundancy techniques [26,27]
+can also be used in QDI circuits, but their duplication is area-
+consuming.
+In addition, Pontes et al. [28,29] used temporal redundancy to
+tolerate transient faults on 1-of-n QDI pipelines. Peng and Manohar
+[30] proposed a failure-detection technique for pipelined QDI cir-
+cuits which can achieve fail-stop with respect to permanent and
+transient errors. Kuang et al. [31] studied the fault-tolerance of
+Null convention logic QDI circuits.
+
+4. Delay insensitive redundant check coding scheme
+
+4.1. Arithmetic rules of m-of-n codes
+
+Before presenting the fault-tolerant coding scheme, some arith-
+metic rules of m-of-n (1 6 m < n) codes are deﬁned.
+Let i be an integer less than n ð0 6 i < nÞ; its 1-of-n code repre-
+sentation is an n-bit vector Dn ðiÞ where the ði þ 1Þ th bit is high (e.g.
+D4 ð2Þ = ‘‘0100’’). The basic arithmetic rule of 1-of-n codes is deﬁned
+as (1)–(3).
+For two integers a and b,
+ð1Þ
+Dn ðaÞ ¼ Dn ða mod nÞ
+  Dn ðaÞ ¼ Dn ð aÞ ¼ Dn ð a mod nÞ ¼ Dn ðn   aÞ
+ð2Þ
+Dn ðaÞ þ Dn ðbÞ ¼ Dn ðða þ bÞ mod nÞ
+ð3Þ
+Transient faults may mutate a 1-of-n code into m-of-n ðm P 2Þ.
+To extend the arithmetic rules of 1-of-n codes to m-of-n codes, a
+position set Am ¼ ða0 ; a1 ; . . . ; am 1 Þ ð1 6 m 6 nÞ is deﬁned to iden-
+tify the positions of
+the m ‘1’s in an m-of-n code. Let
+S
+Dn ðAm Þ ¼ Dn ða0 ; a1 ; . . . ; am 1 Þ be an m-of-n code. A union operation
+is used in (4) to construct an m-of-n code with m 1-of-n codes,
+[
+which is denoted by the symbol ‘‘
+’’.
+m 1
+
+Dn ðai Þ
+Dn ðAm Þ ¼ Dn ða0 ; a1 ; . . . ; am 1 Þ ¼
+i¼0
+¼ Dn ða0 Þ [ Dn ða1 Þ [ . . . [ Dn ðam 1 Þ
+
+ð4Þ
+
+G. Zhang et al. / Microprocessors and Microsystems 38 (2014) 826–842
+
+831
+
+The arithmetic rules of m-of-n codes are shown in (5) and (6),
+[
+[
+[
+which are unions of multiple 1-of-n operations.
+m 1
+m 1
+m 1
+Dn ð ai Þ
+½ Dn ðai Þ ¼
+Dn ðai Þ ¼
+[
+[
+[
+[
+i¼0
+m0  1
+m0  1
+m 1
+m 1
+Dn ðbj Þ ¼
+
+i¼0
+Dn ðAm Þ þ Dn ðBm0 Þ ¼
+
+i¼0
+Dn ðai Þ þ
+
+  Dn ðAm Þ ¼  
+
+Dn ðai þ bj Þ
+
+i¼0
+j¼0
+j¼0
+i¼0
+Taking a 1-of-4 code D4 ð3Þ and a 2-of-4 code D4 ð3; 2Þ for exam-
+ple, we have:
+Þ ¼  ½D4 3ð Þ [ D4 2ð Þ ¼ D4  3ð
+ D4 3; 2ð
+Þ [ D4  2ð
+¼ 0110;
+
+Þ ¼ 0010 [ 0100
+
+ð6Þ
+
+ð5Þ
+
+Þ ¼ ½D4 3ð Þ þ D4 3ð Þ [ ½D4 3ð Þ þ D4 2ð Þ
+D4 ð3Þ þ D4 3; 2ð
+¼ D4 ð2Þ [ D4 ð1Þ ¼ 0110:
+
+4.2. DIRC coding scheme
+
+The proposed DIRC coding scheme is based on the arithmetic
+rules of m-of-n codes. Its deﬁnition is given below:
+
+Deﬁnition 4.1 (DIRC Code). Let X ¼ ðx0 ; x1 ; . . . ; xCN 1 Þ ðCN P 2Þ be
+a data vector containing CN 1-of-n codes. A delay-insensitive
+redundant check word c can be generated from X using a check
+word generating process. Each xi , as well as the check word c, is 1-
+of-n. Together they comprise a DIRC code word ðx0 ; x1 ; . . . ; xCN 1 ; cÞ
+containing ðCN þ 1Þ 1-of-n codes.
+It can be found that the DIRC code is systematic: the informa-
+tion ﬁeld contains the original 1-of-n data while the check ﬁeld
+is a single 1-of-n check word.
+X
+4.2.1. Check generating and error correcting processes
+The check word generating process f ðX Þ is deﬁned as (7):
+c ¼ f ðX Þ ¼
+ð7Þ
+X ¼ x0 þ x1 þ    þ xCN 1
+An arbitrary data word xj in a DIRC code word ðx0 ; x1 ; . . . ; xCN 1 ; cÞ
+can be regenerated using the error correcting process gðX–j Þ deﬁned
+in (8), where X–j ¼ ðx0 ; . . . ; xj 1 ; xjþ1 ; . . . ; xCN 1 ; cÞ and x0
+"
+ 
+!
+#
+j is the regen-
+X
+X
+erated data word of xj .
+CN 1
+CN 1
+xi ¼    c þ
+
+j ¼ g ðX –j Þ ¼ c  
+x0
+
+ð8Þ
+
+xi
+
+i¼0;i–j
+
+i¼0;i–j
+
+In (8), subtraction has been transferred to addition so that both the
+check generating and error correcting processes can be imple-
+mented using the same addition unit (Section 5). Fig. 11 gives
+examples of the DIRC coding scheme for several 1-of-n codes, where
+the CN > 2 case can also be inferred.
+
+4.2.2. Error ﬁltering
+For any data word xi ð0 6 i < CNÞ in a DIRC code ðx0 ; x1 ; . . . ;
+xCN 1 ; cÞ, the regenerated data word x0
+i is the same as xi if no faults
+occur. Under the assumption of a 1-bit transient fault, either xi or
+x0
+i may be altered by a fault but not both. To obtain the error-free
+data word, an error ﬁlter hðxi ; x0
+i Þ is deﬁned in (9), where ‘‘&’’ denotes
+the logical operation of a C-element. The ﬁnal error-free data is
+CN 1 Þ.
+X 00 ¼ ðx00
+0 ; x00
+1 ; . . . ; x00
+i ¼ hðxi ; x0
+i Þ ¼ xi & x0
+i ¼ xi & g ðX –i Þ
+ð9Þ
+x00
+A fault on xi is ﬁltered using (9) because x0
+i is calculated from other
+fault-free codes. If the fault adds an extra ‘1’ to x0
+i , the faulty ‘1’ will
+be ﬁltered since xi is correct. What is important is whether a fault
+on X–i will erase the valid ‘1’ in x0
+i .
+
+x0
+01
+
+c
+x1
+01
+01
+10
+10
+10
+01
+10
+10
+01
+(a ) 1-o f-2 codes
+c
+x1
+x0
+001
+001
+010
+010
+100
+100
+010
+001
+100
+010
+001
+100
+001
+100
+001
+010
+100
+010
+(b ) 1-o f-3 codes
+
+010
+
+001
+
+100
+
+0001 
+
+1000 
+
+0010 
+
+0100 
+
+x0
+
+c
+x1
+0001 
+0001 
+0010 
+0010 
+0100 
+0100 
+1000 
+1000 
+0010 
+0001 
+0100 
+0010 
+1000 
+0100 
+0001 
+1000 
+0100 
+0001 
+1000 
+0010 
+0001 
+0100 
+0010 
+1000 
+1000 
+0001 
+0001 
+0010 
+0010 
+0100 
+1000 
+0100 
+(c) 1-o f-4 codes
+
+Fig. 11. Examples of DIRC coding scheme when CN ¼ 2.
+Theorem 4.1. Assume that Dn ðiÞ; Dn ðjÞ and Dn ðsÞ (0 6 i; j; s < n) are
+three 1-of-n codes where Dn ðiÞ þ Dn ðjÞ ¼ Dn ðsÞ. Dn ðAm Þ and Dn ðSm Þ
+are two m-of-n (1 6 m 6 n) codes, and Dn ðAm Þ þ Dn ðjÞ ¼ Dn ðSm Þ.
+If i 2 Am ; s 2 Sm ; Otherwise; if i R Am ; s R Sm
+
+Proof. If i ¼ ak 2 Am (0 6 k < m), Eq. (10) can be inferred from the
+[
+[
+arithmetic rules of m-of-n codes.
+m 1
+m 1
+
+Dn ðAm Þ þ Dn ðjÞ ¼
+
+Dn ðat þ jÞ
+t¼0;t–k
+
+Dn ðat þ jÞ ¼ Dn ðak þ jÞ [
+[
+m 1
+
+t¼0
+¼ Dn ði þ jÞ [
+[
+t¼0;t–k
+m 1
+Dn ðat þ jÞ
+t¼0;t–k
+
+¼ Dn ðsÞ [
+
+Dn ðat þ jÞ
+
+ð10Þ
+
+Because the union operation will not erase any ‘1’s in the code
+words, it can be inferred that s 2 Sm .
+[
+Else if i R Am ; 8at 2 Am (0 6 t < m), Dn ðat Þ – Dn ðiÞ.
+m 1
+
+ð11Þ
+Dn ðAm Þ þ Dn ðjÞ ¼
+Dn ðat þ jÞ ¼ Dn ðSm Þ
+t¼0
+Dn ðat þ jÞ ¼ Dn ðat Þ þ Dn ðjÞ
+ð12Þ
+Since Dn ðiÞ þ Dn ðjÞ ¼ Dn ðsÞ; Dn ðsÞ – Dn ðat þ jÞ. Therefore, s R Sm . h
+Theorem (4.1) implies that when faults occur on one of the code
+words in X–i , the extra ‘1’s brought by faults would add extra ‘1’s to
+the result of the m-of-n operations (i.e. x0
+i ) but never erase the valid
+‘1’ in x0
+i which ought to be produced by the original error-free code
+words. Therefore, C-elements are able to ﬁlter out the wrong bits.
+Taking two 1-of-4 data words x0 (‘‘0010’’) and x1 (‘‘1000’’) for
+example, the check word c is ‘‘0001’’. Assuming a positive transient
+fault converts x0 to the faulty ‘‘1010’’, the regenerated x0
+0 and x0
+1 are
+‘‘0010’’ and ‘‘1010’’ respectively. For x0
+1 , the ﬁrst ‘1’ from left is gen-
+erated from the invalid ‘1’ in the faulty x0 which can be ﬁltered by
+0 and x00
+C-elements. Using (9), we get x00
+1 as follows:
+0 ¼ x0 & x0
+0 ¼ 0010;
+1 ¼ x1 & x0
+1 ¼ 1000
+x00
+x00
+which are recovered error-free data words. If the check word is
+faulty while the two incoming data words are error-free, both
+regenerated data words will be erroneous. The errors can also be
+ﬁltered by the C-elements.
+Considering the impact of faults happening on data wires
+(Section 2.2), the 2-of-n code insertion (Fig. 7c) makes one of the
+operands of (9) a 2-of-n code. The faulty ‘1’ will be ﬁltered out
+by the C-element. The invalid 1-of-n code insertion has two cases.
+
+832
+
+G. Zhang et al. / Microprocessors and Microsystems 38 (2014) 826–842
+
+One case is both the valid and the invalid 1-of-n code words are
+outputted. The invalid ‘1’ will be ﬁltered using (9). The other case
+is that the valid code is outputted twice, which can be taken as
+an invalid spacer insertion. The spacer will not be latched since
+the other operand of (9) is valid and contains ‘1’. As a result, the
+valid code is outputted only once. The deadlock which is the result
+of the invalid code insertion is also avoided. It can be concluded
+that, all 1-bit transient faults on 4-phase QDI pipelines can be
+tolerated using the DIRC to 1-of-n codes.
+The proposed DIRC coding scheme can also tolerate some multi-
+bit transient faults. If multi-bit unidirectional transient faults hap-
+pen in a single word while the other words of this DIRC code are
+fault-free, the faulty word can be corrected. (Unidirectional faults
+are either positive or negative faults, but not both, in a code word
+[11].)
+
+4.3. Code evaluation
+
+Table 1 summarizes the difference between the DIRC and sev-
+eral existing error-correction codes. Since a large number of exist-
+ing asynchronous designs [4,6–8] use 1-of-n codes to encode data,
+the hardware support for 1-of-n implementation is also important.
+The DIRC code is the only one which is unordered, systematic and
+can be implemented using QDI circuits.
+Coding efﬁciency can be measured by the code rate [32], as
+depicted in (13) where n is the code length or the number of occu-
+pied wires, and M is the number of binary codes it can represent. M
+equals to n for 1-of-n codes. Both code rates of the 1-of-2 and 1-of-
+4 codes are 0.50.
+
+R ¼ log2M
+n
+Applying the proposed DIRC, one extra check word is added for
+every CN 1-of-n data words. The code rate of the DIRC (RDIRC ) can be
+expressed as (14), which decreases 1=ðCN þ 1Þ compared with the
+code rate of the original 1-of-n code.
+
+ð13Þ
+
+RDIRC ¼ CN log2 n
+nðCN þ 1Þ
+
+ð14Þ
+
+It can be inferred from (14) that the code rate of the DIRC code
+increases with CN. In the worst-case of CN ¼ 2, the code rates of
+1-of-2 and 1-of-4 codes are both 0.33, which is 33.3% less than their
+original code rates. When CN ¼ 5, the code rate decreases only
+16.7%. The code rates of most existing code redundancy techniques
+decrease further when applied to 1-of-n codes. For example, the
+code rate decreases by 42.9% when using the Hamming (7, 4) code
+[18] to the 1-of-4 code. Applying the TRDIC code [28] which
+changes 1-of-n codes to 2-of-(n + 1) codes to obtain fault-tolerance,
+the code rate decreases by 33.3% for 1-of-2 codes and 20.0% for 1-of-
+4 codes respectively.
+
+5. Hardware implementation of DIRC pipeline stages
+
+Fig. 12 presents the implementation of a DIRC pipeline stage
+transmitting one DIRC code ðx0 ; x1 ; cÞ (CN ¼ 2). It includes 1-of-n
+adders, error ﬁlters, CDs and an acknowledge generator (AckGen).
+
+5.1. Implementation of 1-of-n adders and error ﬁlters
+
+The check word generating and error correcting processes can
+be implemented using QDI circuits. The key components are 1-
+of-n adders. In Fig. 12, the upper two adders are used to regenerate
+data words while the bottom one is used to generate the check
+word. If no fault happens, operands of the adder are 1-of-n codes.
+When faults convert 1-of-n codes to erroneous m-of-n codes. The
+adder works under the m-of-n arithmetic rules.
+The mathematical representation of the 1-of-n adder is depicted
+in (15):
+ð15Þ
+si ¼ [fðaj & bk Þji ¼ ðj þ kÞmod n; i; j; k 2 ½0; nÞg
+where A (an 1 an 2 . . . a0 ), B (bn 1 bn 2 . . . b0 ) and S (sn 1 sn 2 . . . s0 ) are
+all m-of-n codes, and the subscript denotes the bit index. S is the
+sum of A and B.
+
+Proof. Because S ¼ A þ B, it can be inferred from (6) that:
+si ¼ 1ð0 6 i < nÞ () 9j; k 2 ½0; nÞ
+ðj þ kÞmod n ¼ i; aj ¼ 1
+s.t.
+and bk ¼ 1. Therefore, we have (15). h
+
+Fig. 13 shows the hardware implementation of a 1-of-2 adder
+and a 1-of-4 adder. Only C-elements and OR-gates are employed
+to ensure the adder is QDI. Fig. 14 shows structures of 1-of-n
+adders when the adder has multiple operands (corresponding to
+different CN).
+During the error correcting process, the negating operation of
+an m-of-n code is required in (8). According to (2) and (5), the
+negation of a 1-of-n code is merely a bit-reshufﬂe which is
+depicted in (16) where inv A is the negated A (both A and inv A
+are m-of-n codes).
+inv Ai ¼ Aðn iÞmod n ; 8i 2 ½0; nÞ
+ð16Þ
+The error ﬁlters described by (9) are combined with pipeline latches
+to improve area and speed performance. The resulting 3-input C-ele-
+ments latch structure for data words is depicted in Fig. 12. The asyn-
+chronous latch for check words is built from 2-input C-elements.
+
+5.2. Generation of check words
+
+In the hardware implementation shown in Fig. 12, the check
+word is generated from the incoming data words rather than the
+recovered data words (the implementation using recovered data
+to generate the check word is shown in Fig. 15). Consequently,
+the check word generating process and the error correcting process
+run in parallel which reduces the forward delay. However, the
+newly generated check word would be erroneous when the incom-
+ing data words are wrong. Since the wrong data would be
+
+Table 1
+Comparison of different error-correcting codes.
+
+Codes
+
+Unordered
+
+Systematic
+
+1-of-n Implementation
+
+QDI Implementation
+
+Hamming [18]
+Blaum and Bruck [12]
+Cheng and Ho [22]
+Zero-Sum [23,13]
+TRDIC [28,29]
+DIRC
+
+No
+Yes
+Yes
+Yes
+Yes
+Yes
+
+Yes
+Yes
+Yes
+Yes
+No
+Yes
+
+No
+No
+No
+No
+Yes
+Yes
+
+No
+Unprovided
+Unprovided
+No
+Yes
+Yes
+
+G. Zhang et al. / Microprocessors and Microsystems 38 (2014) 826–842
+
+833
+
+One DIRC code (x0, x1, c)
+...
+
+D
+I
+R
+C
+ 
+s
+t
+a
+g
+e
+
+...
+...
+
+.........
+
+x0
+
+x1
+c
+
+1-of-n
+adder
+
+1-of-n
+adder
+
+1-of-n
+adder
+
+L
+a
+t
+c
+h
+
+Error Filter
+x0
+x0''
+x0'
+CD
+x1
+cd0
+x1''
+x1'
+
+L
+a
+t
+c
+h
+
+c'
+
+L
+a
+t
+c
+h
+iack
+C
+
+CD
+cd1
+
+CD
+cd2
+AckGen
+
+ack0 ack1 ack2
+DIRC stage
+
+Error Filter
+x0,0x0,0'
+C
+x0,1x0,1'
+C
+.
+.
+.
+.
+.
+.
+x0,nx0,n'
+C
+iack
+
+x0,0''
+
+x0,1''
+
+x0,n''
+
+Fig. 12. Implementation of a DIRC pipeline stage transmitting one DIRC code (CN ¼ 2).
+
+a1
+
+b0
+
+a0
+
+b1
+
+a1
+
+b1
+
+a0
+
+b0
+
+CC
+
+CC
+
+S1
+S0
+(a) 1-of-2 adder
+
+a3 b0 a2b1a1b2 a0 b3
+
+a2b0 b1 b2 b3 b0 b1 b2 b3 b0 b1 b2 b3
+a0
+a1
+a3
+a1 a0 a3 a2
+a0
+a3 a2
+a1
+
+CCCCCCCCCCCCCCCC
+
+S3
+
+S2
+S1
+(b) 1-of-4 adder
+
+S0
+
+Fig. 13. Implementation of 1-of-n adders.
+
+A
+
+B
+
+S+
+
++
+
+A
+
+B
+
+C
+
++
+
+S
+
+(a) 2 operands
+
+(b) 3 operands
+
+A
+
+B
+
+C
+
+D
+
++
+
++
+
++
+
+S
+
+(c) 4 operands
+
+corrected and not propagated to the next stage, the check word
+would not be an issue as long as no fault occurs on the corrected
+data again. Under the assumption of a 1-bit transient fault, execut-
+ing the error-correction and check word generation processes in
+parallel is acceptable since the possibility of faults occurring on
+wires of adjacent stages is extremely low in practice.
+
+5.3. Redundant protection of acknowledge wires (RPA)
+
+A new redundant technique named RPA is proposed to protect
+acknowledge wires from transient faults. As shown in Fig. 16a,
+three C-elements are used to build an acknowledge generator
+(AckGen) which
+outputs
+three
+acknowledge
+signals
+ðack0 ; ack1 ; ack2 Þ. The three inputs of AckGen are cd0 ; cd1 and cd2 ,
+coming directly from the completion detection circuit. The original
+CD of a pipeline stage (Fig. 16b) can be easily divided into three
+sub-CDs by cutting off the bottom one or two C-elements when
+the number of 1-of-n slices of a pipeline stage is at least three
+(Fig. 16c). The generation of acknowledge signals is presented in
+(17) where ‘‘&’’ denotes the logical operation of a C-element.
+Finally, at the input side of the previous stage, an inverted 3-input
+8>>><
+C-element is used to generate the iack to asynchronous latches
+(Fig. 12).
+ack0 ¼ cd0 & cd1
+>>>:
+ack1 ¼ cd0 & cd2
+ack2 ¼ cd1 & cd2
+iack ¼ :ðack0 & ack1 & ack2 Þ
+It can be found that the iack ﬂips only when cd0 ; cd1 and cd2 are
+all set high or all reset low. Any one of the three acknowledge sig-
+nals relies on two sub-CDs and any one sub-CD decides two
+acknowledge signals, which ensures that a 1-bit transient fault
+on acknowledge wires will be masked. Only one extra C-element
+is added to the original CD (Fig. 16). The area overhead brought
+by RPA is negligible compared with the large number of data
+latches. This technique can be implemented independently of
+DIRC.
+
+ð17Þ
+
+x0
+
+x1
+c
+
+1-of-n
+adder
+
+1-of-n
+adder
+
+Error Filter
+x0
+L
+x0'
+a
+t
+c
+h
+x1
+x1'
+
+L
+a
+t
+c
+h
+iack
+
+x0''
+
+x1''
+1-of-n 
+adder
+
+c'
+
+...
+
+...
+...
+
+D
+I
+R
+C
+ 
+s
+t
+a
+g
+e
+
+Fig. 14. Construction of 1-of-n adder trees with multiple operands.
+
+Fig. 15. The pipeline stage using the recovered data to generate the check word.
+
+834
+
+G. Zhang et al. / Microprocessors and Microsystems 38 (2014) 826–842
+
+cd0
+
+cd1
+
+cd2
+
+AckGen
+
+C C C
+
+ack0
+
+ack1
+(a) AckGen
+
+ack2
+
+C C
+
+C
+
+cd0
+
+cd1
+
+cd2
+
+C
+
+ack
+(b) Original CD
+
+AckGen
+ack0
+ack1
+ack2
+(c) Cut-off CD
+
+Fig. 16. Implementation of the acknowledge generator (AckGen).
+
+x0
+
+x1
+
+x0
+
+x1
+
+c
+
+x0
+
+x1
+
+1-of-n 
+adder
+
+iack
+
+x0
+
+x1
+
+c
+
+L
+a
+t
+c
+h
+
+L
+a
+t
+c
+h
+
+L
+a
+t
+c
+h
+
+(a) sDIRC stage (sender)
+
+1-of-n 
+adder
+
+1-of-n 
+adder
+
+Error Filter
+L
+a
+t
+c
+h
+
+x0''
+
+x1''
+
+x0
+x0'
+x1
+x1'
+
+L
+a
+t
+c
+h
+iack
+
+(b) rDIRC stage (receiver)
+
+Fig. 18. Incomplete DIRC stages.
+
+6. Case study: DIRC pipelines with different construction
+patterns
+
+DIRC and RPA can be used in basic QDI pipelines (Fig. 3) to pro-
+vide fault-tolerance with little modiﬁcation. Fig. 17 presents a DIRC
+pipeline with three stages. An original pipeline stage with S (S P 2)
+1-of-n slices is divided into GN (GN P 1) groups, each of which
+contains CN (CN ¼ S=GN) slices. Applying DIRC, each group has an
+extra 1-of-n check word,
+resulting in a DIRC stage with
+GNðCN þ 1Þ slices.
+In a DIRC pipeline, the complete DIRC stages (Fig. 12) are placed
+between a pair of incomplete DIRC stages, which are sDIRC and
+rDIRC ones (Fig. 18). The sDIRC stage only generates check words
+while the rDIRC stage only corrects errors. Their sizes are smaller
+than the size of a complete one.
+This section studies the DIRC pipelines with different construc-
+tion patterns. Latency and area models are built to evaluate the
+hardware overhead of different DIRC pipelines.
+
+6.1. Latency analysis
+
+The saturation throughput of a QDI pipeline is determined by
+the equivalent period of two adjacent pipeline stages which form
+a loop (Fig. 4). A latency model is built to evaluate the loop latency
+and speed overhead of DIRC pipelines.
+To make the model simple, it is assumed that cell delays for
+positive and negative transitions are the same while the wire delay
+is zero. The loop latency T can be expressed as (18), where t L ; tCD
+and tComb are the propagation latency of an asynchronous latch,
+the CD and other combinational circuits respectively. The equiva-
+lent period can be approximated to 2T .
+T ¼ 2tL þ tCD þ tComb
+ð18Þ
+Assume a basic pipeline stage (denoted by a subscript of B) con-
+tains S slices. In our implementation (Fig. 3), the asynchronous
+latch is built from 2-input C-elements whose propagation latency
+is tc2 . CD is a tree constructed by n-input OR-gates and 2-input
+C-elements. Its delay tCD;B is determined by the propagation latency
+
+DIRC Stagei-1
+
+DIRC Stagei
+
+DIRC Stagei+1
+
+DIRC0
+
+DIRC1
+
+x0,0
+x0,CN-1
+c0
+x1,0
+x1,CN-1
+c1
+
+.
+.
+.
+
+Group0
+
+.
+.
+.
+
+Group1
+
+...
+
+...
+
+Group0
+
+Group1
+
+...
+
+...
+
+Group0
+
+Group1
+
+.
+.
+.
+
+.
+.
+.
+
+.
+.
+.
+
+.
+.
+.
+
+.
+.
+.
+
+DIRCGN-1
+
+xGN-1,0
+xGN-1,CN-1
+cGN-1
+iacki
+
+.
+.
+.
+
+C
+
+GroupGN-1
+
+...
+.
+.
+.
+iacki+1
+
+C
+
+...
+CD
+AckGen
+
+GroupGN-1
+
+...
+iacki+2
+
+C
+
+...
+CD
+AckGen
+
+GroupGN-1
+
+...
+CD
+AckGen
+
+acki,0 acki,1 acki,2
+
+Fig. 17. A DIRC QDI pipeline.
+
+G. Zhang et al. / Microprocessors and Microsystems 38 (2014) 826–842
+
+835
+
+of an n-input OR-gate (tOR ) and the tree depth (dlog2 Se). The loop
+latency of a basic pipeline T B can be estimated using (19) (the delay
+of the inverter used to invert the ack signal at the input of the latch
+is ignored).
+t L;B ¼ tc2
+tCD;B ¼ tOR þ dlog2 Setc2
+
+tComb;B ¼ 0
+
+ð19Þ
+
+ð20Þ
+
+For a DIRC pipeline using both DIRC and RPA, 1-of-n adders are
+added to the data path. The asynchronous latch for data words uses
+3-input C-elements instead of 2-input ones. The redundant check
+words increase the tree depth of the CD (the new depth is
+dlog2 ðS þ GNÞe  dlog2 Se þ 1). Using RPA does not change the tree
+depth but only induces a delay of a 3-input C-element at the input
+side. Therefore, the loop latency of a DIRC pipeline T DIRC can be esti-
+mated using (20):
+tL;DIRC ¼ tc3
+tComb;DIRC ¼ tadder
+tCD;DIRC  tOR þ ðdlog2 Se þ 1Þt c2 þ tc3
+where t c3 and tadder are the propagation latency of a 3-input C-ele-
+ment and 1-of-n adders respectively. t c3 and t c2 depend on the used
+cell library and the implementation of C-elements. Their values can
+be close. According to the implementation of 1-of-n adders (Sec-
+tion 5.1), tadder can be estimated as (21).
+tadder ¼ dlog2 CNeðt c2 þ tOR Þ
+ð21Þ
+Therefore, the loop latency of a DIRC pipeline can be expressed
+as (22).
+ð22Þ
+T DIRC ¼ T B þ 3t c3   tc2 þ tadder
+It can be concluded that, using DIRC plus RPA, tadder is the only var-
+iable determining the pipeline speed overhead while the other
+items in (22) are constants. The propagation latency of the adder
+is proportional to dlog2 CNe. Usually CN  S (since a large CN
+induces a large area overhead, which will be discussed in the next
+section), so that tadder  T B . In this case, the loop latency of a DIRC
+pipeline is generally less than 2T B . In other words, the period of a
+DIRC pipeline is less than twice as longer as the unprotected basic
+pipeline.
+
+6.2. Construction of different DIRC pipelines
+
+As a systematic code, the DIRC keeps the original data words so
+that the internal pipeline stages or combinational circuits between
+two DIRC stages can obtain the original data directly. This feature
+makes it possible to construct DIRC pipelines using different pat-
+terns, providing designers with ﬂexible choices. Since different
+DIRC pipelines may have quite different area overhead, area mod-
+els are built in this section to analyse the area overhead of DIRC
+pipelines. (The equivalent period of a DIRC pipeline is determined
+by the maximum loop and has a slight change with different pat-
+terns, so that only area overhead is studied.)
+
+6.2.1. Area analysis
+An area model for a single pipeline stage is ﬁrst built to analyse
+the area of different pipeline stages, including the basic, the DIRC,
+the sDIRC and the rDIRC stages. Since the RPA technique protecting
+acknowledge wires causes little overhead compared with the DIRC
+and can be used independently, this area model evaluates only the
+area overhead brought by the DIRC.
+The area of a single pipeline stage A can be expressed as (23),
+where AL is the area of the asynchronous latch, ACD is the area of
+the CD and AComb is the area of other combinational circuits. Wire
+area is assumed to be zero.
+A ¼ AL þ ACD þ AComb
+
+ð23Þ
+
+ð27Þ
+
+For a basic pipeline stage with S 1-of-n slices, the asynchronous
+latch is built from 2-input C-elements and its area AL;B can be esti-
+mated as (24) where Ac2 is the area of a 2-input C-element. The
+area of the CD (Fig. 16b) can be approximated to ACD;B shown in
+(25) where AOR is the area of an n-input OR-gate. For the basic pipe-
+line, AComb;B ¼ 0. The area of a basic pipeline stage AB can be esti-
+mated as (26) (the area of the inverter used to invert the ack
+signal is small and ignored).
+AL;B ¼ S  n  Ac2
+ð24Þ
+ACD;B ¼ S  AOR þ ðS   1Þ  Ac2  S  ðAOR þ Ac2 Þ
+ð25Þ
+AB ¼ AL;B þ ACD;B
+ð26Þ
+Applying DIRC, the slices are divided into GN groups, each of
+which contains CN data words (CN ¼ S=GN) and one check word.
+As a result, each DIRC stage contains ðS þ GNÞ slices. As described
+in Section 5.1, 3-input C-elements are used to latch data and 2-
+input C-elements are used to latch check words in DIRC stages.
+The latch area AL;DIRC can be estimated as (27) where Ac3 is the area
+of a 3-input C-element. The CD of a DIRC stage needs to detect
+ðS þ GNÞ slices. Its area ACD;DIRC can be estimated as (28).
+AL;DIRC ¼ S  n  Ac3 þ GN  n  Ac2 ¼ ðAc3 =Ac2 þ 1=CNÞ  AL;B
+ACD;DIRC ¼ ðS þ GNÞ  AOR þ ðS þ GN   1Þ  Ac2
+ð28Þ
+ ð1 þ 1=CNÞ  ACD;B
+A complete DIRC stage has ðS þ GNÞ 1-of-n adders where S
+adders are used to regenerate data words and GN adders are used
+to generate check words (Fig. 12). The area of a single 1-of-n adder
+unit Aa increases with n and can be estimated as (29). When CN > 2,
+each adder becomes an adder tree containing ðCN   1Þ 1-of-n adder
+units (Fig. 14). It is assumed that the area of adders regenerating
+data words and generating check words is Aadder ;d (i.e. AComb;rDIRC )
+and Aadder ;c (i.e. AComb;sDIRC ) respectively. Aadder ;d , and Aadder ;c can be
+expressed as (30) while their sum is Aadder (i.e. AComb;DIRC ).
+8><
+Aa ¼ n2  Ac2 þ n  AOR
+AComb;rDIRC ¼ Aadder ;d ¼ S  ðCN   1Þ  Aa
+>:
+AComb;sDIRC ¼ Aadder ;c ¼ S  ð1   1=CNÞ  Aa
+AComb;DIRC ¼ Aadder ¼ S  ðCN   1=CNÞ  Aa
+Assuming Ac3 ¼ aAc2 and AOR ¼ bAc2 (usually a  2 and b < 1),
+(30) can be rewritten into (31). The area of a complete DIRC stage
+ADIRC is depicted in (32).
+Aadder ;d ¼ ðCN   1Þðn þ bÞ  AL;B
+Aadder ;c ¼ ð1   1=CNÞðn þ bÞ  AL;B
+Aadder ¼ ðCN   1=CNÞðn þ bÞ  AL;B
+ADIRC ¼ ða þ 1=CNÞ  AL;B þ ð1 þ 1=CNÞ  ACD;B þ ðCN   1=CNÞðn þ bÞ  AL;B
+
+ð32Þ
+Comparing (32) with (26), it can be found that most of the area
+overhead of a DIRC stage comes from 1-of-n adders. According to
+(29), the area of a single 1-of-n adder unit Aa increases with n2 .
+As a result, when applying the DIRC, 1-of-4 pipelines have larger
+area overhead than 1-of-2 pipelines with the same data width.
+For a 1-of-n DIRC pipeline stage with a ﬁxed data width, Aadder
+increases approximately linearly with CN while the area overhead
+brought by the latch and CD decreases slightly (Eq. (32)). As a result,
+the area of a DIRC stage increases with CN.
+
+The area of the incomplete DIRC stages, sDIRC and rDIRC, can
+also be estimated as (33).
+AsDIRC ¼ ð1 þ 1=CNÞ  AL;B þ ð1 þ 1=CNÞ  ACD;B þ ð1   1=CNÞðn þ bÞ  AL;B
+ArDIRC ¼ aAL;B þ ACD;B þ ðCN   1Þðn þ bÞ  AL;B
+
+ð33Þ
+
+ð29Þ
+
+ð30Þ
+
+ð31Þ
+
+G. Zhang et al. / Microprocessors and Microsystems 38 (2014) 826–842
+
+836
+
+)
+B
+A
+/
+C
+R
+I
+D
+A
+(
+ 
+d
+a
+e
+h
+r
+e
+v
+O
+ 
+a
+e
+r
+A
+
+19
+17
+15
+13
+11
+9
+7
+5
+3
+1
+
+ DIRC (1-of-2)
+ sDIRC (1-of-2)
+ rDIRC (1-of-2)
+
+ DIRC (1-of-4)
+ sDIRC (1-of-4)
+ rDIRC (1-of-4)
+
+2
+
+3
+
+4
+
+5
+
+CN
+
+Fig. 19. Area overhead estimation of a single pipeline stage.
+
+According to the Faraday UMC 0.13 lm standard cell library
+used in our implementation, it can be assumed that:
+ð34Þ
+a  2;
+b  0:5
+Fig. 19 presents the area overhead estimation of different DIRC
+pipeline stages with different conﬁgurations. The baseline is the
+area of basic pipeline stages. The Y-axis uses the ratio of the area
+of DIRC (or sDIRC, rDIRC) stages to the area of the basic pipeline
+stages to measure the area overhead. Taking the 1-of-2 DIRC pipe-
+line for example, when CN ¼ 2; ADIRC =AB is approximately 4.2; when
+CN ¼ 5, the ratio rises to 8.6.
+It can be found that, 1-of-4 pipeline stages have a steep gradient
+compared with 1-of-2 ones. The area overhead of all pipeline
+stages increases with CN while the complete DIRC stages have
+the largest area overhead. The sDIRC stage has the lowest gradient
+among the three kinds of DIRC stages. For an sDIRC stage with a
+ﬁxed data width, the area of adders Aadder ;c increases with CN while
+the ratio of the area of the latch and the CD to their original area in
+a basic pipeline is ð1 þ 1=CNÞ, which decreases with CN (Eq. (33)).
+As a result, the ratio AsDIRC =AB increases slightly with a rising CN
+(the ratio increases from 2.21 to 2.34 for 1-of-2 pipelines and from
+3.14 to 3.82 for 1-of-4 pipelines).
+
+6.2.2. DIRC pipelines using different construction patterns
+In Fig. 17, all pipeline stages are complete DIRC ones, which is a
+full-protection pattern (pattern 0 in Fig. 20a). This pattern makes
+the pipeline robust enough to tolerate all 1-bit transient faults
+between any two adjacent pipeline stages but incurs a large area
+overhead. Since the DIRC is systematic, this allows DIRC pipeline
+stages to be placed discontinuously to reduce the area overhead.
+This section builds area models for whole pipelines to evaluate
+the area overhead of different DIRC pipelines.
+In a design, some parts may be critical or more susceptible to
+faults than other parts. In this case, DIRC stages can be used only
+in these parts to protect the communication. As Fig. 20 shows, DIRC
+stages can be placed using an arbitrary or speciﬁc pattern to pro-
+vide protection, including the full protection, the protection in
+alternate stages, the point-to-point protection and the protection
+in critical stages. The protected pipeline segment starts from the
+sDIRC stage and ends with the rDIRC stage. Between the sDIRC
+and rDIRC stages, extra long wires are introduced for the redun-
+dant check words.
+The area of a pipeline can be estimated as the total area of all
+pipeline stages and long wires. For the purpose of simplicity, it is
+assumed that all long wires between two adjacent stages have
+the same area (short internal wires are unconsidered). Aw is the
+area of S  n wires between two continuous basic stages. Applying
+the DIRC, the wire number becomes S  n  ð1 þ 1=CNÞ. As a result,
+
+x0
+
+x1
+
+x0
+
+x1
+
+x0
+
+x1
+
+x0
+
+x1
+
+sDIRC
+
+sDIRC
+
+x0
+c
+x1
+
+x0
+c
+x1
+
+DIRC
+
+DIRC
+
+DIRC
+
+rDIRC
+
+(a) Pattern 0: full protection
+
+Basic
+
+DIRC
+
+Basic
+
+rDIRC
+
+(b) Pattern 1: protection in alternate stages
+
+sDIRC
+
+x0
+c
+x1
+
+Basic
+
+Basic
+
+Basic
+
+rDIRC
+
+(c) Pattern 2: point-to-point protection
+
+cisaB
+
+cisaB
+
+sDIRC
+
+x0
+c
+x1
+
+rDIRC
+
+cisaB
+
+(d) Pattern 3: protection in critical stages
+
+Fig. 20. Different placement of DIRC stages.
+
+x0
+
+x1
+
+x0
+
+x1
+
+x0
+
+x1
+
+x0
+
+x1
+
+4.5
+
+4.0
+
+3.5
+
+3.0
+
+2.5
+
+2.0
+
+1.5
+
+1.0
+
+11
+10
+9
+8
+7
+6
+5
+4
+3
+2
+1
+
+)
+B
+P
+A
+/
+C
+R
+I
+D
+P
+A
+(
+ 
+d
+a
+e
+h
+r
+e
+v
+O
+ 
+a
+e
+r
+A
+
+)
+B
+P
+A
+/
+C
+R
+I
+D
+P
+A
+(
+ 
+d
+a
+e
+h
+r
+e
+v
+O
+ 
+a
+e
+r
+A
+
+ DIRC Pattern0
+ DIRC Pattern1
+ DIRC Pattern2
+ DIRC Pattern3
+
+2
+
+3
+
+4
+
+5
+
+CN
+(a) 1-of-2 pipelines
+
+ DIRC Pattern0
+ DIRC Pattern1
+ DIRC Pattern2
+ DIRC Pattern3
+
+2
+
+3
+
+4
+
+5
+
+CN
+(b) 1-of-4 pipelines
+Fig. 21. Area overhead estimation of different pipelines (Aw ¼ 0).
+
+G. Zhang et al. / Microprocessors and Microsystems 38 (2014) 826–842
+
+837
+
+in a protected pipeline segment, the wire area between two contin-
+uous stages is ð1 þ 1=CNÞ  Aw (acknowledge wires are ignored due
+to their small number). The original basic pipeline stages between
+the sDIRC and rDIRC are expanded due to the check words. The
+area of an expanded basic pipeline stage (AeB ) can be estimated
+as (35). The area of a whole pipeline (AP) is estimated in (36):
+ð35Þ
+AeB ¼ ð1 þ 1=CNÞ  AL þ ACD;DIRC  ð1 þ 1=CNÞ  AB
+AP  a  AB þ b  AeB þ c  AsDIRC þ d  ADIRC þ e  ArDIRC þ f  Aw
+ð36Þ
+where a; b; c; d; e; f are constants for a speciﬁc pipeline.
+Taking a 5-stage pipeline for example, the area of a basic pipe-
+line APB can be estimated as (37):
+ð37Þ
+APB ¼ 5AB þ 4Aw
+If the pipeline is fully protected (using three complete DIRC
+stages and two incomplete DIRC stages) as shown in Fig. 20a, the
+pipeline area APDIRC ;P0 can be estimated as (38):
+ð38Þ
+APDIRC ;P0 ¼ 3ADIRC þ AsDIRC þ ArDIRC þ 4ð1 þ 1=CNÞ  Aw
+Protecting alternate stages (Fig. 20b), three DIRC stages are sep-
+arated by two expanded basic stages. The area of this pipeline
+APDIRC ;P1 is shown in (39).
+ð39Þ
+APDIRC ;P1 ¼ 2AeB þ ADIRC þ AsDIRC þ ArDIRC þ 4ð1 þ 1=CNÞ  Aw
+The area of pipelines with a point-to-point protection (APDIRC ;P2 )
+and a critical-stage protection (APDIRC ;P3 ) can be estimated as (40)
+and (41) respectively.
+APDIRC ;P2 ¼ 3AeB þ AsDIRC þ ArDIRC þ 4ð1 þ 1=CNÞ  Aw
+APDIRC ;P3 ¼ 3AB þ AsDIRC þ ArDIRC þ 3Aw þ ð1 þ 1=CNÞ  Aw
+
+ð40Þ
+ð41Þ
+
+The area overhead of a whole 5-stage pipeline can be divided
+into two cases (Aw ¼ 0 and Aw > 0) to discuss.
+(1) The wire area is assumed to be zero (Aw ¼ 0).
+Using (35)–(41), an area overhead estimation of the pipe-
+lines using different patterns is summarized in Fig. 21. The
+area of the basic pipeline is used as the baseline. The Y-axis
+represents the area overhead brought by the DIRC, which is
+the ratio of the area of DIRC pipelines to the area of the cor-
+responding basic pipelines (APDIRC =APB ). It can be found that,
+for all pipelines, the area overhead increases approximately
+linearly with CN. The pipeline protecting only critical stages
+(pattern 3) brings the least redundant circuit.
+It can be concluded that, DIRC pipelines using different con-
+struction patterns may have a quite different area overhead.
+If the DIRC is only used to protect some speciﬁc or critical
+pipeline segments, the incurred area overhead can be largely
+decreased.
+(2) The wire area is non-zero (Aw ¼ k  AB Þ ðk > 0Þ.
+
+In practical pipelines, the data wires between two continuous
+stages may be long and occupy a large area due to the large num-
+bers of inserted buffers. Assuming that Aw ¼ k  AB ðk > 0Þ; k is the
+ratio of the area of long wires to the area of the latch in a basic
+pipeline stage. Its value is decided by the practical circuit after fab-
+rication which can be various. The area overhead of different pipe-
+lines is re-estimated using the previous model. Since the pipeline
+with a full protection (pattern 0) has the largest area overhead than
+other pipelines, the fully-protected DIRC pipeline is ﬁrst presented
+to analyse the effect of k on the worst-case area overhead (Fig. 22).
+
+ DIRC (1-of-2)
+ DIRC (1-of-4)
+
+0.0 0.2 0.4 0.6 0.8 1.0 1.2 1.4 1.6 1.8 2.0
+k
+(a) C N 2
+
+ DIRC (1-of-2)
+ DIRC (1-of-4)
+
+)
+B
+P
+A
+\
+C
+R
+I
+D
+P
+A
+(
+ 
+d
+a
+e
+h
+r
+e
+v
+O
+ 
+a
+e
+r
+A
+
+5.0
+
+4.5
+
+4.0
+
+3.5
+
+3.0
+
+2.5
+
+2.0
+
+1.5
+
+1.0
+
+)
+B
+P
+A
+\
+C
+R
+I
+D
+P
+A
+(
+ 
+d
+a
+e
+h
+r
+e
+v
+O
+ 
+a
+e
+r
+A
+
+9
+
+8
+
+7
+
+6
+
+5
+
+4
+
+3
+
+2
+
+1
+
+0.0 0.2 0.4 0.6 0.8 1.0 1.2 1.4 1.6 1.8 2.0
+k
+(c) C N 4
+Fig. 22. Area overhead estimation of fully-protected pipelines with different CN (Aw ¼ k  AB ).
+
+0.0 0.2 0.4 0.6 0.8 1.0 1.2 1.4 1.6 1.8 2.0
+k
+(d) C N 5
+
+)
+B
+P
+A
+\
+C
+R
+I
+D
+P
+A
+(
+ 
+d
+a
+e
+h
+r
+e
+v
+O
+ 
+a
+e
+r
+A
+
+7
+
+6
+
+5
+
+4
+
+3
+
+2
+
+1
+
+ DIRC (1-of-2)
+ DIRC (1-of-4)
+
+0.0 0.2 0.4 0.6 0.8 1.0 1.2 1.4 1.6 1.8 2.0
+k
+(b) C N 3
+
+ DIRC (1-of-2)
+ DIRC (1-of-4)
+
+)
+B
+P
+A
+\
+C
+R
+I
+D
+P
+A
+(
+ 
+d
+a
+e
+h
+r
+e
+v
+O
+ 
+a
+e
+r
+A
+
+11
+10
+9
+8
+7
+6
+5
+4
+3
+2
+1
+
+838
+
+G. Zhang et al. / Microprocessors and Microsystems 38 (2014) 826–842
+
+)
+B
+A
+/
+2
+P
+,
+C
+R
+I
+D
+A
+(
+ 
+d
+a
+e
+h
+r
+e
+v
+O
+ 
+a
+e
+r
+A
+
+1.65
+
+1.60
+
+1.55
+
+1.50
+
+1.45
+
+1.40
+
+ CN=2
+ CN=3
+ CN=4
+ CN=5
+
+0.5
+
+1.0
+
+1.5
+
+2.0
+
+k
+
+Fig. 23. Area overhead estimation of 1-of-2 pipelines using the point-to-point
+protection pattern.
+
+Router
+
+asynchronous link
+
+(a) Using DIRC stages at network interfaces
+
+x0
+x1
+c
+
+x0
+C
+R
+I
+x1
+D
+s
+output buffer
+
+...
+...
+...
+
+C
+R
+I
+D
+r
+
+c
+i
+s
+a
+B
+
+C
+R
+I
+D
+s
+
+C
+R
+I
+D
+r
+
+c
+i
+s
+a
+B
+
+input buffer
+output buffer
+router
+router
+link
+(b) Using DIRC to protect a speciﬁc link
+
+input buffer
+
+Fig. 24. DIRC applied to asynchronous NoCs.
+
+For the fully-protected DIRC pipeline, the number of long wires
+between two continuous DIRC stages is S  ð1 þ 1=CNÞ  n.
+In Fig. 22, the Y-axis still denotes the area ratio APDIRC =APB . The
+1-of-4 pipelines have a larger area overhead than 1-of-2 pipelines.
+The area overhead reaches to maximum when k ¼ 0 and then
+decreases with k. In an extreme condition when wires consume a
+signiﬁcantly larger area than pipeline stages,
+the ratio will
+approach to ð1 þ 1=CNÞ. A small k denotes that the pipeline stages
+are the main contributor of the whole area, which is usually the
+practical case. Since the area of complete DIRC stages increases
+quickly with CN (Fig. 19), CN ¼ 2 is more acceptable than a large
+CN. Although the wire number can be reduced by increasing CN,
+the area of the whole pipeline still increases with CN.
+If the pipeline is constructed using other patterns, the area
+overhead can be further reduced. As an example, Fig. 23 presents
+the area overhead of 1-of-2 pipelines using the point-to-point pro-
+tection pattern (pattern 2 in Fig. 20c). Since the area overhead of
+incomplete DIRC stages is lower than that of a complete DIRC stage
+(Fig. 19), increasing CN may not lead to a very large area of pipeline
+stages but reduces the wire area a lot. As a result, the pipeline area
+can be reduced. Fig. 23 shows cases where a large CN can reduce
+the area overhead. This feature provides ﬂexible choices for design-
+ers to design a fault-tolerant system with an acceptable overhead
+according to the practical requirement.
+
+6.2.3. Using DIRC in asynchronous NoCs
+Since the DIRC code is systematic and supports a QDI imple-
+mentation, it is especially suitable for large-scale asynchronous
+NoCs.
+Built from asynchronous routers and links, a 3  3 mesh asyn-
+chronous NoC is illustrated in Fig. 24a. Network interfaces (NIs)
+are used to connect synchronous IP cores to the asynchronous net-
+work, implementing the transformation between the synchronous
+and asynchronous domain. The large numbers of long asynchro-
+nous links connecting routers are susceptible to transient faults.
+DIRC stages can be ﬂexibly distributed in the network to protect
+the on-chip communication.
+As an example, DIRC stages can be placed at the NIs (Fig. 24a),
+so that the check word generating and error-correcting operations
+are only executed when data passes NIs (which is a point-to-point
+protection pattern). A generic asynchronous router can be modeled
+as a pipeline where the input/output buffers, crossbar and other
+possible components are the pipeline stages. A packet traversing
+through multiple routers builds a data path which can be modeled
+
+Code
+
+Data
+width 
+
+GN
+
+1-of-2
+
+1-of-4
+
+4
+8
+16
+32
+64
+128
+4
+8
+16
+32
+64
+128
+
+2
+4
+8
+16
+32
+64
+1
+2
+4
+8
+16
+32
+
+senilepiPcisaB
+Delay
+Period
+(ns)
+(ns)
+
+Power
+(mW)
+
+0.071
+0.071
+0.075
+0.075
+0.075
+0.078
+0.075
+0.075
+0.074
+0.075
+0.075
+0.079
+
+1.34
+1.80
+2.18
+2.76
+2.97
+3.32
+1.19
+1.64
+1.90
+2.29
+2.72
+3.09
+
+0.41
+0.60
+1.03
+1.74
+3.04
+5.55
+0.30
+0.45
+0.76
+1.17
+1.99
+3.80
+
+Area
+( m2)
+
+960
+1791
+3321
+6482
+12673
+24204
+1424
+2842
+5535
+10958
+21711
+43478
+
+Area
+( m2)
+
+193
+400
+822
+1727
+3227
+6481
+176
+365
+738
+1357
+2745
+5664
+
+senilepiPCRID
+Delay
+Period
+(ns)
+(ns)
+
+Power
+(mW)
+
+cisaB/CRID
+
+Area
+
+Period
+
+Delay
+
+Power
+
+0.260
+0.266
+0.279
+0.278
+0.290
+0.294
+0.257
+0.266
+0.277
+0.278
+0.301
+0.317
+
+2.10
+2.65
+3.04
+3.54
+3.92
+4.25
+1.93
+2.28
+2.80
+3.23
+3.64
+4.37
+
+0.76
+1.06
+1.79
+2.99
+5.34
+9.28
+0.56
+0.93
+1.39
+2.33
+4.28
+7.76
+
+4.97
+4.48
+4.04
+3.75
+3.93
+3.73
+8.09
+7.79
+7.50
+8.08
+7.91
+7.68
+
+1.57
+1.47
+1.39
+1.28
+1.32
+1.28
+1.63
+1.39
+1.48
+1.41
+1.34
+1.41
+
+3.67
+3.75
+3.73
+3.70
+3.86
+3.80
+3.44
+3.56
+3.73
+3.70
+4.01
+4.00
+
+1.86 
+1.76 
+1.74 
+1.71 
+1.76 
+1.67 
+1.91 
+2.07 
+1.84 
+2.00 
+2.15 
+2.04 
+
+Fig. 25. Experimental results of the basic and DIRC pipelines (CN = 2).
+
+G. Zhang et al. / Microprocessors and Microsystems 38 (2014) 826–842
+
+839
+
+as a long pipeline. DIRC can be used to protect any segments of the
+pipeline. Fig. 24b illustrates the situation where a speciﬁc link is
+protected. DIRC stages can also be placed to protect all or some
+critical routers.
+
+7. Experimental results and evaluation
+
+7.1. Hardware evaluation
+
+To evaluate the hardware overhead of the proposed fault-toler-
+ant techniques, the DIRC pipelines (DIRC + RPA, Fig. 17) are imple-
+mented and synthesized using the UMC 0.13 lm standard cell
+library. As a comparison, the unprotected basic pipelines (Fig. 3)
+are also implemented. Fig. 25 shows detailed experimental results
+
+for the CN ¼ 2 case, including the area of a pipeline stage, forward
+delay, equivalent period and power consumption under different
+conﬁgurations. The time and power information are obtained from
+transmitting millions of data through 10-stage pipelines.
+Since the wire area is decided by the practical design and the
+DIRC pipeline can be constructed using various patterns, the prac-
+tical pipelines may have quite different area. To provide a general
+evaluation, only the area of complete DIRC stages is presented to
+demonstrate the area overhead brought by the DIRC and RPA.
+Fig. 26a compares the area of different pipeline stages, which
+increases with the pipeline data-width. DIRC and RPA introduce
+some area overhead due to the check generation and error correc-
+tion mechanisms. On average, this ratio is around 4.15 for 1-of-2
+pipeline stages and 7.84 for 1-of-4 ones (Fig. 26b), which is gener-
+ally consistent with the area model proposed in Section 6.2.1.
+
+4.5x104
+4.0x104
+3.5x104
+3.0x104
+2.5x104
+2.0x104
+1.5x104
+1.0x104
+5.0x103
+0.0
+
+)
+2
+m
+u
+(
+ 
+a
+e
+r
+A
+
+0.40
+
+0.35
+
+0.30
+
+0.25
+
+0.20
+
+0.15
+
+0.10
+
+0.05
+
+0.00
+
+)
+s
+n
+(
+ 
+y
+a
+l
+e
+D
+
+10
+9
+8
+7
+6
+5
+4
+3
+2
+1
+0
+
+)
+W
+m
+(
+ 
+r
+e
+w
+o
+P
+
+ Basic (1-of-2)
+ DIRC (1-of-2)
+ Basic (1-of-4)
+ DIRC (1-of-4)
+
+4
+
+8
+
+16
+32
+Data Width (bit)
+(a) Area
+
+64
+
+128
+
+ Basic (1-of-2)
+ DIRC (1-of-2)
+ Basic (1-of-4)
+ DIRC (1-of-4)
+
+4
+
+8
+
+16
+32
+Data Width (bit)
+(c) Delay
+
+64
+
+128
+
+ Basic (1-of-2)
+ DIRC (1-of-2)
+ Basic (1-of-4)
+ DIRC (1-of-4)
+
+4
+
+8
+
+16
+32
+Data Width (bit)
+(e) Power
+
+64
+
+128
+
+10
+9
+8
+7
+6
+5
+4
+3
+2
+1
+0
+
+)
+c
+i
+s
+a
+B
+/
+C
+R
+I
+D
+(
+ 
+d
+a
+e
+h
+r
+e
+v
+o
+ 
+a
+e
+r
+A
+
+5.0
+
+4.5
+
+4.0
+
+3.5
+
+3.0
+
+2.5
+
+2.0
+
+1.5
+
+1.0
+
+3.0
+
+2.5
+
+2.0
+
+1.5
+
+1.0
+
+0.5
+
+0.0
+
+)
+s
+n
+(
+ 
+d
+o
+i
+r
+e
+P
+
+)
+c
+i
+s
+a
+B
+/
+C
+R
+I
+D
+(
+ 
+d
+a
+e
+h
+r
+e
+v
+o
+ 
+r
+e
+w
+o
+P
+
+ 1-of-2 pipelines
+ 1-of-4 pipelines
+
+4
+
+8
+
+16
+32
+Data Width (bit)
+(b) Area overhead
+
+64
+
+128
+
+ Basic (1-of-2)
+ DIRC (1-of-2)
+ Basic (1-of-4)
+ DIRC (1-of-4)
+
+4
+
+8
+
+32
+16
+Data Width (bit)
+(d) Period
+
+64
+
+128
+
+ 1-of-2 pipelines
+ 1-of-4 pipelines
+
+4
+
+64
+
+8
+
+16
+32
+Data Width (bit)
+(f) Power overhead
+
+128
+
+Fig. 26. Comparison between the basic and DIRC pipelines (CN ¼ 2).
+
+840
+
+G. Zhang et al. / Microprocessors and Microsystems 38 (2014) 826–842
+
+When the area of long wires is considered, this ratio will decrease.
+In practical designs where the pipeline is constructed using differ-
+ent patterns, the area overhead can be further reduced.
+The forward delay of an asynchronous pipeline stage is the time
+needed by the data to traverse the asynchronous latch. Fig. 26c
+shows that the average forward delay increases slightly with data
+width due to the increasing area. On average, the forward delay of
+DIRC pipelines is 3.75 times the delay of basic pipelines. The fault-
+tolerant mechanism of the DIRC pipelines causes an extra delay
+(DIRC-Basic) which is only 0.21 ns on average for both 1-of-2 and
+1-of-4 pipelines.
+The equivalent period is an important factor affecting the max-
+imum throughput of the pipeline (Section 6.1). Fig. 26d shows that
+the period increases with the data width of a pipeline. Since the CD
+tree is one level shallower in 1-of-4 pipelines than that of 1-of-2
+pipelines, 1-of-4 pipelines have relatively shorter periods with
+the same data width. In most cases, the equivalent period of the
+DIRC pipeline is less than 1.5 times of the basic pipeline (Fig. 25).
+The period of the 128-bit wide 1-of-2 DIRC pipeline is only 1.28
+times as long as that of the basic pipeline. Compared with the
+fault-tolerant design proposed by Jang and Martin [21] whose per-
+iod is about twice slower than the basic one, the speed of DIRC
+pipelines is moderate and competitive.
+The power consumption of pipelines also increases with the
+data width (Fig. 26e). The redundant circuit brought by DIRC and
+RPA causes more transition activities. On average, the power of
+1-of-2 DIRC pipelines are 1.75 times greater than basic pipelines,
+while for 1-of-4 pipelines the ratio is about 2 (Fig. 26f).
+To evaluate the effect of CN on the hardware overhead of DIRC
+pipeline stages, 60-bit wide 1-of-2 pipeline stages are imple-
+mented and synthesized. Fig. 27 compares the basic and the DIRC
+pipeline stages with different CN. It can be found that, the area of a
+
+x0
+x1
+c
+
+Sender
+
+FG
+
+wrapper
+
+DIRC
+
+Receiver
+
+Write
+Message queue
+
+3
+
+FG
+
+Read
+
+Fig. 28. Test environment for DIRC pipelines.
+
+pipeline stage increases approximately linearly with CN. The for-
+ward delay increases with CN since a larger CN means a deeper
+adder tree inserted to the data path. For the CN ¼ 3 and CN ¼ 4
+cases, the adder trees have the same depth (both are 2-level) but
+the CN ¼ 3 case requires more slices for the check words than
+the CN ¼ 4 case, leading to a wider latch and a deeper CD tree.
+As a result, the speed of the DIRC stage with CN ¼ 3 is a bit slower
+than the stage with CN ¼ 4 (Fig. 27b and c). The power consump-
+tion also increases with CN due to the increased transition
+activities.
+
+7.2. Evaluation of transient fault tolerance
+
+the whole scheme
+To evaluate the fault-tolerance of
+(DIRC + RPA), a SystemC test environment is built (Fig. 28). It
+includes a sender, a receiver, a DIRC pipeline stage, fault-genera-
+tors (FGs) and a stage wrapper. The DIRC pipeline stage is a synthe-
+sized gate-level netlist while other parts are SystemC models. The
+sender works as an sDIRC stage, producing random data and corre-
+sponding check words to the DIRC stage while the receiver works
+
+)
+2
+m
+u
+(
+ 
+a
+e
+r
+A
+
+3.5x10 4
+
+3.0x10 4
+
+2.5x10 4
+
+2.0x10 4
+
+1.5x10 4
+
+1.0x10 4
+
+5.0x10 3
+
+0.0
+
+6.0
+
+5.5
+
+5.0
+
+4.5
+
+4.0
+
+3.5
+
+3.0
+
+2.5
+
+2.0
+
+)
+s
+n
+(
+ 
+d
+o
+i
+r
+e
+P
+
+Basic
+
+CN=2
+
+CN=3
+
+CN=4
+
+CN=5
+
+(a) Area
+
+Basic
+
+CN=2
+
+CN=4
+
+CN=5
+
+CN=3
+(c) Period
+
+1.0
+
+0.8
+
+0.6
+
+0.4
+
+0.2
+
+0.0
+
+10
+9
+8
+7
+6
+5
+4
+3
+2
+1
+0
+
+)
+s
+n
+(
+ 
+y
+a
+l
+e
+D
+
+)
+W
+m
+(
+ 
+r
+e
+w
+o
+P
+
+Basic
+
+CN=2
+
+CN=4
+
+CN=5
+
+CN=3
+(b) Delay
+
+Basic
+
+CN=2
+
+CN=4
+
+CN=5
+
+CN=3
+(d) Power
+
+Fig. 27. Comparison between the basic and DIRC pipelines with different CN.
+
+G. Zhang et al. / Microprocessors and Microsystems 38 (2014) 826–842
+
+841
+
+as an rDIRC stage. A fault-generator generates random faults on all
+wires including data wires (between the sender and the DIRC
+stage) and acknowledge wires (between the DIRC stage and the
+receiver). The stage wrapper checks the correctness of the output
+data and produces statistics. A shared message queue is used to
+store the error-free data being transmitted.
+In this test environment, faults happen on any wires at any
+time, which mimics a real environment where not only 1-bit faults
+but also multi-bit faults may happen. Assuming that the occur-
+rence of faults on a single wire is a Poisson process, the intervals
+between adjacent faults are randomized using an exponential dis-
+tribution. Faults on different wires are inserted independently. The
+mean interval between faults is set to 1 ls while the duration of
+faults is randomized using a uniform distribution between 10 ps
+and 2 ns. These create a more comprehensive and severe fault
+environment than most in existing literature [21,24,28]. Data are
+transmitted continuously using the maximum injection rate. In
+total one million data packets were transmitted during the
+simulation.
+The transient-fault-tolerance capability is evaluated by the
+mean time between failures (MTBF). Fig. 29a illustrates the MTBFs
+of different pipelines with CN ¼ 2. Since the increasing number of
+wires lead to higher occurrence of faults, the MTBFs of all pipelines
+decrease with data width. When the data width is 4-bit, the MTBFs
+of the DIRC 1-of-2 and 1-of-4 pipelines are 2520 and 1748 times
+longer than the basic 1-of-2 and 1-of-4 pipelines respectively.
+When the data width rises to 128-bit, the ratio becomes 1117 for
+
+107
+
+106
+
+105
+
+104
+
+103
+
+102
+
+101
+
+105
+
+104
+
+103
+
+102
+
+101
+
+)
+s
+n
+(
+ 
+F
+B
+T
+M
+
+)
+s
+n
+(
+ 
+F
+B
+T
+M
+
+ 1-of-2 Basic
+ 1-of-2 DIRC
+ 1-of-4 Basic
+ 1-of-4 DIRC
+
+4
+
+8
+
+1 6
+3 2
+Data Width (bit)
+(a) C N = 2
+
+6 4
+
+128
+
+Basi c
+
+CN= 2
+CN= 4
+CN= 3
+(b) Different C N
+
+CN=5
+
+Fig. 29. Comparison of MTBF between the basic and DIRC pipelines.
+
+1-of-2 pipelines and 1012 for 1-of-4 pipelines. For the basic 1-of-
+4 pipeline with a data width of 128 bits, 174647 out of 730498
+transient faults result in errors during simulation period, while
+only 222 out of 1420558 transient faults lead to errors when using
+DIRC and RPA (Note that this test uses a multi-bit fault environ-
+ment so that DIRC pipelines can make errors, while 1-bit transient
+faults will be fully tolerated). The resulting MTBF for the basic
+pipeline is 16 ns while it is prolonged to 16561 ns for the DIRC
+pipeline.
+For DIRC pipelines using different CNs, Fig. 29b compares their
+MTBFs with the MTBF of a 60-bit wide 1-of-2 basic pipeline. It
+can be found that, under such a severe environment with multi-
+bit faults, the MTBFs of all DIRC pipelines are more than 1000 times
+longer than the basic pipeline. For the basic pipeline, 57067 out of
+334679 faults result in errors while for the DIRC pipeline with
+CN ¼ 5, only 62 out of 553143 faults result in errors. Most faults
+are ﬁltered. A more severe multi-bit fault environment may largely
+reduce the MTBF of DIRC pipelines but this rarely happen. This also
+demonstrates the thousands-fold increment of
+fault-tolerance
+capability achieved by a DIRC pipeline.
+
+8. Conclusions
+
+This paper proposes a new unordered systematic fault-tolerant
+code, DIRC, providing the on-chip communication both timing-
+robustness and fault-tolerance. Using 1-of-n check words gener-
+ated from multiple data words, the 4-phase QDI pipelines can
+tolerate all 1-bit and some multi-bit transient faults. Thanks to
+its simple structure, the DIRC stage can be easily used to replace
+all or arbitrary stages in existing 1-of-n QDI pipelines. Since DIRC
+is systematic, the DIRC pipelines can be constructed using different
+patterns to satisfy the practical fault-tolerance requirement with a
+reasonable hardware overhead. This feature makes DIRC especially
+suitable for large-scale communication-centric designs. A new
+redundant technique named RPA is also proposed to protect
+acknowledge wires from transient faults and can be used indepen-
+dently but causes little hardware overhead.
+Latency and area models are built to evaluate the hardware
+overhead of different DIRC pipelines, providing designers a guid-
+ance to design a fault-tolerant system with an acceptable hardware
+overhead. Several DIRC and basic pipelines are implemented using
+the UMC 0.13 lm standard cell library. Detailed experimental
+results show that the DIRC pipelines achieve thousands-fold
+improvement on the fault-tolerance capability even in a severe
+simulation environment. The hardware overhead of DIRC pipelines
+(using DIRC plus RPA) is moderate and can be further reduced
+using different construction patterns. In most cases, the DIRC pipe-
+line is less than 1.5 times slower than the basic one, while the
+fault-tolerance is measured to be more than 1000 times stronger.
+Furthermore, the DIRC coding scheme can be extended to m-of-n
+QDI interconnects [32] which is the future work.
+
+Acknowledgement
+
+The authors would like to thank the various grants from the
+National Natural Science Foundation of China (61272144), the
+China Scholarship Council, and the Engineering and Physical Sci-
+ences Research Council (EP/I038306/1).
+
+References
+
+[1] R. Baumann, Soft errors in advanced semiconductor devices-part I: the three
+radiation sources, IEEE Trans. Dev. Mater. Rel. 1 (1) (2001) 17–22.
+[2] C. Constantinescu, Trends and challenges in VLSI circuit reliability, IEEE Micro
+23 (4) (2003) 14–19.
+[3] J. Sparsø, S.B. Furber, Principles of Asynchronous Circuit Design: A Systems
+Perspective, Kluwer Academic Publishers, 2001.
+
+842
+
+G. Zhang et al. / Microprocessors and Microsystems 38 (2014) 826–842
+
+[4] Y. Thonnart, P. Vivet, F. Clermidy, A fully-asynchronous low-power framework
+for GALS NoC integration, in: Proceedings of Design, Automation Test in Europe
+Conference Exhibition (DATE), 2010, pp. 33–38.
+[5] W.J. Dally, B. Towles, Route packets, not wires: on-chip interconnection
+networks, in: Proceedings of Design Automation Conference (DAC), 2001, pp.
+684–689.
+[6] F. Feliciian, S. Furber, An asynchronous on-chip network router with quality-
+of-service (QoS) support, in: Proceedings of IEEE International SOC Conference,
+2004, pp. 274–277.
+[7] T. Bjerregaard, J. Sparsø, Implementation of guaranteed services in the MANGO
+clockless network-on-chip, IEE Proc. Comput. Digital Tech. 153 (4) (2006) 217–
+229.
+[8] J. Pontes, M. Moreira, F. Moraes, N. Calazans, Hermes-A – an asynchronous NoC
+router with distributed routing, in: Proceedings of International Workshop on
+Power and Timing Modeling, Optimization and Simulation (PATMOS), 2010,
+pp. 150–159.
+[9] W.J. Bainbridge, S.J. Salisbury, Glitch sensitivity and defense of quasi delay-
+insensitive network-on-chip links,
+in: Proceedings of
+IEEE International
+Symposium on Asynchronous Circuits and Systems (ASYNC), 2009, pp. 35–44.
+[10] G. Zhang, W. Song, J.D. Garside, J. Navaridas, Z. Wang, Transient fault tolerant
+QDI interconnects using redundant check code, in: Proceedings of Euromicro
+Conference on Digital System Design (DSD), 2013, pp. 3–10.
+[11] B. Bose, On unordered codes, IEEE Trans. Comput. 40 (2) (1991) 125–131.
+[12] M. Blaum, J. Bruck, Unordered error-correcting codes and their applications,
+in: Proceedings of International Symposium on Fault-Tolerant Computing
+(FTCS), 1992, pp. 486–493.
+[13] M. Agyekum, S. Nowick, Error-correcting unordered codes and hardware
+support for robust asynchronous global communication, IEEE Trans. Comput.-
+Aided Des. Integr. Circ. Syst. 31 (1) (2012) 75–88.
+[14] K.L. Shepard, V. Narayanan, Noise in deep submicron digital design,
+in:
+Proceedings of IEEE/ACM International Conference on Computer-Aided Design
+(ICCAD), 1996, pp. 524–531.
+[15] T. Karnik, P. Hazucha, Characterization of soft errors caused by single event
+upsets in CMOS processes, IEEE Trans. Dependable Secure Comput. 1 (2)
+(2004) 128–143.
+[16] N.K. Jha, Separable codes for detecting unidirectional errors, IEEE Trans.
+Comput.-Aided Des. Integr. Circ. Syst. 8 (5) (1989) 571–574.
+[17] W. Peterson, D. Brown, Cyclic codes for error detection, in: Proceedings of the
+IRE, vol. 49, 1961, pp. 228–235.
+[18] R.W. Hamming, Error detecting and error correcting codes, Bell Syst. Tech. J. 29
+(2) (1950) 147–160.
+[19] T. Lehtonen, P. Liljeberg, J. Plosila, Online reconﬁgurable self-timed links for
+fault tolerant NoC, VLSI Des. 2007 (2007) 1–13.
+[20] J. Lechner, M. Lampacher, T. Polzer, A robust asynchronous interfacing scheme
+with four-phase dual-rail coding, in: Proceedings of International Conference
+on Application of Concurrency to System Design (ACSD), 2012, pp. 122–131.
+[21] W.
+Jang, A.J. Martin, SEU-tolerant QDI circuits,
+in: Proceedings of
+IEEE
+International Symposium on Asynchronous Circuits and Systems (ASYNC),
+2005, pp. 156–165.
+[22] F.-C. Cheng, S.-L. Ho, Efﬁcient systematic error-correcting codes for semi-
+delay-insensitive data transmission,
+in: Proceedings of
+International
+Conference on Computer Design (ICCD), 2001, pp. 24–29.
+[23] M.Y. Agyekum, S.M. Nowick, An error-correcting unordered code and
+hardware support
+in:
+robust asynchronous global communication,
+for
+Proceedings of Design, Automation Test in Europe Conference Exhibition
+(DATE), 2010, pp. 765–770.
+[24] S. Ogg, B. Al-Hashimi, A. Yakovlev, Asynchronous transient resilient links for
+NoC, in: Proceedings of IEEE/ACM/IFIP international conference on Hardware/
+Software codesign and system synthesis (CODES+ISSS), 2008, pp. 209–214.
+[25] J. Lechner, V. Veeravalli, Modular redundancy in a GALS system using
+asynchronous
+recovery links,
+in: Proceedings of
+IEEE International
+Symposium on Asynchronous Circuits and Systems (ASYNC), 2013, pp. 23–30.
+[26] Y. Monnet, M. Renaudin, R. Leveugle, Designing resistant circuits against
+malicious faults injection using asynchronous logic, IEEE Trans. Comput. 55 (9)
+(2006) 1104–1115.
+[27] S. Almukhaizim, F. Shi, E. Love, Y. Makris, Soft-error tolerance and mitigation in
+asynchronous burst-mode circuits, IEEE Trans. VLSI Syst. 17 (7) (2009) 869–882.
+[28] J. Pontes, N. Calazans, P. Vivet, Adding temporal redundancy to delay
+insensitive codes to mitigate single event effects, in: Proceedings of IEEE
+International Symposium on Asynchronous Circuits and Systems (ASYNC),
+2012, pp. 142–149.
+[29] J. Pontes, Soft Error Mitigation in Asynchronous Networks on Chip, Ph.D.
+thesis, The Pontiﬁcal Catholic University of Rio Grande do Sul (PUCRS), 2012.
+[30] S. Peng, R. Manohar, Efﬁcient failure detection in pipelined asynchronous
+circuits, in: Proceedings of IEEE International Symposium on Defect and Fault
+Tolerance in VLSI Systems (DFT), 2005, pp. 484–493.
+[31] W. Kuang, E. Xiao, C. Ibarra, P. Zhao, Design asynchronous circuits for soft error
+tolerance, in: Proceedings of IEEE International Conference on Integrated
+Circuit Design and Technology (ICICDT), 2007, pp. 1–5.
+[32] W.J. Bainbridge, W.B. Toms, D.A. Edwards, S.B. Furber, Delay-insensitive, point-
+to-point interconnect using m-of-n codes, in: Proceedings of IEEE International
+Symposium on Asynchronous Circuits and Systems (ASYNC), 2003, pp. 132–140.
+
+Guangda Zhang received his B.S. degree in Computer
+Science and Technology from the National University of
+Defense Technology, China in 2010. He is currently
+pursuing his Ph.D. in Computer Science at the University
+of Manchester, UK. His current research interest mainly
+lies in fault-tolerant asynchronous circuits and asyn-
+chronous Networks-on-chip.
+
+Wei Song received his B.S. and M.S. degrees in Electrical
+Engineering from Beijing University of Technology,
+China in 2005 and 2008 respectively. He received his
+Ph.D. in Computer Science at the University of Man-
+chester, UK in 2012. His current research interests
+include high-speed asynchronous circuits, on-chip
+interconnection networks,
+systems-on-a-chip
+and
+dynamic reconﬁgurable logics.
+
+Jim Garside gained his Ph.D. in Computer Science from
+the University of Manchester in 1987 for work in signal
+processing architecture. Post-doctoral work on parallel
+processing systems based on Inmos Transputers was
+followed by a spell in industry writing air trafﬁc control
+software. Returning to academia gave an opportunity
+for integrated circuit design work, dominated by design
+and construction work on asynchronous microproces-
+sors in the 1990s. More recently he has been involved
+with dynamic hardware compilation, GALS intercon-
+nection and the development of the hardware and
+software of the SpiNNaker neural network simulator.
+
+Dr. Javier Navaridas is a Lecturer in Computer Archi-
+tecture with the University of Manchester. He obtained
+his Ph.D. in Computer Engineering in 2009 from the
+University of the Basque Country which was rewarded
+with an Extraordinary Doctorate Award (Top 5%). He
+joined the University of Manchester with a prestigious
+Newton Fellowship in 2010. His research interests
+include interconnection networks for parallel and dis-
+tributed systems, networks on chip for SoCs and Mul-
+tiprocessors
+and characterization of
+applications
+behaviour. He has developed and maintained various
+simulation tools for different processes and systems.
+
+Zhiying Wang received the Ph.D. degree in Computer
+Science and Technology from the National University of
+Defense Technology, China in 1989. He is currently a
+professor in the same university. He has contributed 10
+invited chapters to book volumes, published 140 papers
+in archival journals and refereed conference proceed-
+ings, and delivered over 30 keynotes. His current
+research projects include asynchronous microprocessor
+design, nanotechnology circuits and systems based on
+optoelectronic technology, and virtual computer sys-
+tem. His main research ﬁelds include computer archi-
+tecture, asynchronous circuit, computer security, VLSI
+design, reliable architecture and multi-core memory system.
+
+

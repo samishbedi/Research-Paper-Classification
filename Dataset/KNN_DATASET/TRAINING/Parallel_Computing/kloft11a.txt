@@ -1,0 +1,295 @@
+Journal of Machine Learning Research 12 (2011) 953-997
+
+Submitted 2/10; Revised 10/10; Published 3/11
+
+ℓ p -Norm Multiple Kernel Learning
+
+Marius Kloft∗
+University of California
+Computer Science Division
+Berkeley, CA 94720-1758, USA
+Ulf Brefeld
+Yahoo! Research
+Avinguda Diagonal 177
+08018 Barcelona, Spain
+S ¨oren Sonnenburg†
+Technische Universit ¨at Berlin
+Franklinstr. 28/29
+10587 Berlin, Germany
+Alexander Zien ‡
+LIFE Biosystems GmbH
+Belfortstraße 2
+69115 Heidelberg, Germany
+
+Editor: Francis Bach
+
+MK LO F T@C S .B ERK E L EY. EDU
+
+BR E F E LD@YAHOO - INC .COM
+
+SO ER EN . SONN ENBURG@ TU -B ER L IN .D E
+
+Z I EN@ L I F EB IO SY S T EM S .COM
+
+Abstract
+
+Learning linear combinations of multiple kernels is an appealing strategy when the right choice
+of features is unknown. Previous approaches to multiple kernel learning (MKL) promote sparse
+kernel combinations to support interpretability and scalability. Unfortunately, this ℓ1 -norm MKL is
+rarely observed to outperform trivial baselines in practical applications. To allow for robust kernel
+mixtures that generalize well, we extend MKL to arbitrary norms. We devise new insights on the
+connection between several existing MKL formulations and develop two efﬁcient
+interleaved opti-
+mization strategies for arbitrary norms, that is ℓ p -norms with p ≥ 1. This interleaved optimization is
+much faster than the commonly used wrapper approaches, as demonstrated on several data sets. A
+theoretical analysis and an experiment on controlled arti ﬁ cial data shed light on the appropriateness
+of sparse, non-sparse and ℓ¥ -norm MKL in various scenarios. Importantly, empirical applications
+of ℓ p -norm MKL to three real-world problems from computational biology show that non-sparse
+MKL achieves accuracies that surpass the state-of-the-art.
+Data sets, source code to reproduce the experiments, implementations of the algorithms, and
+further information are available at http://doc.ml.tu-berlin.de/nonsparse_mkl/.
+Keywords: multiple kernel learning, learning kernels, non-sparse, support vector machine, con-
+vex conjugate, block coordinate descent, large scale optimization, bioinformatics, generalization
+bounds, Rademacher complexity
+
+∗. Also at Machine Learning Group, Technische Universit ¨at Berlin, 10587 Berlin, Germany.
+†. Parts of this work were done while SS was at the Friedrich Miescher Lab oratory, Max Planck Society, 72076
+T ¨ubingen, Germany.
+‡. Most contributions by AZ were done at the Fraunhofer Institute FIRST , 12489 Berlin, Germany.
+
+c(cid:13)2011 Marius Kloft, Ulf Brefeld, S ¨oren Sonnenburg and Alexander Zien.
+
+K LO F T, BR E F E LD , SONN ENBURG AND Z I EN
+
+1. Introduction
+
+Kernels allow to decouple machine learning from data representations. Finding an appropriate data
+representation via a kernel function immediately opens the door to a vast world of powerful machine
+learning models (e.g., Sch ¨olkopf and Smola, 2002) with many efﬁcient and reliable off-the-shelf
+implementations. This has propelled the dissemination of machine learning techniques to a wide
+range of diverse application domains.
+the best kernel—for the problem
+Finding an appropriate data abstraction—or even engineering
+at hand is not always trivial, though. Starting with cross-validation (Stone, 1974), which is probably
+the most prominent approach to general model selection, a great many approaches to selecting the
+right kernel(s) have been deployed in the literature.
+Kernel target alignment (Cristianini et al., 2002; Cortes et al., 2010b) aims at learning the entries
+of a kernel matrix by using the outer product of the label vector as the ground-truth. Chapelle
+et al. (2002) and Bousquet and Herrmann (2002) minimize estimates of the generalization error of
+support vector machines (SVMs) using a gradient descent algorithm over the set of parameters. Ong
+et al. (2005) study hyperkernels on the space of kernels and alternative approaches include selecting
+kernels by DC programming (Argyriou et al., 2008) and semi-inﬁnite progra mming ( ¨Oz ¨og ¨ur-Aky ¨uz
+and Weber, 2008; Gehler and Nowozin, 2008). Although ﬁnding non-lin ear kernel mixtures (G ¨onen
+and Alpaydin, 2008; Varma and Babu, 2009) generally results in non-convex optimization problems,
+Cortes et al. (2009b) show that convex relaxations may be obtained for special cases.
+However, learning arbitrary kernel combinations is a problem too general to allow for a general
+optimal solution—by focusing on a restricted scenario, it is possible to achiev e guaranteed optimal-
+ity. In their seminal work, Lanckriet et al. (2004) consider training an SVM along with optimizing
+qmKm , subject to the
+the linear combination of several positive semi-deﬁnite matrices, K = (cid:229)M
+m=1
+trace constraint tr(K ) ≤ c and requiring a valid combined kernel K (cid:23) 0. This spawned the new
+ﬁeld of multiple kernel learning (MKL), the automatic combination of several kernel functions.
+Lanckriet et al. (2004) show that their speciﬁc version of the MKL task c an be reduced to a convex
+optimization problem, namely a semi-deﬁnite programming (SDP) optimization problem. T hough
+convex, however, the SDP approach is computationally too expensive for practical applications.
+Thus much of the subsequent research focuses on devising more efﬁc ient optimization procedures.
+One conceptual milestone for developing MKL into a tool of practical utility is simply to con-
+strain the mixing coefﬁcients q to be non-negative: by obviating the complex constraint K (cid:23) 0, this
+small restriction allows to transform the optimization problem into a quadratically constrained pro-
+gram, hence drastically reducing the computational burden. While the original MKL objective is
+stated and optimized in dual space, alternative formulations have been studied. For instance, Bach
+et al. (2004) found a corresponding primal problem, and Rubinstein (2005) decomposed the MKL
+problem into a min-max problem that can be optimized by mirror-prox algorithms (Nemirovski,
+2004). The min-max formulation has been independently proposed by Sonnenburg et al. (2005).
+They use it to recast MKL training as a semi-inﬁnite linear program. Solving the latter with column
+generation (e.g., Nash and Sofer, 1996) amounts to repeatedly training an SVM on a mixture kernel
+q. This immediately lends itself to a convenient
+while iteratively reﬁning the mixture coefﬁcients
+implementation by a wrapper approach. These wrapper algorithms directly beneﬁt from efﬁcient
+SVM optimization routines (cf., Fan et al., 2005; Joachims, 1999) and are now commonly deployed
+in recent MKL solvers (e.g., Rakotomamonjy et al., 2008; Xu et al., 2009), thereby allowing for
+large-scale training (Sonnenburg et al., 2005, 2006a). However, the complete training of several
+
+954
+
+ℓ p -NORM MU LT I P L E K ERN E L L EARN ING
+
+SVMs can still be prohibitive for large data sets. For this reason, Sonnenburg et al. (2005) also
+propose to interleave the SILP with the SVM training which reduces the training time drastically.
+Alternative optimization schemes include level-set methods (Xu et al., 2009) and second order ap-
+proaches (Chapelle and Rakotomamonjy, 2008). Szafranski et al. (2010), Nath et al. (2009), and
+Bach (2009) study composite and hierarchical kernel learning approaches. Finally, Zien and Ong
+(2007) and Ji et al. (2009) provide extensions for multi-class and multi-label settings, respectively.
+Today, there exist two major families of multiple kernel learning models. The ﬁrst
+is charac-
+terized by Ivanov regularization (Ivanov et al., 2002) over the mixing coefﬁcients (Rakotomamonjy
+et al., 2007; Zien and Ong, 2007). For the Tikhonov-regularized optimization problem (Tikhonov
+and Arsenin, 1977), there is an additional parameter controlling the regularization of the mixing
+coefﬁcients (Varma and Ray, 2007).
+All the above mentioned multiple kernel learning formulations promote sparse solutions in
+terms of the mixing coefﬁcients. The desire for sparse mixtures originates in p ractical as well
+as theoretical reasons. First, sparse combinations are easier to interpret. Second, irrelevant (and
+possibly expensive) kernels functions do not need to be evaluated at testing time. Finally, sparse-
+ness appears to be handy also from a technical point of view, as the additional simplex constraint
+kqk1 ≤ 1 simpliﬁes derivations and turns the problem into a linearly constrained prog ram. Never-
+theless, sparseness is not always beneﬁcial in practice and sparse M KL is frequently observed to be
+outperformed by a regular SVM using an unweighted-sum kernel K = (cid:229)m Km (Cortes et al., 2008).
+Consequently, despite all the substantial progress in the ﬁeld of MKL, ther e still remains an
+unsatis ﬁed need for an approach that is really useful for practical ap plications: a model that has a
+good chance of improving the accuracy (over a plain sum kernel) together with an implementation
+that matches today’s standards (i.e., that can be trained on 10,000s of data points in a reasonable
+time). In addition, since the ﬁeld has grown several competing MKL formulation s, it seems timely
+to consolidate the set of models. In this article we argue that all of this is now achievable.
+
+1.1 Outline of the Presented Achievements
+
+On the theoretical side, we cast multiple kernel learning as a general regularized risk minimization
+problem for arbitrary convex loss functions, Hilbertian regularizers, and arbitrary norm-penalties
+on q. We ﬁrst show that the above mentioned Tikhonov and Ivanov regularize d MKL variants are
+equivalent in the sense that they yield the same set of hypotheses. Then we derive a dual repre-
+sentation and show that a variety of methods are special cases of our objective. Our optimization
+problem subsumes state-of-the-art approaches to multiple kernel learning, covering sparse and non-
+sparse MKL by arbitrary p-norm regularization (1 ≤ p ≤ ¥) on the mixing coefﬁcients as well as the
+incorporation of prior knowledge by allowing for non-isotropic regularizers. As we demonstrate, the
+p-norm regularization includes both important special cases (sparse 1-norm and plain sum ¥-norm)
+and offers the potential to elevate predictive accuracy over both of them.
+With regard to the implementation, we introduce an appealing and efﬁcient optimiza tion strategy
+which grounds on an exact update in closed-form in the q-step; hence rendering expensive semi-
+inﬁnite and ﬁrst- or second-order gradient methods unnecessary. By
+using proven working set
+optimization for SVMs, p-norm MKL can now be trained highly efﬁciently for all p; in particular,
+we outpace other current 1-norm MKL implementations. Moreover our implementation employs
+kernel caching techniques, which enables training on ten thousands of data points or thousands
+In contrast, most competing MKL software require all kernel matrices
+of kernels respectively.
+
+955
+
+K LO F T, BR E F E LD , SONN ENBURG AND Z I EN
+
+to be stored completely in memory, which restricts these methods to small data sets with limited
+numbers of kernels. Our implementation is freely available within the SHOGUN machine learning
+toolbox available at http://www.shogun-toolbox.org/. See also our supplementary homepage:
+http://doc.ml.tu-berlin.de/nonsparse_mkl/.
+Our claims are backed up by experiments on artiﬁcial and real world data se ts representing
+diverse, relevant and challenging problems from the application domain of bioinformatics. Using
+artiﬁcial data, we investigate the impact of the p-norm on the test error as a f unction of the size
+of the true sparsity pattern. The real world problems include subcellular localization of proteins,
+transcription start site detection, and enzyme function prediction. The results demonstrate (i) that
+combining kernels is now tractable on large data sets, (ii) that it can provide cutting edge classiﬁca-
+tion accuracy, and (iii) that depending on the task at hand, different kernel mixture regularizations
+are required for achieving optimal performance.
+We also present a theoretical analysis of non-sparse MKL. We introduce a novel ℓ1 -to-ℓ p con-
+version technique and use it to derive generalization bounds. Based on these, we perform a case
+study to compare an exemplary sparse with a non-sparse learning scenario. We show that in the
+sparse scenario ℓ p>1 -norm MKL yields a strictly better generalization bound than ℓ1 -norm MKL,
+while in the non-sparse scenario it is the other way around.
+The remainder is structured as follows. We derive non-sparse MKL in Section 2 and discuss
+relations to existing approaches in Section 3. Section 4.3 introduces the novel optimization strategy
+and its implementation. We report on theoretical results in Section 5 and on our empirical results in
+Section 6. Section 7 concludes.
+
+1 .1 .1 R E LAT ED WORK
+
+A basic version of this work appeared in NIPS 2009 (Kloft et al., 2009a). The present article
+additionally offers a more general and complete derivation of the main optimization problem, ex-
+emplary applications thereof, a simple algorithm based on a closed-form solution, technical details
+of the implementation, a theoretical analysis, and additional experimental results. Parts of Section 5
+are based on Kloft et al. (2010) the present analysis however extends the previous publication by a
+novel conversion technique, an illustrative case study, tighter bounds, and an improved presentation.
+In related papers, non-sparse MKL has been applied, extended, and further analyzed by several
+researchers since its initial publication in Kloft et al. (2008), Cortes et al. (2009a), and Kloft et al.
+(2009a): Varma and Babu (2009) derive a projected gradient-based optimization method for ℓ2 -norm
+MKL. Yu et al. (2010) present a more general dual view of ℓ2 -norm MKL and show advantages of
+ℓ2 -norm over an unweighted-sum kernel SVM on six bioinformatics data sets. Cortes et al. (2010a)
+provide generalization bounds for ℓ1 - and ℓ p≤2 -norm MKL. The analytical optimization method
+presented in this paper was independently and in parallel discovered by Xu et al. (2010) and has
+also been studied in Roth and Fischer (2007) and Ying et al. (2009) for ℓ1 -norm MKL, and in
+Szafranski et al. (2010) and Nath et al. (2009) for composite kernel learning on small and medium
+scales.
+
+2. Multiple Kernel Learning—A Unifying View
+
+In this section we cast multiple kernel learning into a uniﬁed framework: we pr esent a regularized
+loss minimization formulation with additional norm constraints on the kernel mixing coefﬁcients.
+
+956
+
+ℓ p -NORM MU LT I P L E K ERN E L L EARN ING
+
+We show that it comprises many popular MKL variants currently discussed in the literature, includ-
+ing seemingly different ones.
+We derive generalized dual optimization problems without making speciﬁc ass umptions on the
+norm regularizers or the loss function, beside that the latter is convex. As a special case we derive
+ℓ p -norm MKL in Section 4. In addition, our formulation covers binary classiﬁc ation and regression
+tasks and can easily be extended to multi-class classiﬁcation and structural le arning settings using
+appropriate convex loss functions and joint kernel extensions (cf. Section 3). Prior knowledge on
+kernel mixtures and kernel asymmetries can be incorporated by non-isotropic norm regularizers.
+
+2.1 Preliminaries
+
+We begin with reviewing the classical supervised learning setup. Given a labeled sample D =
+{(xi , yi )}i=1...,n , where the xi lie in some input space X and yi ∈ Y ⊂ R, the goal is to ﬁnd a hypoth-
+esis h ∈ H , that generalizes well on new and unseen data. Regularized risk minimization returns a
+minimizer h∗ ,
+h∗ ∈ argminh Remp (h) + lW(h),
+(cid:229)n
+where Remp (h) = 1
+i=1 V (h(xi ), yi ) is the empirical risk of hypothesis h w.r.t. a convex loss function
+n
+V : R × Y → R, W : H → R is a regularizer, and l > 0 is a trade-off parameter. We consider linear
+models of the form
+
+h ˜w,b (x) = h ˜w, y(x)i + b,
+(1)
+together with a (possibly non-linear) mapping y : X → H to a Hilbert space H (e.g., Sch ¨olkopf
+et al., 1998; M ¨uller et al., 2001) and constrain the regularization to be of the form W(h) = 1
+2 k ˜wk2
+2
+which allows to kernelize the resulting models and algorithms. We will later make use of kernel
+functions k(x, x′ ) = hy(x), y(x′ )iH to compute inner products in H .
+2.2 Regularized Risk Minimization with Multiple Kernels
+When learning with multiple kernels, we are given M different feature mappings ym : X → Hm , m =
+1, . . . M , each giving rise to a reproducing kernel km of Hm . Convex approaches to multiple kernel
+learning consider linear kernel mixtures kq = (cid:229) qm km , qm ≥ 0. Compared to Equation (1), the primal
+model for learning with multiple kernels is extended to
+M(cid:229)
+m=1 pqm h ˜wm , ym (x)iHm + b = h ˜w, yq (x)iH + b
+where the parameter vector ˜w and the composite feature map yq have a block structure ˜w = ( ˜w⊤1 , . . . ,
+˜w⊤M )⊤ and yq = √q1y1 × . . . × √qM yM , respectively.
+In learning with multiple kernels we aim at minimizing the loss on the training data w.r.t. the
+qm km in addition to regularizing q to avoid over ﬁtting. Hence, in terms
+optimal kernel mixture (cid:229)M
+m=1
+of regularized risk minimization, the optimization problem becomes
+m=1 pqm h ˜wm , ym (xi )iHm + b, yi! +
+V   M(cid:229)
+957
+
+M(cid:229)
+m=1 k ˜wmk2
+Hm
+
+inf
+˜w,b,q:q≥0
+
+h ˜w,b,q (x) =
+
+1
+n
+
+n(cid:229)
+i=1
+
+l
+2
+
++ ˜
+
+˜W[q],
+
+(2)
+
+µ
+

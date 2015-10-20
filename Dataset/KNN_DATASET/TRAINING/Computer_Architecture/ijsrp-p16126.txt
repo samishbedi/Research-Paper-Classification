@@ -1,0 +1,736 @@
+International Journal of Scientific and Research Publications, Volume 3, Issue 4, April 2013  
+ISSN 2250-3153  
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+1 
+
+A 16-bit MIPS Based Instruction Set Architecture for 
+RISC Processor  
+
+Sagar Bhavsar *, Akhil Rao *, Abhishek Sen *, Rohan Joshi * 
+
+ 
+* B.Tech (Electronics), Veermata Jijabai Technological Institute 
+Mumbai, India 
+
+    
+    Abstract- Microcontrollers  and microprocessors  are  finding 
+their  way 
+into  almost  every  field 
+in 
+today‟s  world, 
+incorporating  an  element  of  „smartness‟  into  conventional 
+devices.  Energy  efficient,  space  efficient  and  optimized 
+microcontrollers are the need of the day. Our paper proposes a 
+new Instruction Set that is a subset of the MIPS architecture. It 
+derives  the  advantages  of  MIPS  like  simplicity  and  speed. 
+Besides, since  it  is a  smartly optimized subset of MIPS,  it  is a 
+smaller  version  consisting  of  the  most  commonly  required 
+instructions. 
+ 
+    Index Terms- ISA, MIPS, Processor design, RISC.  
+ 
+
+I.  INTRODUCTION 
+
+M 
+IPS  is  a  reduced  instructions  set  computer  (RISC) 
+architecture.  It  is  one  of  the  first  RISC  Instruction  set 
+architectures.  MIPS  is  an  acronym  for  “Microprocessor 
+without  interlocked  pipeline  stages”.  It  was  developed  by  a 
+team  led  by  John  Hennessey  at  Stanford  University.  MIPS 
+implementations are primarily used in embedded systems such 
+as  Windows  CE  devices,  routers,  residential  gateways,  and 
+video  game  consoles  such  as  the  Sony  PlayStation  2  and 
+PlayStation  Portable.  Until  late  2006,  they  were  also  used  in 
+many  of  SGI's  computer  products.  MIPS  implementations 
+were  also  used  by  Digital  Equipment  Corporation,  NEC, 
+Pyramid  Technology,  Siemens  Nixdorf,  Tandem  Computers 
+and  others  during  the  late  1980s  and  1990s.  Since  MIPS  is  a 
+RISC  computer  it  employs  less  number  of  transistors  and 
+hence decreases the transistor count. Pipelining is thus heavily 
+employed  to  make  use  of  extra  available  space  on  the  chip  to 
+improve code execution performance. MIPS was defined to be 
+a  32  bit  architecture  called  MIPS32.  Later  Revisions  of  this 
+architecture is 64 bit in size and hence called MIPS64.  [1] 
+
+II.  MIPS 16 INSTRUCTION SET DESCRIPTION 
+
+A. Motivation 
+
+    Small  scale  applications  do  not  require  that  much  of 
+computing  power.  This  paper  proposes  a  reduced  version  of 
+MIPS  instruction  set  for  such  small  scale  applications.  This 
+ISA  will  be  called  MIPS  16.  The  main  aim  of  this  ISA  is  to 
+reduce  the  transistor  count  of  a  MIPS  processing  unit  by 
+scaling down the bus and register width and providing less but 
+enough  number  of  instructions  for  small  scale  applications. 
+The  implementation  of  such  an  instruction  set  would  take  up 
+
+less  real  estate  on  the  chip  (or  FPGA)  and  will  allow  more 
+peripherals  to  be  fabricated  on  a  single  chip  making  it  ideal 
+for  a  System-On-Chip 
+(SOC) 
+implementation  of  an 
+application.  It  will  also  be  beneficial  in  embedded  system 
+design  where  a  custom  processor  core  implementation  is 
+required  with  tight  instruction  requirements  so  that  it  takes 
+less space on a FPGA. 
+
+B. Instruction Set Specification [3] 
+
+    MIPS  instructions  have  fixed  width.  The  original  MIPS 
+32  ISA  has  32  bits  wide  instructions.  Each  instruction  in 
+MIPS16  is  16  bits  wide.  Further,  MIPS16  has  8  internal 
+registers  as  opposed  to  the  32  registers  of  MIPS32.  As  the 
+name  suggests,  data  bus  is  16  bits  wide  and  address  bus  is 
+preferably  16  bits  wide  too.  I/O  support  is  memory  mapped. 
+Memory  is  accessed  by  LOAD  and  STORE  instructions.  The 
+instructions  follow  an  <operand  register,  register,  register> 
+format. 
+The Instructions can be divided into 4 groups:  
+a.  Arithmetic:  Basic  computational  instructions 
+add and subtract. 
+b.  Logical: Operations like AND, OR, EXOR  
+c.  Data Transfer: Load and Store operations 
+d.  Branch and control: Jump, Call, Return, etc. 
+The ISA supports direct and immediate addressing modes.  
+
+C.  Instruction Word Format  
+
+A  MIPS16  instruction  is  16  bits  wide.  Since  MIPS  uses  a 
+Register-Register  type  of  instruction  a  general  instruction 
+specifies  two  source  registers  and  a  destination  registers.  The 
+format of such an instruction will be 
+ADD Rs1, Rs2, Rd 
+ 
+Rs1 = First source operand register 
+Rs2 = Second Source operand register  
+Rd = Destination register 
+ 
+The  instruction  word  has  a  5  bit  op-code  specifying  the 
+operation  to  be  performed.  Number  of  operands  may  be 
+variable  e.g.  ADD  requires  three  operands  while  NOT 
+requires only  two. Format  of  a  three operand  instruction word 
+is shown in Table I 
+
+TABLE I 
+THREE OPERAND INSTRUCTION 
+
+www.ijsrp.org 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+2 
+
+Jump  instructions  have  two  modes  viz..PC  relative  and 
+absolute  modes.  In  PC  relative  mode.  The  lower  5  bits  of  the 
+instruction are used to specify a 5 bit signed value as shown in 
+Table  IV.  This  value  is  added/subtracted  to  the  PC  to  get  the 
+jump  address.  The  PC  relative  mode  is  used  for  conditional 
+jump 
+instructions.  The  absolute  mode 
+is  used 
+for 
+unconditional  jumps  and  jump-&-link  instructions.  In  these 
+instructions  the  all  bits  other  than  the  opcode  are   used  to 
+specify a 11 bit signed PC offset value.  
+
+The  instruction  set  is  so  designed  so  as  to  simplify  the 
+instruction decoding logic and the control logic.  
+
+Rs1 
+3 bits 
+
+Rs2 
+3 bits 
+
+Rd 
+3 bits 
+
+Reserved 
+2 bits 
+
+International Journal of Scientific and Research Publications, Volume 3, Issue 4, April 2013  
+ISSN 2250-3153  
+ 
+Op-code 
+5 bits 
+ 
+In  case  of  ALU  instructions,  the  2  reserved  bits  act  as 
+function  bits  where  they  are  used  to  distinguish  between 
+versions  of  a  common 
+instruction.  For 
+instance, 
+the 
+instructions  ADD  and  ADC  have  the  same  opcode  but 
+different  function  bits.  This  results  in  a  simpler  control  logic 
+as  the  reserved  bits  are  decoded  directly  by  the  ALU  control 
+logic. 
+In  case  of  lesser  operands  appropriate  operand  is  given  a 
+constant value. E.g. NOT  instruction  requires only one  source 
+and  one  destination  operand.  Therefore,  Rs2  field  will  be 
+made  “000” as shown  in Table  II. Likewise a POP  instruction 
+will  require  only  destination  and  hence  both  the  source 
+operands  will  be  constant  and  only  destination  needs  to  be 
+provided as shown in Table III. 
+NOT Rs, Rd 
+
+ 
+
+TABLE VI 
+ JUMP (ABSOLUTE MODE) INSTRUCTION 
+
+Immediate 
+
+11 
+
+it signed PC Relative offset  
+
+Op-code 
+
+5 bits 
+
+TABLE II 
+TWO OPERAND INSTRUCTION 
+
+Rs 
+3 bits 
+
+Constant  Rd 
+000 
+3 bits 
+
+Reserved 
+2 bits 
+
+Op-code 
+5 bits 
+ 
+
+POP Rd 
+
+TABLE III 
+ONE OPERAND INSTRUCTION 
+
+Reserved 
+2 bits 
+
+Constant  Constant  Rd 
+000 
+000 
+3 bits 
+
+Op-code 
+5 bits 
+ 
+The unused  fields  in an  instruction are also used  to provide 
+immediate  input.  The  size  of  the  immediate  field  depends  on 
+the number of operands instruction uses.  
+ADDI Rs, Rd, #10 
+Rs = Source Register 
+Rd = Destination register 
+#10 = Immediate value (0-31 in decimal)  
+ 
+
+TABLE IV 
+ IMMEDIATE INSTRUCTION 
+
+Op-code 
+5 bits 
+
+Rs 
+3 bits 
+
+Rd 
+3 bits 
+
+Immediate 
+5 bits 
+
+Instructions  like  the  move  immediate(MVIH  / MVIL)  require 
+a  8-bit  value  to  be  specified  within  the  instruction.  In  such  a 
+case,  the  8  bt  value  is  split  into  2  parts.  The  higher  3  bits  are 
+specified  in place of  the Rs1 operand and  the next  lower 5 bits 
+are specified in the lower 5 bits of the instruction.  
+
+TABLE V 
+ MOVE IMMEDIATE INSTRUCTION 
+
+Op-code 
+5 bits 
+
+Rs 
+7:5 bits of imm value 
+
+Rd 
+3 bits 
+
+Immediate 
+4:0 bits of imm value 
+
+ 
+
+ 
+
+D.  Comparison between MIPS-16 and MIPS-32 [7] 
+
+ 
+MIPS-16  can  be  considered  to  be  a  derivative  of MIPS-32 
+instruction  set.  But  the  philosophies  behind  their  design  are 
+different.  MIPS-16  provides  more  flexibility  in  terms  of 
+optimizing 
+the  design  by  keeping  only 
+the 
+required 
+instructions. MIPS-16  is  designed  for  small  scale  applications 
+while  MIPS-32  is  a  high  performance  32-bit  architecture 
+which  can  handle  large  data  and  perform  fast  calculations  by 
+employing multiple pipelines and multiple registers at the  cost 
+of larger chip area and complicated logic design.  
+Some key differences have been highlighted in TABLE VII 
+
+Serial 
+No. 
+1 
+
+2 
+
+3 
+4 
+
+5 
+
+6 
+
+TABLE VII 
+COMPARISON OF MIPS-16 AND MIPS-32 ISA 
+
+Instruction 
+
+MIPS-16 
+set 
+Instruction  word  length 
+is 16-bit 
+Supports  only  8  general 
+purpose registers 
+Register is 16 bits wide 
+Program  counter  should 
+be 
+incremented  by  2 
+after  every  instruction 
+(for 
+non-branching 
+instructions) 
+ALU  is  simpler.  It  does 
+not  support  operations 
+with  bulky  logic  like 
+Multiplication 
+and 
+Division 
+Floating 
+point 
+instructions 
+are 
+not 
+included in MIPS-16 
+
+MIPS-32  Instruction  
+set 
+Instruction  word  length  is 
+32-bit 
+Supports  up  to  32  general 
+purpose registers 
+Register is 32 bits wide 
+Program  counter  should 
+be  incremented  by  4  after 
+every 
+(for 
+instruction 
+non-branching 
+instructions) 
+ALU  is  complicated.  It 
+supports 
+complicated 
+like 
+operations 
+Multiplication 
+and 
+Division. 
+Floating 
+Point 
+instructions  are  included 
+and  are  called  SIMD 
+instructions 
+
+www.ijsrp.org 
+
+International Journal of Scientific and Research Publications, Volume 3, Issue 4, April 2013  
+ISSN 2250-3153  
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+3 
+
+7 
+
+8 
+
+9 
+
+Pipelining 
+not 
+is 
+essential  and  depends 
+on the application. 
+Transistor  count  and 
+chip area is less 
+Suitable  for  small  scale 
+applications 
+and 
+applications  with 
+low 
+computing requirement 
+
+Pipelining  is a key  feature 
+of  a  MIPS-32  based 
+processor. 
+Transistor  count  and  chip 
+area is more 
+Suitable 
+high 
+performance 
+high 
+throughput applications. 
+
+for 
+
+E.  List of Instructions 
+
+ 
+
+As  the  op-code  has  a  5  bit  length  there  are  32  possible 
+distinct  instructions.  If  the  reserved  bits  at  the  end  of  the 
+instruction  are  utilized  for  grouping  2  or  more  similar 
+instructions  more  op-codes  can  be  incorporated  in  the 
+instruction  set e.g. ADD and ADC can be grouped  together as 
+they  perform  similar  function  with  the  difference  being 
+inclusion  of  carry  into  the  sum.    A  complete  list  of  37 
+instructions  has  been  provided  in  Table  VIII  with  a  short 
+description of each instruction. 
+
+ 
+ 
+ 
+ 
+ 
+
+ 
+
+TABLE VIII  
+MIPS-16 INSTRUCTION SET 
+
+Mnemonic 
+
+Sr. 
+No. 
+ADD 
+1. 
+ADC 
+2. 
+SUB 
+3. 
+SBB 
+4. 
+AND 
+5. 
+OR 
+6. 
+XOR 
+7. 
+NOT 
+8. 
+SHIFTL 
+9. 
+10. 
+SHIFTR 
+11.  ADDI 
+12. 
+SUBI 
+13.  MOV 
+14.  MVIH 
+15.  MVIL 
+LDIDR 
+16. 
+STIDR 
+17. 
+18. 
+LDIDX 
+STIDX 
+19. 
+JMP 
+20. 
+JMPI 
+21. 
+JGEO 
+22. 
+23. 
+JLEO 
+JCO 
+24. 
+JEO 
+25.   
+PUSH 
+26. 
+27. 
+POP 
+CALL 
+28. 
+29. 
+JAL 
+
+30.  MOVSP 
+31. 
+RET 
+32. 
+STC 
+33.  NOP 
+34.   HLT 
+RST 
+35. 
+36. 
+IE 
+ID 
+37. 
+
+ 
+
+Description 
+
+Instruction 
+Format 
+Adds Rs1 and Rs2 and stores the sum in Rd ignoring carry.  
+ADD Rs1, Rs2 ,Rd 
+Adds Rs1 and Rs2 and stores the sum in Rd with previous carry.  
+ADC Rs1, Rs2 ,Rd 
+Subtracts Rs2 from Rs1 and stores the difference in Rd ignoring the previous borrow. 
+SUB  Rs1, Rs2 ,Rd 
+Subtracts Rs2 from Rs1and stores the difference in Rd with the previous borrow.  
+SUB  Rs1, Rs2 ,Rd 
+Performs Bitwise AND of Rs1 and Rs2 and stores the result in Rd 
+AND Rs1, Rs2 ,Rd 
+Performs Bitwise OR of Rs1 and Rs2 and stores the result in Rd 
+OR Rs1, Rs2 ,Rd 
+Performs Bitwise XOR of Rs1 and Rs2 and stores the result in Rd 
+XOR Rs1, Rs2 ,Rd 
+Performs Complement of Rs1 and stores the result in Rd 
+NOT Rs1 ,Rd 
+Shifts Rs1 by one place to the left and store it in Rd 
+SHIFTL Rs1 ,Rd 
+Shifts Rs1 by one place to the right and store it in Rd 
+SHIFTR Rs1 ,Rd 
+Adds a 5-bit unsigned value to Rs1 and stores the sum in Rd 
+ADDI Rs1 ,Rd,#5-bit 
+Subtracts a 5-bit unsigned value from Rs1 and stores the difference in Rd 
+SUBI Rs1 ,Rd,#5-bit 
+Copies Rs1 to Rd 
+MOV Rs1 ,Rd 
+Copies immediate value into higher byte of Rd 
+MVIH Rd,#8-bit 
+MVIL Rd,#8-bit 
+Copies immediate value into lower byte of Rd 
+LDIDR Rs1 ,Rd,#5-bit  Loads Rd with a nibble at address given by [Rs1 +5 bit  immediate value] 
+Stores Rd with a nibble at address given by [Rs1 +5 bit  immediate value] 
+STIDR Rs1 ,Rd,#5-bit 
+LDIDX Rs1, Rs2 ,Rd 
+Loads Rd with a nibble at address given by [Rs1 + Rs2] 
+Stores Rd with a nibble at address given by [Rs1 + Rs2] 
+STIDX Rs1, Rs2 ,Rd 
+Unconditional jump to address offset by 11 bit signed value from current PC value  
+JMP #11-bit 
+Unconditional jump to address offset by 5 bit signed value added to R d 
+JMPI Rd,#15 
+Conditional Jump to PC + 5 bit signed offset if R s1 is greater than or equal to Rs2 
+JGEO Rs1 ,Rs2,#5-bit 
+JLEO Rs1 ,Rs2,#5-bit 
+Conditional Jump to PC + 5 bit signed offset if R s1 is less than or equal to Rs2 
+Conditional Jump to PC + 5 bit signed offset if carry is set  
+JCO #5-bit 
+Conditional Jump to PC + 5 bit signed offset if R s1 equals to Rs2 
+JEO Rs1 ,Rs2,#5-bit 
+Push Rs1 to the stack top and update stack top 
+PUSH Rs1 
+POP Rd 
+Pop from the stack top and store the value to Rd and update stack top 
+Calls a subroutine located at [Rs1]. Return address is pushed onto stack 
+CALL Rs1 
+Calls a subroutine located at [PC + 11 bit signed offset].Return address is pushed onto 
+JAL #11-bit  
+stack. 
+Copies value at Rs1 to stack pointer SP 
+Return from a function. Return address is popped from the stack  
+Set the carry flag 
+No operation. Idle machine cycle should be executed  
+Halts the processor. 
+Resets the processor. 
+Enables the interrupt. 
+Disables the interrupt. 
+
+MOVSP Rs1 
+RET 
+STC 
+NOP 
+HLT 
+RST 
+IE 
+ID 
+
+www.ijsrp.org 
+
+International Journal of Scientific and Research Publications, Volume 3, Issue 4, April 2013  
+ISSN 2250-3153  
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+4 
+
+F.  Implementation Strategies 
+
+The  implementation  strategies  that  can  be  employed  will 
+depend  on 
+the  application. 
+  Some  of 
+the  design 
+considerations are listed below: 
+a.  Single-Cycle or Multi-cycle implementation: [3], [4], 
+[5]  
+Implementation can use a single cycle or a multi 
+cycle control system for its datapath.  
+A single cycle control system performs all the 
+elementary datapath operations in a single cycle. This 
+generally requires dedicated hardware for every 
+phase of instruction fetching, decoding and 
+execution. It is faster at the cost of larger chip area.  
+       A multi cycle implementation divides the 
+execution of an instruction into well-defined time 
+states. The execution happens in a timely order and 
+might require different number of time states for 
+different instruction. The main advantage is the 
+hardware can be shared for similar elementary 
+functions in different time states. Multi cycle should 
+be preferred for applications with smaller chip area 
+requirements. 
+b.  Pipelining Requirement:[6]  
+Pipelining provides performance enhancement by 
+concurrent execution of more than one pair able 
+instructions. The design involves use of multiple 
+datapaths and a logic to check for pairability and 
+hazard removal that occurs due to concurrent 
+execution. This significantly complicates the design 
+and takes a larger chip area. But the performance 
+improvement would be tremendous. 
+
+ 
+ 
+
+III.  CONCLUSION 
+
+MIPS-16  is  thus  a  low-cost,  compact  and  hence  in  effect  a 
+low  power  RISC  instruction  set  architecture  as  compared  to 
+the  MIPS-32  architecture.  Its  compact  size  and  flexibility 
+makes  it  ideal  for  an  optimized  implementation  of  an 
+embedded  system.  It  provides  all  the  basic  instruction  and 
+functionality  for a  small  scale embedded system not  involving 
+heavy  arithmetic  calculations.  MIPS-16  can  be  implemented 
+
+ 
+ 
+
+on  FPGA  by  an  appropriate  strategy  as  per  the  application's 
+requirement.  Single  cycle  design  should  be  used  for  better 
+performance  while  multi  cycle  design  should  be  preferred  for 
+compactness.  Pipelining  can  further  improve  the  system 
+performance. 
+
+ACKNOWLEDGMENT 
+
+It gives us immense pleasure  to thank Prof Dr. R  D Daruwala, 
+our Project Guide who always motivated us. He was kind   
+enough  to  help  us  with  our  doubts  and  was  a  source  of 
+inspiration for this project. 
+
+REFERENCES 
+
+[1]  http://en.wikipedia.org/wiki/MIPS_architecture. 
+[2]  http://logos.cs.uic.edu/366/notes/mips%20quick%20tutorial.htm 
+[3]  David A. Patterson and John L. Hennessy, Computer Organization and 
+Design, 3rd ed. 
+[4]  Lecture  notes  by  Howard  Huang,  University  of  Illinois  at  Urbana-
+Champaign. [Online]. Available: 
+http://www.howardhuang.us/teaching/cs232/11-Single-cycle-MIPS-
+processor.pdf 
+[5]  Lecture  notes  by  Howard  Huang,  University  of  Illinois  at  Urbana-
+Champaign. [Online]. Available: 
+http://www.howardhuang.us/teaching/cs232/12-Multicycle-
+datapath.pdf 
+[6]  Lecture  notes  by  Howard  Huang,  University  of  Illinois  at  Urbana-
+Champaign. [Online]. Available: 
+http://www.howardhuang.us/teaching/cs232/15-Pipelining.pdf 
+[7]  MIPS Official Website. Available: 
+http://www.mips.com/products/architectures/mips32/ 
+ 
+
+AUTHORS 
+
+First Author – Sagar Bhavsar, B.Tech (Electronics), VJTI, 
+Mumbai, sagar.bhavsar1410@gmail.com 
+Second Author – Akhil Rao, B.Tech (Electronics), VJTI, 
+Mumbai, akhil.rao410@gmail.com 
+Third Author – Abhishek Sen, B.Tech (Electronics), VJTI, 
+Mumbai, abhisen1007 @gmail.com 
+Fourth Author – Rohan Joshi, B.Tech (Electronics), VJTI, 
+Mumbai, vakerorohan@gmail.com 
+ 
+Correspondence Author – Sagar Bhavsar, 
+sagar.bhavsar1410@gmail.com, catchsag@gmail.com, 
++919833393603
+
+www.ijsrp.org 
+
+

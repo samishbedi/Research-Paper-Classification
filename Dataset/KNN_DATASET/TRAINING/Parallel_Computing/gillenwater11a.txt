@@ -1,0 +1,266 @@
+Journal of Machine Learning Research 12 (2011) 455-490
+
+Submitted 5/10; Revised 1/11; Published 2/11
+
+Posterior Sparsity in Unsupervised Dependency Parsing
+
+Jennifer Gillenwater
+Kuzman Ganchev
+João Graça
+Department of Computer and Information Science
+University of Pennsylvania
+Levine 302, 3330 Walnut St
+Philadelphia, PA 19104, USA
+Fernando Pereira
+Google Inc.
+1600 Amphitheatre Parkway
+Mountain View, CA 94043, USA
+
+Ben Taskar
+Department of Computer and Information Science
+University of Pennsylvania
+Levine 302, 3330 Walnut St
+Philadelphia, PA 19104, USA
+
+Editor: Mark Johnson
+
+J ENG I@C I S .U P ENN . EDU
+KU ZMAN@C I S .U P ENN . EDU
+GRACA@C I S .U P ENN . EDU
+
+P ER E IRA@GOOG L E .COM
+
+TA SKAR@C I S .U P ENN . EDU
+
+Abstract
+A strong inductive bias is essential in unsupervised grammar induction. In this paper, we explore
+a particular sparsity bias in dependency grammars that encourages a small number of unique de-
+pendency types. We use part-of-speech (POS) tags to group dependencies by parent-child types
+and investigate sparsity-inducing penalties on the posterior distributions of parent-child POS tag
+pairs in the posterior regularization (PR) framework of Graça et al. (2007). In experiments with 12
+different languages, we achieve signi ﬁcant gains in direct ed attachment accuracy over the standard
+expectation maximization (EM) baseline, with an average accuracy improvement of 6.5%, outper-
+forming EM by at least 1% for 9 out of 12 languages. Furthermore, the new method outperforms
+models based on standard Bayesian sparsity-inducing parameter priors with an average improve-
+ment of 5% and positive gains of at least 1% for 9 out of 12 languages. On English text in particular,
+we show that our approach improves performance over other state-of-the-art techniques.
+
+1. Introduction
+
+We investigate unsupervised learning methods for dependency parsing models that impose sparsity
+biases on the types of dependencies. We assume a corpus annotated with part-of-speech (POS) tags,
+where the task is to induce a dependency model from the tag sequences for corpus sentences. In
+this setting, the type of a dependency is deﬁned as a simple pair: tag of the dependent (also kn own
+as the child), and tag of the head (also known as the parent) for that dependent. Given that POS
+tags are typically designed to convey information about grammatical relations, it is reasonable to
+expect that only some of the possible dependency types would be realized for any given language.
+For instance, it is ungrammatical for nouns to dominate verbs, adjectives to dominate adverbs, and
+
+c(cid:13)2011 Jennifer Gillenwater, Kuzman Ganchev, João Graça, Fern ando Pereira and Ben Taskar.
+
+G I L L ENWAT ER , GANCH EV, GRAÇA , P ER E IRA AND TA SKAR
+
+determiners to dominate almost any part of speech. In other words, the realized dependency types
+should be a sparse subset of all the possible types.
+Previous work in unsupervised grammar induction has mostly focused on achieving sparsity
+through priors on model parameters. For instance, Liang et al. (2007), Finkel et al. (2007) and John-
+son et al. (2007) experimented with hierarchical Dirichlet process priors, and Headden III et al.
+(2009) proposed a (non-hierarchical) Dirichlet prior. Such priors on parameters encourage a stan-
+dard generative dependency parsing model (see Section 2) to limit the number of dependent types
+for each head type. Although not focused on sparsity, several other studies use soft parameter shar-
+ing to constrain the capacity of the model and hence couple different types of dependencies. To this
+end, Cohen et al. (2008) and Cohen and Smith (2009) investigated a (shared) logistic normal prior,
+and Headden III et al. (2009) used a backoff scheme.
+Our experiments (Section 6) show that the more effective sparsity pattern is one that limits the
+total number of unique head-dependent tag pairs. Unlike sparsity-inducing parameter priors, this
+kind of sparsity bias does not induce competition between dependent types for each head type.
+Our experiments validate that this translates into accuracy improvements. In all except one of the
+60 model settings we try for English, we observe higher accuracy than with the best setting for a
+parameter prior baseline. In our multi-lingual experiments, we similarly observe an average absolute
+accuracy gain of 5%.
+As we show in Section 4, we can achieve the desired bias with a sparsity constraint on model
+posteriors, using the posterior regularization (PR) framework (Graça e t al., 2007; Ganchev et al.,
+2010). Speciﬁcally, to implement PR we augment the maximum likelihood objective of
+the gener-
+ative dependency model with a term that penalizes distributions over head-dependent pairs that are
+too permissive. We consider two choices for the form of the penalty, and show experimentally that
+the following penalty works especially well: the model pays for the ﬁrst time it se lects a word with
+tag c as a dependent of a head with tag p; after that, choosing a the same head tag p for any other
+occurrence of c is free. While Ravi et al. (2010) also attempt a direct minimization of tag pairs for a
+supertagging application, they do so with a two-stage integer program that is applied after likelihood
+maximization is complete.
+The remainder of this paper is organized as follows. Section 2 reviews the generative model
+for dependency parsing. Section 3 illustrates why the expectation-maximization learning method
+is insufﬁcient and motivates sparse posteriors. Section 4 describes lear ning with PR constraints
+and how to encode posterior sparsity under the PR framework. Section 5 summarizes previous
+approaches that we compare to in our experiments, focusing in particular on attempts to induce
+sparsity via a parameter prior. Section 6 describes the results of dependency parsing experiments
+across 12 languages and against recent published state-of-the-art results for the English language.
+Section 7 analyzes these results, explaining why PR manages to learn where other methods fail, and
+Section 8 concludes. The model and all the code required to reproduce the experiments are available
+online at code.google.com/p/pr-toolkit, version 2010.11.
+
+2. Parsing Model
+
+The models we consider are based on the dependency model with valence (DMV) of Klein and
+Manning (2004). We also investigate extensions to the DMV borrowed from McClosky (2008)
+and Headden III et al. (2009). These extensions are not crucial to our experimental success with
+posterior regularization, but we choose to explore them for better comparison with previous work.
+
+456
+
+PO S T ER IOR S PAR S I TY IN UN SU P ERV I S ED D E P END ENCY PAR S ING
+
+pstop (f |V ,r,f )
+
+pstop (f |N ,l,f )
+
+pstop (f |V ,l,f )
+
+pstop (f |N ,l,t)
+
+pchild (N |V ,l)
+N
+Regularization
+
+proot (V )
+V
+ﬁxes
+
+pchild (ADJ |N ,l)
+ADJ
+many
+
+pchild (N |N ,l)
+N
+ambiguity
+
+pchild (N |V ,r)
+N
+problems
+
+Figure 1: Example of a dependency tree with DMV probabilities. Right-dependents of a head are
+denoted by r, left-dependents by l . The letters t and f denote ‘true’ and ‘false.’ For
+example, in pst o p ( f | V, r, f ) the f to the left of the conditioning bar indicates that the
+model has decided not to stop, and the other f indicates V does not yet have any right
+dependents. Note that the pst o p (t | . . .) are omitted in this diagram.
+
+As will be discussed in the experiments section, both for the basic and for the extended models
+accuracy can be increased by applying posterior regularization. In this section we brieﬂy describe
+the basic DMV model. Description of the extended models is deferred until the experiments section.
+
+The DMV model speciﬁes the following generative process. For a senten ce consisting of POS
+tags x, the root head POS r(x) is generated ﬁrst with probability proot (r(x)). For example, in Figure
+1 this corresponds to generating the V with probability proot (V ).
+
+After generating the root, the model next generates dependents of the root. First, it generates
+right dependents. It decides whether to produce a right dependent conditioned on the identity of
+the root and the fact that it currently has no other right dependents. In our example, this decision
+is represented by the probability pst o p ( f | V, r, f ). If it decides to generate a right dependent, it
+generates a particular dependent POS by conditioning on the fact that the head POS is r(x) and that
+the directionality is to the right. In our example, this corresponds to the probability pchil d (N | V, r).
+The model then returns to the choice of whether or not to stop generating right dependents, this
+time conditioned on the fact that it already has at least one right dependent. In our example, this
+corresponds to the probability pst o p (t | V, r, t ), which indicates that the model is done generating
+right dependents of V .
+
+After stopping the generation of right dependents, the model generates left dependents using the
+mirror image of the right-dependent process. Once the root has generated all of its dependents, the
+dependents generate their own dependents in the same manner.
+
+We follow the convention that the model generates dependents starting with the rightmost one,
+moving inward (leftward) until all right dependents are added, then it generates the leftmost left
+dependent and moves inward (rightward) from there. This is exempliﬁed in Figure 1, where the
+1
+leftmost dependent of the ﬁnal N is generated before the other left dependent. This convention has
+no effect on the ﬁnal probability of a parse tree under the basic DMV. Ho wever, as we will note in
+the experiments section, it does affect dependency tree probabilities in the extended model.
+
+457
+
+G I L L ENWAT ER , GANCH EV, GRAÇA , P ER E IRA AND TA SKAR
+
+3. Learning with EM
+
+The baseline for evaluating our sparse learning methods is the expectation maximization (EM) al-
+gorithm (Dempster et al., 1977). Before the empirical comparison in Section 6, in we introduce here
+some notation and review the EM algorithm. In what follows, we denote the entire unlabeled corpus
+by X = {x1 , . . . , xn}, and a set of corresponding parses for each corpus sentence by Y = {y1 , . . . , yn}.
+The EM algorithm is a popular method for optimizing marginal likelihood:
+L (q) = log (cid:229)
+Y
+
+pq (X, Y).
+
+q(Y)
+
+q(Y) log
+
+= F (q, q).
+
+pq (X, Y)
+q(Y)
+
+We brieﬂy review the interpretation of the EM algorithm given by Neal and Hin ton (1998), as
+this interpretation best elucidates how the posterior regularization method we propose in Section 4
+is a natural modiﬁcation of the basic EM algorithm. Neal and Hinton (1998) view EM as block
+coordinate ascent on a function that lower-bounds L (q). We form the lower bound, denoted F (q, q),
+by applying Jensen’s inequality to L (q):
+L (q) = log (cid:229)
+≥ (cid:229)
+Y
+Y
+Splitting up the log terms, we can then rewrite F (q, q) as:
+q(Y) log( pq (X) pq (Y | X)) − (cid:229)
+F (q, q) = (cid:229)
+Y
+Y
+= L (q) − (cid:229)
+q(Y)
+pq (Y | X)
+Y
+= L (q) − KL(q(Y) k pq (Y | X)).
+Based on this formulation, we can view EM as performing coordinate ascent on F (q, q). Starting
+from an initial parameter estimate q0 , the algorithm iterates two block coordinate ascent steps until
+a convergence criterion is attained:
+
+pq (X, Y)
+q(Y)
+
+q(Y) log q(Y)
+
+q(Y) log
+
+(1)
+
+E : qt+1 = arg max
+q
+M : qt+1 = arg max
+q
+
+F (q, qt ) = arg min
+q
+F (qt+1 , q) = arg max
+q
+
+KL(q(Y) k pqt (Y | X)),
+
+Eqt+1 [log pq (X, Y)] .
+
+(2)
+
+Note that the E-step just sets qt+1 (Y) = pqt (Y|X), since it performs an unconstrained minimization
+of a Kullback-Leibler divergence.
+Figure 2 illustrates the large mismatch between an EM-trained DMV model and the empirical
+statistics of dependency types. We will eventually show that posterior regularization reduces the
+mismatch much more successfully than approaches based on parameter priors.
+
+4. Learning with Sparse Posteriors
+
+We stated in the introduction that posterior regularization makes gains over baseline methods such
+as EM by inducing sparsity in the posteriors. Before discussing how to learn a model with sparse
+posteriors, we wish to further motivate the idea. The main intuition behind our method is that a
+
+458
+
+

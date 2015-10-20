@@ -1,0 +1,509 @@
+LSHGD: A database for human leprosy susceptible genes
+C. George Priya Doss a,
+⁎, N. Nagasundaram b
+, Jain Srajan b
+, Chakraborty Chiranjib b
+a Medical Biotechnology Division, School of Biosciences and Technology, Center for Nanobiotechnology, VIT University, Vellore 632014, Tamil Nadu, India b School of Biosciences and Technology, VIT University, Vellore 632014, Tamil Nadu, India
+article info abstract
+Article history:
+Received 21 March 2012
+Accepted 23 June 2012
+Available online 30 June 2012
+Keywords:
+Leprosy
+Human
+SNPs
+Database
+Studies aiming to explore the involvement of host genetic factors to determine susceptibility to develop disease
+and individual's response to the infection with Mycobacterium leprae have increased in recent years. To
+address this issue, we have developed a Leprosy Susceptible Human Gene Database (LSHGD) to integrate leprosy
+and human associated 45 genes by profound literature search. This will serve as a user-friendly and interactive
+platform to understand the involvement of human polymorphisms (SNPs) in leprosy, independent
+genetic control over both susceptibility to leprosy and its association with multi-drug resistance of M. leprae.
+As the first human genetic database in leprosy it aims to provide information about the associated genes,
+corresponding protein sequences, available three dimensional structures and polymorphism related to leprosy.
+In conclusion, this will serve as a multifunctional valuable tool and convenient information platform
+which is freely available at http://www.vit.ac.in/leprosy/leprosy.htm and enables the user to retrieve information
+of their interest.
+© 2012 Elsevier Inc. All rights reserved.
+1. Introduction
+The field of human genetics of infectious diseases aims to define the
+genetic variations accounting for inter-individual variability in the
+course of human infections [1]. Leprosy (Hansen's disease) is a chronic
+granulomatous infectious disease of human whose etiological agent,
+Mycobacterium leprae, was identified by G. H. A. Hansen in the 19th century.
+In 2011, there were new cases reported, predominantly in Asia, Africa,
+and Latin America [2]. According to official reports received from
+WHO during 2011 from 130 countries and territories, the global registered
+prevalence of leprosy at the beginning of 2011 stood at 192,246
+cases, while the number of new cases detected during 2010 was
+228,474 (excluding the small number of cases in Europe). Leprosy is
+an unusual disease in many aspects, not the least of which is that, despite
+effective multi-drug therapy, the steady state number of leprosy
+cases is about equal to the annual number of new cases. These numbers
+are evidence of a high transmission rate. Until the modes and sources of
+transmission are well understood, it is unlikely that we will be able to
+interfere with the transmission or be able to eradicate this disease. Leprosy
+is primarily a disease of the skin and peripheral nervous system.
+There were also studies that involved the eyes, bone, lymph nodes,
+nasal structures, and testes [3]. The Ridley–Jopling classification uses
+histopathological and clinical features and the bacteriological index as
+well. It classifies leprosy in tuberculoid (TT), borderline tuberculoid
+(BT), borderline (BB), borderline-lepromatous (BL), and lepromatous
+(LL) categories. In another classification by WHO, multibacillary leprosy
+includes the lepromatous (LL), borderline lepromatous (BL), and borderline
+(BB) forms, and paucibacillary leprosy encompasses the tuberculoid
+(TT) and borderline tuberculoid (BT) forms [4]. During the past
+years, few studies aiming to explore the host susceptibility to leprosy
+have been explored and published. The results of epidemiological studies
+(twin studies and complex segregation analyses) [5–7] and
+genome-wide analysis (linkage and association) [8] in leprosy infection
+clearly indicated the involvement of host genetic factors to determine
+susceptibility to develop the disease and the individual's response to
+the infection with M. leprae. Host genetic factors may therefore largely
+determine which exposed individuals develop disease. Several studies
+indicate that leprosy pathogenesis is a three-step process (i) group of
+genes controls susceptibility to infection, (ii) different genes control
+the clinical manifestation of disease, and (iii) genes influencing the development,
+in a proportion of affected individuals, of leprosy reversal
+reaction type 1 (RR1). A recent human genome-wide linkage or association
+studies have observed a significant association with or linked to
+leprosy in various genes C3, C4B, CCDC122, CCL3, CCL5, CFB, COL3A1,
+CR1, CTLA4, DEFB1, FCN2, HLA-DQA1, HLA-DQB1, HLA-DRB1, HSPA1A,
+ICAM1, IFNG, IL10, IL12B, IL12RB1, IL12RB2, LACC1, LAMA2, LRRK2, LTA,
+LTA4H, MBL2, MICA, MICB, MRC1, NOD2, PACRG, PARK2, PGL1/SDHD,
+RIPK2, SLC11A1, TAP1, TIRAP, TLR1, TLR2, TLR4, TNF, and TNFSF15,
+[5,9–11]. Recent advances in high-throughput genotyping, next generation
+sequencing, and very high-density microarrays have generated a
+tremendous amount of human genetic variation data associated with
+human traits and diseases especially Single Nucleotide Polymorphisms
+(SNPs), Copy Number Variations (CNVs), and Insertions and deletions
+(Indels). There were quite a lot of studies that have reported the direct
+Genomics 100 (2012) 162–166
+⁎ Corresponding author at: VIT University, Vellore 632014, Tamil Nadu, India.
+E-mail addresses: georgecp77@yahoo.co.in, georgepriyadoss@vit.ac.in
+(C. George Priya Doss).
+0888-7543/$ – see front matter © 2012 Elsevier Inc. All rights reserved.
+doi:10.1016/j.ygeno.2012.06.010
+Contents lists available at SciVerse ScienceDirect
+Genomics
+journal homepage: www.elsevier.com/locate/ygeno
+involvement of SNPs in host genetics susceptibility to leprosy. SNPs provide
+an opportunity to understand the association between genotype
+and phenotype in a much broader manner. These mounting studies on
+SNPs insist their role in better understanding the resultant phenotypic
+variations among individuals with an endeavor towards new drug
+design and development. Mapping of SNPs to protein domains and analyzing
+at the structural level will reveal the full extent to which they
+can alter the interactivity of proteins. To understand the key structural
+changes induced by SNPs, we have included three dimensional (3D)
+structures of the corresponding proteins in this database. Although
+human associated studies related to leprosy have received great attention
+from experimental researchers; there is no single comprehensive
+database to address human leprosy associated gene information. The
+amount of genetic data generating will also increase drastically in the
+coming years. To address this issue the need for a comprehensive and
+well organized collection of genetic data from multiple published studies
+is urgently needed to provide information in one cluster. Currently
+there are few databases available related to leprosy such as The Leprosy
+VNTR Database [12], the Leprosy—Mycobacterium Leprae Database
+[13], and the Database of Drug Targets for Resistant Pathogens
+(DDTRP) [14] stating the information related to M. leprae and its drug
+resistance. In this present study, we describe a new web based interface
+called LSHGD which provides detailed information for researchers who
+are interested in analyzing the involvement and association of human
+genome in leprosy. Our main urge is to provide a convenient information
+platform for molecular epidemiologists and clinicians working on
+leprosy. The information about the 45 leprosy susceptible human
+genes [15–56] is shown in Table 1. A primary function of the database
+is to provide a way of identifying associated SNPs that are likely to
+have an impact on molecular function. As the first database, freely accessible
+LSHGD aims to provide comprehensive sets of genetic information
+both at the sequence and structural levels for extending functional
+analysis.
+2. Data collection
+The main goal of our presented work is to develop an interface that
+provides a direct link between leprosy and human associated genes.
+The gene information regarding human leprosy susceptible genes
+[15–56] are provided in Table 1. The data contents can scale up in two
+ways. (i) The literature information on the impact of human genes and
+its association with leprosy were compiled from published literatures
+according to Pub Med (http://www.ncbi.nlm.nih.gov/PubMed/), OMIM
+(http://www.ncbi.nlm.nih.gov/omim/), and UniProtKB (http://www.
+uniprot.org/) [57]. OMIM contains textual information, pictures, and reference
+information. It also contains copious links to NCBI's Entrez database
+of MEDLINE articles and sequence information. UniProt was used
+to validate the involvement of gene in mutation; where this gene is implicated:
+diseases, a selected bibliography with hyperlinks to MEDLINE
+abstracts. (ii) The genomic information types include genes, chromosomal
+regions, natural variants (SNPs), associated proteins and their
+pathways, etc. The SNP information of associated genes was retrieved
+from the NCBI dbSNP (http://www.ncbi.nlm.nih.gov/snp/). The annotated
+sequence is required to determine the functional class (nsSNP,
+cds-synon, UTR, and intronic) of the SNP. Nucleotide coordinates (numerical
+position of a nucleotide in a gene sequence) and genotypic variation
+information were also obtained from this sequence. We retrieved
+related information from Public databases and gene annotation includes
+NCBI [58], OMIM [57], UniProt [59], Ensembl [60], PDB [61], HGNC [62]
+and KEGG [63].
+2.1. Database design
+We provide an intuitive, well organized and user friendly web interface
+that allows users to explore the detailed information of leprosy
+susceptible human genes. It includes gene name, gene ID, chromosome
+number, chromosomal position, chromosomal orientation, gene function,
+taxonomic identifier, RefSeq_protein, RefSeq_mRNA, OMIM ID,
+HGNC ID, Pub Med ID, genotypic variation, residue change, function
+class, SNP reference, associated protein, associated PDB ID, UniProt ID,
+and associated pathways. Majorly, sequence information was incorporated
+from NCBI (DNA), protein related information from UniProt and
+protein structures from PDB. Clicking links leads to more detailed
+information.
+2.2. LSHGD organization and system design
+Upon accessing LSHGD (Link: http://www.vit.ac.in/leprosy/leprosy.
+htm) a click on the first interactive button named “Home” introduces
+the user about the database. A click on the second interactive button
+Table 1
+List of leprosy susceptible human genes.
+Gene
+symbol
+Chromosomal
+position
+Description Reference
+C2 6p21.33 Complement component 2 [15]
+C3 19p13.3 Complement component 3 [16]
+C4B 6p21.33 C4b-binding protein [17]
+CCDC122 13q14.11 Coiled-coil domain containing 122 [18]
+CCL3 17q12 Chemokine (C\C motif) ligand 3 [19]
+CCL5 17q11 Chemokine (C\C motif) ligand 5 [20]
+CFB 6p21.33 Complement factor B [21]
+COL3A1 2q32.2 Collagen, type III, alpha 1 [22]
+CR1 1q32.2 Complement receptor 1 [23]
+CTLA4 2q33.2 Cytotoxic t-lymphocyte antigen 4 [24]
+DEFB1 8p23.1 Defensin, beta 1 [25]
+FCN2 9q34.3 Ficolin-2 [26]
+HLA-DQA1 6p21.3 HLA class II histocompatibility antigen, DQ
+alpha 1
+[27]
+HLA-DQB1 6p21.3 HLA class II histocompatibility antigen, DQ
+beta 1
+[28]
+HLA-DRB1 6p21.32 HLA class II histocompatibility antigen, DR
+beta 1
+[29]
+HSPA1A 6p21.33 Heat shock 70 kDa protein 1A [30]
+ICAM1 19p13.2 Intercellular adhesion molecule 1 [31]
+IFNG 12q14 Interferon-gamma (IFN-γ) [32]
+IL10 1q31–q32 Interleukin-10 [33]
+IL12B 5q33.3 Human interleukin 12 [34]
+IL12RB1 19p13.11 Interleukin 12 receptor, beta 1 [35]
+IL12RB2 1p31.3 Interleukin 12 receptor, beta 2 [36]
+LACC1 13q14.11 Laccase (multicopper oxidoreductase)
+domain containing 1
+[18]
+LAMA2 6q22–q23 Laminin subunit alpha-2 [37]
+LRRK2 12q12 Leucine-rich repeat kinase 2 [38]
+LTA 6p21.3 Lymphotoxin-alpha [39]
+LTA4H 12q22 Leukotriene A4 hydrolase [40]
+MBL2 10q11.2 Mannose-binding lectin [41]
+MICA 6p21.33 MHC class I polypeptide-related sequence [42]
+MICB 6p21.33 MHC class I polypeptide-related sequence B [43]
+MRC1 10p12.33 Mannose receptor, C type 1 [44]
+NOD2 16q21 Nucleotide-binding oligomerization
+domain-containing protein 2
+[45]
+PACRG 6q26 Parkin coregulated gene [46]
+PARK2 6q25.2–q27 Parkinson protein 2, E3 ubiquitin protein
+ligase
+[47]
+PGL1/
+SDHD
+11q23 Succinate dehydrogenase complex
+subunit D
+[48]
+RIPK2 8q21 Receptor-interacting serine/
+threonine–protein kinase 2
+[49]
+SLC11A1 2q35 Solute carrier family 11 (proton-coupled
+divalent metal ion transporters), member 1
+[50]
+TAP1 6p21.3 Antigen peptide transporter 1 [51]
+TIRAP 11q24.2 Toll-interleukin 1 receptor [52]
+TLR1 4p14 Toll-like receptor 1 [53]
+TLR2 4q32 Toll-like receptor 2 [53]
+TLR4 9q33.1 Toll-like receptor 4 [53]
+TNF 6p21.33 Tumor necrosis factor-alpha [54]
+TNFSF15 9q32 Tumor necrosis factor (ligand)
+superfamily, member 15
+[55]
+VDR 12q13 Vitamin D (1,25-dihydroxyvitamin D3)
+receptor
+[56]
+C. George Priya Doss et al. / Genomics 100 (2012) 162–166 163
+named “Gene Database” allows the user to specifically choose the type
+of information from the check box menu that includes gene information,
+chromosomal information, associated protein information, and
+natural variants information from the database. A click on the third interactive
+button named “Classification of Gene”, allows the user to visualize
+the classification of human genes susceptible to leprosy based on
+associated protein mechanisms. A click on the last interactive button
+named “Associated protein study” allows the user to find several
+other protein associated studies in different stages of leprosy. A click
+on the last interactive button named “Link to Other Database” allows
+user to link other related databases Leprosy—Mycobacterium Leprae
+Database [13], and Database of Drug Targets for Resistant Pathogens
+(DDTRP). The following interfaces are displayed in Fig. 1. LSHGD consists
+of three major software components: an Apache HTTP server, a
+MySQL database and an Aspx script. The back end data analysis programs
+were written in asp script using the Microsoft Visual Studio
+2008 tool.
+2.3. Database implementation
+A maximum of 45 genes are displayed in the interface. In gene
+information the interface provides related information such as
+Gene Symbol, Gene Name, Gene Function, Entrez Gene ID,
+RefSeq_Protein, RefSeq_mRNA, OMIM_ID, PubMed_ID, HGNC_ID,
+Primary Reference related to leprosy susceptibility, population
+studied, pathway Information and other cross references. Pathway
+information for each gene allows the user to identify disease related
+and associated pathways. Ethnicity will provide information
+about the predisposition of leprosy genes in different populations.
+Similarly, Gene_Name, Gene_ID, Chromosome_Number, Chromosomal_Position
+and Orientation in Chromosomal Information
+have been provided. These information will definitely provide the
+user the information about susceptibility of genes in a specific
+chromosomal region. Notably, gene information and chromosome
+information will serve as genomic platform for database users. To
+explore the possible relationships between genes and diseases we
+have incorporated information about natural variants. However,
+only a small subset of SNP information has been documented. It is
+easy to determine a preliminary profile of the relationship between
+genes and diseases using the information such as Gene Symbol,
+Entrez Gene ID, Associated SNP, Genotypic Variation, Residue
+Change, Functional Annotation, Consequence of Transcript and
+SNP Associated with other Disease. Information such as functional
+annotation and consequence of transcript encoded have been provided
+for the significant SBNPs by GWAS and pathway information
+for each gene in the natural variants and gene information interface
+of the revised database. Similarly, Gene Name, Associated protein,
+Chromosomal position, UniProt_ID, Associated_PDB_ID and
+Associated_Pathway in protein information exist. From this natural
+variants and protein information result table, the user can interlink
+SNP associated information at the structural level. These interfaces
+created in this database will satisfy the demands of the scientific
+community by providing in depth knowledge about leprosy association
+with human variants.
+2.4. Designed instruction for users
+The freely accessible LSHGD available at http://www.vit.ac.in/
+leprosy/leprosy.htm aims to provide a comprehensive set of genetic
+information both at the sequence and structural levels for extending
+functional analysis. The database is composed of five interactive buttons
+in the main display (Fig. 2) and explained their functions by considering
+TLR1 as example.
+(i) Main Page: the database is composed of five interactive buttons
+in the main display namely
+Home, Gene Database, Classification of genes, Associated protein
+study and Link to other databases. Home is the main
+page of the database. By clicking, the user can access the summarized
+introduction about the database (Fig. 2A).
+(ii) Gene Database: This represents the main characteristics of 45
+leprosy susceptible human genes. Search for genes in LSHGD
+by using the drop down menu provided in the interface.
+From this page the user has the option of retrieving information
+of their choice such as Gene Information (Fig. 2B), Chromosomal
+Information (Fig. 2C), Natural Variants Information
+Fig. 1. Overview of the structural and functional workflows of LSHGD.
+164 C. George Priya Doss et al. / Genomics 100 (2012) 162–166
+(Fig. 2D), and Protein Information (Fig. 2E) by using four radio
+buttons. These information will provide in depth knowledge
+about the gene function, population studied, SNP information,
+annotation, consequence of transcript, primary reference associated
+with the disease and other cross references.
+(iii) Classification of genes: This page displays the classification of 45
+genes namely Innate Immune Receptors Genes (6), Cytokines
+Genes (3), Transport Genes (1), Tissue-Specific Markers Genes
+(1), Innate Immune Effectors Molecules and Serum Proteins
+Genes (3), and Other Candidate Genes (31).
+(iv) Associated protein studies: This page (Fig. 2F) represents other
+associated proteins in different stages of leprosy namely LL, BL,
+BB, TT, BT, Reversal reactions (RRs) and Erythema nodosum
+leprosum (ENL).
+(v) Link to other databases: This page displays two interlinked database
+links which will be helpful in understanding multi‐drug
+resistance in leprosy.
+3. Future improvement
+As the amount of genomic information generating will be increasing
+drastically in the coming years, we will continuously collect the latest
+gene and SNP related data disease data sets to keep up-to-date. In the
+future we would like to improvise our database in three main ways.
+One is to further provide link gene symbol to their corresponding accession
+numbers in NCBI (NP for protein and NM for mRNA). Next is to provide
+link to PDB ID information. Lastly, the incorporation of in silico tool
+prediction results into database will be able to classify SNPs pathogenic
+from neutral ones. We assure this information will definitely will make
+a way for genotype–phenotype researches as well as pharmacogenetics
+studies.
+Conflict of interest
+The authors declare that we don't have a conflict of interest.
+Acknowledgment
+The authors thank the management of VIT University for providing
+the facilities to carry out this work.
+References
+[1] J.L. Casanova, L. Abel, Human genetics of infectious diseases: a unified theory,
+EMBO J. 26 (2007) 915–922.
+[2] F.O. Vannberg, S.J. Chapman, A.V. Hill, Human genetic susceptibility to intracellular
+pathogens, Immunol. Rev. 240 (2011) 105–116.
+[3] S.L. Walker, D.N. Lockwood, Leprosy, Clin. Dermatol. 25 (2007) 165–172.
+[4] R.R. Jacobson, J.L. Krahenbuhl, Leprosy, Lancet 353 (1999) 655–660.
+[5] A. Alter, A. Grant, L. Abel, A. Alcais, E. Schurr, Leprosy as a genetic disease, Int.
+Mamm. Genome Soc. 22 (2011) 19–31.
+[6] M.R. Chakravartti, F. Vogel, A twin study on leprosy, Top Hum. Genet. 1 (1973)
+1–123.
+[7] L. Abel, D.L. Vu, J. Oberti, V.T. Nguyen, V.C. Van, M. Guilloud-Bataille, E. Schurr, P.H.
+Lagrange, Complex segregation analysis of leprosy in southern Vietnam, Genet.
+Epidemiol. 12 (1995) 63–82.
+[8] C.C. Cardoso, A.C. Pereira, C. de SalesMarques, M.O. Moraes, Leprosy susceptibility:
+genetic variations regulate innate and adaptive immunity, and disease outcome,
+Future Microbiol. 6 (2011) 533–549.
+[9] E.A. Misch, W.R. Berrington, J.C. Vary Jr., T.R. Hawn, Leprosy and the human
+genome, Microbiol. Mol. Biol. Rev. 74 (2010) 589–620.
+[10] E. Prado Montes de Oca, Human polymorphisms as clinical predictors in leprosy,
+J Trop Med. 2011 (2011) 923943.
+Fig. 2. Snapshot of LSHGD to access and analyze the data associated with leprosy genes. A) Home page of the LSHGD, B) Gene Information, C) Chromosomal Information, D) Natural
+Variants Information, E) Protein Information, and F) Associated protein study.
+C. George Priya Doss et al. / Genomics 100 (2012) 162–166 165
+[11] F.R. Zhang, et al., Genomewide association study of leprosy, N. Engl. J. Med. 361
+(2009) 2609–2618.
+[12] B.G. Hall, A Mycobacterium leprae VNTR database, Lepr. Rev. 81 (2010) 96–98.
+[13] A. Kapopoulou, J.M. Lew, S.T. Cole, The MycoBrowser portal: a comprehensive and
+manually annotated resource for mycobacterial genomes (Edinb), Tuberculosis
+91 (2011) 8–13.
+[14] J.C. Sundaramurthi, P. Ramanandan, S. Brindha, C.R. Subhasree, A. Prasad, V.
+Kumaraswami, L.E. Hanna, DDTRP: database of drug targets for resistant pathogens,
+Bioinformation 7 (2011) 98–101.
+[15] M.H. de Bruijn, G.H. Fey, Human complement component C3: cDNA coding sequence
+and derived primary structure, Proc. Natl. Acad. Sci. 82 (1985) 708–712.
+[16] M.H. Roos, E. Mollenhauer, P. Demant, C. Rittner, A molecular basis for the two
+locus model of human complement component C4, Nature 298 (1982) 854–856.
+[17] B.O. Smith, R.L. Mallin, M. Krych-Goldberg, X. Wang, R.E. Hauhart, K. Bromek, D.
+Uhrin, J.P. Atkinson, P.N. Barlow, Structure of the C3b binding site of
+CR1(CD35), the immune adherence receptor, Cell 108 (2002) 769–780.
+[18] S.H. Wong, A.V.S. Hill, F.O. Vannberg, Genomewide association study of leprosy,
+N. Engl. J. Med. 362 (2010) 1446–1447.
+[19] M. Nakao, H. Nomiyama, K. Shimada, Structures of human genes coding for cytokine
+LD78 and their expression, Mol. Cell. Biol. 10 (1990) 3646–3658.
+[20] T.A. Donlon, A.M. Krensky, M.R. Wallace, F.S. Collins, M. Lovett, C. Clayberger, Localization
+of a human T-cell-specific gene, RANTES (D17S136E), to chromosome
+17q11.2–q12, Genomics 5 (1990) 548–553.
+[21] R.D. Campbell, The molecular genetics and polymorphism of C2 and factor B, Br.
+Med. Bull. 43 (1987) 37–49.
+[22] R.A. Janeczko, F.F. Ramirez, Nucleotide and amino acid sequences of the entire
+human alpha-1(III) collagen, Nucleic Acids Res. 17 (1989) 6742.
+[23] K.W. Bensch, M. Raida, H.J. Magert, P. Schulz-Knappe, W.G. Forssmann, hBD-1: a
+novel beta-defensin from human plasma, FEBS Lett. 368 (1995) 331–335.
+[24] P. Dariavach, M.-G. Mattei, P. Golstein, M.-P. Lefranc, Human Ig superfamily
+CTLA-4 gene: chromosomal localization and identity of protein sequence between
+murine and human CTLA-4 cytoplasmic domains, Eur. J. Immunol. 18
+(1988) 1901–1905.
+[25] K. Yamamoto, H. Kobayashi, O. Miura, S. Hirosawa, N. Miyasaka, Assignment of
+IL12RB1 and IL12RB2, interleukin-12 receptor beta-1 and beta-2 chains, to
+human chromosome 19 band p13.1 and chromosome 1 band p31.2, respectively,
+by in situ hybridization, Cytogenet. Cell Genet. 770 (1997) 257–258.
+[26] Y. Endo, Y. Sato, M. Matsushita, T. Fujita, Cloning and characterization of the
+human lectin P35 gene and its related gene, Genomics 36 (1996) 515–521.
+[27] R.J. Duquesnoy, M. Marrari, K. Annen, Identification of an HLA-DR associated system
+of B cell alloantigens, Transplant. Proc. 11 (1979) 1757–1760.
+[28] J.A. Todd, J.I. Bell, H.O. McDevitt, HLA-DQ(beta) gene contributes to susceptibility
+and resistance to insulin-dependent diabetes mellitus, Nature 329 (1987)
+599–604.
+[29] T.F. Bergstrom, A. Josefsson, H.A. Erlich, U. Gyllensten, Recent origin of HLA-DRB1
+alleles and implications for human evolution, Nat. Genet. 18 (1998) 237–242.
+[30] C.M. Milner, R.D. Campbell, Structure and expression of the three MHC-linked
+HSP70 genes, Immunogenetics 32 (1990) 242–251.
+[31] J.M. Greve, G. Davis, A.M. Meyer, C.P. Forte, S.C. Yost, C.W. Marlor, M.E. Kamarck, A.
+McClelland, The major human rhinovirus receptor is ICAM-1, Cell 56 (1989) 839–847.
+[32] S.L. Naylor, A.Y. Sakaguchi, T.B. Shows, M.L. Law, D.V. Goeddel, P.W. Gray, Human
+immune interferon gene is located on chromosome 12, J. Exp. Med. 157 (1983)
+1020–1027.
+[33] J. Eskdale, D. Kube, H. Tesch, G. Gallagher, Mapping of the human IL10 gene and
+further characterization of the 5-prime flanking sequence, Immunogenetics 46
+(1997) 120–128.
+[34] D. Huang, M.R. Cancilla, G. Morahan, Complete primary structure, chromosomal
+localisation, and definition of polymorphisms of the gene encoding the human
+interleukin-12 p40 subunit, Genes Immun. 1 (2000) 515–520.
+[35] C. Fieschi, et al., Low penetrance, broad resistance, and favorable outcome of interleukin
+12 receptor beta-1 deficiency: medical and immunological implications,
+J. Exp. Med. 197 (2003) 527–535.
+[36] K. Yamamoto, H. Kobayashi, O. Miura, S. Hirosawa, N. Miyasaka, Assignment of
+IL12RB1 and IL12RB2, interleukin-12 receptor beta-1 and beta-2 chains, to
+human chromosome 19 band p13.1 and chromosome 1 band p31.2, respectively,
+by in situ hybridization, Cytogenet. Cell Genet. 77 (1997) 257–258.
+[37] R. Vuolteenaho, M. Nissinen, K. Sainio, M. Byers, R. Eddy, H. Hirvonen, T.B. Shows,
+H. Sariola, E. Engvall, K. Tryggvason, K. Human, laminin M chain (merosin):
+complete primary structure, chromosomal assignment, and expression of the M
+and A chain in human fetal tissues, J. Cell Biol. 124 (1994) 381–394.
+[38] A. Zimprich, Mutations in LRRK2 cause autosomal-dominant parkinsonism with
+pleomorphic pathology, Neuron 44 (2004) 601–607.
+[39] B.B. Aggarwal, T.E. Eessalu, P.E. Hass, Characterization of receptors for human tumour
+necrosis factor and their regulation by gamma-interferon, Nature 318
+(1985) 665–667.
+[40] J.A. Mancini, J.F. Evans, Cloning and characterization of the human leukotriene
+A-4 hydrolase gene, Eur. J. Biochem. 231 (1995) 65–71.
+[41] K. Sastry, G.A. Herman, L. Day, E. Deignan, G. Bruns, C.C. Morton, R.A.B. Ezekowitz,
+The human mannose-binding protein gene: exon structure reveals its evolutionary
+relationship to a human pulmonary surfactant gene and localization to chromosome
+10, J. Exp. Med. 170 (1989) 1175–1189.
+[42] S. Bahram, M. Bresnahan, D.E. Geraghty, T. Spies, A second lineage of mammalian
+major histocompatibility complex class I genes, Proc. Natl. Acad. Sci. 91 (1994)
+6259–6263.
+[43] S.R. Nalabolu, H. Shukla, G. Nallur, S. Parimoo, S.M. Weissman, Genes in a 220-kb
+region spanning the TNF cluster in human MHC, Genomics 31 (1996) 215–222.
+[44] S.J. Kim, N. Ruiz, K. Bezouska, K. Drickamer, Organization of the gene encoding the
+human macrophage mannose receptor (MRC1), Genomics 14 (1992) 721–727.
+[45] Y. Ogura, N. Inohara, A. Benito, F.F. Chen, S. Yamaoka, G. Nunez, Nod2, a
+Nod1/Apaf-1 family member that is restricted to monocytes and activates
+NF-kappa- B, J. Biol. Chem. 276 (2001) 4812–4818.
+[46] A.B. West, P.J. Lockhart, C. O'Farell, M.J. Farrer, Identification of a novel gene
+linked to parkin via a bi-directional promoter, J. Mol. Biol. 326 (2003) 11–19.
+[47] T. Kitada, S. Asakawa, N. Hattori, H. Matsumine, Y. Yamamura, S. Minoshima, M.
+Yokochi, Y. Mizuno, N. Shimizu, Mutations in the parkin gene cause autosomal recessive
+juvenile parkinsonism, Nature 392 (1998) 605–608.
+[48] H. Hirawake, M. Taniwaki, A. Tamura, S. Kojima, K. Kita, Cytochrome b in human
+complex II (succinate-ubiquinone oxidoreductase): cDNA cloning of the components
+in liver mitochondria and chromosome assignment of the genes for the
+large (SDHC) and small (SDHD) subunits to 1q21 and 11q23, Cytogenet. Cell
+Genet. 79 (1997) 132–138.
+[49] N. Inohara, L. del Peso, T. Koseki, S. Chen, G. Nunez, RICK, a novel protein kinase
+containing a caspase recruitment domain, interacts with CLARP and regulates
+CD95- mediated apoptosis, J. Biol. Chem. 273 (1998) 12296–12300.
+[50] F. Kishi, Isolation and characterization of human NRAMP cDNA, Biochem.
+Biophys. Res. Commun. 204 (1994) 1074–1080.
+[51] T. Spies, M. Bresnahan, S. Bahram, D. Arnold, G. Blanck, E. Mellins, D. Pious, R.
+DeMars, A gene in the human major histocompatibility complex class II region
+controlling the class I antigen presentation pathway, Nature 348 (1990) 744–747.
+[52] T. Horng, G.M. Barton, R. Medzhitov, TIRAP: an adapter molecule in the Toll signaling
+pathway, Nat. Immun. 2 (2001) 835–841.
+[53] F.L. Rock, G. Hardiman, J.C. Timans, R.A. Kastelein, J.F. Bazan, A family of human
+receptors structurally related to Drosophila Toll, Proc. Natl. Acad. Sci. 95 (1998)
+588–593.
+[54] L.J. Old, Tumor necrosis factor (TNF), Science 230 (1985) 630–632.
+[55] Y. Zhai, J. Ni, G.W. Jiang, J. Lu, L. Xing, C. Lincoln, K.C. Carter, F. Janat, D. Kozak, S. Xu, L.
+Rojas, B.B. Aggarwal, S. Ruben, L.Y. Li, R. Gentz, G.L. Yu, VEGI, a novel cytokine of the
+tumor necrosis factor family, is an angiogenesis inhibitor that suppresses the growth
+of colon carcinomas in vivo, FASEB J. 13 (1999) 181–189.
+[56] A.R. Baker, D.P. McDonnell, M. Hughes, T.M. Crisp, D.J. Mangelsdorf, M.R. Haussler,
+J.W. Pike, J. Shine, B.W. O'Malley, Cloning and expression of full-length cDNA
+encoding human vitamin D receptor, Proc. Natl. Acad. Sci. 85 (1988) 3294–3298.
+[57] J. Amberger, C.A. Bocchini, A.F. Scott, A. Hamosh, McKusick's Online Mendelian Inheritance
+in Man (OMIM), Nucleic Acids Res. 37 (2009) D793–D796.
+[58] S.T. Sherry, et al., dbSNP: the NCBI database of genetic variation, Nucleic Acids
+Res. 29 (2001) 308–311.
+[59] A. Bairoch, R. Apweiler, The SWISS-PROT protein sequence data bank and its new
+supplement TREMBL, Nucleic Acids Res. 24 (1996) 21–25.
+[60] P. Flicek, et al., Ensembl 2011, Nucleic Acids Res. 39 (2011) D800–D806.
+[61] A. Kouranov, et al., The RCSB PDB information portal for structural genomics,
+Nucleic Acids Res. 34 (2006) D302–5.
+[62] R.L. Seal, S.M. Gordon, M.J. Lush, M.W. Wright, E.A. Bruford, genenames.org: the
+HGNC resources in 2011, Nucleic Acids Res. 39 (2011) D514–D519.
+[63] M. Kanehisa, S. Goto, M. Hattori, K.F. Aoki-Kinoshita, M. Itoh, S. Kawashima, T.
+Katayama, M. Araki, M. Hirakawa, From genomics to chemical genomics: new developments
+in KEGG, Nucleic Acids Res. 34 (2006) D354–D357.
+166 C. George Priya Doss et al. / Genomics 100 (2012) 162–166a

@@ -1,0 +1,510 @@
+Journal of Machine Learning Research 12 (2011) 2211-2268
+
+Submitted 12/09; Revised 9/10; Published 7/11
+
+Multiple Kernel Learning Algorithms
+
+Mehmet G ¨onen
+Ethem Alpayd ın
+Department of Computer Engineering
+Bo ˘gazic¸ i University
+TR-34342 Bebek, ˙Istanbul, Turkey
+
+Editor: Francis Bach
+
+GON EN@BOUN . EDU . TR
+A L PAYD IN@BOUN . EDU . TR
+
+Abstract
+In recent years, several methods have been proposed to combine multiple kernels instead of using a
+single one. These different kernels may correspond to using different notions of similarity or may
+be using information coming from multiple sources (different representations or different feature
+subsets). In trying to organize and highlight the similarities and differences between them, we give
+a taxonomy of and review several multiple kernel learning algorithms. We perform experiments on
+real data sets for better illustration and comparison of existing algorithms. We see that though there
+may not be large differences in terms of accuracy, there is difference between them in complexity as
+given by the number of stored support vectors, the sparsity of the solution as given by the number of
+used kernels, and training time complexity. We see that overall, using multiple kernels instead of a
+single one is useful and believe that combining kernels in a nonlinear or data-dependent way seems
+more promising than linear combination in fusing information provided by simple linear kernels,
+whereas linear methods are more reasonable when combining complex Gaussian kernels.
+Keywords: support vector machines, kernel machines, multiple kernel learning
+
+1. Introduction
+
+The support vector machine (SVM) is a discriminative classiﬁer proposed for binary classiﬁca-
+tion problems and is based on the theory of structural risk minimization (Vapnik, 1998). Given
+a sample of N independent and identically distributed training instances {(xi , yi )}N
+i=1 where xi is
+the D-dimensional input vector and yi ∈ {−1, +1} is its class label, SVM basically ﬁnds the lin-
+ear discriminant with the maximum margin in the feature space induced by the mapping function
+F : RD → RS . The resulting discriminant function is
+f (x) = hw, F(x)i + b.
+The classiﬁer can be trained by solving the following quadratic optimization pro blem:
+N(cid:229)
+1
+xi
+2 kwk2
+minimize
+2 + C
+i=1
+with respect to w ∈ RS , x ∈ RN
++ , b ∈ R
+subject to yi (hw, F(xi )i + b) ≥ 1 − xi
+∀i
+where w is the vector of weight coefﬁcients, C is a predeﬁned positive trade-off parameter between
+model simplicity and classiﬁcation error, x is the vector of slack variables, and b is the bias term
+
+c(cid:13)2011 Mehmet G ¨onen and Ethem Alpayd ın.
+
+G ¨ON EN AND A L PAYD IN
+
+ai −
+
+1
+2
+
+maximize
+
+of the separating hyperplane. Instead of solving this optimization problem directly, the Lagrangian
+dual function enables us to obtain the following dual formulation:
+N(cid:229)
+N(cid:229)
+N(cid:229)
+j=1
+i=1
+i=1
+with respect to a ∈ RN
++
+N(cid:229)
+ai yi = 0
+subject to
+i=1
+C ≥ ai ≥ 0
+∀i
+where k : RD × RD → R is named the kernel function and a is the vector of dual variables corre-
+ai yiF(xi ) and the discriminant
+sponding to each separation constraint. Solving this, we get w = (cid:229)N
+i=1
+function can be rewritten as
+
+aia j yi y j hF(xi ), F(x j )i
+|
+{z
+}
+k(xi , x j )
+
+f (x) =
+
+N(cid:229)
+i=1
+
+ai yi k(xi , x) + b.
+
+There are several kernel functions successfully used in the literature, such as the linear kernel
+(kLIN ), the polynomial kernel (kPOL ), and the Gaussian kernel (kGAU ):
+kLIN (xi , x j ) = hxi , x j i
+kPOL (xi , x j ) = (hxi , x j i + 1)q ,
+q ∈ N
+kGAU (xi , x j ) = exp (cid:0)−kxi − x j k2
+2/s2(cid:1) ,
+s ∈ R++ .
+There are also kernel functions proposed for particular applications, such as natural language pro-
+cessing (Lodhi et al., 2002) and bioinformatics (Sch ¨olkopf et al., 2004).
+Selecting the kernel function k(·, ·) and its parameters (e.g., q or s) is an important issue in train-
+ing. Generally, a cross-validation procedure is used to choose the best performing kernel function
+among a set of kernel functions on a separate validation set different from the training set. In recent
+years, multiple kernel learning (MKL) methods have been proposed, where we use multiple kernels
+instead of selecting one speci ﬁc kernel function and its corresponding p arameters:
+kh (xi , x j ) = fh ({km (xm
+j )}P
+i , xm
+m=1 )
+where the combination function, fh : RP → R, can be a linear or a nonlinear function. Kernel func-
+tions, {km : RDm × RDm → R}P
+m=1 , take P feature representations (not necessarily different) of data
+i ∈ RDm , and Dm is the dimensionality of the corresponding feature
+m=1 where xm
+i }P
+instances: xi = {xm
+representation. h parameterizes the combination function and the more common implementation is
+m=1 |h)
+kh (xi , x j ) = fh ({km (xm
+j )}P
+i , xm
+where the parameters are used to combine a set of predeﬁned kernels (i.e ., we know the kernel
+functions and corresponding kernel parameters before training). It is also possible to view this as
+j |h)}P
+kh (xi , x j ) = fh ({km (xm
+i , xm
+m=1 )
+
+2212
+
+MU LT I P L E K ERN E L L EARN ING A LGOR I THM S
+
+where the parameters integrated into the kernel functions are optimized during training. Most of
+the existing MKL algorithms fall into the ﬁrst category and try to combine predeﬁ
+ned kernels in an
+optimal way. We will discuss the algorithms in terms of the ﬁrst formulation but giv e the details of
+the algorithms that use the second formulation where appropriate.
+The reasoning is similar to combining different classiﬁers: Instead of choo sing a single kernel
+function and putting all our eggs in the same basket, it is better to have a set and let an algorithm
+do the picking or combination. There can be two uses of MKL: (a) Different kernels correspond to
+different notions of similarity and instead of trying to ﬁnd which works best, a learning method does
+the picking for us, or may use a combination of them. Using a speciﬁc kernel ma y be a source of
+bias, and in allowing a learner to choose among a set of kernels, a better solution can be found. (b)
+Different kernels may be using inputs coming from different representations possibly from different
+sources or modalities. Since these are different representations, they have different measures of
+similarity corresponding to different kernels. In such a case, combining kernels is one possible way
+to combine multiple information sources. Noble (2004) calls this method of combining kernels
+intermediate combination and contrasts this with early combination (where features from different
+sources are concatenated and fed to a single learner) and late combination (where different features
+are fed to different classi ﬁers whose decisions are then combined by a ﬁ
+xed or trained combiner).
+There is signiﬁcant amount of work in the literature for combining multiple kerne ls. Section 2
+identiﬁes the key properties of the existing MKL algorithms in order to construc t a taxonomy,
+highlighting similarities and differences between them. Section 3 categorizes and discusses the
+existing MKL algorithms with respect to this taxonomy. We give experimental results in Section 4
+and conclude in Section 5. The lists of acronyms and notation used in this paper are given in
+Appendices A and B, respectively.
+
+2. Key Properties of Multiple Kernel Learning
+
+We identify and explain six key properties of the existing MKL algorithms in order to obtain a
+meaningful categorization. We can think of these six dimensions (though not necessarily orthogo-
+nal) deﬁning a space in which we can situate the existing MKL algorithms and sea rch for structure
+(i.e., groups) to better see the similarities and differences between them. These properties are the
+learning method, the functional form, the target function, the training method, the base learner, and
+the computational complexity.
+
+2.1 The Learning Method
+
+The existing MKL algorithms use different learning methods for determining the kernel combina-
+tion function. We basically divide them into ﬁve major categories:
+
+1. Fixed rules are functions without any parameters (e.g., summation or multiplication of the
+kernels) and do not need any training.
+
+2. Heuristic approaches use a parameterized combination function and ﬁnd the parameters of
+this function generally by looking at some measure obtained from each kernel function sepa-
+rately. These measures can be calculated from the kernel matrices or taken as the performance
+values of the single kernel-based learners trained separately using each kernel.
+
+2213
+
+G ¨ON EN AND A L PAYD IN
+
+3. Optimization approaches also use a parametrized combination function and learn the parame-
+ters by solving an optimization problem. This optimization can be integrated to a kernel-based
+learner or formulated as a different mathematical model for obtaining only the combination
+parameters.
+
+4. Bayesian approaches interpret the kernel combination parameters as random variables, put
+priors on these parameters, and perform inference for learning them and the base learner
+parameters.
+
+5. Boosting approaches, inspired from ensemble and boosting methods, iteratively add a new
+kernel until the performance stops improving.
+
+2.2 The Functional Form
+
+There are different ways in which the combination can be done and each has its own combination
+parameter characteristics. We group functional forms of the existing MKL algorithms into three
+basic categories:
+
+1. Linear combination methods are the most popular and have two basic categories: unweighted
+sum (i.e., using sum or mean of the kernels as the combined kernel) and weighted sum. In the
+weighted sum case, we can linearly parameterize the combination function:
+
+hm km (xm
+i , xm
+j )
+
+P(cid:229)
+m=1 |h) =
+kh (xi , x j ) = fh ({km (xm
+j )}P
+i , xm
+m=1
+where h denotes the kernel weights. Different versions of this approach differ in the way
+they put restrictions on h: the linear sum (i.e., h ∈ RP ), the conic sum (i.e., h ∈ RP
++ ), or
+hm = 1). As can be seen, the conic sum is a special
+the convex sum (i.e., h ∈ RP
++ and (cid:229)P
+m=1
+case of the linear sum and the convex sum is a special case of the conic sum. The conic
+and convex sums have two advantages over the linear sum in terms of interpretability. First,
+when we have positive kernel weights, we can extract the relative importance of the combined
+kernels by looking at them. Second, when we restrict the kernel weights to be nonnegative,
+this corresponds to scaling the feature spaces and using the concatenation of them as the
+combined feature representation:
+
+√h1F1 (x1 )
+Fh (x) = 
+
+√h2F2 (x2 )
+
+
+...
+√hPFP (xP )
+and the dot product in the combined feature space gives the combined kernel:
+√h1F1 (x1
+√h1F1 (x1
+⊤ 
+
+
+hFh (xi ), Fh (x j )i = 
+j )
+i )
+√h2F2 (x2
+√h2F2 (x2
+j )
+i )
+
+
+
+
+...
+...
+√hPFP (xP
+√hPFP (xP
+i )
+j )
+2214
+
+P(cid:229)
+m=1
+
+=
+
+hm km (xm
+i , xm
+j ).
+
+MU LT I P L E K ERN E L L EARN ING A LGOR I THM S
+
+The combination parameters can also be restricted using extra constraints, such as the ℓ p -
+norm on the kernel weights or trace restriction on the combined kernel matrix, in addition
+to their domain deﬁnitions. For example, the ℓ1 -norm promotes sparsity on the kernel level,
+which can be interpreted as feature selection when the kernels use different feature subsets.
+
+2. Nonlinear combination methods use nonlinear functions of kernels, namely, multiplication,
+power, and exponentiation.
+
+3. Data-dependent combination methods assign speciﬁc kernel weights for each data instance.
+By doing this, they can identify local distributions in the data and learn proper kernel combi-
+nation rules for each region.
+
+2.3 The Target Function
+
+We can optimize different target functions when selecting the combination function parameters. We
+group the existing target functions into three basic categories:
+1. Similarity-based functions calculate a similarity metric between the combined kernel matrix
+and an optimum kernel matrix calculated from the training data and select the combination
+function parameters that maximize the similarity. The similarity between two kernel ma-
+trices can be calculated using kernel alignment, Euclidean distance, Kullback-Leibler (KL)
+divergence, or any other similarity measure.
+
+2. Structural risk functions follow the structural risk minimization framework and try to mini-
+mize the sum of a regularization term that corresponds to the model complexity and an error
+term that corresponds to the system performance. The restrictions on kernel weights can be
+integrated into the regularization term. For example, structural risk function can use the ℓ1 -
+norm, the ℓ2 -norm, or a mixed-norm on the kernel weights or feature spaces to pick the model
+parameters.
+
+3. Bayesian functions measure the quality of the resulting kernel function constructed from can-
+didate kernels using a Bayesian formulation. We generally use the likelihood or the posterior
+as the target function and ﬁnd the maximum likelihood estimate or the maximum a poster iori
+estimate to select the model parameters.
+
+2.4 The Training Method
+
+We can divide the existing MKL algorithms into two main groups in terms of their training method-
+ology:
+1. One-step methods calculate both the combination function parameters and the parameters
+of the combined base learner in a single pass. One can use a sequential approach or a si-
+multaneous approach. In the sequential approach, the combination function parameters are
+determined ﬁrst, and then a kernel-based learner is trained using the combin ed kernel. In the
+simultaneous approach, both set of parameters are learned together.
+
+2. Two-step methods use an iterative approach where each iteration, ﬁrst we update the combi-
+nation function parameters while ﬁxing the base learner parameters, and the n we update the
+base learner parameters while ﬁxing the combination function parameters. Th ese two steps
+are repeated until convergence.
+
+2215
+
+G ¨ON EN AND A L PAYD IN
+
+2.5 The Base Learner
+
+There are many kernel-based learning algorithms proposed in the literature and all of them can be
+transformed into an MKL algorithm, in one way or another.
+The most commonly used base learners are SVM and support vector regression (SVR), due
+to their empirical success, their ease of applicability as a building block in two-step methods, and
+their ease of transformation to other optimization problems as a one-step training method using the
+simultaneous approach. Kernel Fisher discriminant analysis (KFDA), regularized kernel discrimi-
+nant analysis (RKDA), and kernel ridge regression (KRR) are three other popular methods used in
+MKL .
+Multinomial probit and Gaussian process (GP) are generally used in Bayesian approaches. New
+inference algorithms are developed for modiﬁed probabilistic models in order
+to learn both the
+combination function parameters and the base learner parameters.
+
+2.6 The Computational Complexity
+
+The computational complexity of an MKL algorithm mainly depends on its training method (i.e.,
+whether it is one-step or two-step) and the computational complexity of its base learner.
+One-step methods using ﬁxed rules and heuristics generally do not spend much time to ﬁnd the
+combination function parameters, and the overall complexity is determined by the complexity of the
+base learner to a large extent. One-step methods that use optimization approaches to learn combina-
+tion parameters have high computational complexity, due to the fact that they are generally modeled
+as a semideﬁnite programming (SDP) problem, a quadratically constrained qua dratic programming
+(QCQP) problem, or a second-order cone programming (SOCP) problem. These problems are
+much harder to solve than a quadratic programming (QP) problem used in the case of the canonical
+SVM .
+Two-step methods update the combination function parameters and the base learner parameters
+in an alternating manner. The combination function parameters are generally updated by solving
+an optimization problem or using a closed-form update rule. Updating the base learner parameters
+usually requires training a kernel-based learner using the combined kernel. For example, they can
+be modeled as a semi-inﬁnite linear programming (S ILP) problem, which uses a g eneric linear
+programming (LP) solver and a canonical SVM solver in the inner loop.
+
+3. Multiple Kernel Learning Algorithms
+
+In this section, we categorize the existing MKL algorithms in the literature into 12 groups de-
+pending on the six key properties discussed in Section 2. We ﬁrst give a s ummarizing table (see
+Tables 1 and 2) containing 49 representative references and then give a more detailed discussion of
+each group in a separate section reviewing a total of 96 references.
+
+3.1 Fixed Rules
+Fixed rules obtain kh (·, ·) using fh (·) and then train a canonical kernel machine with the kernel
+matrix calculated using kh (·, ·). For example, we can obtain a valid kernel by taking the summation
+2216
+
+MU LT I P L E K ERN E L L EARN ING A LGOR I THM S
+
+or multiplication of two valid kernels (Cristianini and Shawe-Taylor, 2000):
+kh (xi , x j ) = k1 (x1
+i , x2
+i , x1
+j ) + k2 (x2
+j )
+kh (xi , x j ) = k1 (x1
+i , x1
+j )k2 (x2
+i , x2
+(1)
+j ).
+We know that a matrix K is positive semideﬁnite if and only if u⊤Ku ≥ 0, for all u ∈ RN . Trivially,
+i , x2
+j ) + k2 (x2
+i , x1
+we can see that k1 (x1
+j ) gives a positive semideﬁnite kernel matrix:
+u⊤Khu = u⊤ (K1 + K2 )u = u⊤K1u + u⊤K2u ≥ 0
+i , x2
+j )k2 (x2
+i , x1
+and k1 (x1
+j ) also gives a positive semideﬁnite kernel due to the fact that the element-wise
+product between two positive semideﬁnite matrices results in another positive semideﬁnite matrix:
+u⊤Khu = u⊤ (K1 ⊙ K2 )u ≥ 0.
+We can apply the rules in (1) recursively to obtain the rules for more than two kernels. For
+example, the summation or multiplication of P kernels is also a valid kernel:
+P(cid:229)
+m=1
+P(cid:213)
+m=1
+Pavlidis et al. (2001) report that on a gene functional classiﬁcation task , training an SVM with
+an unweighted sum of heterogeneous kernels gives better results than the combination of multiple
+SVMs each trained with one of these kernels.
+We need to calculate the similarity between pairs of objects such as genes or proteins especially
+in bioinformatics applications. Pairwise kernels are proposed to express the similarity between pairs
+in terms of similarities between individual objects. Two pairs are said to be similar when each object
+in one pair is similar to one object in the other pair. This approach can be encoded as a pairwise
+kernel using a kernel function between individual objects, called the genomic kernel (Ben-Hur and
+Noble, 2005), as follows:
+j , xb
+j )k(xa
+i , xb
+j ) + k(xa
+j , xb
+i )k(xa
+i , xb
+j }) = k(xa
+i , xb
+j }, {xb
+i , xa
+kP ({xa
+i ).
+Ben-Hur and Noble (2005) combine pairwise kernels in two different ways: (a) using an unweighted
+sum of different pairwise kernels:
+
+kh (xi , x j ) =
+
+i , xm
+km (xm
+j ).
+
+kh (xi , x j ) =
+
+i , xm
+km (xm
+j )
+
+P(cid:229)
+i , xb
+j }, {xb
+i , xa
+m ({xa
+kP
+i , xb
+j }, {xb
+i , xa
+kPh ({xa
+j })
+j }) =
+m=1
+and (b) using an unweighted sum of different genomic kernels in the pairwise kernel:
+i , xb
+kPh ({xa
+i , xa
+j }, {xb
+j })
+=   P(cid:229)
+i )!   P(cid:229)
+j )! +   P(cid:229)
+i , xb
+km (xa
+j , xb
+km (xa
+m=1
+m=1
+m=1
+= kh (xa
+i )kh (xa
+j ) + kh (xa
+j )kh (xa
+i , xb
+j , xb
+i , xb
+j , xb
+i ).
+The combined pairwise kernels improve the classiﬁcation performance for p rotein-protein interac-
+tion prediction task.
+
+j )!   P(cid:229)
+i , xb
+km (xa
+m=1
+
+i )!
+j , xb
+km (xa
+
+2217
+
+

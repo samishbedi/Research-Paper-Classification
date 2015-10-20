@@ -1,0 +1,1203 @@
+E the rne t : D is t r ibu ted Pac ke t Sw i tch ing fo r
+Lo ca l Compu te r Ne two rks
+
+by Robe r t M. Me tca l fe and Da v id R. Bogg s
+
+CSL ·75 ·7 May 1975 , rep r in ted Feb rua r y 1980
+
+Abs t rac t : E therne t is a b ranch ing broadcas t commun ica t ion system for ca r ry ing d ig i ta l da ta
+packets among loca l ly d is t r ibu ted compu t ing stat ions.
+The packe t
+t ranspo r t mechan ism
+provided by E the rne t has been used to bu i ld systems wh ich can be viewed as e i the r loca l
+loose ly coup led mu lt iprocessors.
+compu te r ne two rks o r
+
+An Ethernet's sha red commun ica t ion facility, its Ether, is a passive b roadcas t med ium w i th no
+centra l control. Coo rd ina t ion o f access to the E the r fo r packe t b roadcas ts is d is t r ibu ted
+among the con tend ing transm i t t ing s ta t ions using con t ro l led stat ist ica l a rb i t ra t ion . Sw i tch ing
+o f packets to the i r des t ina t ions on the Ether is d is tr ibu ted among the rece iv ing s ta t ions us ing
+packe t address recogn i t ion .
+
+Design pr inc ip les and imp lementat ion are descr ibed based on exper ience .with an opera t ing
+E the rne t o f1 00 nodes a long a k i lome ter o f coax ia l cable.
+A model
+fo r est imat ing
+performance unde r heavy loads and a packet p ro toco l fo r error-con tro l led commun ica t ion are
+inc luded for comp leteness.
+
+A version of th is pape r appeared in Commun ica t ions o f the ACM, vol. 19 no. 7, Ju ly 1976.
+
+CR Ca tego r ies : 3.81, 4.32, 6.35
+
+Key wo rds and ph rases : compu te r networks, packe t sw i tch ing , mu l t iprocess ing , d is t r ibu ted
+con t ro l , d is tr ibu ted compu t ing , b roadcas t commun ica t ion , stat ist ica l a rb i t ra t ion
+
+XEROX
+PALO ALTO RESEARCH CENTER
+3333 Coyo te H i l l Road I Pa lo A l to I Ca l i fo rn ia 94304
+
+ETI-IER~ET: DISTRIBCTED PACKET S\VITCH:Ii\G FOR LOCAL CO.\1PCTER NETWORKS
+
+1
+
+1. Background
+
+One can characterize distributed computing as a spectrum o f activities varying in the degree o f
+decentralization., with one extreme being remote computer networking and the other extreme being
+multiprocessing. Remote computer networking is the loose interconnection o f previously isolated,
+widely separated, and rather large computing systems. Multiprocessing is the construction o f
+previously monolithic and serial computing systems from increasingly numerous and smaller pieces
+computing in parallel. Near the middle o f this spectrum is local networking, the interconnection o f
+computers
+to gain the
+resource sharing o f computer networking and the parallelism o f
+multiprocessing.
+The separation between computers and the associated bit rate o f their communication can be
+used to divide .the distributed computing spectrum into b road activities. The product o f separation
+and bit rate, now about 1 gigabit-meter per second (1 Gbmps),
+is an indication o f the limit o f
+current communication technology and can be expected to increase with time.
+
+Activity
+
+Separation
+
+Bit Rate
+
+Remote Networks >10 km
+
+< .1 Mbps
+
+Local Networks
+
+10-.1 km
+
+.1-10 Mbps
+
+Multiprocessors
+
+< .1 km
+
+>10 Mbps
+
+1.1 Remote COlnputer Networking
+
+terminal-computer communication,
+Computer networking evolved from telecommunications,
+where the object was to connect remote terminals to a central computing facility. As the need for
+computer-computer
+interconnection
+grew,
+computers
+themselves were
+used
+to
+provide
+communication [Baran, 1964; Rustin., 1972; Abramson, 1975]. Communication using computers as
+packet switches [Roberts, 1970; Heart, 1970, 1973; Metcalfe 1973b] and communications among
+computers for
+resource sharing [Crocker, 1972; Thomas, 1973] were both advanced by the
+development o f the Arpa Computer Network.
+The Aloha Network at the University o f Hawaii was originally developed to apply packet radio
+techniques for communication between a central computer and i ts terminals scattered among the
+Hawaiian Islands [Abramson, 1970, 1975]. Many o f the terminals are now minicomputers
+communicating among themselves using the Aloha Network's Menehune as a packet switch. The
+Menehune and an Arpanet Imp are now connected providing terminals on the Aloha Network
+access to computing resources on the U .S. ma~nland.
+
+2
+
+ETHER~ET: D ISTR IBLTED PACKET S'VITCHI~G FOR LOCAL CO : \1PL IER NETWORKS
+
+Just as computer networks have grown across continents and oceans to interconnect major
+computing facilities around the world, they are now growing down corridors and between buildings
+to interconnect minicomputer~ in offices and laboratories [AshenhuFSt, 1975; Willard, 1973; Fraser,
+1975~ Farber, 1973, 1975].
+
+1.2 l~lulliprocessing
+
+Multiprocessing first took the' form o f connecting an I /O controller to a large central computer;
+IBM'S ASP is a classic example [Rustin, 1972]. Next, multiple central processors were connected to a
+common memory to provide more power for compute-bound applications [Thornton, 1970]. Fo r
+certain o f these applications, more exotic multiprocessor architectures such as Illiac .1V were
+introduced [Barnes, 1968].
+More recently minicomputers have been connected in multiprocessor configurations for
+economy, reliability, and increased system modularity [Wuli: 1972; Ornstein, 1975]. The trend has
+been toward decentralization for reliability; loosely coupled multiprocessor systems depend less on
+shared central memory and more on thin wires for interprocess communication with increased
+isolation [Metcalfe, 1972a, 1973b]. With the continued thinning o f interprocessor
+component
+cor:nmunication for reliability and the development o f distributable applications, multiprocessing is
+form o f distributed computing.
+gradually approaching a local
+
+1.3 Local Computer Networking
+
+local networks such as Mitre's Mitrix, Bell
+Ethernet shares many objectives with other
+Telephone Laboratory's Spider, and V.C. Irvine's Distributed Computing System (nes) [Willard,
+1973; Fraser, 1975; Farber, 1973, 1975]. Prototypes o f all four local networking schemes operate at
+rates between one and three megabits per second. Mitrix and Spider have a central
+bit
+minicomputer for switching and bandwidth allocation while DCS and Ethernet use distributed
+control. Spider and Des use a ring communication path, Mitrix uses off-the-shelf CATV technology
+to implement two one-way busses, and our experimental Ethernet uses a branching tw'o-way passive
+bus. Differences among these systems are due to differences among their intended applications,
+differences among the cost constraints under which trade-offs were made, an d differences o f opinion
+among researchers.
+Before going into a detailed description o f Ethernet, we offer the following ,overview (see
+Figure 1).
+
+ETI-fER:\ET: DISTRIBL~TED P.-\CKET SW ITCH I : \G FOR LOCAL CO~1PL·TER NET \VORKS
+
+3
+
+Term inator
+
+t----.... Repeater
+
+Controller
+
+Interface
+
+E ther segment # 1
+
+Fig.l. A two-segment Ethernet.
+
+4
+
+ETHER~ET: D ISTR IBCTE 'D PACKET SWITCHI!'\G FOR LOCAL COMPCTERNETWORKS
+
+2. System Summary
+
+Ethernet is a system for local communication among computing stations. Ou r . experimental
+Ethernet uses. tapped coaxial cables to carry variable-length digital data packets among.' for example,
+personal minicomputers, printing facilities, large file storage "devices, magnetic tape backup stations,
+larger central computers, and longer-haul communication equipment.
+The shared communication facility,. a branching Ether, is passive. A station's Ethernet interface
+~onnects bit-serially through an interface cable to a transceiver which in t um taps into the passing
+Ether. A packet is broadcast onto the Ether, is heard by all stations, .and is copied from the Ether
+by destinations which select it according to the packet's leading address bits. This is broadcast
+packet sVt'itching and should be distinguished from store-and-forward packet switching in which
+routing is perfonned" by intermediate processing elements. To handle the demands o f growth, an
+Ethernet can be extended using packet repeaters for signal regeneration, packet filters for traffic
+localization, and packet gateways for
+internetwork address extension.
+Control is completely distributed among stations with packet transmissions coordinated through
+statistical arbitration. Transmissions initiated by a station defer to any which may already be in
+progress. Once started, i f interference with other packets is detected, a transmission is aborted and
+rescheduled by its source station. After a certain period o f interference-free tr,ansmission, a packet
+is heard by all stations and will run to completion without interference. Ethernet controllers in
+colliding stations each generate random retransmission intervals to avoid repeated collisions. The
+mean o f a packet's retransmission intervals is adjusted as a function o f collision history to keep
+Ether utilization near
+the optimum with changing network load.
+Even when transmitted without source-detected interference, a packet may still ,no t reach its
+destination without error; thus, packets are delivered only with high probability. Stations requiring a
+residual error rate lower than. that provided by the bare Ethernet packet transport mechanism must
+follow mutually agreed upon packet protocols.
+
+3. Design Principles
+
+Our object is to design a communication system which can grow smoothly to accommodate
+several buildings full o f personal computers and the facilities needed for
+their support.
+Like the computing stations to be connected, the communication system must be inexpensive.
+We choose to distribute control o f the communications facility among the communicating computers
+to eliminate the reliability problems o f an active central controller, to avoid creating a bottleneck in
+a system rich in parallelism, and to reduce the fIXed costs which make small systems uneconomical.
+Ethernet design started with the basic idea o f packet collision and retransmission d.eveloped in
+the Aloha Network [Abramson, 1970]. We expected that, like the Aloha Network, Etherllets would
+carry bursty traffic so that conventional, synchronous time-division multiplexing (STDM) would be
+inefficient [Roberts, 19io; Abramson, 1970, 1975; Metcalfe, 1973b]. We saw promise in the Aloha
+
+ETHER~ET: DISTRIBUTED P.~CKET SWITCHIXG FOR LOCAL CO~1Pl;lER NETWORKS
+
+5
+
+o\\'n~
+
+approach to distributed control o f radio channel multiplexing and hoped that it could be applied
+effectively with media suited to local computer communication. With several innovations o f our
+the promise .is
+realized.
+Ethernet is named for the historicallunliniferous ether through which electromagnetic radiations
+were once alleged to propagate. Like an Aloha radio transmitter, an Ethernet transmitter broadcasts
+completely-addressed transmitter-synchronous bit sequences called packets onto the Ether and hopes
+that they are heard by the intended receivers. The Ether is a logically passiye medium for the
+propagation o f digital signals and can be constructed using any number o f media including coaxial
+tcables,
+twisted pairs, and optical
+fibers.
+
+3.1 Topology
+
+We cannot afford the redundant connections and dynamic routing o f store-and-forward packet
+switching to assure reliable communication, so we choose to achieve reliability through simplicity.
+We choose to make the shared communication facility passive so that
+the failure o f an active
+element will tend to affect the communications o f only a single station. The layout and changing
+needs o f office and laboratory buildings leads us to pick a network· topology with the potential for
+convenient
+incremental extention and reconfiguration with minimal service disruption.
+I t i s a l r e e so tha t the E ther can
+The topology o f the Ethernet is that o f an unrooted tree.
+branch at the entrance to a building's corridor, yet avoid multipath interference. There must be
+only one path through the Ether between any source and destination; i f more than one path were to
+exist, a transmission would interfere with itself: repeatedly arriving at its intended destination having
+travelled by paths o f different length. The Ether is unrooted because it can be extended from any
+o f its points in any dire~tion. Any station wishing to join an Ethernet taps into the E ther at the
+nearest convenient point.
+Looking at the relationship o f interconnection and control, we see. that Ethernet is·the dual o f a
+star network. Rather than distributed interconnection through many separate links and central
+control in a switching node, as in a star network, the Ethernet has central interconnection through
+the Ether and distributed control among its stations.
+Unlike an Aloha Network which is a star network with an outgoing broadcast channel and an
+incoming multi-access channel, an Ethernet supports many-to-many communication with a single
+broadcast multi-access channel.
+
+3.1 Control
+
+Sharing o f the E ther is controlled in such a way that it is not· only possible. bu t probable that
+two or more .stations will attempt to transmit a packet at roughly the same time.
+.Packets which
+overlap in time on the Ether are said to collide; they interfere so as to be unrecognizable by a
+receiver. A station recovers from a detected collision by abandoning the attempt and retransmitting
+
+6
+
+ETHER~ET: DISTRIBCTED PACKET SWITCIII~G FOR LOCAL COMPCTER NETWORKS
+
+Arbitration o f conflicting
+
+the packet after
+some dynamically"'chosen random time period.
+transmission demands is both distributed and statistical.
+When the Ether is largely unused; a station transmits its packets ,at will,
+the packets are
+received without error, and all
+the rate o f packet
+is well. As more stations begin to transmit,
+intetference increases.
+Ethernet controllers in each station are built
+to adjust
+the mean
+retransmission interval in proportion to the frequency o f collisions; sharing o f the Ether among
+competing station-station transmissions is thereby kept near the optimum [Metcalfe, 1973a, 1973b].
+A degree o f cooperation among the stations is required to share the Ether equitably.
+In
+demanding applications certain stations might usefully take transmission priority through some
+systematic violation o f equity rules. A station could usurp the Ether by not adjusting its
+retransmission interval with increasing traffic or by sending very large packets. Both practices are
+now prohibited by low ... level software in each staqon.
+
+3.3 Addressing
+
+Each packet has a source and destination, both o f which are identified in the packet's header.
+A packet placed on the E ther eventually propagates to all stations. Any station can copy a packet
+from the Ether into its local memory, bu t normally only an active destination station matching 'its
+address in the packet's header will do so as the packet passes. By convention, a zero destination
+address is a wildcard and matches all addresses; a packet with a destination o f zero is called a
+broadcast packet.
+
+3.4 Reliability
+
+Packets may be lost due to interference with other packets,
+An Ethernet is probabilistic.
+impulse noise on the Ether, an inactive receiver at a packet's intended destination, o r purposeful
+discard. Protocols used to communicate through an Ethernet must assume that packets will be
+received correctly at
+intended destinations only with high probability.
+An Ethernet gives its best efforts to transmit packets successfully, bu t ·it is the responsibility ,of
+processes in the source and destination stations to take the precautions necessary to assure reliable
+communication o f the quality they themselves desire [Metcalfe, 1972a, 1973b]. Recognizing the
+costliness and dangers o f promising "error"'free" communication, we refrain from guaranteeing
+reliable delivery o f any single packet to get both economy o f transmission and high reliability
+averaged over many packets
+[Metcalfe, 1973b].
+Removing the responsibility for
+r~liable
+communication from the packet t ranspon mechanism allows us to tailor reliability to the application
+and to place error recovery where it will do the most good. This policy becomes more important as
+Ethernets are interconnected in a hierarchy o f networks through which packets must travel farther
+and suffer greater
+risks.
+
+ETHER~ET: DISTRIBCTED PACKET SWITCHING FOR LOCAL CO~1PUTER NETWORKS
+
+7
+
+3.5 AIechanisnzs
+
+A station connects to the Ether \vith a lap and a transceiver. A tap is a device for phyically
+connecting to the Ether while disturbing its transmission characteristics as little as possible. The
+design o f the transceiver must be an exercise in paranoia. Precautions mus t be taken to insure that
+likely failures in the transceiver o r station do not result in pollution o f the Ether.
+In particular,
+to disconnect'· from the Ether.
+from the transceiver should cause it
+removing power
+Five mechanisms are provided in our experimental Ethernet for reducing the probability and
+cost o f losing a packet. These are (1) carrier detection, (2) interference detection, (3) packet error
+filtering, and (5) collision consensus enforcement.
+truncated packet
+(4)
+detection,
+
+3.5.1 Carrier Detection. As a packet's bits are place~ on the Ether by a station, they are phase
+encoded, (like bits on a magnetic tape) which guarantees· that there is a t least one transition. on the
+Ether during each bit time. The passing o f a packet on the Ether can therefore be detected by
+listening for its transi:ions. Tc us·e . l radio analogy, we speak o f the presence o f ca"ier as a packet
+passes a transceiver. Because a station can sense the carrier o f a passing packet, it can delay sending
+one o f its own until the detected packet passes safely. The Aloha Network does not have carrier
+detection and consequently suffers a substantially higher collision rate. Without carrier detection,
+efficient use o f the Ether would decrease with increasing packet length.
+In Section 6 below, we
+show that with carrier detection, Ether efficiency increases with increasing packet
+length.
+With carrier detection we are able to implement deference: no 'station will start transmitting
+while hearing carrier. With deference comes acquisition: once a packet transmission has been in
+progress for an Ether end-to-end propagation time, all stations are hearing carrier and are deferring;
+the Ether has been acquired and the transmission will complete without an interfering collision.
+With carrier detection, collisions should occur only when two or mo re stations find the Ether
+silent and begin transmitting simultaneously: within an Ether end-to-end propagation time. This
+will almost always happen immediately after a packet
+transmission during which two o r more
+stations were deferring.
+Because stations do no t now randomize after deferring, when the
+the waiting stations pile on together, collide, randomize, and retransmit.
+transmission terminates,
+
+Interference is
+3.5.2
+Each transceiver has an interference detector.
+Interference Detection.
+indi~ated when the transceiver notices a difference between the value o f the bit it is receiving from
+the Ether and the value o f the bit
+is attempting to transmit.
+it
+Interference detection has three advantages. First, a station detecting a collision knows that its
+packet has been damaged. The packet can be scheduled for retransmission immediately, avoiding a
+interference periods on the Ether are limited to a
+long acknowledgement
+Second,
+timeout.
+maximum o f one round trip time. Colliding packets in the the Aloha Netw~rk run to completion,
+bu t the truncated packets resulting from Ethernet collisions waste only a small fraction o f a packet
+time on the Ether. Third, the frequency o f detected interference is used to estimate E the r traffic for
+adjusting retransmission intervals and optimizing channel efficiency.
+
+8
+
+ETHER~ET:' DISTRIBCTED PACKET SWITCHI~G FOR LOCAL CO~1PLTER NETWORKS
+
+3.5.3 Packet Error Detection. As a packet is placed on the Ether, a checksum is computed and
+appended. As the packet is read from the Ether, the checksum is recomputed. Packets which do
+not carry a ~onsistent checksum are discarded.
+In this way transmission errors, impulse noise errors~
+and errors due to undetected interference are caught at a packet's destination.
+
+3.5.4 Truncated Packet Filtering.
+Interference detection and deference cause most collisions to
+in truncated packets o f only a few bits; colliding stations detect
+interference and 'abort
+result
+transmission within an Ether round-trip time. To reduce the processing lOad that the rejection o f
+such obviously damaged packets would place on listening station software, truncated packets are
+in hardware.
+filtered out
+
+its transmission is
+3.5.5 Collision Consensus Enforcement. When a station determines that
+experiencing interference, i t momentarily jams the Ether to insure that all other participants in the
+collision will detect interference and, because o f deference, will be forced to a bo r t Without this
+collzsion consensus enforcement nlechanism, it is possible that the transmittil1g station which would
+otherwise be the last to detect a collision might not do so as the other interfering transmissions
+successively abort and stop interfering. Although the packet may look good to that last transmitter,
+different path lengths between the colliding transmitters and the· intended receiver will cause the
+packet
+to arrive damaged.
+
+4. Implementation
+
+Our choices o f 1 kilometer, 3 megabits per second, and 256 stations for the parameters o f an
+experimental Ethernet were
+based on characteristics o f
+the
+locally-distributed computer
+communication environment .and ou r assessments o f what would be marginally achievable;
+they
+were certainly no t hard restrictions essential
+to the Ethernet concept.
+We expected that a reason~ble maximum network size would be on the order o f 1 kilometer o f
+cable. We used this working number to choose among Ethers o f varying signal attenuation and to
+design transceivers w i th appropriate power and sensitivity.
+The dominant station on our experimental Ethernet is a minicomputer for which 3 megabits
+per second is a convenient data transfer rate. By keeping the peak rate well below that o f the
+,we reduce the need for expensive special-purpose packet
+computer's path to main memory,
+buffering in ou r Ethernet interfaces. By keeping the peak rate as high as is convenient, we provide
+for larger numbers o f stations and more ambitious multiprocessing communications applications.
+To expedite low-level packet handling among 256 stations, we allocate the first 8-bit byte o f the
+packet to be the destination address field and the second byte to be the source address field (see
+Figure 2).
+256 is a number small enough to allow each station to get an adequate share o f the
+available bandwidth and approaches the limit o f what· we can achieve with current techniques for
+tapping cables. 256 is only a convenient number for the lowest level o f protocol; higher levels can
+
+ETHER~ET: DISTRIBUTED PACKET S\VITCHIXG FOR LOCAL COMPUTER NETWORKS
+
+9
+
+accomodate ex tended address spaces with additional
+interpret
+them.
+Ou r experimental E therne t
+implementation has four major parts:
+interfaces, and controllers (see Figure 1).
+
+fields inside the packet and software to
+
+the· Ether,
+
+transceivers,
+
+4.1 Ether
+
+We chose to implement ou r experimental Ether using low-loss coaxial cable with off-the-shelf
+CATV taps and connectors.
+I t is possible to mix E the rs on a single E therne t ; we use a smaller(cid:173)
+diameter coax for convenient connection within station clusters and a larger-diameter coax for low(cid:173)
+loss runs between clusters. The cost o f coaxial cable E t h e r is insignificant relative to the cost o f the
+distributed computing systems suppor ted by Ethernet..
+
+4.2 Transceivers
+
+transceivers can drive a kilometer o f coaxial cable E the r tapped by 256
+Ou r experimental
+Th e transceivers c an endure (Le., work after)
+stations transmitting a t 3 megabits per second.
+imp rope r termination o f the Ether, and simultaneous dr ive by all 256
+sustained direct shorting,
+stations; they can tolerate (Le., work during) ground differentials and everyday electrical noise, from
+typewriters o r electric drills, encoun tered when stations are separated by as much as a kilometer.
+An E therne t transceiver attaches directly to the E th e r which passes by in the ceiling o r und e r
+is powered and controlled through 5 twisted pairs in an interface cable carrying
+the floor.
+I t
+transmit data, receive data, interference detect, and powe r supply voltages. When unpowered, the
+transceiver disconnects itself electrically from the Ether. Here is where ou r fight for reliability is
+won o r lost; a b roken transceiver can, bu t should not, b r ing down an en t i re Ethernet. A watchdog
+timer circuit in each transceiver attempts to prevent pollution o f the E th e r by shu t t ing down the
+ou tpu t stage i f i t acts suspiciously. Fo r transceiver simplicity we use the Ether's base frequency
+band, bu t an E therne t could b e bu i l t
+to use any suitably sized b and o f a frequency division
+multiplexed Ether.
+Even though ou r experimental transceivers are very s imp le and c an tolerate only limited signal
+attenuation, they have proven qu i te adequa te and reliable. A more sophisticated transceiver design
+m igh t permit. passive branch ing o f the E ther and wider station separation.
+
+4 .3 In ter f«e
+
+. An E the rne t interface serla1izes and deseria11zesthe parallel da ta u s ed -by Its station. There are
+. a numbe r .o f different stations on ou r Ethernet; an interface mu s t b e bu i l t :for each kind.
+
+10
+
+I:~TI--IER::\ET: DISTRIBCTED PACKET SWITCHI:\G FOR LOCAL C,O~1PUTER NETWORKS
+
+Each interface is equipped with the hardware necessary to compute a 16-bit cyclic redundancy
+checksum (cRe) on serial data as it
+is transmitted and received. This checksum only protects
+against errors in the Ether and specifically not errors in the p'arallelportions o f the interface
+hardware or station. Higher-level software checksums are recommended for applications in which·a
+higher degree o f reliability is required.
+A transmitting interface uses a packet buffer address and word coun t to serialize and phase
+encode a variable number o f 16-bit words which are taken from the station's memory and passed to
+the transceiver, preceded by a start bit (called SYNC in Figure 2) and followed by the CRC. A
+receiving interface uses the appearance o f carrier to detect the start o f a packet and uses the SYNC
+bit to aquire bit phase. As long as carrier stays on,
+the interface decodes and deserializes the
+incoming bit stream depositing 16-bit words in a packet buffer in the station's main memory. When
+carrier goes away, the interface checks tha t an integral number o f 16-bit words has been received
+and that the eRC is correct. The last word received is assumed to be the eRe and is no t copied into
+the packet huffer.
+These interfaces ordinarily include hardware for accepting only those packets with appropriate
+addresses in their headers. Hardware address filtering helps a station avoid burdensome software
+is very busy carrying traffic intended for other stations.
+packet processing when the Ether
+
+Accessible to software
+
+s
+Dest
+Source
+y
+N Address Address
+c
+
+Data
+
+Checksum
+
+1 bit
+
+8 bits
+
+8 bits
+
+__ __ _______y~---------.",..J.--~y--~
+o - 4000 b its
+16 b its
+
+Fig. 2. Ethernet packet layout.
+
+4.4 Controller
+
+An Ethernet controller is the station-specific low-level firmware o r software for getting packets
+onto and out o f the Ether. When a source-detected collision occurs,
+i t is the source controller's
+'responsibility to generate a new random retransmission interval based on the updated, collision
+count. We have studied a number o f algorithms for controlling retransmission rates in stations to
+.
+-
+maintain Ether efficiency [Metcalfe, 1973a, 1974]. The more practical o f the'se algorithms esti.mate
+traffic load using recent collision history.
+
+ETHER:\ET: DISTRIBl~TED PACKET SWITCHING FOR LOCAL COl\1PUTER, NETWORKS
+
+11
+
+Retransmission intervals are multiples o f a slot,
+the maximum time between starting a
+transmission and detecting a collision, one ·end-to-end round trip delay. An Ethernet controller
+begins transmission o f each new packet with a mean retransmission interval o f one slot. Each time
+a transmission attempt ends in collision, the controller delays for an interval o f random length with
+a mean twice that o f the previous interval, defers to any passing packet, and then attempts
+This heuristic approximates an algorithm we have called Binary Exponential
+retransmission.
+Backoff (see Figure 3) [Metcalfe, 1974].
+
+Zero load es t ima te
+for new packe t
+
+Generate random
+numbe r
+
+yes
+
+E r ro r
+
+Increase load
+estimate
+
+Weight by load
+es t ima te
+
+Decremen t we igh ted
+random numbe r
+
+co l l is ion
+
+Transm i t when
+E ther s i len t
+
+t imeou t
+
+ok
+
+Done
+
+Fig. 3. Collision control algorithm.
+
+12
+
+ETHER~ET: D lSTR IBCTED PACKET SW ITCH l i \G FOR LOCAL CO~1PUTER NETWORKS
+
+When the network is unloaded and collisions are rare, the mean seldom departs from one and
+retransmissions are p romp t As the traffic load increases, more collisions are experienced, a backlog
+o f packets builds up in the stations, retransmission intervals increase, and retransmission traffic
+backs off to sustain channel efficiency.
+
+5. Growth
+
+5.1 Signal Cover
+
+One can expand an Ethernet just so far by adding transceivers and Ether. At some point, the
+transceivers and Ether will be unable to carry the required signals. The signal cover can be
+extended with a simple unbuffered packet repeater.
+In ou r experimental Ethernet where, because· o f
+transceiver simplicity the Ether : an n o t be branched passively, a simple repeater may joL'l any
+number o f Ether segments to enrich the topology while extending the signal cover.
+We operate an experimental two-segment packet repeater, but hope to avoid relying on them.
+In branching the Ether and extending its signal cover,
+there is a trade-off between using
+sophisticated. transceivers and using repeaters. With increase4 power and sensitivity, transceivers
+become more expensive and less reliable. The introduction o f repeaters into an Ethernet makes the
+centrally interconnecting Ether active. The failure o f a transceiver will sever the communications o f
+its owner;
+the failure o f a repeater partitions the Ether severing many communications.
+
+5.2 Traffic Cover
+
+One can expand an Ethernet ju s t so far by adding Ether and packet repeaters. At some point
+the Ether will be so busy that additional stations will jus t divide more finely the already inadequate
+bandwidth: The traffic cover can be extended with an unbuffered tra~c-filtering repeater or packet
+filter, which passes packets from one Ether segment to another only i f the destination station is
+located on Ule new segment. A packet
+filter also extends the signal cover.
+
+5.3 Address Cover
+
+One can expand an Ethernet just so far by adding Ether, repeaters, and traffic filters. A t some
+point there will be too many stations to be addressed with the Ethernet's 8-bit addresses. The
+address cover can be extended with packet gateways and the software addressing conventions they
+implement [Cerf, 1974]. Addresses can be expanded in two directions: down into the station by
+adding fields to identify destination ports or processes within a station, and up into the internetwork
+by adding fields to identify destination stations on remote networks. A gateway also extends the
+traffic and signal covers.
+
+ETHER ! \ET : D ISTR IBL IED ,PACKET S\VITCIIING FOR LOCALCO~1PUTER NETWORKS
+
+13
+
+There can be only one repeater or packet filter connecting two Ether segments; a packet
+repeated onto a segment ·by multiple repeaters would interfere with itself. However, there ,is no
+limit to the number o f gateways connecting two segments; a gateway only repeats packets addressed
+to itself as an intermediary. Failure o f the single repeater connecting two segments partitions the
+network; failure o f a gateway need not partition the net i f there are paths through' other gateways
+between the segments.
+
+6. Performance
+
+Here is a simple set o f formulas with which to characterize the performance expected o f an
+Ethernet when it· is heavily loaded. More elaborate analyses and several detailed simulations have
+been done, bu t the following simple model has proven very useful in understanding the Ethernet's
+distributed contention scheme, even when it
+is loaded beyond expectations [Abramson, 1970;
+Metcalfe, 1973a, 1973b, 1974; Roberts, 1973; Murthy, 1975].
+We develop a simple model o f the performance o f a loaded Ethernet by examining alternating
+Ether time periods. The first, called a transmission interval, is that during which the Ether has been
+acquired for a successful packet transmission. The second, called a contention interval,
+is that
+composed o f the retransmission slots o f Section 4.4, during which stations attempt to acquire control
+o f the Ether. Because the model's Ethemets are loaded and because stations defer to passing
+the slots are synchronized by the tail o f the preceding
+packets before starting transmission,
+acquisition interval. A slot will be empty when no station chooses to attempt transmission in it and
+it will contain a collision·i f more than one station attempts to transmit. When a slot contains only
+one attempted transmission,
+then the Ether has been acquired for the duration o f a packet, the
+contention interval ends, and a transmission interval begins.
+Let P be the number o f bits in an Ethernet packet. Let C be the peak capacity in bits per
+second, carried on the Ether. Le t T be the time in seconds o f a slot, the number o f seconds it takes
+there are Q stations
+to detect a collision after starting a transmission.
+Let us assume that
+continuously queued to transmit a packet; either the acquiring station has a new packet immediately
+after a successful acquisition o r another station comes ready. Note that Q also happens to give the
+total offered load on the network which for this analysis is always 1 or greater. We assume that a
+queued station. attempts to transmit
+in the current slot with probability l /Q , or delays with
+this is known to be the optimum statistical decision rule, approximated in
+probability 1-(1 /Q);
+Ethernet stations by means o f ou r load-estimating retransmission control algorithms [Metcalfe,
+1973a, 1973b].
+
+14·
+
+ETI-IER~ET: D ISTR IBL IED PACKET S \ \'ITCHING FOR LOCAL COl\1PCTER NETWORKS
+
+6.1 Acquisition Probability
+
+We now compute A, the probability that exactly one station attempts a transmission in a slot
+and therefore acquires the Ether. A is Q* ( l /Q )*« I - ( l IQ » (Q - l » ; . there are Q ways in which one
+station can choose to transmit . (with probability ( I I Q» while Q - l stations choose to wait (with
+probability 1-(11Q».
+Simplifying,
+
+A = (1-(I/Q»(Q-1).
+
+6.2 Wa it ing Time
+
+We now compute W, the mean number o f slots o f waiting in a contention interval before a
+successful acquisition o f the Ether by a station's transmission. The probability o f waiting no time at
+all
+the probability that one· and only one station chooses to transmit in the first slot
+is just A,
+fJllowing a tr3~smission. The probabi!ity o f waiting 1 slot is A*(I- A); tile probability o f waiting i
+slots is A*« l - A ) i ) .
+The mean o f this geometric distribution is
+
+w= ( I -A ) IA .
+
+6.3 Efficiency
+
+that fraction o f time the Ether is carrying good packets, the efficiency.
+We now compute E,
+The Ether's time is divided between transmission intervals and contention intervals. A packet
+transmission takes P IC seconds. The mean time to acquisition is Ul*T. Therefore, by ou r simple
+model,
+
+E = (P /C ) /«P IC )+ (U I *n ) .
+
+Table I presents representative performance figures (Le., E) for our experimental E therne t with
+the indicated packet sizes and number o f continuously queued stations. The efficiency figures given
+do not account for inevitable reductions due to headers and control packets nor for losses due to
+imprecise control o f the retransmission parameter I I Q;
+the former is straightforwardly p rotoc 01(cid:173)
+dependent and the latter requires analysis beyond the scope o f this paper. Again, we feel that all o f
+the Ethemets in the table are overloaded; normally loaded Ethemets will usually have a Q ·much
+less than 1 and exhibit behavior not covered by this model.
+For OUf calculations, we use a C o f 3 megabits pe r second and aT o f 16 microseconds. The
+slot duration, T ,mu s t be long enough to allow a collision to be detected o r a t least twice the Ether's
+round trip time. We limit in software the maximum length o f ou r packets to be near 4000 bits to
+keep the latency o f network access down and to perm i t efficient use o f station packet buffer storage.
+
+ETHERXET: D ISTR IBCTED PACKET S\VITCHING FOR LOCAL CO~1PlJTER NETWORKS
+
+15
+
+Table I "E the rne t Efficiency.
+
+Q
+
+P=4096 P=1024 P=512 P=48
+
+1
+
+2
+
+3
+
+4
+
+5
+
+10
+
+32
+
+64
+
+1.0000
+
+1.0000
+
+1.0000
+
+1.0000
+
+0.9884
+
+0.9552
+
+0.9143
+
+0.5000
+
+0.9857
+
+0.9447
+
+0.8951
+
+0.4444
+
+0.9842
+
+0.9396
+
+0.8862
+
+0.4219
+
+0.9834
+
+0.9367
+
+0.8810
+
+0.4096
+
+0.9818
+
+0.9310
+
+0.8709
+
+0.3874
+
+0.9807
+
+0.9272
+
+0.8642
+
+0.3737
+
+0.9805
+
+0.9263
+
+0.8627
+
+0.3708
+
+128
+
+0.9804
+
+0.9259
+
+0.8620
+
+0.3693
+
+256
+
+0.9803
+
+0.9257
+
+0.8616
+
+0.3686
+
+Fo r packets whose size is above 4000 bits, the efficiency· o f our experimental Ethernet stays well
+F o r ·packets with. a ,size···approximating that o f a slot, Ethernet· efficiency
+above 95 percent.
+approaches l i e ,
+the asymptotic efficiency o f a. slotted Aloha network [Roberts, 1973].
+
+7. Protocol
+
+There is more to the construction o f a viable packet communication system than simply
+providing the mechanisms for packet transport. Methods' for error correction, flow control, process
+naming, security, and accounting must also be provided through higher level protocols implemented
+on top o f the Ether control protocol decribed in Sections 3 and 4 above [Ceri: 1974; Crocker, 1972;
+Metcalfe, 1973b; Farber, 1975; Rowe, 1975; Walden, 1972]. Ether control includes packet framing,
+error detection, addressing and multi-access control; like other line control procedures, Ethernet is
+used to support numerous network and multiprocessor architectures [SDLC" 1974; SNA, 1975].
+Here i s a b r ie f description o f one simple error-controlling packet protocol. The EF fP (Ethernet
+File Transfer Protocol) is o f interest both because i t is relatively easy to understand and implement
+correctly and because it has dutifully carried many valuable files during the development o f more
+general and efficient protocols.
+
+16
+
+ETHERNET: DISTRIBL'TED PACKET SWITCHI~G 'FOR LOCAL COMPUTER NETWORKS
+
+7.1 General Terminolog)"
+
+In discussing packet protocols" we 'use the following generally. useful terminology. A packet is
+said to have a source and a destination. A flow o f data is said to have a sender and a receiver,
+recognizing that to support a flow o f data some p~ckets (typically acknowledgments) will be sourced
+at the receiver and destined for the sender. A connection is said to have a listener and an initiator
+It is very useful to treat these as orthogonal
+and a service is said to have a server and a user.
+descriptors o f the participants in a communication. O f course, a server is usually a listener and the
+source o f data-bearing packets is usually the sender.
+
+7.2 EFTP
+
+The first 16 bits o f all Ethernet packets contain its interface-interpretable destination and source
+station addresses, a byte each, in that order (see Figure 2). By software convention, the second '16
+bits o f all Ethernet packets cOl1tain_ the packet type.' Different protocols use disjoint sets o f packet
+types. The EF fP uses 5 packet types: data, ack, abort, end, and endreply. Following the 16-bit type
+word o f an EF fP packet are 16 bits o f sequence number, 16 bits o f length, optionally some 16-bit
+data words, and finally a 16-bit software checksum word (see Figure 4). The Ethernet's hardware
+checksum is present only on the Ether and is not counted at
+this level o f protocol.
+
+Destination
+
+Sou rce
+
+Packet Type
+
+Sequence Number
+
+Leng th (in words)
+
+~
+
+~
+
+Data (words)
+
+~ h
+
+Data
+Packets
+On ly
+
+. So f tware Checksum
+
+1-·-(.-.......- - - - - 16 b its - - - - - - -1 _ ....1
+
+Fig. 4. EF fP packet layout.
+
+ETHER~ET: DISTRIBCTED PACKET SWITCHI~G FOR LOCAL C01\1PUTER NETWORKS"
+
+17
+
+It· should b e obvious that little care has been taken to cram certain fields into jus t the right
+number o f bits. The ., emphasis here is on simplicity and ease o f programming.
+' Despite th'is
+disclaimer, we do feel that it is more advisable to err on the side o f spacious fields; try as you may,
+one field or another will always turn ou t
+to be too small.
+The software checksum word is used to lower the probability o f an undetected error.
+It serves
+not only as a backup for the experimental E theme f s serial hardware 16-bit cyclic redundancy
+checksum (in Figure 2), bu t also for protection against failures in parallel da ta paths within stations
+which are not checked by the CRee The checksum used by the EF fP is a 1's complement add an d
+cycle over the entire packet, including header and con ten t data. The checksum can be ignored at
+the user's peril a t either end; the sender may pu t all l ' s (an impossible value) into the checksum
+that no checksum was computed.
+word to indicate to the receiver
+
+7.2.1 Data Transfer. The 16-bit words o f a file are carried from sending station to receiving station
+in data packets consecutively numbered from O. Each .data packet is retransmitted periodically by
+the sender until an ack packet with a matching sequence number is re turned from the receiver. Th e
+receiver ignores all damaged packets, packets from a station other than the sender, and packets
+whose sequence number does no t match either the expected one or the one preceding. When a
+packet has the expected sequence numbe.r, the packet is acked, its data is accepted as pa r t o f the
+file, and the sequence number is incremented. When a packet arrives with a sequence number on e
+less than that. expected, it is .acknowledged and discarded; the presumption is that i t s ack was lost
+and needs retransmission (Metcalfe, 1973b).
+
+7.2.2 End. When all the data has been transmitted, an end packet is sent with the next consecutive
+sequence number and then the sender waits for a matching endreply. Having accepted an end
+packet in sequence, the data receiver responds with a matching endreply an d then dallys for some
+reasonably long period o f time (10 seconds). Upon getting the endreply,
+the sending station
+transmits an echoing endreply and is free to go o f f with the assurance that
+the file has been
+transferred successfully. The dallying receiver then gets the echoed endreply and i t too goes o f f
+assured.
+The comparatively complex end-dally sequence is intended to make i t practically certain tha t
+the sender and receiver o f a file will agree on whether the file has been transmitted correctly.
+I f the
+end packet is lost, the data sender simply retransmits i t as it would any packet with an overdue
+I f the endreply from the data receiver is lost, the data sender will time o u t in
+acknowledgement.
+the same way and retransmit the end packet which will in tum be acknowledged by the dallying
+I f the echoed endreply is lost, the dallying receiver will be inconvenienced having to wait
+receiver.
+for it, bu t when it has timed out, the receiver can nevertheless be assured o f suc-cessful transfer o f
+the file because the end packet has bee-n received.
+.At any time during all o f this, either side is free to decide communication has failed and ju s t
+give up; it is considered polite to send an abort packe t to end the communication promptly In the
+
+, 18
+
+ETHERNET: DISTRIBUTED PACKET SWITCHING FOR LOCAL COMPUTER NET\VORKS
+
+event
+
+-of: '. say, a user-initiated abort or a file system error.
+
+7.23 "EFTP Shortcomings. The EF fP has been very useful, but its shortcomings are many_ First,
+the protocol provides only for
+file ·transfer from station to station in a single network and
+specifically not from process· to process within stations either on the .same network or through a
+gateway. Seconq, process rendezvous is degenerate in that there are no mechanisms for finding
+processes by name or. for convenient handling o f multiple users by a single server. Third, there is
+no real flow control.
+I f data arrives at a receiver unable to accept it into its buffers, the data can
+simply be thrown away with complete assurance that it will be retransmitted eventually. There is no
+\yay for a receiver to quench the flow o f such wasted transmissions or to expedite retransmission~
+Fourth, data is transmitted in integral numbers of 16-bit words belonging to unnamed files and thus
+the EF fP is either terribly restrictive or demands some nested file transfer formats internal to its data
+words. And fifth, functional generality is lost because the receiver is also the listener and server.
+
+8. Conclusion
+
+leads us to conclude tha t our emphasis on
+Our experience with an operating Ethernet
+distributed control was well placed. By keeping the shared components o f the communication
+system to a minimum and passive, we have achieved a very high level o f reliability.
+Installation,and
+maintenance o f our experimental Ethernet has been more than satisfactory. The flexibility o f
+station interconnection provided by'broadcast packet switching has encouraged the development o f
+numerous computer networking and multiprocessing applications.
+
+9. Acknowledgements
+
+Our colleagues at the Xerox Palo Alto Research Center, especi~ly Tat C. Lam, Butler W.
+Lampson, John F. Shoch, and Charles P. Thacker, have contributed in many ways to the evolution
+o f Ethernet ideas and to the construction. o f the experimental system without which ,such ideas
+would be just so much speculation.
+
+ETHER:\ET: I)ISTRIBCTED PA~CKET S'VITCHING FOR LOCAL COMPUTER NETWORKS
+
+19
+
+10. References
+
+[Abramson, 1970]
+N. Abramson, "The AlohaSystem~', AFIPS Conference Proceedings, voL 37, Fall 1970.
+- - [Abramson, 1975]
+N. Abramson, F.F. Kuo, Computer-Comlnunication Networks, Prentice-Hall, 1975.
+
+[Ashenhurst, 1975]
+R.L. Ashenhurst, R.H. Vonderohe, "A Hierarchical Network", Datamation, February 1975.
+[Baran, 1964]
+P. Baran, On Distributed Comnlunications, Rand Corporation Memo RM-3420-PR, August
+1964.
+
+[Barnes, 1968]
+G.H. Barnes, R.M. Brown, M. Kato, D.J. Kuck, D.L. Slotnick, R.A. Stokes, "The Illiac IV
+IEEE Transactions, C-17, vol. 8, August 1968.
+Computer",
+
+[Binder, 1975]
+R. Binder, N. Abramson, F. Kuo, A. Okinaka, D. Wax, "Aloha Packet Broadcasting-A
+Retrospect", Proceedings o f the National Computer Conference, May 1975.
+[Cerf, 1974]
+V.G. Cert: R.E. Kahn,
+for Packet Network Intercommunication",
+"A Protocol
+Transactions on Conlmunications, vol. cOM-22, no. 5, May 1974.
+[Computer, 1974a]
+"The Shrinking World: Computer Networks and Communications", Computer, IEEE Computer
+Society, February 1974.
+
+IEEE
+
+[Computer, 1974b]
+"Distributed-Function Computer Architectures", Computer,
+1974.
+
+IEEE Computer Society, March
+
+[Crocker, 1972]
+S.D. Crocker, J.F. Heafner, R.M. Metcalfe, and I.B. Postel, "Function-Orie·nted Protocols for
+the ARPA Computer Network", AF IP S Conference Proceedings, vol. 40, May 1972. Reprinted in
+Advances in COlnputer Communications, edited by W.W. Chu, Artech House Inc., 1974.
+Reprinted in Computer Communications, edited by P.E. Green and R.W. Lucky, IEEE press,
+1975.
+
+[Crowther, 1975]
+W.R. Crowther, F.E. Heart, A.A. McKenzie, J.M. McQuillan, and D.C. Walden, "Issues in
+Packet-Switching Network Design", Proceedings o f the National Computer Conference, May
+1975.
+
+[Farber, 1973]
+I
+D J . Farber, et ai, "The Distributed Computing System", ProceediJgs o f the 7th Annual IEEE
+I
+Computer Society International Conference, February 1973.
+
+i
+
+[Farber, 1975)
+D.J. Farber, "A Ring Network", Datamation, February 1975.
+
+20
+
+ETHERi'\ET: DISTRIBUTED PACKET SWITCHING FOR LOCAL COMP1JTER NETWORKS
+
+[Fraser, 1975]
+A.G. Fraser,
+
+i tA Virtual Channel Network", Datamalion, Febru~ 1975.
+
+(Heart, 1970]
+F.E. Hean, R.E. Kahn, S.M. Ornstein, W.R. Crowther, D.C. Walden, "The Interface Message
+Processor for the Arpa Computer Network", AFIPS Conference Proceedings, vol. 36, May 1970.
+
+[HeaIt 1973]
+F.E. Heart, S.M. Ornstein, W.R. Crowther, and W.B. Barker, "A New Minicomputer(cid:173)
+Multiprocessor for the Arpa Network", D IPS Conference Proceedings, vol. 42, June '1973.
+Reprinted in Advances in Computer Communications, edited by W.W. Chu, Artech House Inc.,
+1974.
+[Kahn, 1975]
+R.R. Kahn, "The Organization o f Computer Resources into a Packet Radio. Network",
+Proceedings o f the National Computer Conference, May 1975.
+
+[Metcalfe, 1972a]
+R.M. Metcalfe, "Strategies for
+Interprocess Communication in a Distributed Computing
+System", Proceedings o f the Symposium on Compute,.Communications Networks and Teletraffic,
+Polytechnic Press, New York, 1972.
+[Metcalfe, 1972b]
+R.M. Metcalfe, "Strategies for Operating Systems in Computer Networks", Proceedings o f the
+ACM National Conference, August 1972.
+
+[Metcalfe, 1973a]
+R.M. Metcalfe, "Steady-State Analysis of a Slotted and Controlled Aloha System w i th
+Blocking", Proceedings o f the Sixth Hawaii Conference on System Sciences, January 1973.
+Reprinted in the Sigcomm Review, January 1975.
+[Metcalfe, 1973b]
+R.M. Metcalfe, Packet Communication, Harvard PhD Thesis, Massachusetts Institute o f
+Technology Project Mac TR-114, December 1973.
+
+[Metcalfe, 1974]
+R.M. Metcalfe, "Distributed Algorithms for a Broadcast Queue",
+talk given at Stanford
+University in November 1974 and at the University of California at Berkeley in Febraury 1975,
+paper in preparation.
+[Murthy, 1975]
+P. Murthy, "Analysis o f a Carrier-Sense Random-Access System with Random Packet Lengths",
+Aloha System Technical Report B75-17, University o f Hawaii, May 1975.
+[Ornstein, 1975]
+S.M. Ornstein, W.R. Crowther, M.F. Kraley, R.D. Bressler, A. Michel, and F.E. Heart,
+"Pluribus-A Reliable Multiprocessor", Proceedings o f the National Computer Conference, May
+1975.
+
+[Retz, 1975J
+D.L. Retz, "Operating·System Design Considerations for the Packet Switching Environment",
+Proceedings o f the National Computer Conference, May 1975.
+
+.t
+
+ETHERNET: DISTRIBD'TED PACKET SWITCHING FOR LOCAL COMPUTER NETWORKS
+
+21
+
+[Robens, 1970]
+L. Roberts, B. Wessler, "Computer Network Development to Achieve Resource Sharing", AFIPS
+Conference Proceedings, vol. 36, May 1970.
+[Roberts, 1973]
+L.G. Roberts, "Capture Effects on Aloha Channels", Proceedings o f the Sixth Hawaii
+Conference on S}'stem Sciences, January 1973.
+[Rowe, 1975]
+L.A. Rowe, "The Distributed Computing Operating System", Technical Report Number 66,
+Department o f Information and Computer Science, University o f California, Irvine, June 1975.
+[Rustin, 1972]
+R. Rustin, Editor, Computer Networks, Proceedings o f the Courant Computer Science
+Symposium 3, December 1970, Prentice-Hall Series in Automatic Computation, 1972.
+[sDLe, 1974]
+IBM Synchronous Data Link Control-General Information, IBM Systems De,velopment Division,
+Publications Center, Department E01, P.O. Box 12195, Research Triangle Park, North Carolina
+27709, 1974.
+
+[SNA, 1975]
+IBM System Network Architectur~General Infromation,
+IBM Systems Development Division,
+Publications Center, Department EOI, P.O. Box 12195, Research Triangle Park, North Carolina
+27709, 1975.
+
+[Thomas, 1973]
+R.H. Thomas, "A Resource Sharing Executive for the Arpanet", AFIPS Conference Proceedings,
+October 1973.
+
+[Thornton, 1970]
+J.E. Thornton, Design o f a Computer: the Control Data 6600, Scott Foresman and Company,
+1970.
+
+[Walden, 1972]
+D.C. Walden, "A System for Interprocess Communication in 'a Resource Sharing Computer
+Network", Communications o f the ACM, vol. 15, no. 4, April 1972.
+[Willard, 1973]
+D.O. Willard, "Mitrix: A Sophisticated Digital Cable Communications System", Proceedings o f
+the National Telecommunications Conference, November 1973.
+[Wult: 1972]
+W. Wulf, R. Levin, "C .mmp -A Multi-~ini-Processor", AFIPS Conference Proceedings, Fall
+~.972.
+
+

@@ -1,0 +1,2359 @@
+A Detailed Analysis of Contemporary ARM and x86 Architectures
+Emily Blem, Jaikrishnan Menon, and Karthikeyan Sankaralingam
+University of Wisconsin - Madison
+{blem,menon,karu}@cs.wisc.edu
+
+Abstract
+RISC vs. CISC wars raged in the 1980s when chip area and
+processor design complexity were the primary constraints and
+desktops and servers exclusively dominated the computing land-
+scape. Today, energy and power are the primary design con-
+straints and the computing landscape is signiﬁcantly different:
+growth in tablets and smartphones running ARM (a RISC ISA)
+is surpassing that of desktops and laptops running x86 (a CISC
+ISA). Further, the traditionally low-power ARM ISA is enter-
+ing the high-performance server market, while the traditionally
+high-performance x86 ISA is entering the mobile low-power de-
+vice market. Thus, the question of whether ISA plays an intrinsic
+role in performance or energy efﬁciency is becoming important,
+and we seek to answer this question through a detailed mea-
+surement based study on real hardware running real applica-
+tions. We analyze measurements on the ARM Cortex-A8 and
+Cortex-A9 and Intel Atom and Sandybridge i7 microprocessors
+over workloads spanning mobile, desktop, and server comput-
+ing. Our methodical investigation demonstrates the role of ISA
+in modern microprocessors’ performance and energy efﬁciency.
+We ﬁnd that ARM and x86 processors are simply engineering
+design points optimized for different levels of performance, and
+there is nothing fundamentally more energy efﬁcient in one ISA
+class or the other. The ISA being RISC or CISC seems irrelevant.
+
+1. Introduction
+The question of ISA design and speciﬁcally RISC vs. CISC
+ISA was an important concern in the 1980s and 1990s when
+chip area and processor design complexity were the primary
+constraints [24, 12, 17, 7]. It is questionable if the debate was
+settled in terms of technical issues. Regardless, both ﬂourished
+commercially through the 1980s and 1990s. In the past decade,
+the ARM ISA (a RISC ISA) has dominated mobile and low-
+power embedded computing domains and the x86 ISA (a CISC
+ISA) has dominated desktops and servers.
+Recent trends raise the question of the role of the ISA and
+make a case for revisiting the RISC vs. CISC question. First, the
+computing landscape has quite radically changed from when the
+previous studies were done. Rather than being exclusively desk-
+tops and servers, today’s computing landscape is signiﬁcantly
+shaped by smartphones and tablets. Second, while area and chip
+design complexity were previously the primary constraints, en-
+ergy and power constraints now dominate. Third, from a com-
+
+mercial standpoint, both ISAs are appearing in new markets:
+ARM-based servers for energy efﬁciency and x86-based mo-
+bile and low power devices for higher performance. Thus, the
+question of whether ISA plays a role in performance, power, or
+energy efﬁciency is once again important.
+Related Work:
+Early ISA studies are instructive, but miss
+key changes in today’s microprocessors and design constraints
+that have shifted the ISA’s effect. We review previous com-
+parisons in chronological order, and observe that all prior com-
+prehensive ISA studies considering commercially implemented
+processors focused exclusively on performance.
+Bhandarkar and Clark compared the MIPS and VAX ISA by
+comparing the M/2000 to the Digital VAX 8700 implementa-
+tions [7] and concluded: “RISC as exempliﬁed by MIPS pro-
+vides a signiﬁcant processor performance advantage.” In an-
+other study in 1995, Bhandarkar compared the Pentium-Pro to
+the Alpha 21164 [6], again focused exclusively on performance
+and concluded: “...the Pentium Pro processor achieves 80% to
+90% of the performance of the Alpha 21164... It uses an aggres-
+sive out-of-order design to overcome the instruction set level
+limitations of a CISC architecture. On ﬂoating-point intensive
+benchmarks, the Alpha 21164 does achieve over twice the per-
+formance of the Pentium Pro processor.” Consensus had grown
+that RISC and CISC ISAs had fundamental differences that led
+to performance gaps that required aggressive microarchitecture
+optimization for CISC which only partially bridged the gap.
+Isen et al. [22] compared the performance of Power5+ to Intel
+Woodcrest considering SPEC benchmarks and concluded x86
+matches the POWER ISA. The consensus was that “with ag-
+gressive microarchitectural techniques for ILP, CISC and RISC
+ISAs can be implemented to yield very similar performance.”
+Many informal studies in recent years claim the x86’s
+“crufty” CISC ISA incurs many power overheads and attribute
+the ARM processor’s power efﬁciency to the ISA [1, 2]. These
+studies suggest that the microarchitecture optimizations from the
+past decades have led to RISC and CISC cores with similar per-
+formance, but the power overheads of CISC are intractable.
+In light of the prior ISA studies from decades past, the signif-
+icantly modiﬁed computing landscape, and the seemingly vastly
+different power consumption of ARM implementations (1-2 W)
+to x86 implementations (5 - 36 W), we feel there is need to
+revisit this debate with a rigorous methodology. Speciﬁcally,
+considering the dominance of ARM and x86 and the multi-
+pronged importance of the metrics of power, energy, and perfor-
+
+A version appears in the 19th IEEE Intl. Symposium on High Performance Computer Architecture (HPCA 2013)
+
+2
+
+mance, we need to compare ARM to x86 on those three metrics.
+Macro-op cracking and decades of research in high-performance
+microarchitecture techniques and compiler optimizations seem-
+ingly help overcome x86’s performance and code-effectiveness
+bottlenecks, but these approaches are not free. The crux of our
+analysis is the following: After decades of research to mitigate
+CISC performance overheads, do the new approaches introduce
+fundamental energy inefﬁciencies?
+Challenges: Any ISA study faces challenges in separating
+out the multiple implementation factors that are orthogonal to
+the ISA from the factors that are inﬂuenced or driven by the
+ISA. ISA-independent factors include chip process technology
+node, device optimization (high-performance, low-power, or
+low-standby power transistors), memory bandwidth, I/O device
+effects, operating system, compiler, and workloads executed.
+These issues are exacerbated when considering energy measure-
+ments/analysis, since chips implementing an ISA sit on boards
+and separating out chip energy from board energy presents addi-
+tional challenges. Further, some microarchitecture features may
+be required by the ISA, while others may be dictated by perfor-
+mance and application domain targets that are ISA-independent.
+To separate out the implementation and ISA effects, we con-
+sider multiple chips for each ISA with similar microarchitec-
+tures, use established technology models to separate out the
+technology impact, use the same operating system and com-
+piler front-end on all chips, and construct workloads that do not
+rely signiﬁcantly on the operating system. Figure 1 presents an
+overview of our approach:
+the four platforms, 26 workloads,
+and set of measures collected for each workload on each plat-
+form. We use multiple implementations of the ISAs and speciﬁ-
+cally consider the ARM and x86 ISAs representing RISC against
+CISC. We present an exhaustive and rigorous analysis using
+workloads that span smartphone, desktop, and server applica-
+tions. In our study, we are primarily interested in whether and,
+if so, how the ISA impacts performance and power. We also
+discuss infrastructure and system challenges, missteps, and soft-
+ware/hardware bugs we encountered. Limitations are addressed
+in Section 3. Since there are many ways to analyze the raw
+data, this paper is accompanied by a public release of all data
+at www.cs.wisc.edu/vertical/isa-power-struggles.
+Key Findings: The main ﬁndings from our study are:
+◦ Large performance gaps exist across the implementations, al-
+though average cycle count gaps are ≤ 2.5×.
+
+Figure 1. Summary of Approach.
+◦ Instruction count and mix are ISA-independent to ﬁrst order.
+◦ Performance differences are generated by ISA-independent
+microarchitecture differences.
+◦ The energy consumption is again ISA-independent.
+◦ ISA differences have implementation implications, but mod-
+ern microarchitecture techniques render them moot; one
+ISA is not fundamentally more efﬁcient.
+◦ ARM and x86 implementations are simply design points op-
+timized for different performance levels.
+Implications: Our ﬁndings conﬁrm known conventional (or
+suspected) wisdom, and add value by quantiﬁcation. Our results
+imply that microarchitectural effects dominate performance,
+power, and energy impacts. The overall implication of this work
+is that the ISA being RISC or CISC is largely irrelevant for to-
+day’s mature microprocessor design world.
+Paper organization: Section 2 describes a framework we de-
+velop to understand the ISA’s impacts on performance, power,
+and energy. Section 3 describes our overall infrastructure and
+rationale for the platforms for this study and our limitations,
+Section 4 discusses our methodology, and Section 5 presents the
+analysis of our data. Section 7 concludes.
+2. Framing Key Impacts of the ISA
+In this section, we present an intellectual framework in
+which to examine the impact of the ISA—assuming a von Neu-
+mann model—on performance, power, and energy. We con-
+sider the three key textbook ISA features that are central to the
+RISC/CISC debate: format, operations, and operands. We do
+not consider other textbook features, data types and control, as
+they are orthogonal to RISC/CISC design issues and RISC/CISC
+approaches are similar. Table 1 presents the three key ISA fea-
+tures in three columns and their general RISC and CISC char-
+acteristics in the ﬁrst two rows. We then discuss contrasts for
+each feature and how the choice of RISC or CISC potentially
+and historically introduced signiﬁcant trade-offs in performance
+and power. In the fourth row, we discuss how modern reﬁne-
+ments have led to similarities, marginalizing the choice of RISC
+or CISC on performance and power. Finally, the last row raises
+empirical questions focused on each feature to quantify or val-
+idate this convergence. Overall, our approach is to understand
+all performance and power differences by using measured met-
+rics to quantify the root cause of differences and whether or not
+
+SPEC CPU200610 INT10 FPDesktopCoreMark2 WebKitMobileLighttpdCLuceneDatabase kernelsServerCortex A8Beagle BoardAtom N450Atom Dev BoardCortex A9Panda Boardi7-Core2700SandyBridge26 WorkloadsFour PlatformsOver 200 MeasuresWattsUpPower MeasuresPerfinterface to Hwperformance countersPerformancePowerRISC v CISC appears irrelevantSimulated ARM instruction mixBinary Instrumentation for x86 instruction infoOver 20,000 Data Points + Careful AnalysisA version appears in the 19th IEEE Intl. Symposium on High Performance Computer Architecture (HPCA 2013)
+Table 1. Summary of RISC and CISC Trends.
+Operations
+◦ Simple, single function operations
+◦ Single cycle
+
+3
+
+◦ Complex, multi-cycle instructions
+◦ Transcendentals
+◦ Encryption
+◦ String manipulation
+◦ Even w/ µ code, pipelining hard
+◦ CISC latency may be longer than
+compiler’s RISC equivalent
+
+Operands
+◦ Operands: registers, immediates
+◦ Few addressing modes
+◦ ARM: 16 general purpose registers
+◦ Operands: memory, registers, immediates
+◦ Many addressing modes
+◦ x86: 8 32b & 6 16b registers
+
+◦ CISC decoder complexity higher
+◦ CISC has more per inst work, longer cycles
+◦ Static code size: RISC > CISC
+
+/
+C
+6
+8
+S
+x
+I
+C
+
+Format
+M ◦ Fixed length instructions
+/
+◦ Relatively simple encoding
+C
+R
+S
+◦ ARM: 4B, THUMB(2B, optional)
+I
+A
+R
+◦ Variable length instructions
+◦ Common insts shorter/simpler
+◦ Special insts longer/complex
+◦ x86: from 1B to 16B long
+s ◦ CISC decode latency prevents pipelining
+l
+a
+◦ CISC decoders slower/more area
+t
+s
+c
+a
+i
+r
+◦ Code density: RISC < CISC
+r
+o
+t
+n
+t
+s
+o
+i
+H
+C
+s ◦ µ -op cache minimizes decoding overheads
+e
+c
+◦ x86 decode optimized for common insts
+n
+d
+e
+n
+◦ I-cache minimizes code density impact
+g
+e
+r
+r
+e
+T
+v
+n
+o
+C
+
+◦ CISC insts split into RISC-like micro-ops;
+optimizations eliminated inefﬁciencies
+◦ Modern compilers pick mostly RISC insts;
+µ -op counts similar for ARM and x86
+
+◦ x86 decode optimized for common insts
+◦ CISC insts split into RISC-like micro-ops;
+x86 and ARM µ -op latencies similar
+◦ Number of data cache accesses similar
+
+l
+s
+a
+n
+c
+o
+i
+i
+r
+t
+i
+s
+p
+e
+m
+u
+Q
+E
+
+◦ How much variance in x86 inst length?
+Low variance ⇒ common insts optimized
+◦ Are ARM and x86 code densities similar?
+Similar density ⇒ No ISA effect
+◦ What are instruction cache miss rates?
+Low ⇒ caches hide low code densities
+
+◦ Are macro-op counts similar?
+Similar ⇒ RISC-like on both
+◦ Are complex instructions used by x86 ISA?
+Few complex ⇒ Compiler picks RISC-like
+◦ Are µ -op counts similar?
+Similar ⇒ CISC split into RISC-like µ -ops
+
+◦ Number of data accesses similar?
+Similar ⇒ no data access inefﬁciencies
+
+ISA differences contribute. The remainder of this paper is cen-
+tered around these empirical questions framed by the intuition
+presented as the convergence trends.
+Although whether an ISA is RISC or CISC seems irrelevant,
+ISAs are evolving; expressing more semantic information has
+led to improved performance (x86 SSE, larger address space),
+better security (ARM Trustzone), better virtualization, etc. Ex-
+amples in current research include extensions to allow the hard-
+ware to balance accuracy with energy efﬁciency [15, 13] and ex-
+tensions to use specialized hardware for energy efﬁciency [18].
+We revisit this issue in our conclusions.
+3. Infrastructure
+We now describe our infrastructure and tools. The key take-
+away is that we pick four platforms, doing our best to keep them
+on equal footing, pick representative workloads, and use rigor-
+ous methodology and tools for measurement. Readers can skip
+ahead to Section 4 if uninterested in the details.
+3.1. Implementation Rationale and Challenges
+Choosing implementations presents multiple challenges due
+to differences in technology (technology node, frequency, high
+performance/low power transistors, etc.); ISA-independent mi-
+croarchitecture (L2-cache, memory controller, memory size,
+etc.); and system effects (operating system, compiler, etc.). Fi-
+nally, platforms must be commercially relevant and it is unfair
+to compare platforms from vastly different time-frames.
+We investigated a wide spectrum of platforms spanning In-
+tel Nehalem, Sandybridge, AMD Bobcat, NVIDIA Tegra-2,
+NVIDIA Tegra-3, and Qualcomm Snapdragon. However, we
+did not ﬁnd implementations that met all of our criteria: same
+technology node across the different ISAs, identical or similar
+
+microarchitecture, development board that supported necessary
+measurements, a well-supported operating system, and similar
+I/O and memory subsystems. We ultimately picked the Beagle-
+board (Cortex-A8), Pandaboard (Cortex-A9), and Atom board,
+as they include processors with similar microarchitectural fea-
+tures like issue-width, caches, and main-memory and are from
+similar technology nodes, as described in Tables 2 and 7. They
+are all relevant commercially as shown by the last row in Ta-
+ble 2. For a high performance x86 processor, we use an Intel i7
+Sandybridge processor; it is signiﬁcantly more power-efﬁcient
+than any 45nm offering, including Nehalem. Importantly, these
+choices provided usable software platforms in terms of operat-
+ing system, cross-compilation, and driver support. Overall, our
+choice of platforms provides a reasonably equal footing, and we
+perform detailed analysis to isolate out microarchitecture and
+technology effects. We present system details of our platforms
+for context, although the focus of our work is the processor core.
+A key challenge in running real workloads was the rela-
+tively small memory (512MB) on the Cortex-A8 Beagleboard.
+While representative of the typical target (e.g., iPhone 4 has
+512MB RAM), it presents a challenge for workloads like SPEC-
+CPU2006; execution times are dominated by swapping and OS
+overheads, making the core irrelevant. Section 3.3 describes
+how we handled this. In the remainder of this section, we discuss
+the platforms, applications, and tools for this study in detail.
+
+3.2. Implementation Platforms
+
+Hardware platform: We consider two chip implementations
+each for the ARM and x86 ISAs as described in Table 2.
+Intent: Keep non-processor features as similar as possible.
+
+A version appears in the 19th IEEE Intl. Symposium on High Performance Computer Architecture (HPCA 2013)
+Table 2. Platform Summary.
+Table 3. Benchmark Summary.
+ARMv7 ISA
+32/64b x86 ISA
+Notes
+Benchmarks
+Set to 4000 iterations
+CoreMark
+Similar to BBench
+WebKit
+SPECCPU2006
+10 INT, 10 FP, test inputs
+Represents web-serving
+lighttpd
+Represents web-indexing
+CLucene
+Represents data-streaming and
+Database kernels
+data-analytics
+
+Domain
+Mobile
+client
+Desktop
+Server
+
+4
+
+Cortex-A8
+Cortex-A9
+Architecture Sandybridge Atom
+OMAP3530
+OMAP4430
+N450
+Core 2700
+Processor
+1
+2
+Cores
+4
+1
+0.6 GHz
+1 GHz
+1.66 GHz
+3.4 GHz
+Frequency
+2-way
+2-way
+2-way
+4-way
+Width
+In Order
+OoO
+In Order
+Issue
+OoO
+16 KB
+32 KB
+24 KB
+32 KB
+L1 Data
+16 KB
+32 KB
+32 KB
+L1 Inst
+32 KB
+256 KB
+1 MB/chip
+L2
+256 KB/core 512 KB
+—
+—
+—
+8 MB/chip
+L3
+256 MB
+1 GB
+1 GB
+16 GB
+Memory
+NEON
+NEON
+SSE
+SIMD
+AVX
+60 mm2
+70 mm2
+216 mm2
+66 mm2
+Area
+65 nm
+45 nm
+Tech Node
+32 nm
+45 nm
+Beagleboard
+Pandaboard
+Desktop Dev Board
+Platform
+iPhone 4, 3GS
+Galaxy S-III
+Desktop Netbook
+Products
+Motorola Droid
+Galaxy S-II
+Lava Xolo
+Data from TI OMAP3530, TI OMAP4430, Intel Atom N450, and Intel
+i7-2700 datasheets, www.beagleboard.org & www.pandaboard.org
+Operating system: Across all platforms, we run the same
+stable Linux 2.6 LTS kernel with some minor board-speciﬁc
+patches to obtain accurate results when using the performance
+counter subsystem. We use perf’s1 program sampling to ﬁnd
+the fraction of time spent in the kernel while executing the SPEC
+benchmarks on all four boards; overheads were less than 5% for
+all but GemsFDTD and perlbench (both less than 10%) and the
+fraction of time spent in the operating system was virtually iden-
+tical across platforms spanning ISAs.
+Intent: Keep OS effects as similar as possible across platforms.
+Compiler: Our toolchain is based on a validated gcc 4.4 based
+cross-compiler conﬁguration. We intentionally chose gcc so
+that we can use the same front-end to generate all binaries. All
+target independent optimizations are enabled (O3); machine-
+speciﬁc tuning is disabled so there is a single set of ARM bi-
+naries and a single set of x86 binaries. For x86 we target 32-bit
+since 64-bit ARM platforms are still under development. For
+ARM, we disable THUMB instructions for a more RISC-like
+ISA. We ran experiments to determine the impact of machine-
+speciﬁc optimizations and found that these impacts were less
+than 5% for over half of the SPEC suite, and caused performance
+variations of ±20% on the remaining with speed-ups and slow-
+downs equally likely. None of the benchmarks include SIMD
+code, and although we allow auto-vectorization, very few SIMD
+instructions are generated for either architecture. Floating point
+is done natively on the SSE (x86) and NEON (ARM) units. Ven-
+dor compilers may produce better code for a platform, but we
+use gcc to eliminate compiler inﬂuence. As seen in Table 12 in
+Appendix I, static code size is within 8% and average instruction
+lengths are within 4% using gcc and icc for SPEC INT, so we
+expect that compiler does not make a signiﬁcant difference.
+Intent: Hold compiler effects constant across platforms.
+3.3. Applications
+Since both ISAs are touted as candidates for mobile clients,
+desktops, and servers, we consider a suite of workloads that span
+
+1 perf is a Linux utility to access performance counters.
+
+these. We use prior workload studies to guide our choice, and
+where appropriate we pick equivalent workloads that can run on
+our evaluation platforms. A detailed description follows and is
+summarized in Table 3. All workloads are single-threaded to
+ensure our single-core focus.
+Mobile client: This category presented challenges as mobile
+client chipsets typically include several accelerators and careful
+analysis is required to determine the typical workload executed
+on the programmable general-purpose core. We used CoreMark
+(www.coremark.org), widely used in industry white-papers,
+and two WebKit regression tests informed by the BBench
+study [19]. BBench, a recently proposed smartphone bench-
+mark suite, is a “a web-page rendering benchmark comprising
+11 of the most popular sites on the internet today” [19]. To avoid
+web-browser differences across the platforms, we use the cross-
+platform WebKit with two of its built-in tests that mimic real-
+world HTML layout and performance scenarios for our study2 .
+Desktop: We use the SPECCPU2006 suite (www.spec.org)
+as representative of desktop workloads. SPECCPU2006 is a
+well understood standard desktop benchmark, providing insights
+into core behavior. Due to the large memory footprint of the
+train and reference inputs, we found that for many benchmarks
+the memory constrained Cortex-A8, in particular, ran of mem-
+ory and execution was dominated by system effects. Instead, we
+report results using the test inputs, which ﬁt in the Cortex-A8’s
+memory footprint for 10 of 12 INT and 10 of 17 FP benchmarks.
+Server: We chose server workloads informed by the Cloud-
+Suite workloads recently proposed by Ferdman et al. [16]. Their
+study characterizes server/cloud workloads into data analytics,
+data streaming, media streaming, software testing, web search,
+and web serving. The actual software implementations they
+provide are targeted for large memory-footprint machines and
+their intent is to benchmark the entire system and server clus-
+ter. This is unsuitable for our study since we want to iso-
+late processor effects. Hence, we pick implementations with
+small memory footprints and single-node behavior. To represent
+data-streaming and data-analytics, we use three database ker-
+nels commonly used in database evaluation work [26, 23] that
+capture the core computation in Bayes classiﬁcation and data-
+store3 . To represent web search, we use CLucene (clucene.
+
+2 Speciﬁcally coreLayout and DOMPerformance.
+3CloudSuite uses Hadoop+Mahout plus additional software infrastructure,
+ultimately running Bayes classiﬁcation and data-store; we feel this kernel ap-
+proach is better suited for our study while capturing the domain’s essence.
+
+A version appears in the 19th IEEE Intl. Symposium on High Performance Computer Architecture (HPCA 2013)
+Table 4. Infrastructure Limitations.
+Implications
+2nd order for core design
+Best effort
+Best effort
+µ arch effect, not ISA
+Out of scope
+Out of scope
+See server benchmarks
+Tracks emerging uses
+CloudSuite more relevant
+gcc optimizations uniform
+<10%
+Results show 2nd order
+4-17%
+Validated use (Table 5)
+Validated use (Table 5)
+Second-order
+Second-order
+Best effort; extant nodes
+
+Limitation
+Multicore effects: coherence, locking...
+No platform uniformity across ISAs
+No platform diversity within ISAs
+Design teams are different
+“Pure” RISC, CISC implementations
+n Ultra low power microcontrollers
+Server style platforms
+i
+a
+m
+Why SPEC on mobile platforms?
+o
+D
+Why not SPEC JBB or TPC-C?
+Proprietary compilers are optimized
+Arch. speciﬁc compiler tuning
+No direct decoder power measure
+Power includes non-core factors
+Performance counters may have errors
+Simulations have errors
+g Memory rate effects cycles nonlinearly
+n
+Vmin limit effects frequency scaling
+i
+l
+a
+c
+ITRS scaling numbers are not exact
+S
+
+s
+e
+r
+o
+C
+
+s
+l
+o
+o
+T
+
+5
+
+allows us to eliminate the main memory and I/O power and ex-
+amine only processor power. We validated our strategy for the
+i7 system using the exposed energy counters (the only platform
+we consider that includes isolated power measures). Across all
+three benchmark suites, our WattsUp methodology compared to
+the processor energy counter reports ranged from 4% to 17%
+less, averaging 12%. Our approach tends to under-estimate core
+power, so our results for power and energy are optimistic. We
+saw average power of 800mW, 1.2W, 5.5W, and 24W for A8,
+A9, Atom, and i7 (respectively) and these fall within the typical
+vendor-reported power numbers.
+Technology scaling and projections: Since the i7 processor
+is 32nm and the Cortex-A8 is 65nm, we use technology node
+characteristics from the 2007 ITRS tables to normalize to the
+45nm technology node in two results where we factor out tech-
+nology; we do not account for device type (LOP, HP, LSTP).
+For our 45nm projections, the A8’s power is scaled by 0.8× and
+the i7’s power by 1.3×.
+In some results, we scale frequency
+to 1 GHz, accounting for DVFS impact on voltage using the
+mappings disclosed for Intel SCC [5]. When frequency scal-
+ing, we assume that 20% of the i7’s power is static and does
+not scale with frequency; all other cores are assumed to have
+negligible static power. When frequency scaling, A8’s power is
+scaled by 1.2×, Atom’s power by 0.8×, and i7’s power by 0.6×.
+We acknowledge that this scaling introduces some error to our
+technology-scaled power comparison, but feel it is a reasonable
+strategy and doesn’t affect our primary ﬁndings (see Table 4).
+Emulated instruction mix measurement: For the x86 ISA,
+we use DynamoRIO [11] to measure instruction mix. For the
+ARM ISA, we leverage the gem5 [8] simulator’s functional em-
+ulator to derive instruction mixes (no ARM binary emulation
+available). Our server and mobile-client benchmarks use many
+system calls that do not work in the gem5 functional mode.
+We do not present detailed instruction-mix analysis for these,
+but instead present high-level mix determined from performance
+counters. We use the MICA tool to ﬁnd the available ILP [20].
+3.5. Limitations or Concerns
+Our study’s limitations are classiﬁed into core diversity, do-
+main, tool, and scaling effects. The full list appears in Table 4,
+and details are discussed below. Throughout our work, we fo-
+cus on what we believe to be the ﬁrst order effects for perfor-
+mance, power, and energy and feel our analysis and methodol-
+ogy is rigorous. Other more detailed methods may exist, and we
+have made the data publicly available at www.cs.wisc.edu/
+vertical/isa-power-struggles to allow interested readers
+to pursue their own detailed analysis.
+Cores: We considered four platforms, two from each ISA. A
+perfect study would include platforms at several performance
+levels with matched frequency, branch predictors, other microar-
+chitectural features, and memory systems. Further, a pure RISC
+versus CISC study would use true RISC and CISC cores, while
+ARM and x86’s ISA tweaks represent the current state-of-the-
+art. Our selections reﬂect the available, well-supported imple-
+
+sourceforge.net), an efﬁcient, cross-platform indexing im-
+plementation similar to CloudSuite’s Nutch. To represent web-
+serving (CloudSuite uses Apache), we use the lighttpd server
+(www.lighttpd.net) which is designed for “security, speed,
+compliance, and ﬂexibility”4 . We do not evaluate the media-
+streaming CloudSuite benchmark as it primarily stresses the I/O
+subsystem. CloudSuite’s Software Testing benchmark is a batch
+coarse-grained parallel symbolic execution application; for our
+purposes, the SPEC suite’s Perl parser, combinational optimiza-
+tion, and linear programming benchmarks are similar.
+3.4. Tools
+The four main tools we use in our work are described below
+and Table 5 in Section 4 describes how we use them.
+Native execution time and microarchitectural events: We
+use wall-clock time and performance-counter-based clock-cycle
+measurements to determine execution time of programs. We
+also use performance counters to understand microarchitecture
+inﬂuences on the execution time. Each of the processors has
+different counters available, and we examined them to ﬁnd com-
+parable measures. Ultimately three counters explain much of
+the program behavior: branch mis-prediction rate, Level-1 data-
+cache miss rate, and Level-1 instruction-cache miss rate (all
+measured as misses per kilo-instructions). We use the perf tool
+for performance counter measurement.
+Power: For power measurements, we connect a Wattsup
+(www.wattsupmeters.com) meter to the board (or desktop)
+power supply. This gives us system power. We run the bench-
+mark repeatedly to ﬁnd consistent average power as explained in
+Table 5. We use a control run to determine the board power alone
+when the processor is halted and subtract away this board power
+to determine chip power. Some recent power studies [14, 21, 9]
+accurately isolate the processor power alone by measuring the
+current supply line of the processor. This is not possible for
+the SoC-based ARM development boards, and hence we deter-
+mine and then subtract out the board-power. This methodology
+
+4Real users of lighttpd include YouTube.
+
+A version appears in the 19th IEEE Intl. Symposium on High Performance Computer Architecture (HPCA 2013)
+Table 5. Methodology Summary.
+(a) Native Execution on Real Hardware
+
+6
+
+Measures
+Execution time,
+Cycle counts
+
+Inst. count (ARM)
+
+Inst. count (x86)
+
+Inst. mix (Coarse)
+
+Inst. length (x86)
+
+Microarch events
+
+Full system power
+
+Board power
+
+Processor power
+
+Methodology
+◦ Approach: Use perf tool to sample cycle performance counters; sampling avoids potential counter overﬂow.
+◦ Analysis: 5 - 20 trials (dependent on variance and benchmark runtime); report minimum from trials that complete normally.
+◦ Validation: Compare against wall clock time.
+◦ Approach: Use perf tool to collect macro-ops from performance counters
+◦ Analysis: At least 3 trials; report minimum from trials that complete normally.
+◦ Validation: Performance counters within 10% of gem5 ARM simulation. Table 9 elaborates on challenges.
+◦ Approach: Use perf to collect macro-ops and micro-ops from performance counters.
+◦ Analysis: At least 3 trials; report minimum from trials that complete normally.
+◦ Validation: Counters within 2% of DynamoRIO trace count (macro-ops only). Table 9 elaborates on challenges.
+◦ Approach: SIMD + FP + load/store performance counters.
+◦ Approach: Wrote Pin tool to ﬁnd length of each instruction and keep running average.
+◦ Approach: Branch mispredictions, cache misses, and other uarch events measured using perf performance counters.
+◦ Analysis: At least 3 trials; additional if a particular counter varies by > 5%. Report minimum from normal trials.
+◦ Set-up: Use Wattsup meter connected to board or desktop
+(no network connection, peripherals on separate supply, kernel DVFS disabled, cores at peak frequency, single-user mode).
+◦ Approach: Run benchmarks in loop to guarantee 3 minutes of samples (180 samples at maximum sampling rate).
+◦ Analysis: If outliers occur, rerun experiment; present average power across run without outliers.
+◦ Set-up: Use Wattsup meter connected to board or desktop
+(no network connection, peripherals on separate supply, kernel DVFS disabled, cores at peak frequency, single-user mode).
+◦ Approach: Run with kernel power saving enabled; force to lowest frequency. Issue halt; report power when it stabilizes.
+◦ Analysis: Report minimum observed power.
+◦ Approach: Subtracting above two gives processor power.
+◦ Validation: compare core power against energy performance counters and/or reported TDP and power draw.
+
+(b) Emulated Execution
+
+Measures
+Inst. mix (Detailed)
+
+ILP
+
+Methodology
+◦ Approach (ARM): Use gem5 instruction trace and analyze using python script.
+◦ Approach (x86): Use DynamoRIO instruction trace and analyze using python script.
+◦ Validation: Compare against coarse mix from SIMD + FP + load/store performance counters.
+◦ Approach: Pin based MICA tool which reports ILP with window size 32, 64, 128, 256.
+
+mentations available to our group. The impact of higher per-
+formance emerging cores is included in our synthetic processor
+study.
+Domain: We picked a representative set of workloads we feel
+captures a signiﬁcant subset of modern workloads. We do not
+make broad domain-speciﬁc arguments, since that requires truly
+representative inputs and IO subsystem control for the mobile
+and server domains. Our study focused on single-core, and thus
+intentionally avoids multi-core system issues (e.g., consistency
+models, coherence, virtualization, etc.).
+Measurement and tool errors: Our measurements are pri-
+marily on real hardware, and therefore include real world errors.
+We execute multiple runs and take a rigorous approach as de-
+tailed in Table 5. Eliminating all errors is impractical, and our
+ﬁnal result trends are consistent and intuitive.
+Analysis: We have presented our analysis of this rich data set,
+and will release the data and our analysis scripts to allow inter-
+ested readers to pursue their own detailed analysis.
+4. Methodology
+In this section, we describe how we use our tools and the
+overall ﬂow of our analysis. Section 5 presents our data and
+
+analysis. Table 5 describes how we employ the aforementioned
+tools and obtain the measures we are interested in, namely, ex-
+ecution time, execution cycles, instruction-mix, microarchitec-
+ture events, power, and energy.
+Our overall approach is to understand all performance and
+power differences and use the measured metrics to quantify the
+root cause of differences and whether or not ISA differences
+contribute, answering empirical questions from Section 2. Un-
+less otherwise explicitly stated, all data is measured on real hard-
+ware. The ﬂow of the next section is outlined below.
+4.1. Performance Analysis Flow
+Step 1: Present execution time for each benchmark.
+Step 2: Normalize frequency’s impact using cycle counts.
+Step 3: To understand differences in cycle count and the inﬂu-
+ence of the ISA, present the dynamic instruction count measures,
+measured in both macro-ops and micro-ops.
+Step 4: Use instruction mix, code binary size, and average dy-
+namic instruction length to understand ISA’s inﬂuence.
+Step 5: To understand performance differences not attributable
+to ISA, look at detailed microarchitecture events.
+Step 6: Attribute performance gaps to frequency, ISA, or ISA-
+
+A version appears in the 19th IEEE Intl. Symposium on High Performance Computer Architecture (HPCA 2013)
+
+7
+
+independent microarchitecture features. Qualitatively reason
+about whether the ISA forces microarchitecture features.
+4.2. Power and Energy Analysis Flow
+Step 1: Present per benchmark raw power measurements.
+Step 2: To factor out
+the impact of technology, present
+technology-independent power by scaling all processors to
+45nm and normalizing the frequency to 1 GHz.
+Step 3: To understand the interplay between power and perfor-
+mance, examine raw energy.
+Step 4: Qualitatively reason about the ISA inﬂuence on microar-
+chitecture in terms of energy.
+4.3. Trade-off Analysis Flow
+Step 1: Combining the performance and power measures, com-
+pare the processor implementations using Pareto-frontiers.
+Step 2: Compare measured and synthetic processor implemen-
+tations using Energy-Performance Pareto-frontiers.
+5. Measured Data Analysis and Findings
+We now present our measurements and analysis of perfor-
+mance, power, energy, and the trade-offs between them. We
+conclude the section with sensitivity studies projecting perfor-
+mance of additional implementations of the ARM and x86 ISA
+using a simple performance and power model.
+We present our data for all four platforms, often comparing
+A8 to Atom (both dual-issue in-order) and A9 to i7 (both OOO)
+since their implementations are pair-wise similar. For each step,
+we present the average measured data, average in-order and OoO
+ratios if applicable, and then our main ﬁndings. When our analy-
+sis suggests that some benchmarks are outliers, we give averages
+with the outliers included in parentheses.
+5.1. Performance Analysis
+Step 1: Execution Time Comparison
+Data: Figure 2 shows execution time normalized to i7; av-
+erages including outliers are given using parentheses. Average
+ratios are in table below. Per benchmark data is in Figure 16 of
+Appendix I.
+
+Finding P1: Large performance gaps are platform and bench-
+mark dependent: A9 to i7 performance gaps range from 5× to
+102× and A8 to Atom gaps range from 2× to 997×.
+Key Finding 1: Large performance gaps exist across the four
+platforms studied, as expected, since frequency ranges from 600
+MHz to 3.4 GHz and microarchitectures are very different.
+Step 2: Cycle-Count Comparison
+
+Data: Figure 3 shows cycle counts normalized to i7. Per
+benchmark data is in Figure 7.
+
+Figure 3. Cycle Count Normalized to i7.
+
+Server
+SPEC INT SPEC FP
+Ratio
+Mobile
+1.3 (23)
+1.5 (2.7)
+1.2
+A8 to Atom 1.2 (12)
+2.2
+2.5
+2.1 (7.0)
+A9 to i7
+1.7
+Finding P2: Per suite cycle count gaps between out-of-order
+implementations A9 and i7 are less than 2.5× (no outliers).
+Finding P3: Per suite cycle count gaps between in-order im-
+plementations A8 and Atom are less than 1.5× (no outliers).
+Key Finding 2: Performance gaps, when normalized to cycle
+counts, are less than 2.5× when comparing in-order cores to
+each other and out-of-order cores to each other.
+Step 3: Instruction Count Comparison
+
+Data: Figure 4a shows dynamic instruction (macro) counts on
+A8 and Atom normalized to Atom x86 macro-instructions. Per
+benchmark data is in Figure 17a of Appendix I. Per benchmark
+data for CPIs is in Table 11 in Appendix I.
+Data: Figure 4b shows dynamic micro-op counts for Atom
+and i7 normalized to Atom macro-instructions5 . Per benchmark
+data is in Figure 17b. of Appendix I
+
+Figure 2. Execution Time Normalized to i7.
+Server
+SPEC INT SPEC FP
+Ratio
+Mobile
+3.7 (103)
+4.2 (7.4)
+3.5
+A8 to Atom 3.4 (34)
+A9 to i7
+7.4
+5.8
+8.4
+7.2 (23)
+Outliers: A8 performs particularly poorly on WebKit tests
+and lighttpd, skewing A8/Atom differences in the mobile and
+server data, respectively; see details in Step 2. Five SPEC FP
+benchmarks are also considered outliers; see Table 8. Where
+outliers are listed, they are in this set.
+
+(b) Micro-Ops
+(a) Macro-Ops
+Figure 4. Instructions Normalized to i7 macro-ops.
+5 For i7, we use issued micro-ops instead of retired micro-ops; we found that
+on average, this does not impact the micro-op/macro-op ratio.
+
+MobileSPEC INTSPEC FPServer051015202530Normalized Time(130)(72)(24)(344)A8AtomA9I7MobileSPEC INTSPEC FPServer0246810Normalized Cycles(23)(13)(7)(61)A8AtomA9I7MobileSPEC INTSPEC FPServer0.00.51.01.52.0Normalized Macro-Ops(3.2)ARMx86MobileSPEC INTSPEC FPServer0.00.51.01.52.0Normalized Micro-Ops(1.5)Atomi7A version appears in the 19th IEEE Intl. Symposium on High Performance Computer Architecture (HPCA 2013)
+
+8
+
+Outliers: For wkperf and lighttpd, A8 executes more than
+twice as many instructions as A96 . We report A9 instruction
+counts for these two benchmarks. For CLucene, x86 machines
+execute 1.7× more instructions than ARM machines; this ap-
+pears to be a pathological case of x86 code generation inefﬁ-
+ciencies. For cactusADM, Atom executes 2.7× more micro-ops
+than macro-ops; this extreme is not seen for other benchmarks.
+Finding P4: Instruction count similar across ISAs. Implies
+gcc picks the RISC-like instructions from the x86 ISA.
+Finding P5: All ARM outliers in SPEC FP due to transcen-
+dental FP operations supported only by x86.
+Finding P6: x86 micro-op to macro-op ratio is often less than
+1.3×, again suggesting gcc picks the RISC-like instructions.
+Key Finding 3: Instruction and cycle counts imply CPI is less
+on x86 implementations: geometric mean CPI is 3.4 for A8, 2.2
+for A9, 2.1 for Atom, and 0.7 for i7 across all suites. x86 ISA
+overheads, if any, are overcome by microarchitecture.
+Step 4: Instruction Format and Mix
+Data: Table 6a shows average ARM and x86 static binary
+sizes, measuring only the binary’s instruction segment. Per
+benchmark data is in Table 12a in Appendix I.
+Data: Table 6b shows average dynamic ARM and x86 in-
+struction lengths. Per benchmark data is in Table 12b in Ap-
+pendix I.
+
+Table 6. Instruction Size Summary.
+(b) Instruction Length (B)
+(a) Binary Size (MB)
+ARM
+x86
+ARM
+x86
+
+e Minimum
+l
+i
+Average
+b
+o
+M
+Maximum
+T Minimum
+p
+o
+t
+Average
+N
+k
+s
+I
+e
+Maximum
+D
+
+p
+o
+t
+P
+k
+F
+s
+e
+D
+
+Minimum
+Average
+Maximum
+
+0.02
+0.95
+1.30
+
+0.53
+1.47
+3.88
+
+0.66
+1.70
+4.75
+
+0.02
+0.87
+1.42
+
+0.65
+1.46
+4.05
+
+0.74
+1.73
+5.24
+
+4.0
+4.0
+4.0
+
+4.0
+4.0
+4.0
+
+4.0
+4.0
+4.0
+
+2.4
+3.3
+3.7
+
+2.7
+3.1
+3.5
+
+2.6
+3.4
+6.4
+
+2.5
+4.0
+0.18
+0.12
+r Minimum
+e
+3.2
+4.0
+0.59
+0.39
+Average
+v
+r
+e
+3.7
+4.0
+1.00
+0.47
+Maximum
+S
+Outliers: CLucene binary (from server suite) is almost 2×
+larger for x86 than ARM; the server suite thus has the largest
+span in binary sizes. ARM executes correspondingly few in-
+structions; see outliers discussion in Step 3.
+Finding P7: Average ARM and x86 binary sizes are simi-
+lar for SPEC INT, SPEC FP, and Mobile workloads, suggesting
+similar code densities.
+Finding P8: Executed x86 instructions are on average up to
+25% shorter than ARM instructions: short, simple x86 instruc-
+tions are typical.
+Finding P9: x86 FP benchmarks, which tend to have more
+complex instructions, have instructions with longer encodings
+(e.g., cactusADM with 6.4 Bytes/inst on average).
+
+6A8 spins for IO, event-loops, and timeouts.
+
+Data: Figure 5 shows average coarse-grained ARM and x86
+instruction mixes for each benchmark suite7 .
+
+Figure 5. Instruction Mix (Performance Counters).
+
+Data: Figure 6 shows ﬁne-grained ARM and x86 instruction
+mixes normalized to x86 for a subset of SPEC benchmarks7 .
+
+Figure 6. Selected Instruction Counts (Emulated).
+
+Finding P10: Fraction of loads and stores similar across ISA
+for all suites, suggesting that the ISA does not lead to signiﬁcant
+differences in data accesses.
+Finding P11: Large instruction counts for ARM are due
+to absence of FP instructions like fsincon, fyl2xpl, (e.g.,
+tonto in Figure 6’s many special x86 instructions correspond
+to ALU/logical/multiply ARM instructions).
+Key Finding 4: Combining the instruction-count and mix-
+ﬁndings, we conclude that ISA effects are indistinguishable be-
+tween x86 and ARM implementations.
+Step 5: Microarchitecture
+
+Data: Figure 7 shows the per-benchmark cycle counts for
+more detailed analysis where performance gaps are large. The
+raw data for this ﬁgure is in the Cycles worksheet of our pub-
+licly released spreadsheet [10].
+Data: Table 7 compares the A8 microarchitecture to Atom,
+and A9 to i7, focusing on the primary structures. These details
+are from ﬁve Microprocessor Report articles8 and the A9 num-
+bers are estimates derived from publicly disclosed information
+on A15 and A9/A15 comparisons.
+7 x86 instructions with memory operands are cracked into a memory opera-
+tion and the original operation.
+8 “Cortex-A8 High speed, low power” (Nov 2005), “More applications for
+OMAP4” (Nov 2009), “ Sandybridge spans generations” (Sept 2010), “Intel’s
+Tiny Atom” (April 2008), “Cortex A-15 Eagle Flies the Coop” (Nov 2010).
+9 60 for A15.
+
+ARMx86ARMx86ARMx86ARMx8620%40%60%80%100%Percent of psuedo-µopsLoadStoreBranchOtherMobileSPEC INTSPEC FPServerARMx86ARMx86ARMx86ARMx860.00.51.01.52.02.53.03.54.0Fraction of x86 pseudo-µopsgccomnetppsoplextontoLoadStoreBranchMoveALULogicalMulDivSpecialOtherA version appears in the 19th IEEE Intl. Symposium on High Performance Computer Architecture (HPCA 2013)
+
+9
+
+(a) In-Order
+
+Figure 7. Cycle Counts Normalized to i7.
+
+(b) Out-of-Order
+
+(a) In-Order
+(b) Out-of-Order
+Figure 8. Branch Misses per 1000 ARM Instructions.
+
+A8
+Atom
+
+Table 7. Processor Microarchitecture Features.
+(a) In-Order Cores
+ALU/FP
+Pipeline
+Issue
+Threads
+Depth Width
+Units
+2/2 + NEON
+1
+2
+13
+2
+2
+16+2
+2/2 + IMul
+(b) Out-of-Order Cores
+Issue Threads ROB
+Entries for
+Size LD/ST Rename Scheduler
+width
+- 9
+64/36
+
+4
+4(6)
+
+20
+54
+
+-/4
+160
+
+56
+168
+
+A9
+i7
+
+1
+2
+
+Br. Pred.
+BTB Entries
+512
+128
+
+BTB
+
+512
+8K - 16K
+
+Finding P14: Observe large microarchitectural event count
+differences (e.g., A9 branch misses are more common than i7
+branch misses). These differences are not because of the ISA,
+but rather due to microarchitectural design choices (e.g., A9’s
+BTB has 512 entries versus i7’s 16K entries).
+Finding P15: Per benchmark, we can attribute the largest
+gaps in i7 to A9 performance (and in Atom to A8 performance)
+to speciﬁc microachitectural events.
+In the interest of space,
+we present example analyses for those benchmarks with gaps
+greater than 3.0× in Table 8; bwaves details are in Appendix II.
+Key Finding 5: The microarchitecture has signiﬁcant impact on
+performance. The ARM and x86 architectures have similar in-
+struction counts. The highly accurate branch predictor and large
+caches, in particular, effectively allow x86 architectures to sus-
+tain high performance. x86 performance inefﬁciencies, if any,
+are not observed. The microarchitecture, not the ISA, is respon-
+sible for performance differences.
+Step 6: ISA inﬂuence on microarchitecture
+Key Finding 6: As shown in Table 7, there are signiﬁcant dif-
+ferences in microarchitectures. Drawing upon instruction mix
+and instruction count analysis, we feel that the only case where
+the ISA forces larger structures is on the ROB size, physical
+rename ﬁle size, and scheduler size since there are almost the
+same number of x86 micro-ops in ﬂight compared to ARM in-
+structions. The difference is small enough that we argue it is not
+necessary to quantify further. Beyond the translation to micro-
+ops, pipelined implementation of an x86 ISA introduces no addi-
+tional overheads over an ARM ISA for these performance levels.
+
+Finding P12: A9 and i7’s different issue widths (2 versus
+4, respectively)10 explain performance differences up to 2×, as-
+suming sufﬁcient ILP, a sufﬁcient instruction window and a well
+balanced processor pipeline. We use MICA to conﬁrm that our
+benchmarks all have limit ILP greater than 4 [20].
+Finding P13: Even with different ISAs and signiﬁcant differ-
+ences in microarchitecture, for 12 benchmarks, the A9 is within
+2× the cycle count of i7 and can be explained by the difference
+in issue width.
+Data: Figures 8, 9, and 10 show branch mispredictions & L1
+data and instruction cache misses per 1000 ARM instructions.
+The raw data for these ﬁgures is in the Branch Misses, L1
+Data Misses, and L1 Inst Misses worksheets, respectively,
+of our publicly released spreadsheet [10].
+
+10We assume the conventional wisdom that A9 is dual issue, although its
+pipeline diagrams indicate it is quad-issue.
+
+coremarkwk_layoutwk_perfmeanastarlibquantumhmmerh264gobmkbzip2sjenggccperlbenchomnetppmeansoplexGemsFDTDcalculixpovraytontonamdleslie3DmilccactusADMbwavesmeanlucenedb_kernelslighttpdmean02468101214Normalized Cycles152538642317661A8Atomwk_perfwk_layoutcoremarkmeanastarhmmerlibquantumgobmksjenggccperlbenchh264bzip2omnetppmeansoplexGemsFDTDcalculixnamdpovraytontocactusADMmilcleslie3Dbwavesmeanlucenelighttpddb_kernelsmean02468101214Normalized Cycles30A9i7coremarkwk_layoutwk_perfmeanastarlibquantumhmmerh264gobmkbzip2sjenggccperlbenchomnetppmeansoplexGemsFDTDcalculixpovraytontonamdleslie3DmilccactusADMbwavesmeanlucenedb_kernelslighttpdmean0102030405060 Branch MPKI71373A8Atomwk_perfwk_layoutcoremarkmeanastarhmmerlibquantumgobmksjenggccperlbenchh264bzip2omnetppmeansoplexGemsFDTDcalculixnamdpovraytontocactusADMmilcleslie3Dbwavesmeanlucenelighttpddb_kernelsmean0102030405060Branch MPKIA9i7A version appears in the 19th IEEE Intl. Symposium on High Performance Computer Architecture (HPCA 2013)
+
+10
+
+(a) In-Order
+(b) Out-of-Order
+Figure 9. Data L1 Misses per 1000 ARM Instructions.
+
+(a) In-Order
+(b) Out-of-Order
+Figure 10. Instruction Misses per 1000 ARM Instructions.
+
+5.2. Power and Energy Analysis
+In this section, we normalize to A8 as it uses the least power.
+Step 1: Average Power
+Data: Figure 11 shows average power normalized to the A8.
+Per benchmark data is in Figure 18 of Appendix I.
+
+Figure 11. Raw Average Power Normalized to A8.
+
+Server
+SPEC INT SPEC FP
+Mobile
+Ratio
+3.0
+3.1
+3.1
+3.0
+Atom to A8
+21
+17
+20
+i7 to A9
+20
+Key Finding 7: Overall x86 implementations consume signiﬁ-
+cantly more power than ARM implementations.
+Step 2: Average Technology Independent Power
+Data: Figure 12 shows technology-independent average
+power–cores are scaled to 1 GHz at 45nm (normalized to A8).
+Per benchmark data is in Figure 19 of Appendix I.
+SPEC INT SPEC FP
+Mobile
+Ratio
+Server
+Atom to A8
+0.6
+0.6
+0.6
+0.6
+i7 to A9
+7.0
+6.1
+7.4
+7.6
+Finding E1: With frequency and technology scaling, ISA ap-
+pears irrelevant for power optimized cores: A8, A9, and Atom
+are all within 0.6× of each other (A8 consumes 29% more power
+than A9). Atom is actually lower power than A8 or A9.
+
+Figure 12. Tech. Independent Avg. Power Normalized to A8.
+
+Finding E2: i7 is performance, not power, optimized. Per
+suite power costs are 6.1× to 7.6× higher for i7 than A9 with
+1.7× to 7.0× higher frequency-independent performance (Fig-
+ure 3 cycle count performance).
+Key Finding 8: The choice of power or performance optimized
+core designs impacts core power use more than ISA.
+Step 3: Average Energy
+Data: Figure 13 shows energy (product of power and time).
+Per benchmark data is in Figure 20 of Appendix I.
+
+Figure 13. Raw Average Energy Normalized to A8.
+
+coremarkwk_layoutwk_perfmeanastarlibquantumhmmerh264gobmkbzip2sjenggccperlbenchomnetppmeansoplexGemsFDTDcalculixpovraytontonamdleslie3DmilccactusADMbwavesmeanlucenedb_kernelslighttpdmean0102030405060L1 Data MPKI498A8Atomwk_perfwk_layoutcoremarkmeanastarhmmerlibquantumgobmksjenggccperlbenchh264bzip2omnetppmeansoplexGemsFDTDcalculixnamdpovraytontocactusADMmilcleslie3Dbwavesmeanlucenelighttpddb_kernelsmean0102030405060L1 Data MPKIA9i7coremarkwk_layoutwk_perfmeanastarlibquantumhmmerh264gobmkbzip2sjenggccperlbenchomnetppmeansoplexGemsFDTDcalculixpovraytontonamdleslie3DmilccactusADMbwavesmeanlucenedb_kernelslighttpdmean0102030405060Inst Cache MPKI269A8Atomwk_perfwk_layoutcoremarkmeanastarhmmerlibquantumgobmksjenggccperlbenchh264bzip2omnetppmeansoplexGemsFDTDcalculixnamdpovraytontocactusADMmilcleslie3Dbwavesmeanlucenelighttpddb_kernelsmean0102030405060Inst Cache MPKIA9i7MobileSPEC INTSPEC FPServer0510152025303540Normalized PowerA8AtomA9I7MobileSPEC INTSPEC FPServer012345678Normalized TI PowerA8AtomA9I7MobileSPEC INTSPEC FPServer0.00.20.40.60.81.01.21.41.6Normalized EnergyA8AtomA9I7A version appears in the 19th IEEE Intl. Symposium on High Performance Computer Architecture (HPCA 2013)
+Table 8. Detailed Analysis for Benchmarks with A9 to i7 Gap Greater Than 3×.
+Analysis
+
+Benchmark
+
+Gap
+
+11
+
+omnetpp
+db kernels
+tonto
+cactusADM
+milc
+leslie3D
+
+bwaves
+
+3.4
+3.8
+6.2
+6.6
+8.0
+8.4
+
+30
+
+Branch MPKI: 59 for A9 versus only 2.0 for i7; I-Cache MPKI: 33 for A9 versus only 2.2 for i7.
+1.6× more instructions, 5× more branch MPKI for A9 than i7.
+Instructions: 4× more for ARM than x86.
+Instructions: 2.8× more for ARM than x86.
+A9 and i7 both experience more than 50 data cache MPKI. i7’s microarchitecture hides these misses more effectively.
+4× as many L2 cache misses using the A8 than using the Atom explains the 2× A8 to Atom gap. On the A9, the data cache
+MPKI is 55, compared to only 30 for the i7.
+324× more branch MPKI, 17.5× more instructions, 4.6× more instruction MPKI, and 6× more L2 cache misses on A8 than
+Atom. A9 has similar trends, including 1000× more branch MPKI than the i7.
+
+Mobile
+Ratio
+A8 to Atom 0.8(0.1)
+i7 to A9
+3.3
+
+SPEC INT SPEC FP
+0.8 (0.6)
+0.9
+1.7
+1.7 (1.0)
+
+Server
+0.8(0.2)
+1.8
+
+Finding E3: Despite power differences, Atom consumes less
+energy than A8 and i7 uses only slightly more energy than A9
+due primarily to faster execution times, not ISA.
+Finding E4: For “hard” benchmarks with high cache miss
+rates that leave the core poorly utilized (e.g., many in SPEC
+FP), ﬁxed energy costs from structures provided for high-
+performance make i7’s energy 2× to 3× worse than A9.
+Key Finding 9: Since power and performance are both primar-
+ily design choices, energy use is also primarily impacted by de-
+sign choice. ISA’s impact on energy is insigniﬁcant.
+
+Step 4: ISA impact on microarchitecture.
+Data: Table 7 outlined microarchitecture features.
+Finding E5: The energy impact of the ISA is that it requires
+micro-ops translation and an additional micro-ops cache. Fur-
+ther, since the number of micro-ops is not signiﬁcantly higher,
+the energy impact of x86 support is small.
+Finding E6: Other power-hungry structures like a large L2-
+cache, highly associative TLB, aggressive prefetcher, and large
+branch predictor seem dictated primarily by the performance
+level and application domain targeted by the Atom and i7 pro-
+cessors and are not necessitated by x86 ISA features.
+5.3. Trade-off Analysis
+Step 1: Power- Performance Trade-offs
+Data:
+Figure 14 shows the geometric mean power-
+performance trade-off for all benchmarks using technology node
+scaled power. We generate a cubic curve for the power-
+performance trade-off curve. Given our small sample set, a
+core’s location on the frontier does not imply that it is optimal.
+
+Figure 14. Power Performance Trade-offs.
+Finding T1: A9 provides 3.5× better performance using 1.8×
+the power of A8.
+
+Finding T2: i7 provides 6.2× better performance using 10.9×
+the power of Atom.
+
+Finding T3: i7’s microarchitecture has high energy cost when
+performance is low: benchmarks with the smallest performance
+gap between i7 and A9 (star in Figure 14) 11 have only 6× better
+performance than A9 but use more than 10× more power.
+Key Finding 10: Regardless of ISA or energy-efﬁciency,
+high-performance processors require more power than lower-
+performance processors. They follow well established cubic
+power/performance trade-offs.
+Step 2: Energy-Performance Trade-offs
+
+Data:
+Figure 15 shows the geometric mean energy-
+performance trade-off using technology node scaled energy. We
+generate a quadratic energy-performance trade-off curve. Again,
+a core’s location on the frontier does not imply optimality. Syn-
+thetic processor points beyond the four processors studied are
+shown using hollow points; we consider a performance targeted
+ARM core (A15) and frequency scaled A9, Atom, and i7 cores.
+A15 BIPS are from reported CoreMark scores; details on syn-
+thetic points are in Appendix III.
+
+Figure 15. Energy Performance Trade-offs.
+
+Finding T4: Regardless of ISA, power-only or performance-
+only optimized cores have high energy overheads (e.g., A8 and
+i7).
+
+Finding T5: Balancing power and performance leads to
+energy-efﬁcient cores, regardless of the ISA: A9 and Atom pro-
+cessor energy requirements are within 24% of each other and
+use up to 50% less energy than other cores.
+11 Seven SPEC, all mobile, and the non-database server benchmarks.
+
+0123456Performance (BIPS)05101520253035Power (W)A8A9Atomi7i7 - low perf0123456Performance (BIPS)051015202530Energy (J)Synthetic Points Are HollowA9 2 GhzA15 2 GhzAtom 1 Ghzi7 2GhzA8A9Atomi7A version appears in the 19th IEEE Intl. Symposium on High Performance Computer Architecture (HPCA 2013)
+Table 9. Summary of Challenges.
+Description
+
+Challenge
+
+12
+
+Board Cooling (ARM)
+
+Networking (ARM)
+
+Networking (Atom)
+
+Perf Counters (ARM)
+
+Compilation (ARM)
+
+Tracing (ARM)
+
+No active cooling leading to failures
+Fix: use a fan-based laptop cooling pad
+ssh connection used up to 20% of CPU
+Fix: use a serial terminal
+USB networking not supported
+Fix: use as standalone terminal
+PMU poorly supported on selected boards
+Fix: backport over 150 TI patches
+Failures due to dependences on > 100 packages
+Fix 1: pick portable equivalent (lighttpd)
+Fix 2: work through errors (CLucene & WebKit)
+No dynamic binary emulation
+Fix: Use gem5 to generate instruction traces
+
+# Finding
+
+Table 10. Summary of Findings.
+Support
+
+e
+c
+n
+a
+m
+r
+o
+f
+r
+e
+P
+
+Fig-2
+Fig-3
+
+1 Large performance gaps exist
+2 Cycle-count gaps are less than 2.5×
+(A8 to Atom, A9 to i7)
+3 x86 CPI < ARM CPI:
+Fig-3 & 4
+x86 ISA overheads hidden by µ arch
+4 ISA performance effects indistinguishable Table-6
+Fig-5 & 6
+between x86 and ARM
+5 µ architecture, not the ISA, responsible
+Table-8
+for performance differences
+6 Beyond micro-op translation, x86 ISA
+introduces no overheads over ARM ISA
+1 x86 implementations draw more power
+than ARM implementations
+2 Choice of power or perf. optimization
+impacts power use more than ISA
+3 Energy use primarily a design choice;
+ISA’s impact insigniﬁcant
+s 1 High-perf processors require more power Fig-14
+than lower-performance processors
+f
+f
+o
+-
+e
+2 It is the µ -architecture and design
+d
+a
+r
+methodology that really matters
+T
+
+Table-7
+
+Fig-15
+
+Fig-11
+
+Fig-12
+
+Fig-13
+
+r
+e
+w
+o
+P
+
+Representative
+Data: A8/Atom
+2× to 997×
+≤ 2.5×
+A8: 3.4
+Atom: 2.2
+inst. mix same
+short x86 insts
+324× Br MPKI
+4× L2-misses
+
+Atom/A8 raw
+power: 3×
+Atom/A8 power
+@1 GHz: 0.6×
+Atom/A8 raw
+energy: 0.8×
+A8/A9: 1.8×
+i7/Atom: 10.9×
+ED: i7@2GHz<A9
+A15 best for ED
+i7 best for E D1.4
+
+7. Conclusions
+In this work, we revisit the RISC vs. CISC debate consid-
+ering contemporary ARM and x86 processors running modern
+workloads to understand the role of ISA on performance, power,
+and energy.Our study suggests that whether the ISA is RISC or
+CISC is irrelevant, as summarized in Table 10, which includes
+a key representative quantitative measure for each analysis step.
+We reﬂect on whether there are certain metrics for which RISC
+or CISC matters, and place our ﬁndings in the context of past
+ISA evolution and future ISA and microarchitecture evolution.
+Considering area normalized to the 45nm technology node,
+we observe that A8’s area is 4.3mm2 , AMD’s Bobcat’s area
+is 5.8mm2 , A9’s area is 8.5 mm2 , and Intel’s Atom is 9.7
+mm2 [4, 25, 27]. The smallest, the A8, is smaller than Bob-
+cat by 25%. We feel much of this is explained by simpler core
+design (in-order vs OOO), and smaller caches, predictors, and
+TLBs. We also observe that the A9’s area is in-between Bobcat
+
+Finding T6: DVFS and microarchitectural techniques can
+provide high energy-efﬁciency to performance-optimized cores,
+regardless of the ISA: i7 at 2 GHz provides 6× performance at
+the same energy level as an A9.
+Finding T7: We consider the energy-delay metric (ED) to
+capture both performance and power. Cores designed balancing
+power and performance constraints show the best energy-delay
+product: A15 is 46% lower than any other design we considered.
+Finding T8: When weighting the importance of performance
+only slightly more than power, high-performance cores seem
+best suited. Considering E D1.4 , i7–a performance optimized
+core–is best (lowest product, and 6× higher performance). Con-
+sidering E D2 , i7 is more than 2× better than the next best design.
+See Appendix IV for more details.
+Key Finding 11: It is the microarchitecture and design method-
+ologies that really matter.
+
+6. Challenges
+During this study, we encountered infrastructure and system
+challenges, missteps, and software/hardware bugs. Table 9 out-
+lines these issues as a potentially useful guide for similar studies,
+and we describe them in more detail below.
+Board cooling: The A8 and A9 boards lack active cooling,
+and repeatedly rebooted due to over-heating while under test. A
+fan-based laptop cooling pad ﬁxed the problem.
+Network over USB: The ssh connection to the A8 and A9
+boards used up to 20% of the CPU, which was unsuitable for
+performance benchmarking. We instead used a serial terminal
+to access these boards. The Atom board does not support USB
+networking; we used the Atom as a stand-alone terminal.
+Microprocessor PMU infrastructure: The performance
+counters on the ARM processor are poorly supported on
+community-supported boards. We backported over 150 TI
+patches to the Linux kernel to support performance counters and
+PMU interrupts.
+Compilation: gcc works remarkably well as a cross-platform
+compiler for simple benchmarks like SPEC which relies on
+libc. However, for the ARM environment, the compiler often
+fails when compiling complex code bases that have not been rig-
+orously tested on Linux, due to dependences on over 100 pack-
+ages. Overcoming these linking errors is a tremendously tedious
+process. We either carefully choose equivalent highly portable
+workloads (e.g., lighttpd) or worked through the errors (e.g.,
+CLucene and WebKit).
+Tracing and debugging: ARM open-source tracing infras-
+tructure is limited, and lacks dynamic binary translation tools
+like Pin or DynamoRIO. ptrace based approaches were too
+slow; QEMU correctly emulated, but its JIT obfuscated the in-
+struction stream. We used gem5 for ARM traces; gem5 does not
+support all benchmarks (e.g., lighttpd).
+
+A version appears in the 19th IEEE Intl. Symposium on High Performance Computer Architecture (HPCA 2013)
+
+13
+
+and Atom and is close to Atom’s. Further detailed analysis is
+required to determine how much the ISA and the microarchitec-
+ture structures for performance contribute to these differences.
+A related issue is the performance level for which our re-
+sults hold. Considering very low performance processors, like
+the RISC ATmega324PA microcontroller with operating fre-
+quencies from 1 to 20 MHz and power consumption between
+2 and 50mW [3], the overheads of a CISC ISA (speciﬁcally the
+complete x86 ISA) are clearly untenable. In similar domains,
+even ARM’s full ISA is too rich; the Cortex-M0, meant for low
+power embedded markets, includes only a 56 instruction subset
+of Thumb-2. Our study suggests that at performance levels in
+the range of A8 and higher, RISC/CISC is irrelevant for perfor-
+mance, power, and energy. Determining the lowest performance
+level at which the RISC/CISC ISA effects are irrelevant for all
+metrics is interesting future work.
+While our study shows that RISC and CISC ISA traits are
+irrelevant to power and performance characteristics of mod-
+ern cores, ISAs continue to evolve to better support exposing
+workload-speciﬁc semantic information to the execution sub-
+strate. On x86, such changes include the transition to Intel64
+(larger word sizes, optimized calling conventions and shared
+code support), wider vector extensions like AVX, integer crypto
+and security extensions (NX), hardware virtualization exten-
+sions and, more recently, architectural support for transactions
+in the form of HLE. Similarly, the ARM ISA has introduced
+shorter ﬁxed length instructions for low power targets (Thumb),
+vector extensions (NEON), DSP and bytecode execution exten-
+sions (Jazelle DBX), Trustzone security, and hardware virtual-
+ization support. Thus, while ISA evolution has been continuous,
+it has focused on enabling specialization and has been largely
+agnostic of RISC or CISC. Other examples from recent research
+include extensions to allow the hardware to balance accuracy
+and reliability with energy efﬁciency [15, 13] and extensions to
+use specialized hardware for energy efﬁciency [18].
+It appears decades of hardware and compiler research has
+enabled efﬁcient handling of both RISC and CISC ISAs and
+both are equally positioned for the coming years of energy-
+constrained innovation.
+Acknowledgments
+We thank the anonymous reviewers, the Vertical group, and
+the PARSA group for comments. Thanks to Doug Burger, Mark
+Hill, Guri Sohi, David Wood, Mike Swift, Greg Wright, Jichuan
+Chang, and Brad Beckmann for comments on the paper and
+thought-provoking discussions on ISA impact. Thanks for vari-
+ous comments on the paper and valuable input on ISA evolution
+and area/cost overheads of implementing CISC ISAs provided
+by David Patterson. Support for this research was provided by
+NSF grants CCF-0845751, CCF-0917238, and CNS-0917213,
+and the Cisco Systems Distinguished Graduate Fellowship.
+References
+
+[1] ARM on Ubuntu 12.04 LTS battling Intel x86?
+
+http:
+
+//www.phoronix.com/scan.php?page=article&item=
+ubuntu_1204_armfeb&num=1.
+[2] The ARM vs x86 wars have begun:
+In-depth power analysis
+of Atom, Krait & Cortex A15 http://www.anandtech.com/
+show/6536/arm- vs- x86- the- real- showdown/.
+[3] Atmel
+Datasheet,
+http://www.atmel.com/Images/
+doc2503.pdf.
+[4] chip-architect,
+http://www.chip- architect.com/news/
+AMD_Ontario_Bobcat_vs_Intel_Pineview_Atom.jpg.
+[5] M. Baron. The single-chip cloud computer. Microprocessor Re-
+port, April 2010.
+[6] D. Bhandarkar. RISC versus CISC: a tale of two chips. SIGARCH
+Comp. Arch. News, 25(1):1–12, Mar. 1997.
+[7] D. Bhandarkar and D. W. Clark. Performance from architecture:
+comparing a RISC and a CISC with similar hardware organiza-
+tion. In ASPLOS ’91.
+[8] N. Binkert, B. Beckmann, G. Black, S. Reinhardt, A. Saidi,
+A. Basu, J. Hestness, D. Hower, T. Krishna, S. Sardashti, R. Sen,
+K. Sewell, M. Shoaib, N. Vaish, M. Hill, and D. Wood. The gem5
+simulator. SIGARCH Comp. Arch. News, 39(2), Aug. 2011.
+[9] W. L. Bircher and L. K. John. Analysis of dynamic power man-
+agement on multi-core processors. In ICS ’08.
+[10] E. Blem, J. Menon, and K. Sankaralingam. Data to accompany
+a detailed analysis of contemporary arm and x86 architectures,
+www.cs.wisc.edu/vertical/isa- power- struggles, 2013.
+[11] D. Bruening, T. Garnett, and S. Amarasinghe. An infrastructure
+for adaptive dynamic optimization. In CGO ’03.
+[12] R. Colwell, C. Y. Hitchcock, III, E. Jensen, H. Brinkley Sprunt,
+and C. Kollar. Instruction sets and beyond: Computers, complex-
+ity, and controversy. Computer, 18(9):8–19, Sept. 1985.
+[13] M. de Kruijf, S. Nomura, and K. Sankaralingam. Relax: An ar-
+chitectural framework for software recovery of hardware faults.
+In ISCA ’10.
+[14] H. Esmaeilzadeh, T. Cao, Y. Xi, S. Blackburn, and K. McKinley.
+Looking back on the language and hardware revolutions: mea-
+sured power, performance, and scaling. In ASPLOS ’11.
+[15] H. Esmaeilzadeh, A. Sampson, L. Ceze, and D. Burger. Archi-
+tecture support for disciplined approximate programming. In AS-
+PLOS ’12.
+[16] M. Ferdman, A. Adileh, O. Kocberber, S. Volos, M. Alisafaee,
+D. Jevdjic, C. Kaynak, A. D. Popescu, A. Ailamaki, and B. Fal-
+saﬁ. Clearing the clouds: a study of emerging scale-out work-
+loads on modern hardware. In ASPLOS ’12.
+[17] M. J. Flynn, C. L. Mitchell, and J. M. Mulder. And now a case
+for more complex instruction sets. Computer, 20(9), 1987.
+[18] V. Govindaraju, C.-H. Ho, and K. Sankaralingam. Dynamically
+specialized datapaths for energy efﬁcient computing. In HPCA
+’11.
+[19] A. Gutierrez, R. G. Dreslinski, T. F. Wenisch, T. Mudge, A. Saidi,
+C. Emmons, and N. Paver. Full-system analysis and characteri-
+zation of interactive smartphone applications. In IISWC ’11.
+[20] K. Hoste and L. Eeckhout. Microarchitecture-independent work-
+load characterization. Micro, IEEE, 27(3):63 –72, 2007.
+[21] C. Isci and M. Martonosi. Runtime power monitoring in high-end
+processors: Methodology and empirical data. In MICRO ’03.
+[22] C. Isen, L. John, and E. John. A tale of two processors: Revisiting
+the RISC-CISC debate. In 2009 SPEC Benchmark Workshop.
+[23] C. Kim, T. Kaldewey, V. W. Lee, E. Sedlar, A. D. Nguyen,
+N. Satish, J. Chhugani, A. Di Blas, and P. Dubey. Sort vs. Hash
+revisited: fast join implementation on modern multi-core CPUs.
+VLDB ’09.
+[24] D. A. Patterson and D. R. Ditzel. The case for the reduced in-
+struction set computer. SIGARCH Comp. Arch. News, 8(6), 1980.
+[25] G. Quirk.
+Improved ARM core, other changes in TI mobile
+app processor, http://www.cs.virginia.edu/~skadron/
+cs8535_s11/arm_cortex.pdf.
+[26] J. Rao and K. A. Ross. Making B+- trees cache conscious in main
+memory. In SIGMOD ’00.
+[27] W. Wang and T. Dey.
+http://www.cs.virginia.edu/
+~skadron/cs8535_s11/ARM_Cortex.pdf.
+
+A version appears in the 19th IEEE Intl. Symposium on High Performance Computer Architecture (HPCA 2013)
+Appendices
+All raw data mentioned below can be found in the
+Appendix I: Detailed Counts
+
+attached to this document (right click on link to save).
+
+14
+
+Data: Figure 16 shows execution time normalized to i7. The raw data for this ﬁgure is in the Time worksheet of our publicly
+released spreadsheet [10].
+
+(a) In-Order
+
+Figure 16. Execution Time Normalized to i7.
+
+(b) Out-of-Order
+
+Data: Figure 17a shows dynamic instruction (macro) counts on A8 and Atom normalized to Atom x86 macro-instructions. The
+raw data for this ﬁgure is in the Macro-ops worksheet of our publicly released spreadsheet [10].
+Data: Figure 17b shows dynamic micro-op counts for Atom and i7 normalized to Atom macro-instructions12 . The raw data for
+this ﬁgure is in the Micro-ops worksheet of our publicly released spreadsheet [10]. Note: for icc results, preprocessor directives
+changed so that gcc and icc use the same alignment and compiler hints.
+
+(a) In-Order
+
+(b) Out-of-Order
+Figure 17. Instruction Counts Normalized to i7 macro-ops.
+
+Data: Table 11 shows CPIs. This data is also in the CPI worksheet of our publicly released spreadsheet [10].
+Table 11. Cycles per Instruction (CPI) Per Benchmark.
+SPEC INT
+SPEC FP
+
+Mobile
+t
+u
+o
+y
+a
+l
+
+f
+r
+e
+p
+
+k
+r
+a
+m
+e
+r
+o
+c
+
+Server
+
+l
+e
+n
+r
+e
+k
+
+b
+d
+
+d
+p
+t
+t
+h
+g
+i
+l
+
+e
+n
+e
+c
+u
+l
+
+0.4 0.47 0.1
+1.0 0.6 0.2
+
+m
+u
+t
+n
+a
+u
+q
+b
+i
+l
+
+r
+e
+m
+m
+h
+
+k
+m
+b
+o
+g
+
+4
+6
+2
+h
+
+2
+p
+i
+z
+b
+
+g
+n
+e
+j
+s
+
+c
+c
+g
+
+h
+c
+n
+e
+b
+l
+r
+e
+p
+
+p
+p
+t
+e
+n
+m
+o
+
+D
+T
+D
+F
+s
+m
+e
+G
+
+x
+e
+l
+p
+o
+s
+
+x
+i
+l
+u
+c
+l
+a
+c
+
+y
+a
+r
+v
+o
+p
+
+o
+t
+n
+o
+t
+
+d
+m
+a
+n
+
+D
+3
+e
+i
+l
+s
+e
+l
+
+c
+l
+i
+m
+
+M
+D
+A
+s
+u
+t
+c
+a
+c
+
+s
+e
+v
+a
+w
+b
+
+-
+
+-
+
+k
+w
+
+k
+w
+
+r
+a
+t
+s
+a
+
+ARM 0.02 1.3 1.3
+x86 0.02 1.4 1.4
+
+0.6 0.6 0.9 1.7 2.1 0.5 0.6 3.9 1.9 2.0
+0.7 0.7 0.9 1.5 2.1 0.7 0.7 4.1 1.7 1.7
+
+1.4 1.3 2.7 2.0 4.8 0.9 0.9 0.7 1.7 0.8
+1.5 1.3 2.6 1.8 5.2 0.9 0.9 0.7 1.5 0.8
+
+12 For i7, we use issued micro-ops instead of retired micro-ops; we found that on average, this does not impact the micro-op/macro-op ratio.
+
+coremarkwk_layoutwk_perfmeanastarlibquantumhmmerh264gobmkbzip2sjenggccperlbenchomnetppmeansoplexGemsFDTDcalculixpovraytontonamdleslie3DmilccactusADMbwavesmeanlucenedb_kernelslighttpdmean05101520253035Time405454758614221372363130997344A8Atomwk_perfwk_layoutcoremarkmeanastarhmmerlibquantumgobmksjenggccperlbenchh264bzip2omnetppmeansoplexGemsFDTDcalculixnamdpovraytontocactusADMmilcleslie3Dbwavesmeanlucenelighttpddb_kernelsmean05101520253035Time102A9i7wk_perfwk_layoutcoremarkmeanastarhmmerlibquantumgobmksjenggccperlbenchh264bzip2omnetppmeansoplexGemsFDTDcalculixnamdpovraytontocactusADMmilcleslie3Dbwavesmeanlucenelighttpddb_kernelsmean0.00.51.01.52.02.53.03.5Macro-Ops4.717ARMx86wk_perfwk_layoutcoremarkmeanastarhmmerlibquantumgobmksjenggccperlbenchh264bzip2omnetppmeansoplexGemsFDTDcalculixnamdpovraytontocactusADMmilcleslie3Dbwavesmeanlucenelighttpddb_kernelsmean0.00.51.01.52.02.53.03.5Micro-OpsAtomi7A version appears in the 19th IEEE Intl. Symposium on High Performance Computer Architecture (HPCA 2013)
+
+15
+
+Data: Table 12a shows average ARM and x86 static binary sizes, measuring only the binary’s instruction segment. Note that
+bwaves fails to run due incorrect code produced by ifort. This data is also in the Code Size worksheet of our publicly released
+spreadsheet [10].
+Data: Table 12b shows average dynamic ARM and x86 instruction lengths. This data is also in the Inst Length worksheet of our
+publicly released spreadsheet [10].
+Table 12. Instruction Size Details: (a) Static Binary (MB), (b) Average Dynamic Instruction (B).
+Mobile
+SPEC INT
+SPEC FP
+t
+u
+o
+y
+a
+l
+
+Server
+
+k
+r
+a
+m
+e
+r
+o
+c
+
+f
+r
+e
+p
+-
+
+k
+w
+
+-
+
+k
+w
+
+m
+u
+t
+n
+a
+u
+q
+b
+i
+l
+
+r
+a
+t
+s
+a
+
+r
+e
+m
+m
+h
+
+k
+m
+b
+o
+g
+
+4
+6
+2
+h
+
+2
+p
+i
+z
+b
+
+g
+n
+e
+j
+s
+
+c
+c
+g
+
+h
+c
+n
+e
+b
+l
+r
+e
+p
+
+p
+p
+t
+e
+n
+m
+o
+
+D
+T
+D
+F
+s
+m
+e
+G
+
+x
+e
+l
+p
+o
+s
+
+x
+i
+l
+u
+c
+l
+a
+c
+
+y
+a
+r
+v
+o
+p
+
+o
+t
+n
+o
+t
+
+d
+m
+a
+n
+
+D
+3
+e
+i
+l
+s
+e
+l
+
+c
+l
+i
+m
+
+M
+D
+A
+s
+u
+t
+c
+a
+c
+
+s
+e
+v
+a
+w
+b
+
+l
+e
+n
+r
+e
+k
+
+b
+d
+
+d
+p
+t
+t
+h
+g
+i
+l
+
+e
+n
+e
+c
+u
+l
+
+n ARM 0.02 1.3 1.3
+i
+x86 - gcc 0.02 1.4 1.4
+B
+x86 - icc 0.6 1.5 1.5
+t ARM 4.0 4.0 4.0
+s
+x86 - gcc 2.4 3.7 3.7
+n
+I
+x86 - icc 2.5 3.2 3.2
+
+0.6 0.6 0.9 1.7 2.1 0.5 0.6 3.9 1.9 2.0
+0.7 0.7 0.9 1.5 2.1 0.7 0.7 4.1 1.7 1.7
+0.7 0.7 1.0 1.3 2.2 0.7 0.8 4.3 1.9 2.2
+4.0 4.0 4.0 4.0 4.0 4.0 4.0 4.0 4.0 4.0
+2.9 3.0 3.0 3.5 3.1 3.6 3.5 2.8 2.9 2.7
+3.2 2.9 3.6 3.3 3.3 3.4 3.6 2.9 3.2 2.8
+
+1.4 1.3 2.7 2.0 4.8 0.9 0.9 0.7 1.7 0.8
+1.5 1.3 2.6 1.8 5.2 0.9 0.9 0.7 1.5 0.8
+1.5 1.7 3.1 2.2 6.8 1.0 1.4 0.8 2.0 —
+4.0 4.0 4.0 4.0 4.0 4.0 4.0 4.0 4.0 4.0
+2.7 3.4 2.9 2.6 3.4 3.3 4.1 2.6 6.4 3.0
+3.1 3.6 3.3 3.5 4.2 4.9 5.0 4.1 6.1 —
+
+0.4 0.47 0.1
+1.0 0.6 0.2
+1.4 1.8 0.2
+4.0 4.0 4.0
+3.7 2.6 3.7
+2.7 2.7 2.8
+
+Data: Figure 18 shows average power normalized to the A8. The raw data for this ﬁgure is in the Avg Power worksheet of our
+publicly released spreadsheet [10].
+
+(a) In-Order
+
+(b) Our-of-Order
+Figure 18. Average Power Normalized to A8.
+
+Data: Figure 19 shows technology-independent average power–cores are scaled to 1 GHz at 45 nm (normalized to A8). The raw
+data for this ﬁgure is in the Avg TI Power worksheet of our publicly released spreadsheet [10].
+
+(a) In-Order
+(b) Out-of-Order
+Figure 19. Technology Independent Average Power Normalized to A8.
+
+coremarkwk_layoutwk_perfmeanastarlibquantumhmmerh264gobmkbzip2sjenggccperlbenchomnetppmeansoplexGemsFDTDcalculixpovraytontonamdleslie3DmilccactusADMbwavesmeanlucenedb_kernelslighttpdmean0510152025303540Average PowerA8Atomwk_perfwk_layoutcoremarkmeanastarhmmerlibquantumgobmksjenggccperlbenchh264bzip2omnetppmeansoplexGemsFDTDcalculixnamdpovraytontocactusADMmilcleslie3Dbwavesmeanlucenelighttpddb_kernelsmean0510152025303540Average PowerA9i7coremarkwk_layoutwk_perfmeanastarlibquantumhmmerh264gobmkbzip2sjenggccperlbenchomnetppmeansoplexGemsFDTDcalculixpovraytontonamdleslie3DmilccactusADMbwavesmeanlucenedb_kernelslighttpdmean0246810Average PowerA8Atomwk_perfwk_layoutcoremarkmeanastarhmmerlibquantumgobmksjenggccperlbenchh264bzip2omnetppmeansoplexGemsFDTDcalculixnamdpovraytontocactusADMmilcleslie3Dbwavesmeanlucenelighttpddb_kernelsmean0246810Average PowerA9i7A version appears in the 19th IEEE Intl. Symposium on High Performance Computer Architecture (HPCA 2013)
+
+16
+
+Data: Figure 20 shows raw energy (power and time). The raw data for this ﬁgure is in the Energy worksheet of our publicly
+released spreadsheet [10].
+
+(a) In-Order
+
+(b) Out-of-Order
+
+Figure 20. Energy Normalized to A8.
+Appendix II: Detailed bwaves Analysis
+As noted in Section 5, the bwaves benchmark performed signiﬁcantly worse (up to 30× more cycles) on ARM cores than on x86
+cores. Contributing to this gap, we found that ARM cores executed 17.5× more instructions than x86 cores. We believe that most
+of the ARM to x86 gap for bwaves can be explained by this large differences in the number of instructions required to complete the
+same amount of work.
+We performed detailed analysis to ﬁnd the source of the instruction count discrepancies. To begin, we found from the execution
+proﬁle that complex double ﬂoating point operations which the compiler translates to longer instruction sequences for ARM than for
+x86 are a signiﬁcant source of additional instructions: 37% of all cycles for ARM cores are spent in
+aeabi dadd and 29% of all
+cycles are spent in aeabi dmul, while neither of these routines appear in the x86 summary).
+We use ﬂags to force gcc to compile ﬂoating point instructions to SSE 2 (x86) and NEON (ARM) instructions. This decision is the
+most fair in general, since ARM’s VFP unit is known to be signiﬁcantly slower than the NEON unit for single precision ﬂoating point
+operations. However, unlike the VFP unit, the NEON unit is not IEEE754 compliant, and double precision operations are mapped to
+library calls. The result is that for ARM architectures, gcc—in the absence of FP relaxation—compiles double-precision ﬂoating point
+arithmetic to library calls which add signiﬁcant overhead compared to short instruction sequences on x86. One solution to bwave’s
+outlier status would be to use different compiler ﬂags for benchmarks with signiﬁcant amounts of double precision arithmetic.
+
+coremarkwk_layoutwk_perfmeanastarlibquantumhmmerh264gobmkbzip2sjenggccperlbenchomnetppmeansoplexGemsFDTDcalculixpovraytontonamdleslie3DmilccactusADMbwavesmeanlucenedb_kernelslighttpdmean0.00.51.01.52.02.53.03.54.0Energy (J)A8Atomwk_perfwk_layoutcoremarkmeanastarhmmerlibquantumgobmksjenggccperlbenchh264bzip2omnetppmeansoplexGemsFDTDcalculixnamdpovraytontocactusADMmilcleslie3Dbwavesmeanlucenelighttpddb_kernelsmean0.00.51.01.52.02.53.03.54.0Energy (J)A9i7A version appears in the 19th IEEE Intl. Symposium on High Performance Computer Architecture (HPCA 2013)
+Appendix III: Synthetic Points
+A15: Using reported Coremark scores (Coremarks/MHz) and mW/MHz from Microprocessor Reports and ARM documentation, we
+assume a 2GHz operating frequency and compute the Coremark score and energy. We then scale A9 BIPS results by the ratio of the
+A15 Coremark score to the A9 Coremark score to get an A15 performance projection.
+Frequency scaled cores: For frequency scaled cores, we project performance by assuming a linear relationship between performance
+and frequency. We scale energy projections as detailed in the Technology scaling and projections paragraph of Section 3.4.
+Appendix IV: E Dx Analysis
+
+17
+
+Data: Figure 21 shows the impact of the exponent x on the product E Dx . Note that a lower product is better. When x is greater than
+1.4, i7 outperforms all other cores.
+
+Figure 21. Impact of exponent, x, on product E Dx .
+
+2-1202122Exponent (x)100101102103104105106107108109101010111012Product (EDx)A8A9Atomi7A15i7 @ 2GHz

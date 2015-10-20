@@ -1,0 +1,232 @@
+CREATION AND DEVELOPMENT OF THE LOCAL INFORMATION 
+COMPUTER NETWORK OF INSTITUTE OF HIGH ENERGY PHYSICS 
+AND NUCLEAR PHYSICS NSC KIPT
+
+V.A. Dudnik, E.V. Krivorukov, V.I. Kudrjavtsev, T.M. Sereda, S.A. Us, M.V. Shestakov
+  
+National Science Center “Kharkov Institute of Physics and Technology”, Kharkov, Ukraine
+e-mail: dudnik@kipt.kharkov.ua 
+
+Results   and   the  basic   stages  of   creation   and  development  of   local   information  computer  network  at   Institute  of 
+High  Energy  Physics   and  Nuclear   Physics  NSC KIPT   for   last   five   years   are   submitted.  The  purpose  of  work  was 
+increase   of   an   overall   performance   of   researchers   due   to   rational   use   of   resources   and   creation   on   base   local 
+information computer network  of shared system. In article obtained experience and specificity of realization of such  
+systems is reflected.
+PACS: 13.75Gx
+
+INTRODUCTION
+The   history   of   use   of   computer   facilities,   and   in 
+particular,   its   applications   for   automation   and 
+processing’s   of   results   of   scientific   and   technical 
+researches   testifies   that   at   all   stages   of   development   it 
+was   necessary   to   search   for   the   compromise   between 
+mutually   exclusive   requirements:   maximum   favorable 
+interface   for   users   and   an   effective  utilization   technical 
+and   software.   The   first   computers   were   exclusively 
+given   the   user,   but   thus   the   extremely   expensive 
+technical   equipment   was   used   very   inefficiently. 
+Therefore   shared   systems   in   which   the   technical 
+equipment  was used  very effectively have  been  created, 
+but   numerous   users   frequently   slowed   down  work   each 
+other,   and   efficiency   of   their   work   fell.   Therefore   in 
+process   of   reduction   in   price   of   hardware   of   computer 
+facilities   (CF)   and   with   the   advent   of   personal 
+computers   (PC)   the   rational   decision   was   return   to 
+exclusive use of means of the CF.
+However  practice  has  shown,  that,  despite  of  a  wide 
+circulation  of  personal  computer   facilities,  nevertheless, 
+collective use of computing means in many cases gives a 
+positive  effect   -  as  due   to  expansion  of  opportunities  of  
+users   and   increase   of   efficiency   of   their   work,   and   for 
+the account of more rational use of the equipment.
+In  IHEPNP NSC KIPT  creation  and  development  of 
+shared   systems   has   old   traditions.   However   in   new 
+conditions  -  a   wide   circulation   of   personal   computers 
+on   the   one   hand,   and   absence   of   powerful   computer  
+complexes  -  with   another,   the   shared   system   should  be 
+built   on   the   basis   of   technical   equipment   and   the 
+software   initially  intended   for  personal  calculations   that 
+generates   set   of   difficulties   in   the   organization   of   re-
+liable   and   effective   work   of   such   systems.   In   article  
+experience and specificity of realization of such systems 
+is reflected.
+
+LOCAL INFORMATION COMPUTER 
+NETWORK AS A BASIS OF SHARED 
+SYSTEM
+The  means   to   transform   group   of   separate   personal 
+computers   in   the   coordinated   multi-user   computer 
+system,  the   local   information  computer  network  (LICN) 
+is   capable.  The  user   connected   to   a  network,   can  easily 
+share   copies  of   the   software   files  of   the  data  with other 
+users, and also have access to the printers connected to a  
+network, scanners and other peripheral equipment. Thus, 
+advantages of sharing of the equipment and the software 
+compensate   the   means   enclosed   in   connection   of   the 
+personal computer.
+In   a   concrete   case   of   the   nuclear   center   of 
+IHEPNP NSC KIPT  personal computers are allocated in 
+working   rooms  on   four   floors  of   an   industrial  building.  
+The   total   of   personal   computers   included   in   LICN   and 
+workstations   makes   more   than   60.   The   main   lines   of 
+each   floor   represent   the   separate   segments   connected 
+through   repeaters   and   concentrators   to   the   common 
+trunk.
+The   local   network   of   IHEPNP NSC KIPT   is 
+constructed   on   the   basis   of   local   networks   Ethernet 
+created in divisions and group of the personal computers 
+allocated   for   collective   use   incorporated   among   them 
+and   forming  the   server   center.  The   general   structure   of 
+an offered network is resulted at the design below.
+
+EQUIREMENTS OF LICN
+Reliable   and   safe   functioning   of   LICN   can   be  
+provided   only   under   condition   of   performance   of   the  
+following set  of   the  requirements produced  on   the  basis 
+of   experience   of   designing   and   operation   of   shared  
+systems and networks of the computers.
+
+PROBLEMS OF ATOMIC SCIENCE AND TECHNOLOGY. 2005, № 6.
+Series: Nuclear Physics Investigations (45), p. 87-89. 
+
+87
+
+ELECTROSECURITY OF WORKSTATIONS 
+AND SERVERS
+The   problem   consists   that   a   feed   of   personal 
+computers   is   carried   out   usually   from   the   lighting 
+orpower  electric   system of  220 V,   thus always  there  are 
+outflow   of   a   current   through   circuits   of   power   units   of 
+computers   (capacity   of   filters   of   handicap’s,   parasitic 
+capacities of   transformers and  so  forth).  In  result on  the  
+case   of   a   computer   always   probably   presence   of   some  
+voltage   which   usually   is   not   felt,   and   even   in   case   of 
+failure   of   power   supplies   of   a   computer   of   a  
+consequence   is   limited  only  to   this  computer.  But  when 
+the   computer   is   connected   to   a   local   network,   through 
+wires   of   an   information   network   occurrence   of   electric 
+contact   to  other  computers   is  possible.  In  such   situation 
+failure   on   one   computer   can   cause   failure   of   all  
+computers  of   the  whole  site  of  a   local  network.  Besides  
+
+because   of   a   potential   difference   available   usually 
+between   zero   wires   of   various   sites   of   lighting   and 
+power  (force)  networks work behind  such computer  can 
+be unsafe for users.
+Therefore  one  of   the   obligatory   requirements   to   the  
+equipment and  structure  of  a  network   is  maintenance  of  
+an   electro   security.   Possible   failures   of   power   supplies 
+on   any   workstation   or   a   server   should   not   cause 
+damages   of   other   workstations   or   do   work   at   these 
+stations dangerous to the personnel. The  best decision is 
+the   full   electric   outcome   of   units   of   a   network   among 
+themselves due  to  use of networks of radial structure on  
+base   so-called   twisted   pair   and   refusal   of   use   of  
+networks on  the basis of   the  common  trunk on   the  basis 
+of   a   coaxial   cable.   Use   as   units   of   a   network   of 
+concentrators   and   the   routers   having   optical   electronic 
+outcomes;   have   allowed   achieving   a   comprehensible 
+level of an electro security and reliability of LICN.
+
+MAINTENANCE OF RELIABILITY OF 
+FUNCTIONING OF A LOCAL NETWORK
+During   work   of   LICN   as   frequent   enough 
+phenomenon   failures   in   work   of   separate   workstations 
+are.   It   is  connected  as  to  malfunctions of   the  equipment 
+of   a   local   network   (network   adapters   in   computers, 
+infringements of  contact  in sockets of a  network, breaks 
+of   conductors   in   information   cables),   and   with   the 
+various casual reasons. Similar possible infringements in 
+work   of   separate   workstations   or   even   local   subnets 
+should   not   cause   failures   in   work   of   a   network   as   a 
+whole.   Use   of   radial   network   structure   allows 
+minimizing   consequences   of   infringement   in  work   of   a  
+network   and   facilitates   diagnostics   and   detection  of   the 
+reason of such infringements.
+
+CONTROLLABILITY OF A NETWORK
+The   architecture   of   a   network   should   allow 
+organizing   both   the   centralized   management   of   a 
+network,   and   division   of   powers   on   management   and 
+decentralized  support  of  separate  sites  of  a  network and  
+local subnets. Such opportunities can be achieved due to  
+use   of   hierarchical   structure   of   a   network   and 
+concentrators   with   an   opportunity   of   routing   of 
+information   packages.   Computers   -   units   of   subnet   are 
+connected   to   such   concentrator,   and   as   localization   of 
+the   traffic   (information   streams   between   computers   of 
+subnet become  isolated   through  the  concentrator  and do 
+not   load   other   sites   of   a   network),   and   increase   of  
+reliability   (in   a   case   practically   any   malfunctions   in 
+work   of   a   network   trouble-free   work   of   a   site   of   a 
+network or subnet is provided) thus is achieved.
+
+88
+
+MAINTENANCE OF MULTIPLATFORM 
+AND MULTIPROTOCOL WORK 
+IN A NETWORK
+The   great   value   has   also   maintenance   with   multi-
+protocol   work   in   a   network   -   support   of   simultaneous 
+work   in   a   network   of   the   workstations   using   various 
+reports   of   an   exchange   (ТСР/IР,   IРХ,   NetBIOS),   and 
+support   of   workstations   of   various   types   and   various 
+operational   systems.   Use   as   transport   report   Ethernet 
+ensures   the   functioning   into   these   most   widespread 
+reports   that   allows   to   support   work   in   a   network   of  
+stations on the basis of processors Intel, DEC, SUN and 
+operational   systems   MS DOS,   Windows,   WIN NT, 
+Windows 2000, UNIX (Linux).
+Besides   the   structure  of  a   local  network  provides  an 
+opportunity   of   connection   of   workstations   to   the   tele-
+communication   center  -  ground   station   of   a   satellite 
+communication   and   an   output   in   global   network 
+Internet.
+
+CONCLUSIONS
+The   shared   system   described   in   the   given   work   on  
+the   basis   of   the   personal   computer   is   created   and   used  
+for   a   number   of   years   in   server   center   of 
+IHEPNP NSC KIPT.
+Operating   experience   within   several   years   of   such 
+system has  shown sufficient  efficiency and  a  demand  of  
+services   given   by   it.   Besides   it   is   possible   to   see,   that  
+reliable   work   of   system   and   safety   of   the   user   data   is 
+provided   at   a   sufficient   level   in   spite   of   the   fact   that 
+usual   personal   computers   used   as   hardware   platforms 
+have  a   level  of   reliability  not  above   the  average,  and  as  
+the   basic   operational   system   OS   Microsoft   Windows-
+2000 is used.
+
+REFERENCE
+1. V. Stolins.  Operating   systems.   The   internal 
+device   and   designing,   4.  М:  The  Publishing  house 
+"Williams", 2002, 848 p.
+
+.
+
+СОЗДАНИЕ И РАЗВИТИЕ ЛОКАЛЬНОЙ ИНФОРМАЦИОННОЙ ВЫЧИСЛИТЕЛЬНОЙ СЕТИ 
+ИНСТИТУТА ФИЗИКИ ВЫСОКИХ ЭНЕРГИЙ И ЯДЕРНОЙ ФИЗИКИ ННЦ ХФТИ
+
+В.А. Дудник, Е.В. Криворуков, В.И. Кудрявцев, Т.М. Середа, С.А. Ус, М.В. Шестаков
+
+Представлены   результаты   и   основные   этапы   создания   и   развития   локальной   информационной 
+вычислительной сети  Института физики высоких  энергий и ядерной физики ННЦ  ХФТИ  за  последние  пять 
+лет.   Целью   работы   было   повышение   эффективности   работы   исследователей   за   счет   рационального  
+использования   ресурсов   и   создание   на   базе  локальной   информационной   вычислительной   сети  системы 
+коллективного пользования. В статье описывается накопленный опыт и специфика реализации таких систем.
+
+СТВОРЕННЯ І РОЗВИТОК ЛОКАЛЬНОЇ ІНФОРМАЦІЙНОЇ ОБЧИСЛЮВАЛЬНОЇ МЕРЕЖІ 
+ІНСТИТУТУ ФІЗИКИ ВИСОКИХ ЕНЕРГІЙ І ЯДЕРНОЇ ФІЗИКИ ННЦ ХФТІ
+
+В.О. Дудник, Є.В. Криворуков, В.І. Кудрявцев, Т.М. Середа, С.А. Ус, М.В. Шестаков
+
+Представлено  результати й основні  етапи створення  і  розвитку локальної  інформаційної  обчислювальної 
+мережі   Інституту фізики високих енергій  і  ядерної  фізики ННЦ  ХФТІ  за  останні  п'ять років.  Метою  роботи 
+було   підвищення   ефективності   праці   дослідників   за   рахунок   раціонального   використання   ресурсів   і 
+створення  на   базі  локальної   інформаційної  обчислювальної  мережі  системи   колективного   користування.  У 
+статті описано накопичений  досвід і специфіка реалізації таких систем.
+
+89
+
+

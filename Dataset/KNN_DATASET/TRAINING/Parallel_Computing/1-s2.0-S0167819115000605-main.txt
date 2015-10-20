@@ -1,0 +1,1764 @@
+JID: PARCO
+
+[m3Gsc;April 22, 2015;20:16]
+
+ARTICLE IN PRESS
+
+Parallel Computing 000 (2015) 1–16
+
+Contents lists available at ScienceDirect
+
+Parallel Computing
+
+journal homepage: www.elsevier.com/locate/parco
+
+A direct tridiagonal solver based on Givens rotations for GPU
+architectures
+I.E. Venetis a,∗
+a Computer Engineering and Informatics Department, University of Patras, Greece
+b Computer Science Department, Purdue University, West Lafayette, IN 47907, USA
+
+, A. Kouris a, A. Sobczyk a, E. Gallopoulos a, A.H. Sameh b
+
+a r t i c l e
+
+i n f o
+
+a b s t r a c t
+
+Article history:
+Available online xxx
+
+Keywords:
+Parallel tridiagonal solvers
+Givens rotations-based QR
+GPU
+Spike framework
+Singular matrix
+Low-rank modiﬁcation
+
+1. Introduction
+
+g-Spike, a parallel algorithm for solving general nonsymmetric tridiagonal systems for the
+GPU, and its CUDA implementation are described. The solver is based on the Spike framework,
+applying Givens rotations and QR factorization without pivoting. It also implements a low-
+rank modiﬁcation strategy to compute the Spike DS decomposition even when the partitioning
+deﬁnes singular submatrices along the diagonal. The method is also used to solve the reduced
+system resulting from the Spike partitioning. Numerical experiments with problems of high
+order indicate that g-Spike is competitive in runtime with existing GPU methods, and can
+provide acceptable results when other methods cannot be applied or fail.
+
+© 2015 Elsevier B.V. All rights reserved.
+
+Tridiagonal linear system solvers and to a lesser extent solvers for systems of wider bandwidths, have been proposed and
+implemented for every “new generation” HPC system, and most recently GPUs. This is because banded linear systems are
+ubiquitous in scientiﬁc computation, even motivating the design of special purpose architectures; see e.g. [44]. Our primary
+interest here is in effective tridiagonal solvers for a single linear system using GPGPUs. Therefore, we do not discuss the case
+of multiple right-hand sides or matrices; as has been observed (e.g. see [31]) however, even in that case, there is a need to
+make available eﬃcient solvers for single systems, to handle problems that are so large that it becomes impractical to ﬁt several
+instances in GPU memory.
+Fast tridiagonal solvers of parallel complexity O(log n) have long been known [25,29,32,36]. They require, however, special
+matrices (e.g. diagonally dominant or symmetric positive deﬁnite) in order to work reliably; cf. [35]. Otherwise, if Gaussian
+elimination is used, it is prudent to apply pivoting so as to reduce the risk of instability. Partial pivoting might perturb the
+tridiagonal structure, however, and cause additional overhead in a GPU implementation.
+Recently, as described in ref. [17], the IMPACT group1 at the University of Illinois, combined the Spike algorithm ([53]) for
+banded systems with a special block diagonal pivoting strategy [22,23] to produce an algorithm for general tridiagonal systems.
+As most parallel algorithms for banded systems, it is based on partitioning and distributing the matrix and right-hand side to
+the processing elements. Then, signiﬁcant parts of the computation amount to solving independent systems with coeﬃcients
+
+∗
+
+Corresponding author at: University of Patras, Computer Engineering and Informatics Department, Building B, 26500 Patras, Achaia, Greece. Tel.: +30 261
+099 6911.
+E-mail addresses: venetis@ceid.upatras.gr (I.E. Venetis), kouris@ceid.upatras.gr (A. Kouris), sobczyk@ceid.upatras.gr (A. Sobczyk), stratis@ceid.upatras.gr
+(E. Gallopoulos), sameh@cs.purdue.edu (A.H. Sameh).
+1 http://impact.crhc.illinois.edu/
+
+http://dx.doi.org/10.1016/j.parco.2015.03.008
+0167-8191/© 2015 Elsevier B.V. All rights reserved.
+
+Please cite this article as: I.E. Venetis et al., A direct tridiagonal solver based on Givens rotations for GPU architectures, Parallel
+Computing (2015), http://dx.doi.org/10.1016/j.parco.2015.03.008
+
+JID: PARCO
+
+2
+
+ARTICLE IN PRESS
+
+I.E. Venetis et al. / Parallel Computing 000 (2015) 1–16
+
+[m3Gsc;April 22, 2015;20:16]
+
+A =
+
+A1,1
+
+−1
+0
+0
+1
+0
+1 −2
+0
+1
+0
+1 −1
+0
+1
+0
+1 −1
+0
+0
+1
+1 −1
+0
+0
+0
+
+A2,2
+
+Fig. 1. Matrix A is nonsingular whereas the A1, 1 and A2, 2 are both singular.
+
+the submatrices along the diagonal of the original matrix. The pivoting strategy used for each block avoids row interchanges and
+is backward stable according to the ﬁndings in [22]. The algorithm of [17] was carefully mapped on the GPU architecture (see
+also [15,16,39,58]) and was shown to be fast for very large problems, also solving systems that could not be solved by existing
+methods in NVIDIA’s cuSPARSE library (these methods were based on cyclic reduction and its variants and thus required special
+properties from the matrix; cf. comments in [37, p. 2576]). Subsequently, the algorithm was implemented and incorporated
+into cuSPARSE by NVIDIA under the name gtsv; cf. [50]. Considering these achievements, one outstanding issue is what to do
+when any submatrix along the diagonal is singular. The question arises because, even after accepting the overhead of an effective
+pivoting strategy, as illustrated in Fig. 1, a partitioned nonsingular matrix can have one or more blocks along the diagonal be
+singular. Without safeguards, a method attempting to solve these blocks would fail.
+In this paper, we describe and implement g-Spike, a scheme competitive with [17] in performance and returning solutions
+with acceptable forward error when current direct tridiagonal solvers on GPUs deliver inaccurate results. In particular, the par-
+titioning and divide-and-conquer strategies (cf. Section 5) that are commonly used not only in cuSPARSE but also in Scalapack2 ,
+are not designed to work if any of the generated systems is detected to be singular.
+The structure of this paper is as follows: Section 2 motivates and describes the g-Spike algorithm. Section 3 describes the GPU
+implementation, Section 4 describes the numerical experiments, and Section 5 provides concluding remarks. We use capitals
+and small letters for matrices and vectors respectively and small Greek letters for scalars except for the sine and cosine in the
+Givens rotations that are denoted by s and c respectively. Also, even though the discussion refers to real matrices, our method
+can easily be extended to the complex case.
+
+2. Motivation and description
+
+=
+
+(1)
+
+α1,1 α1,2
+α2,1 α2,2 α2,3
+. . .
+. . .
+. . .
+
+We consider the solution of a nonsingular tridiagonal linear system,
+⎛
+⎞
+⎞
+⎞
+⎛
+⎛
+⎟⎟⎟⎟⎟⎟⎟⎠
+⎟⎟⎟⎟⎟⎟⎟⎠
+⎟⎟⎟⎟⎟⎟⎟⎠
+⎜⎜⎜⎜⎜⎜⎜⎝
+⎜⎜⎜⎜⎜⎜⎜⎝
+⎜⎜⎜⎜⎜⎜⎜⎝
+ξ1
+φ1
+ξ2
+φ2
+...
+...
+. . .
+...
+...
+. . . αn−1,n
+αn,n−1 αn,n
+ξn
+φn
+written as Ax = f. It is assumed that n, is much larger than p, the number of processing elements (e.g. processors, cores, or threads).
+Unless mentioned otherwise, we also assume that the elements in the diagonals directly above and below the main diagonal are
+all nonzero, thus A is irreducible.
+Most parallel algorithms for tridiagonal and banded linear systems are based on partitioning. There are two major partitionings,
+consisting of breaking the matrix by rows across the p processing elements by creating a (2p − 1) × (2p − 1) (as in Scalapack)
+or a p × p (as in the Spike framework) block tridiagonal matrix. In this paper we use the latter though many of our comments
+are also valid for the former. For simplicity we assume that n = mp, and that the processing elements have similar capabilities
+to justify equipartitioning. Therefore, equations (j − 1)m + 1 up to jm will be allocated to processing element j = 1, . . . , p. The
+
+2 See for example http://icl.cs.utk.edu/lapack-forum/viewtopic.php?t=24.
+
+Please cite this article as: I.E. Venetis et al., A direct tridiagonal solver based on Givens rotations for GPU architectures, Parallel
+Computing (2015), http://dx.doi.org/10.1016/j.parco.2015.03.008
+
+JID: PARCO
+
+ARTICLE IN PRESS
+
+[m3Gsc;April 22, 2015;20:16]
+
+I.E. Venetis et al. / Parallel Computing 000 (2015) 1–16
+
+3
+
+A1 B1
+
+⎞
+⎟⎟⎟⎠,
+
+C2 A2
+. . .
+
+⎛
+⎞
+partitioned system will have the form
+⎞
+⎛
+⎛
+⎟⎟⎟⎟⎟⎠
+⎜⎜⎜⎜⎜⎝
+⎟⎟⎟⎠ =
+⎜⎜⎜⎝
+⎜⎜⎜⎝
+x1
+f1
+. . .
+f2
+x2
+...
+...
+. . . Bp−1
+fp
+xp
+Cp Ap
+where Bj = αjm,jm+1 em e
+, Cj+1 = αjm+1,jm e1 e
+(cid:3)
+(cid:3)
+m and e1 , em are vectors of the standard basis of Rm . That is Bj and Cj + 1 each contain
+1
+only one nonzero value, located respectively at their southwest and northeast corners.
+Parallel algorithms for system (2) contain a step in which p independent linear systems are solved having Aj , j = 1, . . . , p as
+coeﬃcient matrices. As we mentioned earlier, however, this step is likely to fail if any of these matrices is singular unless special
+precautions are taken. Existing parallel libraries handle this possibility in one of the following ways (cf. Section 5):
+
+(2)
+
+1. Monitor/detect singularity, signaling if it occurs; if so, the user must search for a more suitable partitioning ; cf. [12,24].
+2. Compute results; rely on the user to monitor and check the validity of the results and if unacceptable, attempt to solve with
+a more suitable partitioning; cf. [50].
+3. Monitor/detect singularity; if present, adjust the system to remove the singularities and solve; cf. [26].
+
+The simplest approach is the ﬁrst but has the disadvantage that there is no guidance to the user who is left on her/his own
+to handle the singularity. It is worth noting that linear time algorithms for detecting if tridiagonal systems are componentwise
+close to singularity were proposed in [9,10] but do not seem to be in use in existing numerical libraries. The second approach
+relies on monitoring the pivots and if none is acceptable, an information ﬂag is set to warn the user. Both approaches require
+repartitioning and solving at least one more time, which is inconvenient. Moreover, there is no a priori guarantee that the new
+partitioning will work. So it is of interest to see if there are methods that upon encountering a singularity automatically adjust
+and modify the system to make it nonsingular. This is the idea behind the third approach that is implemented in the Intel Spike
+code based on the work in [54]. The adjustment consists of a “diagonal boosting” strategy that adds a suitable value to any
+diagonal element that is in a position to be used as pivot not only to maintain invertibility of the block but also to eliminate
+any need for row interchanges. However, once boosting is invoked, then Spike is no longer used as a direct solver but either in
+combination with an iterative method as preconditioner or by applying iterative reﬁnement.
+Unfortunately, for general matrices, it is not a simple matter to determine, a priori, partitionings that correspond to nonsingular
+diagonal blocks or identifying those that contain singular ones. Thus, an implementation could fail even if the selected partitioning
+makes the best use of the parallel resources and the local solver is designed with a pivoting procedure that is stable and has the
+smallest possible overhead. We thus seek a direct method that is fast on the GPU architecture, that can compute the solution
+of the diagonal subsystems in a stable manner without pivoting, and that can also handle singular ones as long as the original
+tridiagonal matrix is invertible.
+Motivated by these observations and the fast solver developed by the IMPACT group, we revisit the ﬁrst version of the Spike
+algorithm as it was proposed in [56] and consider a CUDA implementation and its performance3 . The algorithm uses Givens-
+based QR (Givens-QR, for short) factorization of the tridiagonal submatrices along the diagonal. No pivoting is necessary but we
+show that the scheme contains a “singularity detection and modiﬁcation” procedure. We also show that this is equivalent with
+a special low rank update of the matrix that boosts unwanted zero values making possible the computation of partial solutions
+that are then used to construct the solution of the entire (nonsingular) tridiagonal system. g-Spike differs in several respects
+from the theoretical description in [56]. The method does not require from the system to be similar to a symmetric one and the
+formulation of the treatment of any singularities is different. Moreover, there are differences in the treatment of the reduced
+system. Like [56], however, it allows the user to partition without worrying about the occurrence of singular blocks, since these
+are handled automatically. As our experiments indicate, despite the higher cost of QR relative to LU, g-Spike exploits the high
+performance of elementary CUDA kernels and it has performance similar and sometimes better than the block diagonal pivoting
+approach of [17].
+
+2.1. Spike and the g-Spike algorithm
+
+Spike has been proposed and used either as a direct method or in hybrid form in combination with an iterative method
+as a preconditioner [26,27,43,45,46,48,52–54]. Recent descriptions of Spike are based on (dense or sparse) LU factorization to
+factorize the submatrices along the diagonal; cf. [53] and references therein. The major advance in the algorithm of [17] was the
+incorporation and implementation of a block diagonal pivoting strategy, ([22,23]) that allowed the fast solution on GPUs of a
+wider range of tridiagonal systems than was possible before.
+The two fundamental ingredients of g-Spike are i) Givens-based QR instead of an LU type strategy. ii) A singularity detection
+and modiﬁcation strategy for diagonal blocks. The QR factorization is deployed in order to enhance stability without pivoting for
+
+3 Based on our survey of the citations, this paper is hardly referenced for this speciﬁc tridiagonal solver but much more for its stable, Givens-QR based dense
+solver. It is also interesting to note that the algorithm in [56] and the motivation for the partitioning that led to the Spike framework was not parallelism but
+stabilization of another parallel Givens-QR algorithm in that same paper.
+
+Please cite this article as: I.E. Venetis et al., A direct tridiagonal solver based on Givens rotations for GPU architectures, Parallel
+Computing (2015), http://dx.doi.org/10.1016/j.parco.2015.03.008
+
+JID: PARCO
+
+4
+
+ARTICLE IN PRESS
+
+I.E. Venetis et al. / Parallel Computing 000 (2015) 1–16
+
+[m3Gsc;April 22, 2015;20:16]
+
+A1
+
+C1
+
+B1
+
+A2
+
+C2
+
+B2
+
+A3
+
+C3
+
+B3
+
+A4
+
+A1
+
+A2
+
+[Pµ ] =
+
+A3
+
+A4
+
+Fig. 2. Factorization APμ = DS for p = 4.
+
+I1
+
+w1
+
+v1
+
+I2
+
+w2
+
+v2
+
+I3
+
+w3
+
+v3
+
+I4
+
+general systems while Givens rotations are more eﬃcient than Householder reﬂectors in zeroeing out elements in the tridiagonal
+case.
+Spike implementations typically consist of three steps centered around the DS factorization and the solution of a system
+based on matrix S (the Spike matrix) using a strategy in which the system is decoupled into a much smaller reduced system (of
+size a small multiple of p) followed by a set of p independent subsystems. g-Spike is similar but uses a modiﬁed factorization,
+APμ = DS where D is block diagonal, and Pμ a rank-k perturbation of the identity, where k is the number of singular diagonal
+blocks in the partition used for A; cf. Fig. 2.
+Before the process starts, the matrix is tested for reducibility and if it is, partitioning takes this into account. The steps of
+g-Spike are listed in panel Algorithm 1.
+
+Algorithm 1 g-Spike algorithm
+
+Require: Tridiagonal matrix A as in (1) and right-hand side f.
+Ensure: Solution of the linear system Ax = f
+{Stage 1 - Preprocessing}
+1: Assuming irreducibility of A, partition as indicated in Eq. (2)
+{Stage 2 - Factorization and Spike system formation}
+2: For each j = 1, . . . , p:
+
+i) Givens-based QR decomposition of each diagonal block and application of the relevant transformations: Compute the Givens
+for i = 1, . . . , m − 1 and apply Q
+= G
+· · · G
+(cid:3)
+(j)
+(j)
+(j)
+rotationsa G
+m−1
+1 on block row j to obtain the upper triangular matrix
+j
+i
+Rj = Q
+j Aj , the vectors ˆfj = Q
+j fj for j = 1, . . . , p, the vectors αjm+1,jmQ
+j e1 for j = 2, . . . , p and the vectors αjm,jm+1Q
+(cid:3)
+(cid:3)
+(cid:3)
+(cid:3)
+j em for
+j = 1, .., p − 1. Because of the structure of the rotations, each Rj has bandwidth 3; cf. [30].
+ii) Singularity detection and modiﬁcation: If matrix Rj is detected to be singular, it is modiﬁed; cf. Section 2.2. Denote the
+resulting nonsingular diagonal block by ˜Rj (if no modiﬁcations, ˜Rj = Rj ).
+iii) Spike system formation: Formally, multiply each of the terms generated in the previous stage by ( ˜Rj )−1 . In practice, solve
+with right-hand side ˜fj and the last and ﬁrst vectors of the off diagonal blocks to the left and right of block j (in case j = 1
+or p, one is empty).
+{Stage 3 - Postprocessing: solve the Spike system S ˜x = g, recover x.}
+3: i) Extract the reduced system from S. The system is nonsingular and can be permuted to tridiagonal form. Depending on
+its size and the parameters of the underlying architecture, it can be solved either calling g-Spike recursively or by some
+stable sequential method, e.g. Givens-based QR.
+ii) Solve for the remaining unknowns, assembling the solution in ˜x.
+iii) If singularities were detected, compute the ﬁnal result Pμ ˜x = x.
+
+a cf. Appendix B.
+Some notes about the steps of Algorithm 1. Step 2(i) is the transformation of the system to Q Ax = Q f, where Q = diag[Q1 ,
+. . . , Qp ]. Step 2(iii) amounts to the multiplication of the modiﬁed system with the inverse of ˜R = diag[ ˜R1 , . . . , ˜Rp ] to obtain
+−1 ˜f . The resulting factor S is the Spike matrix (Fig. 2) in the factorization APμ = DS, where D = Q ˜R
+APμ )˜x = g where g = ˜R
+(cid:3)
+−1 (Q
+˜R
+with Q , ˜R as deﬁned in the previous steps and Pμ is a rank-k update of the identity that enables the factorization when singularities
+are detected in the diagonal submatrices; cf. Section 2.2. Note that if any diagonal block is singular, there is a change of unknowns
+to ˜x = P
+−1
+μ x. The reduced system in step 3(i) is nonsingular (otherwise the entire matrix would be singular) and has a very special
+structure. In fact, it is “psychologically tridiagonal”, in that it is pentadiagonal but can be permuted to tridiagonal form. If so, it
+can be solved by recursively calling g-Spike as long as reducibility is detected and taken into account at this and subsequent
+levels of the recursion.
+The number of ﬂoating-point operations executed for each block (that is in each processing element) for Stage 2 of g-Spike
+is approximately 45m + O(1) (elementary) operations and m − 1 square roots. The cost for the same stage of the block diagonal
+pivoting Spike method is approximately 24m − 5ζ (not counting comparisons), where ζ is the number of times the method
+
+Please cite this article as: I.E. Venetis et al., A direct tridiagonal solver based on Givens rotations for GPU architectures, Parallel
+Computing (2015), http://dx.doi.org/10.1016/j.parco.2015.03.008
+
+JID: PARCO
+
+ARTICLE IN PRESS
+
+[m3Gsc;April 22, 2015;20:16]
+
+I.E. Venetis et al. / Parallel Computing 000 (2015) 1–16
+
+5
+
+x x x
+x x x
+x x x
+v
+x x
+0
+v
+w x x
+x
+w
+
+x x x
+x x x
+x
+x x
+x x + v
+v
+0 + v
+v
+w + x x x
+x
+w
+
+Illustration of the “welcome ﬁll-in”: Rj (instance shown left) is singular but adding the column (marked by purple) results in the modiﬁed ˜Rj (right). Note
+Fig. 3.
+also that elements labeled v are nonzero.
+
+resorted to a simple 1 × 1 pivot. Recall that Stage 2 computes the Spike DS factorization and transforms the right-hand sides. We
+thus consider that the parallel arithmetic cost of g-Spike is roughly double that of Spike based on block diagonal pivoting.
+
+2.2. Singularity detection and modiﬁcation
+
+As mentioned in Section 2, to handle very small pivots in the Spike framework, one can apply a diagonal boosting strategy
+combined with an iterative scheme; cf. [53] and [17, Table IV] . In our case, however, it is also possible to remain in the framework
+of direct methods, by means of an alternative boosting strategy. Key to this is the fact that the tridiagonal structure of the matrix
+restricts the amount of rank loss of the diagonal submatrices as the following results show.
+Proposition 2.1. [56] Let the nonsingular tridiagonal matrix A be of order n = pm, and let it be partitioned into a block tridiagonal
+matrix of p blocks of order m each in the diagonal with rank-1 off-diagonal blocks. Then each of the tridiagonal submatrices along the
+diagonal and in block positions 2 up to p − 1 have rank at least m − 2 and the ﬁrst and last submatrices have rank at least m − 1.
+Moreover, if A is irreducible, then the rank of each diagonal submatrix is at least m − 1.
+
+A more general result is also valid for banded matrices; cf [60, Lemma 2.1]. The next propositions are fundamental in the
+singularity detection and modiﬁcation mechanism of g-Spike.
+
+Proposition 2.2. [56] Let the order m irreducible tridiagonal matrix A be singular. Then in exact arithmetic, the last row of the
+triangular factor R in any QR decomposition of A will be zero. Element (R)m, m = 0 will be the only zero in the diagonal of R. Moreover,
+if computed with Givens rotations, R will be banded upper triangular of bandwidth 3 and the cosine, cm − 1 in the last Givens rotation,
+Gm − 1 , is nonzero.
+In exact arithmetic, if Aj is singular, then (Rj )m, m = 0 so singularity manifests itself. In practice, as we discuss later in this
+section, we do not expect an exact zero, but use some suitable threshold. We ﬁrst consider the case of singularity for any Aj other
+than the last, Ap . The basic idea is the following: from Proposition 2.2 if Aj is singular then (Rj )m, m must be zero but then, the
+element lying immediately to its right in Q A is nonzero. We can thus eliminate the zero by adding the column containing this
+nonzero to the one immediately to its left and modifying the vector of unknowns appropriately.
+j Aj = Rj be the Givens-QR decomposition of Aj for j = 1, . . . , p and consider Q A. The off-diagonal blocks
+(cid:3)
+In particular let Q
+j em = (s
+j Bj = (αjm,jm+1Q
+(cid:3)
+(cid:3)
+(cid:3)
+)(cid:3)
+(j)
+(j)
+j em , 0m×(m−1)). However, Q
+m−1
+m−1
+, c
+where the superscript in s and
+above the main diagonal are Q
+c identiﬁes the block. From Proposition 2.2 and the irreducibility of A it follows that position (jm, jm + 1) will be αjm,jm+1 c
+(j)
+m−1
+,
+(cid:8)
+(j)
+hence nonzero. Moreover, the only other nonzero element above it is its immediate northerly neighbor, equal to αjm,jm+1 s
+m−1 .
+= αjm,jm−1 /
++ α 2
+(j)
+α 2
+m−1
+jm,jm−1
+jm−1,jm−1
+, this is also nonzero due to the irreducibility. Comparing the structure of columns
+Since s
+jm and jm + 1 when singularity is detected in block j, column jm will have a zero in row jm, a nonzero in row jm + 1 and possibly
+non-zeros in rows jm − 1, jm − 2. All other elements will be zero. This is key to circumventing the singularity with only small
+additional overhead. Adding column jm + 1 to column jm will have as effect the “welcome ﬁll-in” of position (jm, jm). No other
+ﬁll-in will take place at locations that contain zeros, and the banded triangular structure will not be affected. The last diagonal
+element of Rj is thus replaced by (Rj )m,m + αjm,jm+1 c
+(j)
+m−1 and no other diagonal elements of Rj are affected so the new diagonal
+block, let us call it ˜Rj , is nonsingular. Observe next that the column addition can be expressed as A + Aejm+1 e
+= A(In + ejm+1 e
+(cid:3)
+(cid:3)
+).
+Now let Pj = In + ejm+1 e
+jm
+jm
+(cid:3)
+jm and so the modiﬁcation can be expressed as the multiplication APj . This modiﬁcation to make a diagonal
+, Aj2
+block nonsingular can be extended to several blocks. Assume, for example, that there are exactly two singular blocks Aj1
+. Then
+, where the Pj s have been constructed as before, has no singular blocks. Some algebraic properties of
+Pj2
+it is easy to verify that APj1
+these operators are that if Pμ = Pj1
+, where Zj = ejm+1 e
++ Zj2
+, then Pμ = In + Zj1
+(cid:3)
+jm . Note also that if m > 1 (non-trivial blocksize)
+Pj2
+= 0n×n . Also APμ is nonsingular. Thus the product of the Pj s can be written as the identity plus a sum of rank-1 factors,
+then Zj1
+Zj2
+Zj , such that the product of any two of these factors is 0. Since these modiﬁcations affect different blocks (assuming assigned at
+different processing elements), they could be applied independently. Based on this discussion, it is easy to see that the following
+properties hold.
+
+Please cite this article as: I.E. Venetis et al., A direct tridiagonal solver based on Givens rotations for GPU architectures, Parallel
+Computing (2015), http://dx.doi.org/10.1016/j.parco.2015.03.008
+
+JID: PARCO
+
+ARTICLE IN PRESS
+
+[m3Gsc;April 22, 2015;20:16]
+
+(cid:3)
+jν m
+
+,
+
+ejν m+1 e
+
+6
+I.E. Venetis et al. / Parallel Computing 000 (2015) 1–16
+partitioning (2) except the last, say Ajν for ν = 1, . . . , k, be singular. Deﬁne Pμ = (cid:9)
+Proposition 2.3. Let the tridiagonal matrix A in Proposition 2.1 be nonsingular and irreducible and let k of the diagonal blocks in the
+ν=1 Pjν where Pjν = In + ejν m+1 e
+(cid:3)
+k
+jν m . Then APjν has
+its jν ’th block nonsingular. Moreover,
+Pμ = In + k(cid:10)
+ν=1
+and APμ is nonsingular.
+Proposition 2.4. Let A and Pμ be as in Proposition 2.3 and let Aj = Qj Rj be the Givens-based QR decomposition of each block. Let also
+Q = diag[Q1 , . . . , Qp ]. If Q A is partitioned like A, then its blocks Rjν in positions j1 , . . . , jk are upper triangular and singular. Moreover
+if ˜R = diag[ ˜R1 , . . . , ˜Rp ] is the block diagonal section of Q APμ , then it is nonsingular. Also the DS factorization in g-Spike is
+APμ = DS
+where D = Q ˜R with S the Spike matrix, which is block tridiagonal with unit diagonal blocks and nonzero elements only in selected
+columns (cf. Fig. (2)).
+
+In practice, we do not check for an exact zero but set some small threshold value, say δ . Some care is required to avoid the
+possibility that the value added to the corner is equal in magnitude and opposite in sign since that would make the diagonal
+block exactly singular. To avoid this remote situation, we follow a basic technique in Householder reﬂector construction, by
+adding instead a suitable multiple of α jm, jm + 1 cj , choosing the sign of the product to be the same as that of the small element in
+(Rj )m, m . This guarantees that after the addition, the new corner element will be larger in magnitude than its original value (and
+(cid:11)
+also nonzero). We describe only a simple variant of the rank-k modiﬁcation deﬁned in Proposition 2.3. Speciﬁcally, replace Pj by
+sign(Rj )m,m if |(Rj )m,m | < δ ,
+, where ζj =
+Pj = In + ζj ejm+1 e
+(cid:3)
+jm
+0 otherwise.
+
+˜APμ P
+
+From the preceding discussion, it follows that the system is equivalent to
+μ x = ˜f .
+−1
+where the matrix ˜APμ is block tridiagonal with all its p blocks along the diagonal upper triangular and invertible with the possible
+exception of the last one, which might contain a zero in the last diagonal element. It is thus possible to enter step 2(iii) of g-Spike
+−1 .
+and create the Spike matrix S after (formally) multiplying by ˜R
+Consider ﬁnally the case that Rp is detected to be singular so that the last diagonal element is nonzero. In that case, we do not
+attempt to make it nonsingular but consider only its ﬁrst m − 1 rows and multiply by the inverse of Rp ’s leading (m − 1) × (m
+− 1) submatrix, that is ((Rp )1: m − 1, 1: m − 1 )
+−1 , which exists. This creates one extra spike on the last column of the last block, but
+the reduced system remains tridiagonal. Overall, the effect is that when the last diagonal block is singular, we multiply by the
+inverse of the block diagonal matrix diag[ ˜R1 , . . . , ˜Rp−1 , ˜Rp ], where ˜Rp = diag[(Rp )1:m−1,1:m−1 , 1].
+The advantage of the method compared to existing Spike algorithms and conﬁrmed by experiments described in Section 4,
+is the enhanced stability in solving each subsystem that also facilitates the identiﬁcation and correction of singularities. On the
+other hand, it is possible that direct methods such as g-Spike and gtsv that are based on block factorization, will return higher
+forward error compared to solving the entire system by means of QR or LU with partial pivoting; cf. [19,35]. We show such
+examples in Section 4.
+
+3. GPU implementation
+
+For some time now, GPUs have entered the mainstream as cost effective solutions for HPC; cf. [40,41,51,57]. Their high
+throughput is largely the result of a different approach in hiding the latency of memory accesses, compared to approaches used
+in more traditional CPUs. As GPUs have become mainstream, we assume that the reader is familiar with the basic architectural
+aspects of a GPU, which are discussed in detail in [41].
+The use of Givens-based QR in g-Spike has two important implications. First, the development of eﬃcient and reliable code for
+(cid:12)
+Givens rotations is a delicate task, especially when complex numbers are involved (cf. [11]). At this stage of our effort, we relied
+α 2 + β 2 reducing the danger of intermediate
+on the reciprocal hypotenuse function rhypot in CUDA [34]. This computes 1/
+under or overﬂow. Second, the computation and application of the rotation at each step is signiﬁcantly more expensive than LU
+with partial pivoting. This makes QR-Givens more expensive in terms of operations. As we show, however, by means of careful
+programming and by exploiting the high degree of parallelism of GPUs and the idiosyncrasies of the memory system, it is possible
+to hide much of this overhead.
+As a ﬁrst step in implementing g-Spike, an appropriate scheme to store the tridiagonal matrix had to be chosen. In order for
+our implementation to keep the same function call notation as cuSPARSE, we used three separate vectors for the diagonals, as
+shown in Fig. 4 and one more vector for the right hand side of the system. Due to the fact that the matrices Rj produced in step 2
+of g-Spike (cf. Section 2.1) have bandwidth 3 and thus have a nonzero second superdiagonal, a ﬁfth vector is allocated as soon
+as the function implementing g-Spike is entered. Furthermore, some elements at the borders of partitions are not included in
+any partition and these have to be handled separately. These elements are leading to the creation of the spikes. The size of the
+
+Please cite this article as: I.E. Venetis et al., A direct tridiagonal solver based on Givens rotations for GPU architectures, Parallel
+Computing (2015), http://dx.doi.org/10.1016/j.parco.2015.03.008
+
+JID: PARCO
+
+ARTICLE IN PRESS
+
+[m3Gsc;April 22, 2015;20:16]
+
+I.E. Venetis et al. / Parallel Computing 000 (2015) 1–16
+
+7
+
+a11 a12
+a21 a22 a23
+a32 a33
+a43
+
+a34
+a44 a45
+a54 a55
+
+⇔
+
+a12 a23 a34
+a11 a22 a33
+∗
+a21 a32
+
+∗
+a45
+a44 a55
+a43 a54
+
+Tridiagonal Matrix
+
+cuSPARSE gtsv Storage Format
+
+Fig. 4. Storage of a sample tridiagonal matrix in CPU and GPU memory.
+
+Fig. 5. g-Spike: GPU implementation ﬂowchart.
+
+left and right side spikes that will appear is known a priori, but fortunately there is no reason to allocate further vectors to store
+them. As computations proceed, elements of the subdiagonal of the original matrix start being replaced by zeroes. In their place
+the left side spikes are stored. Similarly, when right side spikes are created, the second superdiagonal elements created earlier
+are not needed anymore and these spikes are stored in their place. Finally, some additional storage is required to mark whether a
+partition has been found that is singular. Overall, the temporary storage space required for our algorithm is 5n + O(p). By contrast,
+the gtsv routine from NVIDIA needs space for 8(n + 3) temporary elements when n > 8. That is, g-Spike has signiﬁcantly smaller
+storage costs, which allows solving much larger systems on the limited memory of the GPU.
+Deﬁning the appropriate number of partitions p in Eq. (2) is crucial in order to achieve load balancing among Streaming
+Multiprocessors (SMs) and hardware threads within SMs. Currently this is calculated dynamically during runtime, according to
+the size of the matrix and the characteristics of the GPU used4 . Fig. 5 depicts the ﬂowchart for g-Spike, providing a high level
+overview of the whole procedure.
+
+3.1. Overlapping memory access latency with computations
+
+Accessing data stored in the global memory of a GPU can cost up to 800 clock cycles. GPUs rely on heavy threading to tolerate
+this latency, but it is diﬃcult to completely hide this delay when solving tridiagonal systems. For every element fetched from
+memory, only a small number of operations is performed and execution of each thread will stall quickly, since the memory
+subsystem will not be able to provide data in a timely manner to all executing threads. Furthermore, because of the underlying
+data dependencies, calculated results are immediately required in subsequent operations. Hence, instruction dependency stalls
+occur in addition to memory access stalls.
+From our description of the arithmetic complexity of the DS factorization stage (just before Section 2.2), the QR-Givens
+approach to Spike involves almost twice the number of ﬂoating-point operations of the block diagonal pivoting version. Due to
+the low “ﬂoating-point operations per memory accesses ratio”, however, GPU threads stall very frequently. Therefore, if there
+are useful computations that can be performed in the time window between the point where a thread stalls and the point it
+resumes execution, then these additional computations will be effectively hidden and no overhead will be observed in the total
+execution time. The runtimes reported in Section 4 clearly indicate that the arithmetic overhead in g-Spike is effectively hidden
+so that the method becomes competitive with block diagonal pivoting.
+
+4 We have not yet implemented device information retrieval at runtime and leave this input to the user.
+
+Please cite this article as: I.E. Venetis et al., A direct tridiagonal solver based on Givens rotations for GPU architectures, Parallel
+Computing (2015), http://dx.doi.org/10.1016/j.parco.2015.03.008
+
+JID: PARCO
+
+8
+
+ARTICLE IN PRESS
+
+I.E. Venetis et al. / Parallel Computing 000 (2015) 1–16
+
+[m3Gsc;April 22, 2015;20:16]
+
+Fig. 6. Memory accesses of threads in the same thread block. Consecutive threads access memory locations that are not consecutive, leading to reduced
+performance. ‘l’, ‘u’ and ‘d’ represent the lower, upper and the diagonal elements of the tridiagonal matrix.
+
+3.2. Data marshalling
+
+In order to further reduce the effects of memory latency it is crucial to exploit a much as possible the underlying architectural
+features. Since GPU memory consists of DRAM modules that support bursting, programs can take advantage of this feature
+by arranging data in memory in a way so that consecutive threads in a thread block access consecutive memory addresses.
+The simple layout in Fig. 4 that was effective during CPU-GPU data transfers, is not appropriate to exploit bursting. In [58]
+various layout transformations are proposed in order to optimize memory access patterns. The IMPACT gtsv routine embedded
+a variation of the “array of structure of tiled arrays” method described in that paper. After performing several experiments with
+different memory layouts, we concluded that the same strategy performed best in our case too. The upper part of Fig. 6 presents
+a case of memory accesses by multiple threads for the vectors that store the tridiagonal matrix. The second superdiagonal is also
+displayed. As threads are executing the same code in batches (CUDA warps), they are accessing at the same time the elements
+denoted by the same color shade. Since these elements are not located in consecutive memory locations, the elements available
+from the bursting capability of the memory subsystem are not used.
+The lower part of Fig. 6 presents the rearrangement performed in our implementation, in order to improve on this. The
+cost of rearranging elements proved to be quite low, therefore overall, the execution time improved. More speciﬁcally, the
+rearrangement is performed as soon as the routine is called. The three input vectors are transformed and stored in the internal
+vectors that are allocated within the routine. It is worth noting that these internal vectors have been included in the temporary
+storage calculated in Section 3.
+
+3.3. Solving the reduced system
+
+After extracting the reduced system, noting that it is tridiagonal as well, one can apply a variety of methods to solve it.
+The multicore CPU oriented Intel Spike implementation, for example, offers various options; cf. [26]. The method offered by
+NVIDIA’s gtsv appears5 to be an optimized implementation of the “recursive Spike”, ﬁrst presented in [53]. It is very fast, but
+care is required because there might exist reduced subsystems that are also singular. To preclude this possibility, we opted
+for an alternative approach, that recursively calls g-Spike on the reduced system. This approach has been recently used in a
+multithreaded general sparse implementation of the DS factorization [13,14]. This takes into account the partitioning that is
+performed during runtime, it is adaptable and can handle every reduced system size eﬃciently. Once the reduced system is small
+enough (of order less than 128 in the current implementation) it is solved sequentially using Givens-based QR. Our experiments
+showed that when applying the Spike solver to also solve the reduced system, great care must be exercised in that system’s
+partitioning (Stage 1) at each level of the recursion. Moreover, we have observed that the reduced system can become reducible
+(unlike the original matrix) so the algorithm must detect this and take it into account in the partitioning. For completeness, we
+describe the scheme that we used in Appendix C and note that it differs from that of [56].
+
+5 Recursive Spike is used in the sourcecode of the IMPACT group gtsv code. Moreover, both the relevant acknowledgment of the work of the IMPACT group at
+the NVIDIA website and the fact that cuSPARSE gtsv returned the same solution (digit by digit) as the IMPACT version of gtsv in all our experiments.
+
+Please cite this article as: I.E. Venetis et al., A direct tridiagonal solver based on Givens rotations for GPU architectures, Parallel
+Computing (2015), http://dx.doi.org/10.1016/j.parco.2015.03.008
+
+JID: PARCO
+
+ARTICLE IN PRESS
+
+[m3Gsc;April 22, 2015;20:16]
+
+I.E. Venetis et al. / Parallel Computing 000 (2015) 1–16
+
+9
+
+Table 1
+System details.
+
+NVIDIA GPU device
+CUDA driver/runtime
+CUDA compute capability
+NVCC
+NVIDIA driver
+C compiler
+
+Tesla C2075
+v. 6.0/v. 6.0
+v. 2.0
+Release 6.0, V6.0.1
+331.62
+gcc 4.8.2
+
+Global memory
+Multiprocessors (mp)
+CUDA cores (mp)
+cuSPARSE version
+
+5375MB
+14
+32
+6000
+
+Table 2
+Condition numbers, forward relative errors (RER) and max-norm normwise backward errors (NBE) for the
+matrix collection of Appendix A using the Spike-type methods and MATLAB backslash (for sparse operands).
+Functions gtsv and gtsv_nopivot are from the NVIDIA cuSPARSE library. Results from the code of the IMPACT
+group for gtsv were identical and not included. An “∗” indicates matrix reducibility, thus not suitable for
+g-Spike without preprocessing.
+
+Id #
+
+κ 2 (A)
+
+∗
+
+1
+2
+3
+∗
+4
+∗
+5
+6
+7
+∗
+8
+∗
+9
+10
+11
+∗
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+
+9.21e+03
+1.00e+00
+2.84e+03
+1.03e+04
+5.51e+05
+1.01e+00
+9.00e+00
+8.76e+14
+1.01e+15
+1.65e+15
+9.37e+14
+2.67e+21
+1.05e+17
+1.57e+16
+4.99e+16
+2.61e+03
+1.00e+00
+3.00e+00
+1.12e+00
+2.47e+00
+4.01e+07
+
+gtsv
+RER
+8.77e−15
+1.04e−16
+1.79e−16
+2.19e−14
+1.06e−12
+1.27e−16
+2.80e−16
+9.81e−06
+3.51e−05
+9.08e−05
+2.39e−04
+1.68e+03
+3.73e−01
+6.35e+00
+2.24e+04
+6.23e−15
+1.62e−16
+1.56e−16
+1.45e−16
+1.52e−16
+2.79e−11
+
+gtsv_nopivot
+RER
+6.21e−11
+8.58e−17
+1.82e−16
+2.34e−12
+3.24e−13
+2.30e−16
+2.76e−16
+6.91e−06
+1.64e+00
+1.32e−04
+9.04e+03
+1.30e+03
+9.09e−01
+9.96e+09
+NaN
+2.18e−04
+1.28e−16
+1.73e−16
+1.81e−16
+1.76e−16
+5.76e−11
+
+g-Spike
+RER
+2.38e−14
+1.17e−16
+2.07e−16
+3.84e−14
+1.46e−13
+1.51e−16
+4.38e−16
+9.06e−07
+2.12e−05
+1.37e−04
+8.40e−05
+1.57e+03
+2.00e+00
+5.70e+03
+7.28e+03
+5.01e−15
+1.54e−16
+1.85e−16
+1.67e−16
+1.73e−16
+5.01e−11
+
+MATLAB
+RER
+1.38e−14
+7.08e−17
+1.50e−16
+8.36e−15
+1.47e−13
+1.29e−16
+2.52e−16
+2.93e−05
+2.34e−05
+5.27e−05
+5.74e−04
+9.02e+03
+8.07e−01
+1.45e−02
+1.99e+03
+2.06e−15
+1.12e−16
+1.26e−16
+1.08e−16
+1.18e−16
+1.29e−11
+
+gtsv
+NBE
+1.70e−15
+7.77e−17
+9.25e−17
+7.85e−15
+2.66e−15
+9.22e−17
+8.50e−17
+9.84e−17
+1.20e−16
+1.22e−18
+8.35e−17
+1.09e−10
+8.65e−17
+1.00e−03
+1.36e−14
+9.73e−17
+1.57e−16
+9.93e−17
+9.64e−17
+9.37e−17
+3.51e−16
+
+g-Spike
+NBE
+1.07e−15
+7.77e−17
+9.25e−17
+4.65e−15
+2.01e−15
+1.38e−16
+8.50e−17
+9.84e−17
+1.03e−16
+7.82e−17
+7.51e−17
+1.41e−07
+9.03e−17
+8.59e−11
+1.14e−13
+8.11e−17
+1.57e−16
+9.93e−17
+1.45e−16
+1.41e−16
+1.08e−15
+
+CoreTM i7-3770K
+
+4. Numerical experiments
+The CPU-GPU system used for our experiments was running Ubuntu 14.04.1 LTS (x86_64) on an 8x Intel R(cid:4)
+CPU 3.50GHz. The details of the system, having a total of 448 GPU cores, is shown in Table 1.
+We performed tests with matrices from the collection shown in Appendix A as well as others described below. We compared
+g-Spike to gtsv from the IMPACT group, and gtsv and gtsv_nopivot functions from the NVIDIA cuSPARSE library. The linear
+systems were constructed by generating x using the MATLAB randn function and multiplying by A to obtain f = Ax. Since
+the exact solution is for these problems is available, we also compute the 2-norm of the forward relative error (cid:5)x − x
+∗ (cid:5)/(cid:5)x(cid:5)
+and the (normwise) backward error (cid:5)b − Ax
+∗ (cid:5)/((cid:5)A(cid:5)(cid:5)x
+∗ (cid:5) + (cid:5)b(cid:5)) in the maximum norm. We also computed the errors obtained
+using the MATLAB backslash operation for sparse matrices. The condition numbers and aforementioned error metrics for the test
+matrices from the collection of Appendix A are shown in Table 2. Since the errors for the gtsv codes from IMPACT and cuSPARSE
+were identical, we only need include one column for them. The results in the ﬁrst four columns show forward errors and to
+interpret them we also need to take into account the condition numbers. Note also that some matrices are reducible. On purpose,
+we did not take any special precautions to check for reducibility of the original matrix in g-Spike. In general, the forward errors
+are as predicted by standard theory [35], that is commensurate with the matrix condition number and the measured backward
+stability. Not surprisingly, the forward relative error is larger than 1 in most extremely ill-conditioned matrices. On the other
+hand, for matrices with moderate or small condition, gtsv and g-Spike have similar forward relative error, that is also quite close
+to the error of MATLAB. More important is the fact that the backward errors for g-Spike indicate that it is stable overall, with
+performance rather similar to gtsv. The noticeable differences are in matrices #12 and #14. In the former, the backward error is
+quite a bit larger than in gtsv but the matrix is reducible. In the latter, g-Spike appears to be much more stable. Of course, these
+small backward errors are not suﬃcient to guarantee accurate answers. The forward error in #14 for MATLAB is considerably
+smaller, but it is worth noting that the matrix condition is very high and this small error is an outlier.6
+
+6 This was conﬁrmed by repeated experiments with the same matrix but different instances of its random elements; cf. URL https://www.dropbox.com/
+sh/k5meofkmdsj4k0m/AACotwRBxPT8Bb1TOVZml09ga?dl=0.
+
+Please cite this article as: I.E. Venetis et al., A direct tridiagonal solver based on Givens rotations for GPU architectures, Parallel
+Computing (2015), http://dx.doi.org/10.1016/j.parco.2015.03.008
+
+JID: PARCO
+
+10
+
+ARTICLE IN PRESS
+
+I.E. Venetis et al. / Parallel Computing 000 (2015) 1–16
+
+[m3Gsc;April 22, 2015;20:16]
+
+Fig. 7. (Left) Runtimes for a matrix that requires substantial pivoting activity in the algorithm used by the gtsv implementations. (Right) Runtimes for a matrix
+that does not require pivoting.
+
+Fig. 7 shows runtimes for matrices #1 and #18 from the collection. The ﬁrst has random elements and the second is the standard
+Toeplitz matrix trid [−1.0, 4.0, −1.0], which is diagonally dominant and hence does not require pivoting. Each experiment has
+been repeated 300 times and the reported time is the average of all repetitions. We observe that when pivoting is required in the
+gtsv codes of IMPACT and cuSPARSE, runtimes are similar to those of g-Spike for sizes up to 220 . However, a clear trend emerges
+for larger matrices, where g-Spike outperforms the other two implementations. When no pivoting is necessary, g-Spike manages
+to withhold a performance comparable with the other two approaches. As expected, gtsv_nopivot (which completely avoids
+pivoting and thus requires the least number of operations among the tested implementations) outperforms all other algorithms.
+This superior behavior holds up to order 220 . Interestingly, from then on, gtsv_nopivot appears to slow down, whereas g-Spike
+maintains execution times again comparable to the other methods. Some ﬂuctuations can be observed for small matrix sizes in
+both graphs of Fig. 7. The fact that these appear for the exact same sizes for different matrices leads to the conclusion that they
+are caused by a suboptimal mapping of the operations to the execution units of the used GPU. As the size of each test matrix
+increases, the reasons for these imbalances disappear.
+We attribute this good performance of g-Spike to the overlap of stalls with computations, as described in Section 3.1 and all
+other performance driven optimizations presented earlier. Furthermore, it has to be noted that when pivoting is required, it is
+possible that threads within a warp will diverge, i.e. some of them might follow one path in a condition, whereas the rest of them
+will follow another path. On current GPUs, this has severe performance implications, as execution of the two divergent paths is
+serialized. On the other hand, g-Spike does not suffer from this issue, as there is no need for conditional execution of code in
+most cases.
+The previous observations are further conﬁrmed by the runtimes depicted in Fig. 8 from experiments with four representative
+matrices from Table A.1. Matrices #1 and #4 (random), #17 (symmetric positive deﬁnite and diagonally dominant) and #21 (ill-
+conditioned). All return a forward error commensurate with their condition numbers. It can be observed that the runtimes of
+g-Spike and gtsv_nopivot are independent of matrix characteristics. On the other hand, it is clear that even though the gtsv
+codes of IMPACT and cuSPARSE are very well written, painstakingly minimizing branch divergences due to pivoting by means of
+dynamic tiling, divergences still degrade performance.
+Our next experiments are designed to show the effect of singularities in the blocks. We ﬁrst determined the block size used
+by each method in the Spike partitioning and constructed matrices with singular blocks of that size based on matrices #1 and
+#18 of Table A.1. The size of these matrices was chosen to be n = 1, 048, 576. For #1, we ﬁrst generated a random, full rank matrix
+of size m × (m − 1), multiplied by its transpose and computed its Hessenberg form, which will be of rank m − 1 and because of
+symmetry, will also be tridiagonal. We then replaced selected diagonal blocks of the original matrix with these symmetric but
+singular blocks. For matrix #18 (symmetric Toeplitz with eigenvalues explicitly known), we rendered singular a speciﬁc number
+of diagonal blocks by simple diagonal shift, that is replacing some of the diagonal blocks Aj by (Aj − ωI), where ω is the smallest
+eigenvalue of Aj nearest zero. Tables 3 and 4 show the results for the relative errors and the accompanying Figs. 9 and 10 depict
+them as plots. Results are also shown for reference for matrices with no singular blocks, while, at the other extreme (the case
+of 32,768) all blocks are singular. As soon as even one singular block is present, there is an immediate degradation both in the
+accuracy but also in performance of gtsv. This is expected, since it was not designed to handle singular blocks. Using g-Spike,
+we are able to obtain an acceptable solution even for the case of many singular blocks.
+We ﬁnally perform a set of experiments that show the limits of our direct approach. This is when the partitioning contains
+numerically singular blocks for which Givens-QR is not rank revealing. We use matrices #1 and #18 as before and implant in them
+singular blocks that are created as follows: First, a diagonal matrix is constructed with some (diagonal) elements smaller than
+the machine epsilon or zero. Then an orthogonally similar Hessenberg matrix (hence tridiagonal, due to symmetry) is generated.
+
+Please cite this article as: I.E. Venetis et al., A direct tridiagonal solver based on Givens rotations for GPU architectures, Parallel
+Computing (2015), http://dx.doi.org/10.1016/j.parco.2015.03.008
+
+JID: PARCO
+
+ARTICLE IN PRESS
+
+[m3Gsc;April 22, 2015;20:16]
+
+I.E. Venetis et al. / Parallel Computing 000 (2015) 1–16
+
+11
+
+Fig. 8. GPU performance evaluation for four different matrices and sizes.
+
+Table 3
+Forward relative errors for matrix #18
+(Toeplitz).
+
+sing.blks.
+
+0
+1
+2
+4
+8
+32
+128
+512
+2048
+8192
+32768
+
+gtsv
+2.22e−16
+1.35e−05
+1.91e−05
+2.71e−05
+4.39e−05
+9.28e−05
+2.17e−04
+4.49e−04
+1.13e−03
+2.89e−03
+3.45e−03
+
+g-Spike
+1.35e−16
+6.75e−16
+9.56e−16
+1.34e−15
+1.89e−15
+3.76e−15
+7.48e−15
+1.50e−14
+3.02e−14
+5.87e−14
+8.42e−14
+
+Table 4
+Forward relative errors for matrix #1
+(random).
+
+sing.blks.
+
+0
+1
+2
+4
+8
+32
+128
+512
+2048
+8192
+32768
+
+gtsv
+3.48e−13
+3.05e−05
+9.30e−05
+1.88e−04
+4.05e−04
+1.89e−03
+2.16e−02
+2.09e−02
+9.32e−02
+3.48e+00
+1.18e+01
+
+g-Spike
+7.01e−12
+5.85e−13
+9.49e−13
+2.24e−12
+3.73e−13
+2.27e−12
+7.85e−12
+9.02e−12
+2.86e−12
+1.22e−11
+1.87e−10
+
+Please cite this article as: I.E. Venetis et al., A direct tridiagonal solver based on Givens rotations for GPU architectures, Parallel
+Computing (2015), http://dx.doi.org/10.1016/j.parco.2015.03.008
+
+JID: PARCO
+
+12
+
+ARTICLE IN PRESS
+
+I.E. Venetis et al. / Parallel Computing 000 (2015) 1–16
+
+[m3Gsc;April 22, 2015;20:16]
+
+Fig. 9. Plot of data from Table 3.
+
+Fig. 10. Plot of data from Table 4.
+
+Table 5
+Forward and backward errors when g-Spike fails to detect near singularity of the diagonal blocks. gtsv
+is also unsuccessful. All values are with respect to the max-norm.
+
+mx id
+
+Cond.
+
+MATLAB “\”
+
+(sing. blks)
+
+#1(1)
+#1(4)
+
+#18(1)
+#18(4)
+
+est.
+6e+07
+6e+07
+3e+04
+1e+03
+
+RER
+7.8e−11
+1.8e−10
+7.4e−14
+6.8e−15
+
+NBE
+4.0e−17
+4.1e−17
+7.1e−17
+7.1e−17
+
+gtsv
+
+RER
+5.4e−02
+3.4e−02
+1.4e−04
+9.3e−01
+
+g-Spike
+
+RER
+6.3e−01
+8.9e−01
+3.6e−04
+2.2e−01
+
+NBE
+2.2e−03
+2.1e−03
+6.1e−06
+6.1e−02
+
+NBE
+1.6e−03
+6.6e−04
+5.7e−05
+1.4e−02
+
+Table 5 shows the number of singular blocks, the estimated inﬁnity norm condition of the underlying matrix, as well as the
+forward and backward error estimates. We note that neither gtsv was successful for the same matrices. To increase robustness
+it would be advantageous to provide a warning signal to the user. Such an effort could be based on a condition estimator for each
+block, of the type described in [33]; this utilizes Givens-QR and thus lends itself for implementation as an optional module of
+g-Spike.
+
+5. Other related work
+
+Even though there have been many proposals for tridiagonal solvers on GPUs, e.g. [20,31,42,49,55,61,62], most are not
+applicable or prone to failure in the general case; cf. experiments with gtsv_nopivot in Table 2 and in [17].
+
+Please cite this article as: I.E. Venetis et al., A direct tridiagonal solver based on Givens rotations for GPU architectures, Parallel
+Computing (2015), http://dx.doi.org/10.1016/j.parco.2015.03.008
+
+JID: PARCO
+
+ARTICLE IN PRESS
+
+[m3Gsc;April 22, 2015;20:16]
+
+I.E. Venetis et al. / Parallel Computing 000 (2015) 1–16
+
+13
+
+Most parallel tridiagonal solvers proposed in the literature for general matrices combine partitioning with pivoting or some
+other scheme to prevent instability; cf. [1–4,6,7,21,47,60]. Even though we do not know of GPU implementations of these
+algorithms, we provide some brief comments of relevance here. References [1,6–8] discuss also methods that ﬁrst rearrange
+the matrix to block bidiagonal form and then applies partitioning and block elimination on the resulting system based on LU
+with partial pivoting or Householder-based QR designed to avoid pivot growth. These works also demonstrate the importance
+of some decisions related to the organization of the computation and storage in the overall performance. There have also been
+proposals for low rank modiﬁcations to enable decoupling of the original system into independent subproblems, using the
+Sherman-Morrison formula to reconstruct the complete solution; cf. [28] for some early work; Ref. [47], in particular, describes
+using the aforementioned formula and selecting the partitioning in light not only of its effect on the workload but also on the
+numerical properties of the individual factors. The work in reference [60] is the closest to ours in spirit since it is one of the few
+contributions to explicitly address the case of singular submatrices in partitioning-based parallel banded solvers. Each submatrix
+from the partition (of the type used in [21]) is factored with a special row pivoting strategy. When no suitable pivot is found
+(implying submatrix singularity), lookahead is applied, that is subsequent columns (one for tridiagonals) are considered. This
+is similar to the strategy of [56] that we also use in this paper. To the best of our knowledge, this similarity of these two early
+contributions has not been observed before. Interestingly, ref. [60] proposes a sequential method to solve the reduced system.
+It has been observed, however ([5,18]), that this can cause bottlenecks for large problems. Givens rotations for linear systems
+were used in GPUs in [38]. The conclusion was that Householder transformations are more effective, but this was based on
+performance for dense linear systems. We showed here that a Givens based method is very effective for tridiagonal systems and
+so our results complement that study.
+Finally some comments about related parallel software. The solver for general tridiagonal systems in Scalapack is pdgbsv7
+(written for general banded systems, cf. [12]) and pdgtsv in the IBM ESSL library [24]. These algorithms use divide and conquer
+and a partitioning scheme slightly different from Spike. Gaussian elimination with partial pivoting is applied independently for
+each subsystem followed by the solution of the reduced system corresponding to the partitioning using block cyclic reduction.
+If no errors are detected, the ﬁnal solution is retrieved after back substitution that can be conducted in parallel. A variable is set
+accordingly if any submatrix (either portion of the global submatrix factored locally or one representing interactions between
+processes) locally is detected to be singular (e.g. from the pivot size). In that case, the results are considered unreliable.
+
+6. Conclusion
+
+Based on an algorithm proposed in [56], we developed g-Spike, a direct solver for tridiagonal systems based on Givens-QR
+on GPUs. We experimented with systems of order up to O(107 ) and showed that the method is competitive with cuSPARSE
+library solvers. Moreover, it returns accurate solutions for some systems for which existing methods fail or are not applicable
+either because they are designed for systems with special structure or because the partitioning leads to singular blocks along
+the diagonal. The method is most appropriate for matrices containing singular blocks for which Givens-QR is rank revealing and
+each can be rendered nonsingular by a rank-1 modiﬁcation.
+Our effort also shows that with careful programming, the additional cost of Givens-QR can be hidden. This could serve as a
+guide for future efforts using Givens rotations. It would also be interesting to explore the application of square-root-free Givens
+rotations and to investigate the extension and performance behavior of the g-Spike approach for systems of wider bandwidth.
+Finally, g-Spike can be extended to handle multiple right-hand sides or multiple systems, as long as there is suﬃcient memory.
+
+Acknowledgments
+
+We thank Peter Arbenz and Olaf Schenk for their hospitality in Lugano during PMAA, Volker Mehrmann for providing us
+with ref. [47] and the reviewers for their comments and suggestions and for pointing out references [13,14]. We thank the
+Cyprus Institute for giving us access to their systems. This research has been co-ﬁnanced by the European Union (European
+Social Fund – ESF) and Greek national funds through the Operational Program Education and Lifelong Learning of the National
+Strategic Reference Framework (NSRF) - Research Funding Program: THALES: Reinforcement of the interdisciplinary and/or
+inter - institutional research and innovation, (MIS-379421, “Expertise development for the aeroelastic analysis and the design-
+optimization of wind turbines”). Finally we are grateful that the IMPACT group has made their codes available to the research
+community for experimentation. Our code, g-Spike as well as a complete set of timing measurements and related statistics for
+all matrices in this paper are publicly available8 .
+
+Appendix A. Matrix collection
+
+Most of the matrices in this set, tabulated in Table A.1, have been used as benchmarks for tridiagonal solvers by various
+researchers; cf. [17,33,59].
+
+7 See http://www.netlib.org/scalapack/explore-html/d0/d92/pdgbsv_8f_source.html.
+8 At the URL http://scgroup19.ceid.upatras.gr/g-spike.
+
+Please cite this article as: I.E. Venetis et al., A direct tridiagonal solver based on Givens rotations for GPU architectures, Parallel
+Computing (2015), http://dx.doi.org/10.1016/j.parco.2015.03.008
+
+JID: PARCO
+
+14
+
+ARTICLE IN PRESS
+
+I.E. Venetis et al. / Parallel Computing 000 (2015) 1–16
+
+[m3Gsc;April 22, 2015;20:16]
+
+Table A.1
+Matrix collection (order denoted by n). The “†” indicates reducibility. MATLAB functions
+are used. Function tridiag (L,D,U) returns a tridiagonal matrix with main diagonal D
+and sub and superdiagonals L, U. U (−1, 1) is the uniform distribution.
+
+Id
+
+1
+2
+3
+4†
+5†
+6
+7
+8†
+9†
+10†
+11
+12†
+13
+14
+15
+16
+17
+18
+19
+20
+21
+
+Description
+tridiag(n,L,D,U), with L,D,U sampled from U (−1, 1)
+tridiagonal & Toeplitz; diagonal equal to 1e+08; L,U sampled from U (−1, 1)
+gallery(‘lesp’,n)
+same as #1, with L(n/2+1,n/2)= 1e-50∗L(n/2+1,n/2)
+same as #1, each element of L,U has 50%; chance to be zero
+tridiagonal & Toeplitz, D=64∗ones(n,1), L,U sampled from U (−1, 1)
+inv( gallery(‘kms’,n,0.5) Toeplitz, inverse of Kac-Murdock-Szegö
+gallery(‘randsvd’,n,1e15,2,1,1)
+gallery(‘randsvd’,n,1e15,3,1,1)
+gallery(‘randsvd’,n,1e15,1,1,1)
+gallery(‘randsvd’,n,1e15,4,1,1)
+same as #1, L = L∗1e-50
+gallery(‘dorr’,n, 1e-4)
+tridiag(n,L,1e-8∗ones(n,1),U), with L,U sampled from U (−1, 1)
+tridiag(n,L,zeros(n,1),U), with L,U sampled from U (−1, 1)
+tridiag(n,ones(n-1,1),1e-8∗ones(n,1),ones(n-1,1))
+tridiag(n,ones(n-1,1),1e8∗ones(n,1),ones(n-1,1))
+tridiag(-ones(n-1,1),4∗ones(n,1),-ones(n-1,1))
+tridiag(-ones(n-1,1),4∗ones(n,1),ones(n-1,1))
+tridiag(-ones(n-1,1),4∗ones(n,1),U), U sampled from U (−1, 1)
+from computation of Fourier coeffs of Legendre polynomials [59]
+
+Appendix B. Givens rotations
+⎛
+⎞
+Recall that Givens rotations (see e.g. [32]) in Rn are orthogonal matrices of the form
+⎜⎜⎝
+⎟⎟⎠
+
+Gk (ξk , ξk+1 ) =
+
+Ik−1
+
+ck sk
+−sk ck
+
+In−k−1
+(cid:8)
+and for k = 1, . . . , n − 1. Then if x = (ξ1 , . . . , ξn ) ∈ Rn , then
+= ξ
+k+1
++ξ 2
+(cid:14)(cid:3)
+(cid:8)
+ξ 2
+k+1
+k
++ ξ 2
+ξ 2
+k+1
+k
+
+, 0 · · · (cid:11)
+
+.
+
+=
+
+(cid:8)
+
+where ck
+
+ξ
+k
++ξ 2
+ξ 2
+k+1
+k
+Gk (ξk , ξk+1 )v =
+
+and sk
+(cid:13)
+
+(cid:11), · · · ,
+
+If the values of x are known from the context, we write simply Gk .
+
+Appendix C. Reduced system
+(cid:7) = ˆy
+Once the reduced system ˆS ˆx = ˆy is extracted it can be permuted as ˆSPP
+−1 ˆx = ˆy, forming a new tridiagonal system ˆS
+ˆx
+(Fig. C.1). At the next recursion step g-Spike is called and the system is dynamically partitioned. In order to retain eﬃcient
+load balancing and the convenient tiling paradigm, the size of each partition will be a power of 2. Hence each partition will be
+structured as in Fig. C.2(b). This might lead to solution failure in certain cases (i.e. the spike elements might all be very close to
+zero). To avoid this while preserving the tridiagonal structure a new permutation is performed, swapping the last column of each
+partition with the ﬁrst column of the next one, as shown in Fig. C.2(c).
+
+(cid:7)
+
+1
+
+v (t)
+1 v (b)
+w(t) 1
+w(b)
+
+v (t)
+1 v (b)
+w(t) 1
+w(b)
+
+v (t)
+1 v (b)
+w(t) 1
+w(b)
+
+1
+
+1 v (t)
+v (b) 1
+1 w(t) v (t)
+w(b) v (b) 1
+1 w(t) v (t)
+w(b) v (b) 1
+1 w(t)
+w(b) 1
+
+Fig. C1. Left: the reduced system as extracted. Right: the reduced system permuted forming a tridiagonal matrix.
+
+Please cite this article as: I.E. Venetis et al., A direct tridiagonal solver based on Givens rotations for GPU architectures, Parallel
+Computing (2015), http://dx.doi.org/10.1016/j.parco.2015.03.008
+
+JID: PARCO
+
+ARTICLE IN PRESS
+
+[m3Gsc;April 22, 2015;20:16]
+
+I.E. Venetis et al. / Parallel Computing 000 (2015) 1–16
+
+15
+
+.
+
+.
+
+.
+
+.
+
+.
+
+.
+
+w(t) v(t)
+w(b) v(b)
+1
+1 w(t) v(t)
+w(b) v(b)
+1
+1 w(t) v(t)
+w(b) v(b)
+
+v(b)
+1
+1 w(t) v(t)
+w(b) v(b)
+1
+1 w(t) v(t)
+w(b) v(b)
+1
+1 w(t)
+
+.
+
+.
+
+.
+
+.
+
+.
+
+.
+
+(a)
+
+(b)
+
+.
+
+.
+
+.
+
+1
+w(t)
+w(b)
+
+v(t)
+v(b)
+1 v(t)
+v(b)
+1
+1 w(t)
+w(b)
+
+(c)
+
+v(t)
+v(b)
+1
+
+1
+w(t)
+
+w(b)
+
+.
+
+.
+
+.
+
+Fig. C2. (a) and (b) Two different ways of partitioning the tridiagonal reduced system. (c) : permuted version of (b).
+
+References
+
+[1] P. Arbenz, On ScaLAPACK’s banded system solvers, in: M. Deville, R. Owens (Eds.), Proceedings of the 16th IMACS World Congress 2000 on Scientiﬁc
+Computation, Applied Mathematics and Simulation (IMACS2000). IMACS, 2000, p. 6.
+[2] P. Arbenz, A. Cleary, J. Dongarra, M. Hegland, et al., A comparison of parallel solvers for diagonally dominant and general narrow-banded linear systems II,
+in: P. Amestoy (Ed.), Euro-Par’99. Vol. 1685 of LNCS, Springer, Berlin, Heidelberg, 1999, pp. 1078–1087.
+[3] P. Arbenz, A. Cleary, J. Dongarra, M. Hegland, A comparison of parallel solvers for general narrow banded linear systems., Parallel Distributed Comput. Pract.
+2 (4) (1999) 385–400.
+[4] P. Arbenz, W. Gander, A survey of direct parallel algorithms for banded linear systems, 1994, Tech. Rep. 221, Departement Informatik, ETH, Zurich.
+[5] P. Arbenz, W. Gander, Direct methods for banded linear systems on massively parallel processor computers, in: PPSC, 1995, pp. 506–507.
+[6] P. Arbenz, M. Hegland, Scalable stable solvers for non-symmetric narrow-banded linear systems, in: P. Mackerras (Ed.), Seventh International Parallel
+Computing Workshop (PCW’97), Australian National University, 1997, pp. P2-U-1–P2-U-6.
+[7] P. Arbenz, M. Hegland, The stable parallel solution of narrow banded linear systems, in: Proceedings of the 8th SIAM Conference Parallel Proc. for Sci.
+Comput., 1997, 8 pages on CD.
+[8] P. Arbenz, M. Hegland, On the stable parallel solution of general narrow banded linear systems, High Perf. Algs. for Struc. Mat. Probls (1998) 47–73.
+[9] I. Bar-On, Checking non-singularity of tridiagonal matrices, The Electronic Journal of Linear Algebra 6 (December 1999) 11–19.
+[10] I. Bar-On, B. Codenotti, M. Leoncini, Checking robust nonsingularity of tridiagonal matrices in linear time, BIT Numer. Math. 36 (2) (1996) 206–220.
+[11] D. Bindel, J. Demmel, W. Kahan, O. Marques, On computing givens rotations reliably and eﬃciently, ACM Trans. Math. Soft. (TOMS) 28 (2) (2002) 206–238.
+[12] L. Blackford, et al., 1997, ScaLAPACK User’s Guide, SIAM, Philadelphia.
+[13] E. Bölükba ¸si, Aug. 2013, A new multi-threaded and recursive direct algorithm for parallel solution of sparse linear systems. Master’s thesis, Middle East
+Technical University, Ankara, Turkey.
+[14] M.M. Bölükba ¸si E. Manguo ˘glu, A new multi-threaded and recursive direct algorithm for parallel solution of sparse linear systems (abstract), 5th Int’l. Conf.
+ERCIM WG on Computing & Statistics, Oviedo, Spain, November 2013.
+[15] L.-W. Chang, Scalable parallel tridiagonal algorithms with diagonal pivoting and their optimization for many-core architectures, 2014 Ph.D. thesis, Dept. of
+Electrical and Computer Engineering, University of Illinois at Urbana-Champaign.
+[16] L.-W. Chang, W.-M. Hwu, A guide for implementing tridiagonal solvers on GPUs, in: V. Kindratenko (Ed.), Numerical Computations with GPUs, Springer,
+2014, pp. 29–44.
+[17] L.-W. Chang, J. Stratton, H. Kim, W.-M. Hwu, A scalable, numerically stable, high-performance tridiagonal solver using GPUs, Proc. Int’l. Conf. High Performance
+Computing, Networking Storage and Analysis. SC ’12, IEEE Computer Society Press, Los Alamitos, CA, USA, 2012, pp. 27:1–27:11.
+[18] A. Cleary, J. Dongarra, Implementation in scalapack of divide and conquer algorithms for banded and tridiagonal linear systems, 1997, Tech. Rep. UT-CS-97-
+358, University of Tennessee Computer Science Technical Report.
+[19] J. Conroy, Parallel algorithms for the solution of narrow banded systems, Appl. Numer. Math. 5 (1989) 409–421.
+[20] A. Davidson, Y. Zhang, J. Owens, An auto-tuned method for solving large tridiagonal systems on the GPU, in: Proc. 2011 IPDPS. IEEE, 2011, pp. pp.956–965.
+[21] J. Dongarra, L. Johnsson, Solving banded systems on a parallel processor, Parallel Comput. 5 (1–2) (1987) 219–246.
+[22] J. Erway, R. Marcia, A backward stability analysis of diagonal pivoting methods for solving unsymmetric tridiagonal systems without interchanges, Numer.
+Linear Algebra Applic 18 (January 2011) 41–54.
+[23] J.B. Erway, R.F. Marcia, J. Tyson, Generalized diagonal pivoting methods for tridiagonal systems without interchanges, IAENG Int. J. Appl. Math. 4 (40) (2010)
+269–275.
+[24] ESSL Manual 2013, Parallel Engineering and Scientiﬁc Subroutine Library 4.2.0: PDGTSV and PDDTSV A General Tridiagonal Matrix Factorization and Solve.
+IBM Corporation http://www-01.ibm.com/support/knowledgecenter/SSNR5K_4.2.0/com.ibm.cluster.pessl.v4r2.pssl100.doc/am6gr_lgttrs.htm.
+
+Please cite this article as: I.E. Venetis et al., A direct tridiagonal solver based on Givens rotations for GPU architectures, Parallel
+Computing (2015), http://dx.doi.org/10.1016/j.parco.2015.03.008
+
+JID: PARCO
+
+16
+
+ARTICLE IN PRESS
+
+I.E. Venetis et al. / Parallel Computing 000 (2015) 1–16
+
+[m3Gsc;April 22, 2015;20:16]
+
+[25] O. E ˘gecio ˘glu, C. Koç, A. Laub, A recursive doubling algorithm for solution of tridiagonal systems on hypercube multiprocessors, J. Comput. Appl. Math. 27
+(1989) 95–108.
+[26] H. Gabb, D. Kuck, P. Tang, D. Wong, A. Sameh, M. Manguoglu, E. Polizzi, Submitted October 2010, accessed October 28, 2014. Intel Adaptive Spike-Based
+Solver, https://software.intel.com/en-us/articles/intel-adaptive-spike-based-solver.
+[27] K. Gallivan, E. Gallopoulos, A. Grama, B. Philippe, E. Polizzi, Y. Saad, F. Saied, D. Sorensen, et al., Parallel numerical computing from Illiac IV to exascale – the
+contributions of Ahmed H. Sameh, in: M. Berry (Ed.), High-Performance Scientiﬁc Computing, Springer, London, 2012, pp. 1–44.
+[28] E. Gallopoulos, Processor arrays for problems in computational physics. tech. rep. UIUCDCS-R-85-1193, Department of Computer Science, University of
+Illinois at Urbana-Champaign, January 1985.
+[29] W. Gander, G.H. Golub, Cyclic reduction: history and applications, in: F. Luk, R. Plemmons (Eds.), Proc. Workshop on Scientiﬁc Computing, Springer-Verlag,
+New York, 1997, pp. 73–85.
+[30] P.E. Gill, G. Golub, W. Murray, M. Saunders, Methods for modifying matrix factorizations, Math. Comp. 28 (1974) 505–535.
+[31] D. Goeddeke, R. Strzodka, Cyclic reduction tridiagonal solvers on GPUs applied to mixed-precision multigrid, IEEE Trans. Parallel Distributed Syst. 22 (1)
+(2011) 22–32.
+[32] G. Golub, C. Van Loan, Matrix Computations, 4th, Johns Hopkins, 2013.
+[33] G. Hargreaves, Computing the condition number of tridiagonal and diagonal-plus-semiseparable matrices in linear time, SIAM J. Matrix Anal. Appl. 27 (3)
+(2005) 801–820.
+[34] M. Harris, Accessed October 28, 2014. CUDA Pro Tip: Fast and robust computation of Givens rotations. http://devblogs.nvidia.com/parallelforall/cuda-pro-
+tip-fast-robust-computation-givens-rotations/.
+[35] N. Higham, Accuracy and Stability of Numerical Algorithms, 2nd Edition, SIAM, Philadelphia, 2002.
+[36] R. Hockney, C. Jesshope, P.C. Architecture, Programming and Algorithms, 2nd Edition, Adam Hilger, 1988.
+[37] W.-M. Hwu, What is ahead for parallel computing, JPDC 74 (7) (2014) 2574–2581 special Issue on Perspectives on Parallel and Distributed Processing.
+[38] A. Kerr, D. Campbell, M. Richards, QR decomposition on GPUs, in: Proc. 2nd Workshop on General Purpose Processing on GPUs. GPGPU-2, ACM, New York,
+NY, USA, 2009, pp. 71–78.
+[39] H.-S. Kim, S. Wu, L.-w. Chang, W.-m. Hwu, A scalable tridiagonal solver for GPUs, in: Proc. ICPP ’11, IEEE Computer Society, Washington, DC, USA, 2011,
+pp. 444–453.
+[40] V. Kindratenko, R. Wilhelmson, R. Brunner, T. Martnez, W. m. Hwu, High-performance computing with accelerators, Comput. Sci. Eng. (2010).
+[41] D. Kirk, W.-m. Hwu, Programming Massively Parallel Processors: A Hands-on Approach, 1st, Morgan Kaufmann Publishers Inc., San Francisco, CA, USA,
+2010.
+[42] J. Lamas-Rodriguez, F. Argüello, D. Heras, M. Bóo, Memory hierarchy optimization for large tridiagonal system solvers on GPU, in: 10th IEEE Int’l. Symposium
+on Parallel and Distributed Processing with Applications. IEEE, July 2012, pp. 87–94.
+[43] A. Li, A. Seidl, D. Negrut, A GPU-based LU factorization of dense banded matrices. Tech. Rep. TR-2012-04, University of Wisconsin, Simulation Based
+Engineering Laboratory, source code in https://github.com/spikegpu/.2012.
+[44] J. López, E. Zapata, Uniﬁed architecture for divide and conquer based tridiagonal system solvers, IEEE Trans. Comput. 43 (12) (December 1994) 1413–1425.
+[45] M. Manguoglu, F. Saied, A. Sameh, A. Grama, Performance models for the Spike banded linear system solver, Sci. Program. 19 (1) (January 2011) 13–25.
+[46] M. Manguoglu, A. Sameh, O. Schenk, Pspike: a parallel hybrid sparse linear system solver, in: H. Sips, D. Epema, H.-X. Lin (Eds.), Euro-Par 2009 Parallel
+Processing. Vol. 5704 of Lecture Notes in Computer Science, Springer, Berlin, 2009, pp. 797–808.
+[47] V. Mehrmann, Divide and conquer methods for tridiagonal linear systems, in: W. Hackbusch (Ed.), Proc. 6th GAMM-Seminar, Kiel, January 1990. No. 68 in
+Notes on Numerical Fluid Mechanics (Parallel Algorithms for Partial Differential Equations), Vieweg-Verlag, 1990, pp. 188–199.
+[48] K. Mendiratta, E. Polizzi, A threaded SPIKE algorithm for solving general banded systems, Paral. Comput. 37 (2011) 733–741.
+[49] B. Murphy, Solving tridiagonal systems on a GPU, in: 20th Annual Int’l. Conf. High Perf. Comput., HiPC 2013, Bengaluru (Bangalore), Karnataka, India,
+December 18–21, 2013, IEEE Computer Society, 2013, pp. 159–168.
+[50] NVIDIA, Accessed October 28, 2014. CUDA Toolkit Documentation v. 6.5: cuSPARSE, http://docs.nvidia.com/cuda/cusparse.
+[51] J. Owens, M. Houston, D. Luebke, J.S. S. Green, J. Phillips, GPU computing, Proc. IEEE 96 (5) (2008) 879–899.
+[52] E. Polizzi, Encyclopedia of Parallel Computing, in: D. Padua (Ed.), Springer, 2011, pp. 1912–1920.
+[53] E. Polizzi, A. Sameh, A parallel hybrid banded system solver: The SPIKE algorithm, Parallel Comput. 32 (2006) 177–194.
+[54] E. Polizzi, A. Sameh, Spike – a parallel environment for solving banded linear systems, Comp. Fluids 36 (2007) 113–120.
+[55] P. Quesada-Barriuso, J. Lamas-Rodríguez, D. Heras, M. Bóo, F. Argüello, Selecting the best tridiagonal system solver projected on multi-core CPU and GPU
+platforms, in: H. Arabnia (Ed.), Proc. PDPTA’11, 2011, pp. 839–845.
+[56] A. Sameh, D. Kuck, On stable parallel linear system solvers, J. Assoc. Comput. Mach. 25 (1) (January 1978) 81–91.
+[57] J. Suh, Y. Kim, 2014, Accelerating MATLAB with GPU Computing: A Primer with Examples, Morgan Kaufmann.
+[58] I.-J. Sung, J. Stratton, W.-M. Hwu, Data layout transformation exploiting memory-level parallelism in structured grid many-core applications, in: Proc. PACT
+’10. ACM, New York, NY, USA, 2010, pp. 513–522.
+[59] P.N. Swarztrauber, A parallel algorithm for solving general tridiagonal equations, Math. Comp. 33 (January 1979) 185–199.
+[60] S. Wright, Parallel algorithms for banded linear systems, SIAM J. Sci. Stat. Comput. 12 (4) (July 1991) 824–842.
+[61] Y. Zhang, J. Cohen, J. Owens, Fast tridiagonal solvers on the GPU, ACM SIGPLAN Notices 45 (5) (2010) 127–136.
+[62] D. Zhao, J. Yu, Eﬃciently solving tri-diagonal system by chunked cyclic reduction and single-GPU shared memory, J. Supercomput. (2014) 1–22.
+
+Please cite this article as: I.E. Venetis et al., A direct tridiagonal solver based on Givens rotations for GPU architectures, Parallel
+Computing (2015), http://dx.doi.org/10.1016/j.parco.2015.03.008
+
+

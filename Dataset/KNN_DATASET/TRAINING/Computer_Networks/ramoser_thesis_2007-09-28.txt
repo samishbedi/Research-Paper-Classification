@@ -1,0 +1,1987 @@
+ 
+
+Network Maintenance 
+Tool for Evolving 
+Computer Networks 
+ 
+ 
+ 
+ 
+ 
+Manfred Ramoser 
+ 
+3074 
+ 
+ 
+October 2007 
+ 
+Tutor: Dr. Sergio Tessaris 
+ 
+
+ 
+
+ 
+ 
+
+ 
+
+ 
+
+ 
+
+1  Content 
+Figures and tables ..................................................................................... 5 
+2 
+
+2.1 
+
+2.2 
+
+List of figures ........................................................................................................................... 5 
+
+List of tables............................................................................................................................. 5 
+
+3 
+
+Introduction .............................................................................................. 6 
+
+Description of the project ............................................................................................................... 6 
+
+Temporal issues ............................................................................................................................... 6 
+
+Web development ........................................................................................................................... 6 
+
+API.................................................................................................................................................... 6 
+
+4 
+
+Background ............................................................................................... 7 
+
+4.1 
+
+Temporal Databases ................................................................................................................ 7 
+
+Definitions ....................................................................................................................................... 8 
+
+Granularity ....................................................................................................................................... 9 
+
+Infinity.............................................................................................................................................. 9 
+
+Gaps ................................................................................................................................................. 9 
+
+Overlap ............................................................................................................................................ 9 
+
+Global update ................................................................................................................................ 10 
+
+4.2  Web application .................................................................................................................... 10 
+
+Client server................................................................................................................................... 10 
+
+Model, view, controller ................................................................................................................. 10 
+
+Multi tier application ..................................................................................................................... 11 
+
+Security .......................................................................................................................................... 12 
+
+4.3 
+
+System architecture............................................................................................................... 13 
+
+Pure object oriented programming language ............................................................................... 13 
+
+4.4 
+
+Extreme programming .......................................................................................................... 14 
+
+Simple design ................................................................................................................................. 14 
+
+40 hours week ............................................................................................................................... 14 
+
+Refactoring .................................................................................................................................... 14 
+
+Testing ........................................................................................................................................... 14 
+
+4.5 
+
+Ruby on Rails ......................................................................................................................... 15 
+
+Active Record ................................................................................................................................. 15 
+
+DRY principle ................................................................................................................................. 16 
+
+Helpers........................................................................................................................................... 16 
+
+Database migration ....................................................................................................................... 16 
+
+Single table inheritance ................................................................................................................. 17 
+
+5 
+
+Design and decisions ............................................................................... 18 
+
+5.1 
+
+Technology ............................................................................................................................ 18 
+
+Programming language ................................................................................................................. 18 
+2 of 40 
+
+ 
+
+Development environment ........................................................................................................... 18 
+
+Database ........................................................................................................................................ 18 
+
+Web server .................................................................................................................................... 18 
+
+API protocol ................................................................................................................................... 18 
+
+5.2 
+
+Temporal database ................................................................................................................ 19 
+
+Handling infinity ............................................................................................................................ 19 
+
+Time frame captured ..................................................................................................................... 20 
+
+Time intervals ................................................................................................................................ 20 
+
+Gaps ............................................................................................................................................... 20 
+
+Granularity ..................................................................................................................................... 20 
+
+Global update ................................................................................................................................ 21 
+
+Implementation ............................................................................................................................. 21 
+
+5.3 
+
+Design .................................................................................................................................... 21 
+
+Requirements ................................................................................................................................ 21 
+
+Level of detail ................................................................................................................................ 22 
+
+User management ......................................................................................................................... 22 
+
+User stories .................................................................................................................................... 23 
+
+Model in natural language ............................................................................................................ 24 
+
+Inheritance .................................................................................................................................... 24 
+
+Modeling........................................................................................................................................ 25 
+
+6 
+
+Development .......................................................................................... 26 
+
+6.1 
+
+Security .................................................................................................................................. 26 
+
+SSL encryption ............................................................................................................................... 26 
+
+SQL injection .................................................................................................................................. 26 
+
+XSS ................................................................................................................................................. 27 
+
+Log files and sensitive information ................................................................................................ 27 
+
+6.2 
+
+6.3 
+
+6.4 
+
+Switching DBMS ..................................................................................................................... 27 
+
+Authentication for the API..................................................................................................... 27 
+
+Update through API ............................................................................................................... 28 
+
+6.5  Many to many problem ......................................................................................................... 28 
+
+6.6 
+
+6.7 
+
+6.8 
+
+XML problem ......................................................................................................................... 28 
+
+Error handling ........................................................................................................................ 29 
+
+Testing ................................................................................................................................... 29 
+
+6.9  Modifying the database ........................................................................................................ 29 
+
+Adding a record ............................................................................................................................. 30 
+
+Editing a record ............................................................................................................................. 30 
+
+Deleting a record ........................................................................................................................... 30 
+
+Deployment ............................................................................................ 31 
+
+3 of 40 
+
+7 
+
+ 
+
+7.1 
+
+Apache Tomcat web server ................................................................................................... 31 
+
+7.2  Mongrel web server with redirection ................................................................................... 31 
+
+8 
+
+9 
+
+10 
+
+11 
+
+12 
+
+Screenshots and description ................................................................... 32 
+
+Conclusion .............................................................................................. 34 
+
+Future work ................................................................................................................................... 34 
+
+Acronyms ................................................................................................ 35 
+
+References .............................................................................................. 36 
+
+Appendix ................................................................................................. 37 
+
+a)  UML diagram of the API ............................................................................................................ 37 
+
+b)  UML diagram of the internal structure of the program ............................................................ 38 
+
+c) 
+
+Schema diagram of the database .............................................................................................. 39 
+
+d)  Used programs and versions ..................................................................................................... 40 
+
+e)  User manual .............................................................................................................................. 40 
+
+ 
+
+ 
+
+4 of 40 
+
+2  Figures and tables 
+
+2.1  List of figures 
+Figure 1: Instant ....................................................................................................................................... 8 
+Figure 2: Interval ..................................................................................................................................... 8 
+Figure 3: Period ....................................................................................................................................... 8 
+Figure 4: Three types of overlapping....................................................................................................... 9 
+Figure 5: Client-server architecture ...................................................................................................... 10 
+Figure 6: model view controller ............................................................................................................ 11 
+Figure 7: Three tier application ............................................................................................................. 12 
+Figure 8: LDAP authentication mechanism ........................................................................................... 13 
+Figure 9: Object oriented paradigm. Inspired by the lecture of Werner Wild ...................................... 14 
+Figure 10: TDD cycle; inspired by the lecture of Werner Wild .............................................................. 15 
+Figure 11: Single table inheritance ........................................................................................................ 17 
+Figure 12: Difference between REST and SOAP .................................................................................... 19 
+Figure 13: Time frame captured by the application .............................................................................. 20 
+Figure 14: Sample network which can be represented ......................................................................... 22 
+Figure 15: User roles.............................................................................................................................. 23 
+Figure 16: “Normalize” server unit ........................................................................................................ 25 
+Figure 17: Mapping of Copier from internal structure to database ...................................................... 26 
+Figure 18: Mapping of Event from internal structure to database ....................................................... 26 
+Figure 19: Login screen .......................................................................................................................... 32 
+Figure 20: Sidebar .................................................................................................................................. 32 
+Figure 21: List of networks .................................................................................................................... 32 
+Figure 22: Details of a network ............................................................................................................. 33 
+Figure 23: Page flow diagram ................................................................................................................ 33 
+ 
+
+2.2  List of tables 
+Table 1: Granularity - one day ................................................................................................................. 9 
+Table 2: Valid database entries ............................................................................................................. 20 
+Table 3: Non valid database entries ...................................................................................................... 20 
+Table 4: Granularity in the application .................................................................................................. 20 
+Table 5: Database deletion .................................................................................................................... 30 
+ 
+
+ 
+
+5 of 40 
+
+3  Introduction 
+
+Description of the project 
+The  project  is  a  web  based  tool  for  network  maintenance.  It  stores  information  about  computers, 
+copiers,  printers,  servers,  server  units,  server  unit  pools,  networks,  LAN’s,  software,  operating 
+systems and events. For devices which’s attributes may change over time the application keeps track 
+of the changes with some concepts a temporal database. Additionally it provides search functionality 
+for devices, a historical search and event management. The application is dedicated to administrators 
+and normal users and provides therefore a user authentication mechanism to distinguish them. 
+
+Temporal issues 
+One  of  the  most  challenging  things  is  the  temporal  support  of  the  application.  Since  a  computer 
+network  evolves  over  time  it  makes  sense  to  store  all  the  historical  information  for  searching  or 
+statistical purposes.  In detail  this means that every  change  to  the data, be  it an update, a new entry 
+or  a  deletion,  is  captured.  To  achieve  this  some  concepts  of  a  temporal  database  have  to  be  used 
+which adds constraints to the database that have to be fulfilled. 
+
+Web development 
+Since  the  internet  is  very  popular  today  there  are  more  and  more  applications  which  provide  their 
+functionalities  through  the web.  To make  it  easy  for  users  to work with  the  application  I  decided  to 
+develop it as a web service. A web service  is a program running on a web server with a connection to 
+the  internet. The clients get  information by sending a request to  the server and getting back an html 
+page which  is rendered  in  the client’s web browser. This makes  the application very  flexible because 
+it can be used on every computer with a web browser and an internet connection. 
+
+API 
+To make  it possible  to  integrate  the  functionalities of the application  into other  tools the application 
+provides  an  API  through  which  the  data  can  be  manipulated.  Software  can  get,  update,  modify  or 
+delete  data  by  sending  requests  over  the  internet  to  the  application.  This  allows  for  example 
+automated tools which collect data of a network to automatically store the data into the application. 
+The  users  of  the  application  have  then  the  possibility  to  administer  and  view  the  data  through  the 
+web interface. 
+
+ 
+
+6 of 40 
+
+4  Background 
+
+4.1  Temporal Databases 
+A  database  is  a  structured  collection  of  data  which  stores  data,  holds  relations  between  data  and 
+makes  it  easy  to  retrieve  the  data  by  using  a  structured  query  language.  Databases  are widely  used 
+today because  in many applications a  reliable,  fast and persistent way of  storing data  is needed.  But 
+not  only  is  the  storage  of  the  data  important  but  also  a  standardized  and  fast  retrieval mechanism, 
+concurrency  control  and  data  recovery.  These  are  the main  requirements  to modern  databases.  To 
+handle  queries  and  to  compute  the  best  way  to  retrieve  the  requested  data  a  so  called  database 
+management system takes care of doing this e.g. MySQL1 or PostgreSQL2. 
+
+As  there  are  different  needs  to  store  the  data  there  exist  different  kinds  of  databases.  For  example 
+there  exist  relational  databases,  object  oriented  databases,  spatial  databases  and  temporal 
+databases.  Relational  databases  are  used  to  store  a  snapshot  of  the  reality  and  they  are  the  first 
+choice  for  most  of  the  applications  because  only  the  current  reality  is  needed.  Relation  is  the 
+mathematical  term  for  table  and  therefore  a  relational  database  is  based  on  tables.  It  stores  all  the 
+data  inside  tables also metadata, data about the data,  is stored  in  tables. To  interconnect  the data  it 
+is  possible  to  have  keys  and  foreign  keys  which  refer  to  other  tables.  In  contrast  to  relational 
+databases  there  are  the  object  oriented  databases  which  store  the  data  of  objects.  This  is  a  good 
+approach when using an object oriented programming  language  like  Java or Ruby. Spatial databases 
+are  designed  to  store  spatial  data.  They  provide  special  treatment  for  spatial  data  and  use  another 
+indexing method to quickly retrieve the requested spatial data. 
+
+The  focus of  this application  lies on  temporal databases. A temporal database  is used to store actual 
+and  historical  information.  It  provides  special  data  types,  a  temporal  data  model  and  a  temporal 
+query language. It keeps track of all the changes on the data and allows querying actual and historical 
+information. To store  temporal data  there are  the concepts of valid  time and  transactional  time  (see 
+definitions). If both are combined then we have a bi temporal relation. 
+To make  it easy  to handle the historical  information an appropriate temporal database management 
+system and an appropriate query language would be needed. Now there exist only a few commercial 
+products  which  provide  temporal  support.  One  of  them  is  TimeDB3.  It  “is  a  bi  temporal  relational 
+database  system  based  on  SQL”  (1).  The  system  uses  the  temporal  query  language  ATSQL24  which 
+was designed by Michael Boehlen, Christian Jensen, Richard Snodgrass and Andreas Steiner. 
+Another  approach  to  have  a  temporal  database  is  to  simulate  one  on  a  relational  database.  This  is 
+possible by adding two columns (start and end date) for a valid time relation and four columns (start, 
+end,  from  and  to  date)  for  a  bi  temporal  relation.  To  simulate  temporal  behaviour  on  a  relational 
+database  some  complex  concepts  are  needed  to  make  sure  that  the  data  is  consistent  and  that  all 
+requirements  of  a  temporal  database  are met.  One  of  these  for  example  is  the  sequenced  primary 
+key.  It  is  used  to  make  sure  that  there  is  no  overlapping  with  an  existing  historical  record  when 
+modifying or adding an entry. The main reference  for simulating a temporal database on a relational 
+database  is  the  book  “Developing  Time-Oriented  Database  Applications  in  SQL”  by  Richard  T. 
+Snodgrass (2). 
+
+The  most  important  issues  and  constraint  which  regard  the  application  that  was  developed  are 
+handles below. 
+
+                                                           
+1 http://www.mysql.com/ 
+2 http://www.postgresql.org/ 
+3 http://www.timeconsult.com/TimeConsult.html  
+4 http://hopl.murdoch.edu.au/showlanguage.prx?exp=6825&language=ATSQL2  
+
+ 
+
+7 of 40 
+
+Definitions 
+
+Instant 
+An instant is a specific point on the time line. E.g.: 2000-01-01 (Figure 1) 
+
+Figure 1: Instant 
+
+ 
+
+Interval 
+An  interval  is an unanchored contiguous portion on  the  time  line.  It  is delimited by  two  instants, has 
+a duration and a direction  (positive or negative) E.g.: 2000-01-01 plus 23 days → 2000-01-24  (Figure 
+2) 
+
+Figure 2: Interval 
+
+ 
+
+Period 
+A  period  is  an  anchored  interval on  the  time  line. E.g.:  summer 2000 →  June  21  2000  to  September 
+23 2000 (Figure 3) 
+
+Figure 3: Period 
+
+ 
+
+Valid-time table 
+A  valid-time  table  is  a  table  which  records  the  history  of  the  modelled  reality.  From  such  a  table 
+historical and actual data can be retrieved. 
+
+Snapshot table 
+A snapshot table is a table which “only” stores the state of the reality of some point in time. Only the 
+actual data is retrievable; historical data is deleted or overwritten. 
+
+Current modification 
+A current modification  is a modification which changes a record with  information of now and of the 
+future. It “only” updates the current state of the database and leaves the historical data untouched. 
+
+Sequenced modification 
+A sequenced modification  is a modification which changes  the historical data of a record.  It  includes 
+sequential updates and deletes. The problem with sequential deletes is that it may create gaps in the 
+history which are not allowed in my application. 
+
+Valid time 
+The valid time is the interval in which the fact is/was valid in reality. 
+
+Transaction time 
+The transaction time is the time interval in which the database believed that the fact was true. 
+
+ 
+
+8 of 40 
+
+Temporal relation 
+A temporal relation holds the valid time. 
+
+Bi temporal relation 
+A bi temporal relation holds the valid time and the transaction time. This two times may coincide but 
+can also differ in some cases. 
+
+Sequenced primary key 
+The  sequenced  primary  key  assures  that  the  natural  constraints  are met.  For  example  this  ensures 
+that a device can not have two different states in the same time interval. 
+
+Granularity 
+Granularity  denotes  the  smallest  difference  which  can  be  captured  by  a  temporal  database.  E.g.  if 
+dates  are  used  for  the  start  and  end  date  than  the  granularity  is  one  day  (Table  1).  It must  be  clear 
+which  granularity  is  needed  in  a  temporal  database  because  this  creates  constraints  for  the  data 
+which will be stored and the data type which holds the valid time interval. 
+
+ID  Name 
+1  HP Desk Jet 815i 
+2  HP Desk Jet 815i 
+
+3  HP Desk Jet 815i 
+
+Start date 
+2000-01-01 
+2000-01-10 
+
+2000-01-20 
+Table 1: Granularity - one day 
+
+End date 
+2000-01-10 
+2000-01-20 
+
+2038-01-19 
+
+Infinity 
+In  order  to  be  able  to  say which  is  the  valid  entry  of  a  device  a  specific  date  in  the  future  has  to  be 
+chosen to represent now. The actual date can not be used because this will clearly change over time. 
+Null  should  not  be  used  because  it  may  be  needed  to  represent  other  states.  Therefore  special 
+attention has to be paid when selecting this date because it may be constrained by the programming 
+language and/or the database used. 
+
+Gaps 
+Gaps  in  the  history  are  not  allowed.  This  means  that  in  a  temporal  database  there  has  to  exist 
+contiguous  historical  information  for  each  temporal  record.  From  the  start  date  of  the  first  entry  to 
+the end date (Jan 19 2038) of the last entry. 
+
+Overlap 
+Overlapping  is  extensively  used  when  simulating  a  temporal  database  on  a  relational  database.  It 
+checks  if  two  time  intervals  overlap  which  is  needed  for  example  to  ensure  the  sequenced  primary 
+key. Figure 4 shows the three different types of overlapping which may occur. 
+
+Figure 4: Three types of overlapping 
+
+ 
+
+ 
+
+9 of 40 
+
+Global update 
+Since  in  a  temporal  database  for  each  change  a  new  record  is  created  there  is  the  concept  of  global 
+update.  Global  update  means  that  instead  of  inserting  a  new  record  into  the  database  with  the 
+changes,  the  global  attributes  of  all  temporal  entries  of  a  device  are  changed.  This  allows  the 
+application  to  define  global  attributes  which  must  be  the  same  for  all  entries  of  a  device.   Another 
+possibility would be to make them not changeable at all. 
+
+4.2  Web application 
+
+Client server 
+The program is based on the client-server architecture. This means that there is a server which serves 
+many  clients  by  providing  them  information.  The  client  is  the  active  node  which  interacts  directly 
+with  the user  through a UI and  sends  requests  to  the  server.  In  the normal case  it  sends  requests  to 
+apparently one server. The server  is the passive node which waits for requests to accept and process 
+them  (Figure  5).  It  handles  normally  many  clients  and  has  no  direct  interaction  with  the  end  user. 
+This architecture  is very common  in computer networks because the application does not have to be 
+installed on the computer. 
+
+A  big  advantage  of  this  architecture  is  that  if  there  are  changes  in  the  application  (bug  fixes,  new 
+features)  the  program  has  to  be  updated  only  in  one  location  and  all  clients  have  the  new  version. 
+Further,  all  the  data  is  stored  on  the  server  (or  in  a  database  server)  and  therefore  it  is  easier  to 
+control access rights and to provide security for the data. 
+
+The  disadvantage  is  that  if  there  are many  clients  accessing  the  service  at  the  same  time  the  speed 
+may go down. The solution for this problem is to use many servers which work together to serve the 
+clients.  The  clients  interact  with  the  servers  as  if  they  were  “talking”  with  one  server.  Also  traffic 
+overlapping  may  be  a  problem  when  many  concurrent  clients  are  handled.  The  worst  case   is  if  an 
+essential  server  crashes  because  then  no  client  can  access  the  data  anymore  until  the  server  is  up 
+and  running  again.  For  big  systems  (e.g. Google)  there  are many  servers which  are  able  to  replace a 
+server that crashed and the user does not notice the failure. 
+
+Figure 5: Client-server architecture 
+
+ 
+
+Model, view, controller 
+Model,  view,  controller  is  a  design  pattern  which  is  used  in  many  modern  applications.  The  idea  is 
+almost  the  same as  in  the multi  tier architecture namely  to  separate  the data  (model)  from  the user 
+interface  (view).  To  manage  the  interactions  between  the  model  and  the  view  another  entity  is 
+needed:  the controller  (Figure 6). The difference  to multi tier architecture  is that  in  the model, view, 
+
+10 of 40 
+
+ 
+
+controller  pattern  the  view  may  directly  modify  or  get  information  from  the  model.  The  latest 
+proposal  is  that  exactly  this  should  be  prevented  so  that  it  is  like  the  multi  tier  architecture.  The 
+model,  view,  controller  pattern  makes  the  system  change  tolerant  because  each  entity  may  be 
+changed without having to change the other one. 
+
+Ruby  on  Rails  implements  this  pattern  and  creates  for  every  entity  a model  (the  class),  a  controller 
+(which handles the requests) and a view (which contains rhtml pages which are rendered and send to 
+the client). 
+
+Figure 6: model view controller5 
+
+ 
+
+Multi tier application 
+As  multi  tier  application  we  mean  normally  a  three  tier  application. We  have  a  presentation  tier,  a 
+business  tier  and  a  data  tier  (Figure  7).  The  presentation  tier  is  the  user  interface which  shows  data 
+to  the  user  and  provides  forms  to  enter  and  modify  data.  The  business  tier  takes  care  of  all 
+computations  that  have  to  be made  and  handles  the  information  exchange  between  user  interface 
+and database. The data  tier denotes  the management of the data and uses  in most cases a database 
+to store the data persistent. 
+
+This  architecture  is  widely  used  in  modern  web  development  to  decouple  the  data  from  the 
+computation  and  from  the  user  interface.  The  main  advantage  of  this  architecture  is  that  by 
+separating  the  functionalities  in  tiers  it  is  easier  to  exchange  and  modify  a  tier.  For  example  if 
+another  DBMS  has  to  be  used  only  the  data  tier  is  affected  and  the  other  two  tiers  have  not  to  be 
+touched. The difference to model view controller is that there is no interaction between the data tier 
+and the presentation tier. Everything has to pass through the business tier. 
+
+In web development  it  is very common  to have  three  tiers. A web server  represents  the  front end of 
+the  application  (presentation  tier)  and  serves  html  pages  to  the  client.  An  application  server 
+(business  logic)  runs  the  application  and  produces  dynamic  content  by  taking  information  from  the 
+database  and  form  data.  It  is  the  middleware  between  front  end  and  back  end.  A  database  server 
+with a DBMS represents the back end of the web application which provides and stores the data. 
+
+For  small  projects  it  is  common  to  have  all  this  three  tiers  on  the  same  server  but  the  concept 
+remains the same. 
+
+                                                           
+5 taken from: http://en.wikipedia.org/wiki/Image:ModelViewControllerDiagram.svg  
+
+ 
+
+11 of 40 
+
+Figure 7: Three tier application 
+
+ 
+
+Security 
+
+SSL 
+SSL  is  a  cryptographic  protocol  which  establishes  a  secure  connection  over  the  internet.  The 
+connection  is  instantiated by a handshaking procedure where  the client and  the  server agree on  the 
+different parameters. To assure the servers identity a digital certificate is used. 
+
+SQL injection 
+SQL  injection  (3)  is  a  hacker method where  an  attacker  sends malicious  SQL  instructions  inside  form 
+data. This can happen  for example  through  the search  functionality of a web page. The hacker could 
+commit  the  string “  ‘ OR 1  --  “. Or 1  is always  true and  selects everything  from  the database and  the 
+“--“ starts an SQL comment which means that everything after is ignored. 
+
+XSS (4) 
+To  identify  a  user  and  hold  its  associated  rights  Rails  uses,  as many  other web  applications,  session 
+objects.  The  connection  between  the  user  and  the  session  object  is  tracked  with  a  session  cookie 
+which  is  sent  back  and  forth  with  each  request  to  identify  the  user.  The  problem  is  that  if  the 
+application  shows  attributes  directly  on  a  page,  it may  be  the  case  that  someone  has modified  that 
+attribute  and  inserted  a  java  script  which  reads  out  the  session  data  of  the  user  and  sends  it  to  an 
+attacker.  This  means  that  the  identity  of  a  user  is  stolen  and  the  attacker  can  do  what  the  user  is 
+allowed to do in the application. 
+
+LDAP 
+LDAP  is  a  protocol  which  allows  a  client  to  send  queries  to  a  directory  service  over  TCP/IP.  This 
+technology is used to store information about persons but can also store other information. The only 
+usage  in  this  application  of  such  a  server  is  to  authenticate  users  by  checking  their  username  and 
+password against the information stored in the directory service. 
+
+The steps which are performed to authenticate a user are the following (Figure 8): 
+  A SSL connection as “anonymous” is established to the server (bind) 
+  The application sends a bind request to the server and provides the username, the password 
+and the base dn (path) 
+  The servers performs a search for the user on the path and sub trees and if it finds a match it 
+tries to rebind to that user with the supplied password otherwise it reports an error 
+If the rebind is successful the user is authenticated 
+
+ 
+
+ 
+
+12 of 40 
+
+Figure 8: LDAP authentication mechanism  
+
+ 
+
+4.3  System architecture 
+
+Pure object oriented programming language 
+A pure object oriented programming language like Ruby uses the concept of objects as entities which 
+have  their  associated  data  and  interact  with  other  objects  by  sending  messages  (Figure  9). 
+Additionally  it  has  the  concepts  of  inheritance,  encapsulation,  modularity  and  polymorphism.  With 
+inheritance  it  is  possible  to  have  specializations  of  general  classes  which  may  extend  or  override 
+functionalities  of  the  base  class.  Encapsulation  is  provided  by  protecting  the  data  of  the  object  and 
+allowing modifications only through message calls. Modularity fosters the breakdown of a big system 
+into  smaller modules  which  are  easier  to  be maintained  and  which  work  independently  from   other 
+parts of the system. Polymorphism is the concept of having the same behaviour without knowing the 
+exact  type  of  the  object.  The  different  classes  have  to  implement  a  function  with  the  same  name 
+which  can  then  be  called  at  runtime.  The  correct  method  is  found  through  late  binding  during 
+execution. 
+
+A  pure  object  oriented  language  differs mainly  from  Java  for  example  by  not  having  base  types  like 
+integer, string, double… In Ruby for example everything is an object and to every object  it is possible 
+to  send  messages.  If  the  object  knows  how  to  handle  and  respond  to  the  message  it  will  do  so, 
+otherwise it will simply tell that it does not understand the message sent. 
+
+ 
+
+13 of 40 
+
+Methods 
+
+DATA 
+
+Messages 
+
+ 
+
+ 
+
+Figure 9: Object oriented paradigm. Inspired by the lecture of Werner Wild 
+
+4.4  Extreme programming 
+Extreme  programming  is  a methodology  for  developing  agile  software  projects.  It  provides  practices 
+which  should  help  to  face  with  the  known  problems  of  software  development;  uncertainty, 
+irreversibility and complexity. XP has the notion of iterations which are small time periods in which a 
+whole  development  cycle  (coding,  testing,  listening  and  designing)  is  performed.  Only  the  practices 
+used during development are listed. 
+
+Simple design 
+The  simplest  thing  that  could  possibly  work  is  the  goal  of  a  project.  Everything  else,  fancy  user 
+interfaces and functionalities which are not requested by the customer, is waste. 
+
+40 hours week 
+Work only 40 hours per week and do not overload yourself or your people. This makes sure that you 
+are not burned out because otherwise your productivity goes down immediately. 
+
+Refactoring 
+Refactoring  is  a  restructuring  of  the  code  without  changing  the  behaviour.  It  is  very  important  to 
+make  the  code  simpler  and  more  understandable  for  other  persons.  Refactoring  fosters  simple 
+design. This makes it easier to maintain and change it which is very important in agile development. 
+
+Testing 
+Testing  is very  important  to  check  that  the  required behaviour  is  achieved  and  that  after  changes  in 
+the code the implemented functionalities are not broken. Tests give developers trust in the code and 
+are  used  to  check  that  a  feature  is  there  and  works  as  expected.  To  ensure  testing  Test  driven 
+development should be done when developing. The TDD cycle can be seen in Figure 10. 
+
+ 
+
+14 of 40 
+
+Write the 
+test
+
+Run the test 
+and see it 
+pass
+
+Run the test 
+and see it fail
+
+Refactor
+
+Implement 
+functionality
+
+Run the test 
+and see it 
+pass
+
+ 
+
+Figure 10: TDD cycle; inspired by the lecture of Werner Wild 
+
+4.5  Ruby on Rails 
+Ruby  on  Rails  is  an  open  source  full-stack  web  framework  which  to  develop  database  backed  web 
+applications.  It uses  the Model View Controller pattern and makes  it easy  to write beautiful  code by 
+having conventions. To  learn Ruby on Rails  I used the books “Agile Development with Ruby on Rails” 
+(5), “RESTful Rails development” (6) and “Build Your own Ruby on Rails Web Applications” (7).  
+
+Active Record 
+Active  Record  is  a  design  pattern which maps  a  database  entry  to  an  instance of  a  class.  This means 
+that  all  columns which  are  present  in  the  database  become  attributes  of  the  object.  To  state which 
+table  contains  the  information  about  the  objects  Rails  uses  a  naming  mechanism.  This  assumes  as 
+table  name  the  plural  of  the  class  name.  E.g.  if  the  model  is  called  computer  then  the  data  will  be 
+stored  inside  a  table  which  is  called  computers.  It  a  different  name  is  used  it  is  also  possible  to  tell 
+Active Record how the table for the model is called. 
+To  create  a  new  record  in  the  database  it  is  enough  to  assign  values  to  the  object  and  then  to  send 
+the “save” message to the object. Active Record takes care of writing the appropriate SQL instruction 
+for  the  actual  DBMS.  This  assures  persistency  between  the  objects  of  the  application  and  the  data 
+layer. For the developer  this pattern makes  it easier  to work with a database because no SQL has  to 
+be  written  which  makes  the  application  DBMS  independent  and  prevents  errors  when  writing  the 
+SQL instructions. 
+Here some code which shows how this is used in Ruby on Rails: 
+
+computer = Computer.new 
+computer.type_model = ‘type_model’ 
+computer.name = ‘name’ 
+... 
+computer.save 
+ 
+computer.name = ‘new name’ 
+computer.update   
+#updates the record with the specified attribute/s 
+ 
+computer.destroy   
+
+#deletes the record from the database 
+
+ 
+
+#creates a new record in the database 
+
+Active  Record  supports  also  relations  between  objects  and  takes  care  of  mapping  them  to  the 
+database.  To  represent  for  example  that  a  desktop  computer  has  a  display,  only  a  column  called 
+
+15 of 40 
+
+ 
+
+“display_id”  has  to  be  added  to  the  computers  table  and  in  the model  the  following  code  has  to  be 
+written: 
+
+has_one :computer  
+
+belongs_to :display 
+
+ 
+
+ 
+
+#inside display.rb 
+
+#inside computer.rb 
+
+This  tells Active Record  that  there exists a  relation  between  computers  and  displays.  The  associated 
+display of a computer can be obtained with: 
+
+a_computer.display 
+
+To represent more complicated relations such as many  to many relations Active Record provides the 
+“has_and_belongs_to_many”  instruction.  For  such  a  relation  a  new  table  has  to  be  created  which 
+holds the  ids of the associated objects. I used many to many relations for computers and lans or lans 
+and networks. 
+
+DRY principle 
+A  principle  which  is  very  extensively  implemented  and  used  in  Rails  is  the  DRY  (Don’t  Repeat 
+Yourself)  principle.  This  means  do  not  write  code,  which  does  the  same  thing,  more  than  once. 
+Duplicated  code  is  a  code  smell  that  makes  the  code  more  error  prone  and  if  something  has  to  be 
+changed  then  for  sure  one  location  will  be  forgotten  which  introduces  errors.  For  that  reason  it  is 
+important  to  be  aware  of  the  DRY  principle.  Ruby  on  Rails  supports  that with  partials  and modules. 
+Partials  are  essentially  html  pages  which  can  be  used  inside  other  html  pages.  They  are  named  like 
+“_search.rhtml” which tells Ruby on Rails that this file is a partial. The rhtml extension states that this 
+file will be executed by Ruby on Rails and that it contains Ruby tags inside html code. I used such files 
+for  the  search  functionality,  the  sidebar  and  the  event  list.  These  are  the  parts  which  are  used  on 
+many  pages  and  therefore  if  something  has  to  be  changed  I  can  change  it  in  one  location.  Partials 
+foster the DRY principle for the web part and modules do the same for Ruby code. A module is  like a 
+class  and  can  have  methods  and  variables.  The  difference  is  that  we  cannot  have  an  instance  of  a 
+module. But a module can be used by a class and reuse  its methods. The class “imports” the module 
+by  using  the  “require”  and  “include”  keywords.  This  adds  the  methods  of  the  module  to  the  class 
+which  requires  them  and  they  can  be  called  as  if  they  were  class  methods.  I  used  modules  for  the 
+temporal  helper  class.  In  that  module  I  implemented  the  functions  “create_temporal_device”, 
+“update_temporal_device”, “destroy_temporal_device” and “temporal_search”. For all classes which 
+should support temporal behaviour I simply required that module and used the methods. 
+
+Helpers 
+Another helpful feature  is the notion of helpers. When a new controller  is created, among other files 
+a  helper  is  created  for  it.  In  this  helper  file methods  can  be  specified which  can  be  called  inside  the 
+rhtml  files.  This  is  useful  for  frequently  used  variables  or  functionalities.  The  helpers  foster  the  DRY 
+principle because they prevent duplicated code. There exists also a file called “application_helper.rb” 
+which  contains  methods  that  are  available  to  all  rhtml  files.  The  same  principle  exists  for  the 
+controllers. There is a file “application_controller.rb” which contains methods that can be used inside 
+all  controllers.  I  used  that  file  to  provide  the  controller  functions  for  the  temporal  devices.  This 
+means  that  the  controller  defines  the  methods  “index”,  “edit”,  “update”,  “new”,  “create”  and 
+“destroy”.  This  makes  it  easier  and  follows  the  DRY  principle.  For  other  controllers  which  need  a 
+different behaviour the methods are simply overwritten. 
+
+Database migration 
+Very helpful when working with a database are  the migration  scripts.  In  this  files all  tables are  listed 
+with its attributes and the revert statement. For example there is a create table instruction and there 
+exists also the corresponding drop table instruction. With this implementation it is possible to modify 
+the database and to easily create the needed tables  in the database. No SQL  has to be written which 
+
+ 
+
+16 of 40 
+
+makes  the  application  DBMS  independent  and  it  is  possible  to  migrate  the  database  to  different 
+versions because for all operations the reverting operation is provided. 
+
+Single table inheritance 
+Single  table  inheritance  is  used  to  map  inheritance  from  objects  to  the  database.  It  stores  all 
+attributes of  the  parent  and  the  children  in  one  table  and  adds  a  column  type which  holds  the  class 
+of the object (Figure 11). This works well, if the classes differ only on a few attributes. If they differ a 
+lot much fields would remain empty and too much columns would be needed in a table. 
+
+Figure 11: Single table inheritance6 
+
+ 
+
+ 
+
+ 
+
+                                                           
+6 taken from: http://www.martinfowler.com/eaaCatalog/singleTableInheritance.html  
+
+ 
+
+17 of 40 
+
+5  Design and decisions 
+
+5.1  Technology 
+
+Programming language 
+I  have  chosen  Ruby  on  Rails  to  develop  the  application  because  I wanted  to  get  to  know  about  this 
+new  and  popular  technology.  Ruby  is  a  pure  object  oriented  programming  language  with  object 
+orientation  and  an  interpreter  instead  of  a  compiler.  This  means  that  the  code  is  interpreted  on 
+demand which removes the compile time but some errors in the code may only be discovered during 
+execution.  Ruby  on  Rails  is  a web  framework  for  Ruby which  encourages  agile  web  development.  It 
+supports  unit  tests,  database  migration, model  view  controller  pattern  and much more.  Since  Ruby 
+on Rails is a very young technology (first release to the public July 2004)  it is still in development and 
+there  are  some  bugs  in  it;  but  there  is  a  big  and  very  active  community  which  takes  care  of  fixing 
+bugs and adding new functionality. 
+
+Development environment 
+To develop the application I used Eclipse 3.3.0 with the Aptana and RadRails plug-in. Aptana provides 
+useful editors  for html, xml and  rhtml with  syntax highlighting and outline. RadRails  is  the plug-in  to 
+use  Ruby  on  Rails  within  Eclipse.  It  provides  generators  for  model,  views,  controllers,  migration 
+scripts…  Additionally  it  provides  easy  access  to  the  documentation,  plug-ins  installation  and  a  lot 
+more  useful  functionalities  for  developing  Rails  applications.  The  Ruby  Development  Tools  provide 
+syntax highlighting, code completion and refactoring for ruby code. 
+
+Database 
+When  I  started  to  develop  the  application  I  thought  that  I  have  to  implement  all  the  temporal 
+functions  within  the  database  through  scripts  and  triggers.  For  that  purpose  I  choose  PostgreSQL 
+because  it  makes  it  easy  to  write  your  own  scripts  and  triggers  and  it  provides  the,  for  temporal 
+operations useful, “overlaps” function. This function essentially takes two time intervals and checks if 
+they overlap or not. As  I  then  changed my mind and  implemented  the  temporal  functions  inside  the 
+program,  I  continued  to  use  PostgreSQL.  Thanks  to  the  change  tolerant  implementation of  Rails  it  is 
+no  problem  to  switch  to  another  DBMS.  It  requires  only  changing  the  adapter,  because  of  the 
+migration scripts which are then translated to the specific SQL dialect of the actual database. 
+
+Web server 
+For  development  purposes  I  used  Webrick  as  web  server  because  it  is  integrated  in  Rails  and  does 
+not  need  any  configuration.  I was  very excited with  this web  server  and everything worked  fine.  For 
+production this web server would not be a good choice because compared to Apache it is slower and 
+it is not scalable for many user requests. 
+
+API protocol 
+To  implement  the  API  of  the  application  I  had  three  choices;  SOAP,  XML -RPC  and  REST.  All  of  them 
+are  supported by Ruby and Ruby provides easy handling  for all of  them. They are based on  XML and 
+use HTTP for transporting the data. This ensures that the messages are not blocked by a firewall. 
+
+1.  SOAP  (8)  has  a  very  verbose  XML  format  and  therefore  requires  more  space  and  time  for 
+decoding/encoding. It uses HTTP to send the XML file which contains the data and the action 
+which should be performed by  the server  (Figure 12).  It surely provides  the most  features of 
+these three choices, but I will not need them for this application. 
+2.  XML-RPC  (9)  has  the  advantage,  that  it  has  a  simple  structure  and  is more  lightweight  than 
+SOAP.  It  supports  simple  data  types  (int,  double,  boolean,  string,  dateTime,  arrays  and 
+structs) and there exist implementations for many programming languages (.NET, Java, Ruby, 
+Perl…). 
+3.  REST  (10)    is  an  architecture  rather  than  a  standard.  It  uses  standards  for  communication 
+such  as  XML  and  HTTP.  It  is  lightweight,  because  it  “only”  transmits  a  simple  XML  file  with 
+18 of 40 
+
+ 
+
+the  data  in  it  and  there  is  no metadata  or  other  overhead.  It  is  also  the  best  choice  for  the 
+compatibility  because  the  client  can  be  written  in  every  programming  language  which 
+supports XML parsing and HTTP  requests/responses. To perform operations  through  the API 
+it uses the HTTP methods GET, POST, PUT and DELETE (Figure 12). 
+
+For my  application  I  decided  to  use  REST  because  it  provides  the  most  flexibility  regarding  possible 
+clients, is lightweight and Ruby on Rails provides a built in support for REST. 
+
+ 
+
+Figure 12: Difference between REST and SOAP7 
+
+5.2  Temporal database 
+
+Handling infinity 
+To represent infinity I wanted to use 3000-01-01 which adds enough flexibility to the application. But 
+because  of  a  bug  in  the  “calculations.rb”  in  “active_support/core_extensions/time/”  Active  Record 
+converts  a  timestamp  to  a  Time  object.  The  Time  class  represents  a  date  and  time  as  32 -bit  integer 
+which  holds  the  seconds  passed  since  Jan  01  1970.  To  perform  computations  it  uses  under  laying  C 
+functions.  The  problem  now  is  that  the  biggest  32-bit  integer  is  2147483647  which  represents  the 
+date “Jan 19 2038 04:14:07”. If a later date is stored in the database Active Record raises a “Time out 
+of  range” exception when  loading  the  records  from  the database. The problem  is known  in  the Rails 
+community  and  there  exists  a  patch  for  this  bug  (http://dev.rubyonrails.org/ticket/7706).  The  patch 
+simply creates a DateTime object if the date is beyond the 2038-date. The DateTime object stores the 
+date  and  time  differently  and with  that  class  it  is  possible  to  represent  almost  any  date-time.  I  tried 
+to  apply  the  patch  and  it  worked,  but  then  I  got  other  errors  which  I  was  not  able  to  resolve. 
+Therefore  I  used  the  biggest  integer,  created  a  Time  object with  it  and  used  that  date  to  represent 
+infinity. Now there are two different possibilities. One is that the size of the integer changes and then 
+automatically  a  new  infinity  date will  be  used  or  the other  possibility  is  that  this  bug will  be  fixed  in 
+the  next  stable  release  of  Rails  (hopefully)  and  the  3000-01-01  00:00:00  date  can  be  used.  The  first 
+possibility  happens  automatically  and  if  so  all  entries  in  the  database  have  to  be  changed  to  the 
+correct  infinity  date  because  otherwise  the  application will  not work  properly.  For  the  second  case  I 
+already  wrote  the  code  and  some  instructions  inside  the  temporal  helper  class.  It  can  be  found  at 
+“app/models/temporal_helper.rb” line 3 – 11 and the method is called “self.infinity”. 
+
+ 
+
+                                                           
+7 taken from: 
+http://www.networkcomputing.com/channels/enterpriseapps/showArticle.jhtml?articleID=193005691  
+
+ 
+
+19 of 40 
+
+Time frame captured 
+The application should keep  track of all changes made  to  the data of the database.  It does not make 
+sense  to  consider  also  future  events  such  as  e.g.  a  computer will  be  sold  in  one  year.  Therefore  the 
+application  only  handles  changes  that  happened  in  the  past  and  are  still  valid  now  or  are  not  valid 
+anymore i.e. a record is deleted (Figure 13). 
+
+Figure 13: Time frame captured by the application 
+
+ 
+
+I decided to implement only current modifications and not sequenced modifications. The user should 
+not  be  allowed  to  modify  or  delete  historical  information.  This  information  is  there  for  “ever”.  If 
+someone wants really to change something he/she has to modify the data in the database but this is 
+not a normal operation and should not happen. 
+
+Time intervals 
+To  store  the  time  interval  in which  a  record  is  valid  I  use  “closed  –  open”  intervals.  This means  that 
+the start date and  time  is  included and  the end date and  time  is excluded. E.g. a database entry may 
+look like in Table 2. 
+
+ID  Name 
+1  HP Desk Jet 815i 
+2  HP Desk Jet 815i 
+
+Start date 
+2000-01-01 12:10:11 
+2004-06-04 14:50:55 
+Table 2: Valid database entries  
+
+End date 
+2004-06-04 14:50:55 
+2038-01-19 04:14:07 
+
+Gaps 
+I decided  that gaps  in  the history are not allowed  in  this application. For this reason  it  is not allowed 
+to delete a  single  row of  the history as normal operation.  If needed  someone has  to do  that  directly 
+in the database (see “Modifying the database”). E.g. such database entries should not exist as seen in 
+Table 3. 
+
+ID  Name 
+1  HP Desk Jet 815i 
+2  HP Desk Jet 815i 
+
+Start date 
+2000-01-01 12:10:11 
+2004-06-04 14:50:55 
+Table 3: Non valid database entries 
+
+End date 
+2003-02-05 09:34:01 
+2038-01-19 04:14:07 
+
+Granularity 
+To  meet  the  needs  of  the  application  I  decided  to  use  time  stamps  to  hold  the  valid  time  interval 
+(Table 4). This provides a granularity of one second which is enough for multiple changes a day. 
+
+ID  Name 
+1  HP Desk Jet 815i 
+2  HP Desk Jet 815i 
+
+3  HP Desk Jet 815i 
+
+Start date 
+2000-01-01 10:30:25 
+2000-01-01 11:15:34 
+
+2000-01-01 11:15:40 
+Table 4: Granularity in the application 
+
+End date 
+2000-01-01 11:15:34 
+2000-01-01 11:15:40 
+
+2038-01-19 04:14:07 
+
+ 
+
+20 of 40 
+
+Global update 
+The global update was not as easy to implement as I thought because to modify data, especially from 
+the  API,  I  have  only  the  four  http  methods  get,  put,  post  and  delete.  I  could  not  add  a  new  http 
+method  to  represent  a  global  update  request.  Therefore  I  decided  to  use  the  put  request  combined 
+with a parameter called “is_global_update=true”. When the application receives an update request it 
+checks  if  it  is a global update and  if  so  calls an appropriate method of  the  corresponding  class which 
+knows which attributes to update. The same way it works for a normal update. 
+
+Implementation 
+I  decided  to  implement  the  temporal  behaviour  in  the  application  itself.  Since  I  did  not  need  all 
+features of a temporal database it was, in my eyes, the best solution. I have full control over the data 
+which  is going  to be  inserted. The main  reason why  I did  it  this way was because  first  I  thought  that 
+the  user  should  be  allowed  to  modify  the  start  and  end  date.  Then  I  understood  that  a  temporal 
+database  can  be  seen  like  a  version  control  system,  which  basically  never  deletes  data  and  keeps 
+track  of  all  modifications.  I  prevented  the  user  from  modifying  the  start  and  end  date  and  set  it 
+before  the  record  is  inserted  into the database. To provide  the  functions  to all classes which need to 
+have temporal support I created a Ruby module with three methods  called “create temporal device”, 
+“update  temporal  device” and  “destroy  temporal  device”. The  classes with  temporal  support  had  to 
+import  (keyword “require”  in Ruby)  the module and could use  the methods as  if they would be class 
+methods.  I  created  a  temporal  id  for  all  temporal  devices  which  remains  the  same  for  all  history 
+entries  of  a  record.  The  temporal  id  is  only  increased  when  a  new  device  is  inserted  and  identifies 
+distinct devices  inside  tables.  It would have been a good  idea to have a “global”  temporal  id which  is 
+unique  in  the  whole  database,  but  that  would  not  have  been  easy  to  implement.  The  methods  in 
+detail: 
+
+The  “create  temporal  device” method  creates  a  temporal  id,  sets  the  start  date  to  the  current  date - 
+time and the end date to “Jan 19 2038 04:14:07”. Then it stores the object in the database. 
+
+The  “update  temporal  device”  method  checks  if  the  update  should  be  a  global  or  normal  update. 
+Global  update  means  that  attributes  which  should  be  the  same  for  all  history  entries  are  updated; 
+e.g.  purchase  date,  serial  number…  These  attributes  are  then modified  for  all  entries with  the  same 
+temporal  id.  If  it  is  a  normal  update,  a  new  database  entry  is  created  with  the  new  attributes;  the 
+start  date  is  set  to  the  current  date-time  and  the  end  date  to  “Jan  19 2038 04:14:07”.  For  the entry 
+which was till now the actual entry only the end date is set to the current date-time. 
+
+The  “delete  temporal  device”  method  sets  the  end  date  of  the  actual  record  with  the  supplied 
+temporal  id  to  the  current  date-time.  This  entry  does  not  appear  in  the  list  anymore  but  it  is  still 
+there in the database and can be found through the temporal search. 
+
+5.3  Design 
+
+Requirements 
+The  requirements are mostly  taken  from  the  interviews which Amantia Pano  (11 pp. 38-39) did with 
+the technicians of the Faculty of Computer Science. I took the answers of the  interview, analyzed the 
+requirements and defined my own model based on  that  information. As the development was going 
+on  I mainly  got  feedback  from my  tutor on  the  implemented  features  and  on  changes which  should 
+be made to the model. 
+
+Example user stories which should be captured by the application: 
+
+Searching 
+A  power  and  normal  user  get  a  list  of  matching  devices  by  entering  a  search  string  and  pressing  a 
+button 
+
+ 
+
+21 of 40 
+
+Add copier 
+A power user can add a copier by filling out a form and committing it 
+
+Level of detail 
+The  application  is  dedicated  to  administrators  of  computer  networks.  It  is  supposed  to  give  an 
+overview of a network and to represent the most  important  devices (Figure 14) with their associated 
+events.  The  level of  detail  is  given  by  common  sense and  by  the  Faculty Wiki  (12) where  there  exist 
+already tables with information about the hardware in the University network. 
+
+Figure 14: Sample network which can be represented 
+
+ 
+
+ 
+
+User management 
+In the application there are two kinds of users, normal users and power users (Figure 15). The normal 
+user  is  allowed  to  read  and  query  data.  The  access  to  all  other  pages  is  restricted  and  checked 
+immediately after a  request  is  received. The power user  is the administrator who  is allowed  to  read, 
+query,  add, modify  and  delete  data.  The  power  user  can  also  give  other  users  power  user  rights  by 
+adding  them  to  a  local  table.  He/she  is  identified  by  checking,  after  a  successful  authentication,  the 
+username  against  a  local  table with  a  list of  all  power  users. At  least  one  power  user must exist  and 
+therefore the deletion of the last power user is prevented. If by accident there is only one power user 
+present and his username  is changed to some bogus string only a modification  in  the database  table 
+can help to add a user as power user and get access to the application. 
+
+ 
+
+22 of 40 
+
+Figure 15: User roles 
+
+ 
+
+User stories 
+To  understand  better  the  requested  operations  I wrote  a  kind  of  user  stories.  It  did  not make  sense 
+to register the estimated time and the used time, because many of the things hang together through 
+the temporal part. Therefore it was quite impossible to capture these times. The user stories are: 
+
+  Add/Edit/Remove a computer to/from the list of computers 
+  Add/Edit/Remove a server to/from the list of servers 
+  Add/Edit/Remove a server unit to/from the list of server units 
+  Add/Edit/Remove a server unit pool to/from the list of server unit pools 
+  Add/Edit/Remove a printer to/from the list of printers 
+  Add/Edit/Remove a copier to/from the list of printers 
+  Add/Edit/Remove a display to/from the list of displays 
+  Add/Edit/Remove a service to/from the list of services 
+  Add/Edit/Remove an event to/from the list of events 
+  Add/Edit/Remove a software to/from the list of software 
+  Add/Edit/Remove a operating system to/from the list of operating systems 
+  Add/Edit/Remove a drive type to/from the list of drive types 
+  Add/Edit/Remove a service type to/from the list of service types 
+  Add/Edit/Remove a cartridge to/from the list of cartridges 
+  Create/Edit/Delete networks 
+  Create/Edit/Delete LANs and VLAN’s 
+  Add/Remove a device to/from a network or a LAN/VLAN 
+  Create an event for a device 
+List all events for a device 
+ 
+  Search for a key word in a list of devices 
+  Show the state of devices on a specified date and time 
+  Show the history of a device 
+
+ 
+
+23 of 40 
+
+Model in natural language 
+To  understand  better  which  attributes  the  different  entities  have  and  how  they  are  correlated  to 
+each  other  I  decided  to  write  the  model  in  natural  language.  This  helped  me  a  lot  to  create  the 
+database design. 
+
+  A  network  has  a  name,  a  velocity,  a  description,  can  be  wireless  and  should  have  temporal 
+support. It represents the physical layer. 
+  A LAN consists of devices, is deployed over one or more networks, has a name, a netmask, an 
+authentication, a description and may be a virtual LAN. It should have temporal support. 
+  A device  can be a computer  (desktop or  laptop), a  server, a  server unit, a  server unit pool, a 
+printer or a copier. 
+  Each  device  has  a  type/model,  a  serial  number,  a  UNIBZ  stock  number,  location,  and  was 
+bought at a given date (purchase date). 
+  A  computer  has  a  CPU  speed,  a main memory  size,  a memory  size,  a  name,  an  IP  address,  a 
+description,  zero  or  more  operating  systems  installed  on  it,  zero  or  more  drive  types 
+installed, belongs to zero or more networks, belongs to zero or more LANs, has zero or more 
+software installed on it and should have temporal support. 
+  A desktop is a computer and has additionally a display. 
+  A laptop is a computer. 
+  A server unit has a received date, a fully operational date, a CPU speed, a main memory size, 
+a  memory  size,  a  rack  position,  a  description,  may  belong  to  a  server  unit  pool,  belongs  to 
+zero or more networks and should have temporal support. 
+  A server unit pool has a name and a description. 
+  A  server  has  a  name,  an  IP  address,  a  user  access,  access  credentials,  an  access  method,  a 
+description, may have a backup agent, runs on a server unit and/or a server unit pool, has an 
+operating system, software  installed on it, provides zero or more services, belongs to zero or 
+more LANs and should have temporal support. 
+  A service has a name (e.g. mail, data, streaming…) and a description. 
+  An  event  has  a  date  of  occurrence,  a  severity,  a  description,  a  status,  a  resolution  date,  a 
+ticket reference and an associated device. 
+  A printer has a paper format, may be duplex, may have colour, a name, an IP address, a date 
+when  the  cartridges  were  changed,  a  description,  belongs  to  a  network,  has  zero  or  more 
+cartridges and should have temporal support. 
+  A  copier  has  a  name,  a  contact,  a  service  id,  a  note,  a  date  when  the  toner  was  changed, 
+belongs to a network and should have temporal support. 
+  An operating system has a name and a version. 
+Software has a name, a version and a number of licenses. 
+ 
+  A  cartridge  has  a  designation,  a  colour,  available  pieces,  a  kind  (toner,  print  head…)  and 
+compatible devices. 
+  A display has a designation, a serial number, a  location, a purchase date, a type  (CRT or TFT) 
+and a size. 
+  A drive has a type (CD, DVD…) and a description. 
+  A user has a name. 
+
+Inheritance 
+I  needed  inheritance  for my  project  for  example  for  the  two  computer  types;  laptop  and  desktop. A 
+more  sophisticated  inheritance  is network device with printer,  copier,  computer,  server unit … Since 
+Ruby  on  Rails  supports  “only”  single  table  inheritance  it  was  not  possible  to  realize  the  inheritance 
+like  the  diagram  of  the  API.  Therefore  I  decided  to  develop  a  second  model  which  represents  the 
+internal  structure  of  the  program.  I  implemented  inheritance  only  for  computers  because  laptops 
+and desktops differ only on the attribute display_id. For all others I created separate tables. The data 
+
+ 
+
+24 of 40 
+
+is  not  redundant  because  it  is  stored  only  once;  it  is  only  not  stored  in  a  single  table  and  therefore 
+some tables have columns with the same name.  
+
+Modeling 
+To  create  the model  of  the  application  I  used  the  information  of  the model  in  natural  language  and 
+created  a  UML  diagram  to  represent  it.  I  came  up  with  the  UML  diagram  of  the  API.  The  problem 
+with this model is the inheritance between the objects. Since Ruby on Rails supports only single table 
+inheritance  it  was  not  a  good  idea  to  use  that model  to  represent  the  data  inside  the  application.  I 
+did  a  kind  of  normalization  by  adding  the  common  columns  to  all  tables  and  by  using  single  table 
+inheritance only for tables with small differences in their attributes (Computer  -> Desktop, Computer 
+->  Laptop).  The  result was  the  UML  diagram of  the  internal  structure.  For  example  if we  take  Server 
+Unit  on  the  UML  diagram  of  the  API  we  have  an  inheritance  from  Network  Device  and  from 
+Computer.  I  “normalized”  this  to  a  single  class  Server  Unit  which  has  all  attributes  from  Network 
+Device and Computer plus its own attributes without inheritance (Figure 16). 
+
+Figure 16: “Normalize” server unit 
+
+ 
+
+The database design is based on the internal structure of the program. The differences are that in the 
+database  there  are  tables  for  all  the  many  to  many  relations  (Figure  17)  and  the  event  table  is 
+different.  To  be  able  to  use  a  single  table  for  all  events  I  had  to  add  a  column  with  the  id  fo r  each 
+device which should be able to have events (Figure 18). 
+
+ 
+
+25 of 40 
+
+Figure 17: Mapping of Copier from internal structure to database  
+
+ 
+
+ 
+
+Figure 18: Mapping of Event from internal structure to database  
+
+6  Development 
+
+6.1  Security 
+
+SSL encryption 
+This  is especially  important when the  login  information  is transmitted or when API requests are sent 
+to  the  application  because  there  in  all  requests  the  username  and  password  has  to  be  specified.  It 
+also augments the overall security of the application. 
+
+SQL injection 
+To  prevent  SQL  injection  I  used  for  all  parameters  which  are  passed  to  the  database  the 
+“quote_value”  function.  This  function  takes  care  of  quoting  all  characters  which  have  a  special 
+meaning for the database adapter. 
+
+ 
+
+26 of 40 
+
+XSS 
+To prevent such attacks Rails provides the h() method which translates the html meta characters “<” 
+and  “>”  to  ”&lt;”  and  ”&gt;”  because  then  it  is  not  possible  anymore  to  insert  html  tags  and  Java 
+script.    I used this method  therefore  for all  form data where a user could possibly enter a dangerous 
+string to prevent cross site scripting. 
+
+Log files and sensible sensitive information 
+To prevent  the  logging of  sensible  information Rails provides a  filter which  interferes before  logging. 
+With this filter it is possible to filter the value of a specified string. It looks like this: 
+
+filter_parameter_logging :password 
+
+This  line  of  code  is  added  to  the  application_controller.rb  file  and  takes  care  of  replacing  all  the 
+passwords with another string. E.g. instead of writing to the log file 
+
+"name"=>"username", "password"=>"myPassword" 
+
+the following is written: 
+
+"name"=>"username", "password"=>"[FILTERED]" 
+
+6.2  Switching DBMS 
+Since  the  deployment  database  is  MySQL  and  I  developed  the  application  on  PostgreSQL  I  had  to 
+switch the DBMS. I installed the Rails adapter for MySQL and changed the “database.yml” file. During 
+the  first  migration  attempt  (creation  of  the  tables)  I  got  an  error  because  MySQL  does  not  accept 
+:integer. Instead I had to exchange :integer with :int and everything worked fine. The strange thing is 
+that  PostgreSQL works with  both  representations.  After  changing  this,  the migration  scripts  created 
+all tables and I started the web server. I created a new device but after the successful creation it was 
+not  in  the  list. With  PostgreSQL  I  used  the  string  “Tue  Jan  19  04:14:07  +0100 2038“  to  filter  out  the 
+valid devices but MySQL does not support this timestamp. After some trying I found out, that MySQL 
+wants  the  date  in  the  format  “2038-01-19  04:14:07”.  Since  PostgreSQL  accepts  also  the  other 
+representation I changed it permanently so that the compatibility is provided. 
+
+6.3  Authentication for the API 
+The  authentication  is  done  the  same  way  as  for  the  web  interface.  The  only  difference  is  that  for 
+each  API  request  a  new  session  id  is  created  which  means  that  the  user  can  not  be  identified  and 
+he/she has to provide authentication data  for every request.  If a possible client  is able  to handle  the 
+session  data  like  a  web  browser  then  only  one  login  is  required  for  all  the  requests.  The 
+authentication  is  done  via  an  HTTP  basic  authentication.  This  authentication method  is  understood 
+by many web browsers; the username and password are entered in plain text and encoded in Base64 
+before they are transmitted. This adds some security but it is relatively easy to decode the string. For 
+that  reason  the program uses an SSL  connection  for all  requests  so  that  the  communication  channel 
+is  secure. Another method would  be  the HTTP  digest  authentication8 where  a  request  is  sent  to  the 
+server,  the server responds and sends a unique pass key which  is used by  the client  to make  the real 
+request. This method may also be used over an  insecure  communication  channel. The problem with 
+this  method  for  my  application  is  that  the  password  is  sent  as  MD5  hash9,  but  I  have  to  send  it  as 
+plain text to the LDAP server. 
+
+                                                           
+8 For details see: http://en.wikipedia.org/wiki/Digest_access_authentication  
+
+9 For details see: http://en.wikipedia.org/wiki/MD5  
+
+ 
+
+27 of 40 
+
+6.4  Update through API 
+While  testing  the  API  for  its  functionalities  I  discovered  a  problem  with  update  commands.  The 
+problem  is  that  if  a  device  is  updated  through  the  web  interface  the  user  has  not  to  change  the 
+associated devices which are already associated  to  the actual device because  they are automatically 
+selected  in  the  appropriate  combo  box  or  check  box. When  the  update  form  is  sent  to  the  server  it 
+automatically  creates  the needed arrays with  the  ids of  the associated objects. Since when updating 
+elements  through  the  API  all  attributes  have  to  be  written  explicitly  also  the  ids   of  the  associated 
+objects have  to be committed also  if they have not changed. This problem was not solvable because 
+the  server  can  not  distinguish  between  an  empty  array  and  no  array.  Therefore  if  no  array with  ids 
+for  an  associated  object  is  supplied  the  application  does  not  know  if  this  is  a  modification  or  if  it 
+should  associate  the  same  objects  the  last  device  was  associated  to.  In  this  case  the  application 
+behaves  like  this.  If  no  ids  or  if  empty  arrays  are  supplied  the  application  does  no  association.  This 
+means that  the device stored does not have associations  for  the objects.  If  ids are  supplied  then  the 
+application associates the updated device with the correct objects. 
+
+6.5  Many to many problem 
+The problem showed up when there  is a many to many relation between two  temporal objects. This 
+means  that  if  there  is  a  temporal  device  which  has  many  other  temporal  devices  then  the 
+appropriate  ids  of  the  associated  devices  are  stored  together  with  the  id  of  the  device.  The  error 
+occurs  if  an  associated  device  is  updated,  because  the  update  creates  a  new  database  record  and 
+therefore the id stored in the many to many table points to a not anymore valid entry. This especially 
+shows  up  if  the  name  of  the  associated  device  is  changed,  because  it  is  used  for  the  link.  To  resolve 
+this  I  needed  to  overwrite  the  finder  and  insert  SQL  of  the many-to-many  relation.  Instead  of  using 
+the  id of  the  associated  device  I  use  the  temporal  id which  is  the  same  for  the history  elements and 
+the valid element. With the temporal id and the infinity date it is easy to get the correct object. 
+
+Before  this worked  correctly  I  had  to  discover  a  bug  in  the  finder  SQL.  The  problem was  that  it was 
+rendered only once and therefore the id did not change. Therefore for every request the same object 
+came 
+back 
+as 
+result. 
+The 
+bug 
+is 
+known 
+by 
+the 
+Rails 
+community 
+(http://dev.rubyonrails.org/ticket/7576)  and  can  be  resolved  by  applying  a  change  set  which 
+enforces a rendering of the query for each object. After I applied it the problem was resolved. 
+
+6.6  XML problem 
+When  the  API  requests  a  list  of  devices  then  it  gets  them  as  xml  files.  Active  Record  provides  the 
+“to_xml” method which converts an array of objects to an xml file. This works well for normal classes 
+but when there  is  inheritance  it does not produce a good output.  In my case this happened with the 
+computers class. If I called Computer.find(:all).to_xml it produced the following: 
+
+<records> 
+<record> 
+ 
+ 
+ 
+... a desktop computer 
+</record> 
+ 
+<record> 
+ 
+ 
+ 
+... a laptop computer 
+ 
+</record> 
+</records> 
+
+But I wanted that the xml tags specify which kind of computer it contains. The solution was that I had 
+to  produce  my  own  xml  where  I  specify  the  start  and  end  tag  and  in  between  I  have  put  first 
+“Desktop.find(:all).to_xml” and then “Laptop.find(:all).to_xml”. The result looked then like this: 
+
+<computers> 
+ 
+<desktop> 
+ 
+ 
+... a desktop computer 
+</desktop> 
+ 
+<laptop> 
+ 
+ 
+ 
+... a laptop computer 
+
+ 
+
+28 of 40 
+
+ 
+</laptop> 
+</computers> 
+ 
+
+6.7  Error handling 
+For  the  error  handling  I wanted  that  the  user  knows  that  something went wrong  but  he/she  should 
+not  see  a  page  with  “No  Action  responded  to …”  and  he/she  should  not  get  too much  detail  about 
+the  error.  Therefore  I  catch  all  routing  and  method  missing  errors,  redirect  the  user  to  the  home 
+page and give him a short message that something went wrong. 
+
+The  same  is  for  the  authentication.  I  do  not  want  to  give  to  detailed  error messages  for  example  if 
+the username or the password was wrong because this information may help an attacker to hack the 
+system. 
+
+To  handle  unexpected  errors  there  is  a  method  in  the  application  controller  which  takes  care  of 
+them. It shows a short error message and redirects the user to the home page. 
+
+6.8  Testing 
+To test the correct behaviour of the application Rails provides unit and functional tests. The unit tests 
+should  be  used  to  test  the  model.  The  functional  tests  should  be  used  to  test  that  the  web 
+application  redirects  the  user  to  the  correct  paths  after  operations  and  that  the  operations  are 
+performed.  Functional  tests  simulate  a  user  requests  by  sending  the  request  to  the  web  server  and 
+comparing the actual results with the expected ones. 
+
+I  tried  to do Test Driven Development which  states  that  first  the  test has  to be written and  then  the 
+code  has  to  be  implemented.  Most  of  the  times  I  was  able  to  do  that,  but  sometimes  I  forgot  to 
+implement the tests. It was extremely important for me to have the tests because they gave me trust 
+in  the  code  and  after  refactoring  I  could  check  if  I  did  not  change  the  behaviour.  All  together  there 
+are 59 unit  tests and 143  functional tests.  I wrote  tests  for normal and  for exceptional operations so 
+that  I  could  also  check  if  errors  are  handled  the  correct  way.  If  I  found  an  error  in  the  application  I 
+immediately  checked  why  the  tests  have  not  captured  that  error  and  modified  them  such  that  a 
+similar error may not occur any more. 
+
+A  problem when  testing was  that when  a  device  is  created,  updated  or  deleted  the  actual  date  and 
+time  is stored  in  the database.  If  I want  to check  if the correct date and  time  is stored then  I can not 
+check  it with “Time.now” because there passed some milliseconds and then the time is not the same 
+anymore. Therefore I only check the minute of the two times.  I think this is a good solution although 
+it may  be  the  case  that  the  tests  are  run when  the minute  is  switched  between  the  update  and  the 
+check because then the test fails. But the probability that this happens is very low. 
+
+If someone wants to run the tests against an empty test database he/she will see some tests that do 
+not  pass.  Rails  provides  so  called  “Fixtures”  where  records  for  each  table  can  be  defined.  Before 
+running  the  tests  the  dataset  is  cleaned  up  and  these  records  are  inserted.  This  ensures  that  these 
+records  are  always  present  in  the  original  format.  This  is  very  helpful  for  testing  to  have  records 
+which  are  already  there.  The  errors  arise  now  because  some  tests  depend  on  the  fixtures  of  other 
+tests and  the  fixtures are  loaded only before each test  is run. After the  first execution all records are 
+present and the errors should not occur anymore. 
+
+6.9  Modifying the database 
+Since the temporal database adds some constraints to the data special attention has to be paid when 
+changing the data in the database manually. If the data is changed without respecting the constraints 
+the application may not work as expected anymore. 
+
+ 
+
+29 of 40 
+
+Adding a record 
+When adding a record to a valid time table the things to be aware of is the temporal id, the start date 
+and  the  end  date.  The  temporal  id  is  used  to  identify  records  and  therefore  the  history  of  a  record 
+has  the  same  temporal  id.  The  start  and  end  date  specify  the  valid  time  and MUST  be  specified.  To 
+add correctly a new  record  the biggest  temporal  id has to be  incremented by  one,  the start date has 
+to be set to the actual date (or also a past date) and the end date to “2038-01-19 04:14:07”. E.g. 
+
+INSERT INTO printers (name,…, temporal_id, start_date, end_date) VALUES (“Canon”,…, 1, “2000-01-
+01 12:00:00”, “2038-01-19 04:14:07”) 
+
+Editing a record 
+When editing a  record  it  is  important  to know which  the global attributes are because  they must be 
+the  same  for  all  entries  of  a  one  device.  When  editing  the  start  or  end  date  of  a  record  make  sure 
+that also the according following start or end date is modified accordingly. 
+
+E.g.  If there  is a record with  the end date 2000-01-01 12:00:00  then there exists another  record with 
+start  date  2000-01-01  12:00:00  (if  the  record  is  not  deleted).  When  the  end  date  is  modified  then 
+also the start date has to be modified to ensure that there are no gaps in history or overlapping. 
+
+Deleting a record 
+
+Delete a single entry 
+When  deleting  a  single  entry  of  the  history  of  a  device  it  is  important  to  modify  the  start  and  end 
+date of the enclosing records. 
+
+E.g.  take  Table  5  and  its  entries.  If  the  history  element  with  ID=2  should  be  deleted  then  either  the 
+end date of record with ID=1 must be set to 2000-01-20 11:15:40 or the start date of the record with 
+ID=3 must  be  set  to  2000-01-10  11:15:34.  This  depends  on  the  fact  which  record  should  be  valid  in 
+the interval of the deleted one. If the record with ID=3 should be deleted then the end date of record 
+with ID=2 must be set to 2038-01-19 04:14:07. 
+
+ID  Name 
+1  HP Desk Jet 815i 
+2  HP Desk Jet 815i 
+
+3  HP Desk Jet 815i 
+
+Start date 
+2000-01-01 10:30:25 
+2000-01-10 11:15:34 
+
+2000-01-20 11:15:40 
+Table 5: Database deletion 
+
+End date 
+2000-01-10 11:15:34 
+2000-01-20 11:15:40 
+
+2038-01-19 04:14:07 
+
+Delete the whole history of an entry 
+To delete all records of a device from the database  it is enough to delete them through the temporal 
+id. 
+
+E.g. if a copier with temporal id = 8 should be deleted the SQL instruction may look like this: 
+
+DELETE FROM copiers WHERE temporal_id = 8 
+
+ 
+
+ 
+
+ 
+
+30 of 40 
+
+7  Deployment 
+The application should be deployed on an Apache server of the Free University of Bolzano. To deploy 
+a Rails application there are several options. 
+
+7.1  Apache Tomcat web server 
+Apache Tomcat web server  is written  for  Java and  to deploy  Java Server Pages. Therefore a so called 
+WAR  (Web Archive)  file  is  required.  Thanks  to  a  plug  in, which  is  called  goldspike,  and with  the  help 
+of a how-to10 I was able to create a working WAR file of a simple test application. I uploaded it to the 
+Tomcat server and it worked. I did now the same with my application and already during the creation 
+of  the WAR  file  I  got  an  error.  The  error was  about  the  “acts_as_ferret”  plug  in which  is  used  in  the 
+application  for  the  full-text  search. Also with  the help of  the  internet  I was not able  to make  it work 
+and  therefore  I  removed  the  search  functionality  to  test  the  creation  of  the  WAR  file.  If  it  will  not 
+work  I  will  have  to  replace  the  plug  in  by  writing  SQL  queries  for  searching.  After  I  removed  it  the 
+WAR  file was  successfully  created  and  I  uploaded  it  to  the  server.  It  did  not work  and  I  got  always a 
+“Resource not found” error. I found out that this was because I used REST in my application. 
+
+7.2  Mongrel web server with redirection 
+Another option is to deploy the Rails application on a Mongrel web server which is the Ruby pendant 
+of  Apache  Tomcat.  It  is  a  fast  and  reliable  web  server  but  load  balancing  and  static  content  are  its 
+weaknesses. To overcome this problems the solution is to use an Apache server to redirect  incoming 
+requests to multiple Mongrel instances with load balancing. If performance goes down it is enough to 
+start  more  instances  of  Mongrel.  The  Apache  web  server  takes  also  care  of  providing  the  static 
+content of the page. 
+
+ 
+
+ 
+
+                                                           
+10 http://www.developer.com/db/article.php/10920_3691716_1 
+
+ 
+
+31 of 40 
+
+8  Screenshots and description 
+When  the  user  types  the  URL  of  the  project 
+he/she  gets  redirected  to  the  login  screen 
+(Figure  19).  The  login  submits  the  inserted 
+username and password to the LDAP server of 
+the  university  and  checks  if  the  user  is  a 
+member  of  the  university.  If  the  user  is 
+authenticated  the  application  compares  the 
+user name with the usernames  in a  local table 
+to  determine  if  the  user  is  a  power  user  and 
+can therefore add, update and delete entries. 
+
+Figure 19: Login screen 
+
+ 
+
+This is the sidebar (Figure 20) with all the menu entries which can be  looked at. This 
+is  the  menu  for  the  administrator  because  there  is  an  entry  called  “user 
+management”  to  add  and  remove  power  users.  Through  this  links  the  user  is  able 
+show the data. 
+
+ 
+
+Figure 20: Sidebar 
+
+Here  we  see  a  list  of  networks 
+(Figure  21).  All 
+the  associated 
+attributes are shown and  the actions 
+which a power user can perform. For 
+a  normal  user  only  the  “Details” 
+action  would  be  enabled.  At  the  top 
+there  is  the  search  area,  where  a 
+power  and  a  normal  user  can  search 
+for  a  word  and  also  perform  a 
+temporal  search.  For  the  temporal 
+search  the  user  specifies  a  date  and 
+clicks  on  search.  The  result  of  the 
+temporal  search  is  the  state  of  the 
+“Networks”  at  the  given  date-time. 
+This  makes  it  possible  to  look  in  the 
+history. 
+
+ 
+
+Figure 21: List of networks 
+
+ 
+
+32 of 40 
+
+ 
+
+This  Figure  shows  the  details  page  (Figure  22)  of  a 
+network.  Here  we  have  at  the  top  the  common 
+attributes  which  are  the  same  for  all  historical 
+entries  and  are  changed  for  all  historical  entries  if 
+needed.  Then  there  are  the  associated  LANs which 
+may  be  virtual  LANs.  On  a  click  on  them  we  are 
+redirected  to  the  details  page  of  the  appropriate 
+LAN.  And  finally  there  is  the  history  where  all 
+changes  made  to  the  “changeable”  attributes  are 
+listed with the date when they were changed. 
+
+Figure 22: Details of a network 
+
+ 
+
+The different “ways” of the web application, based on the user roles, can be seen in Figure 23. 
+
+Figure 23: Page flow diagram 
+
+ 
+
+33 of 40 
+
+ 
+
+9  Conclusion 
+With  this  project  I  learned  much  about  web  applications  and  in  general  about  Ruby  and  Ruby  on 
+Rails.  It  was  very  interesting  for  me  to  create  an  application  and  performing  all  the  different  steps 
+from requirements gathering  to  the deployment of the application.  It took me some  time to get  into 
+Ruby on Rails and temporal databases but it was a good experience and may be useful for my future.  
+I  think  that  it  is  very  important  to  try out  and work with  new  technologies  because  especially  in  the 
+field  of  computer  science  the  knowledge  obtained  now  has  a  half-life  period  of  about  3  years.  This 
+means  that  we  have  to  learn  almost  every  three  years  something  new  and  work  with  these  new 
+technologies. 
+
+About temporal databases I want to say that it is a very powerful concept which can be used in many 
+different  fields.  It  requires  some  attention when working with  temporal  data  but  I  think  a  temporal 
+database could enrich many applications. 
+
+I would  like  to  thank my  tutor  Sergio  Tessaris which  supported me when  I  had  problems  during  the 
+development and my girlfriend which supported me mentally in these three months. 
+
+Future work 
+For  future  work  the  temporal  search  functionality  could  be  extended.  One  could  create  more 
+sophisticated  search  methods  and  give  interesting  statistics  about  the  data.  For  example  the  user 
+could  be  allowed  to  perform  a  temporal  search  over  a  time  interval  which  would  show  him  all 
+changes made during that interval.  
+
+Another work would be  to extend  the user management. Now  it  is only possible  to add users  to  the 
+power users  list. Therefore a user  is either a power user or a normal user. One could  implement  the 
+notion of groups which makes it easier to add a group of people to the power users list. An additional 
+feature would be to give users individual rights which may differ from user to user. 
+
+ 
+
+ 
+
+ 
+
+34 of 40 
+
+10  Acronyms 
+
+API 
+
+CD 
+
+CPU 
+
+CRT 
+
+Application Programming Interface 
+
+Compact Disc 
+
+Central Processing Unit 
+
+Cathode Ray Tube 
+
+DBMS 
+
+DataBase Management System 
+
+DRY 
+
+DVD 
+
+GUI 
+
+HTTP 
+
+IP 
+
+LAN 
+
+LDAP 
+
+MD5 
+
+REST 
+
+SOAP 
+
+SQL 
+
+SSL 
+
+Don’t Repeat Yourself 
+
+Digital Versatile Disc 
+
+Graphical User Interface 
+
+HyperText Transfer Protocol 
+
+Internet Protocol 
+
+Local Area Network 
+
+Lightweight Directory Access Protocol 
+
+Message Digest algorithm 5 
+
+REpresentational State Transfer 
+
+Simple Object Access Protocol 
+
+Structured Query Language 
+
+Secure Socket Layer 
+
+TCP/IP 
+
+Transmission Control Protocol/Internet Protocol 
+
+TDD 
+
+TFT 
+
+UI 
+
+UML 
+
+VLAN 
+
+XML 
+
+Test Driven Development 
+
+Thin Film Transistor 
+
+User Interface 
+
+Unified Modeling Language 
+
+Virtual Local Area Network 
+
+eXtensible Mark-up Language 
+
+XML-RPC 
+
+eXtensible Mark-up Language Remote Procedure Call 
+
+XP 
+
+XSS 
+
+ 
+
+eXtreme Programming 
+
+Cross Site Scripting 
+
+ 
+
+ 
+
+35 of 40 
+
+11  References 
+1.  TimeConsult.  http://www.timeconsult.com.  [Online]  21  May  2005.  [Cited:  7  September  2007.] 
+http://www.timeconsult.com/Software/AboutTimeDB1.0.html. 
+
+2.  Snodgrass,  Richard  T.  Developing  Time-Oriented  Database  Applications  in  SQL.  San  Francisco, 
+California : Morgan Kaufmann Publishers, July 1999. p. 504+xxiii. ISBN 1-55860-436-7. 
+
+3. SQL injection. http://en.wikipedia.org/wiki/SQL_injection. [Online]  
+
+4. Cross Site Scripting. http://www.cgisecurity.com/articles/xss-faq.shtml. [Online]  
+
+5. Thomas, Dave and Hansson, David Heinemeier. Agile Web Development with Rails. United States : 
+Pragmatic Bookshelf, 2005. ISBN-13: 978-0977616633. 
+
+6. Wirdemann, Ralf and Baustert, Thomas. RESTful Rails Development. Hamburg : s.n., 2007. Can be 
+downloaded at http://www.b-simple.de/documents. 
+
+7.  Lenz,  Patrick.  Build  Your  Own  Ruby  On  Rails Web  Applications.  VIC  Australia :  SitePoint  Pty.  Ltd., 
+2007. p. 447. ISBN-13: 978-0975841952. 
+
+8. SOAP. http://en.wikipedia.org/wiki/SOAP. [Online]  
+
+9. XML- RPC. http://en.wikipedia.org/wiki/XML_RPC. [Online]  
+
+10. REST. http://en.wikipedia.org/wiki/Representational_State_Transfer. [Online]  
+
+11. Thesis Amantia Pano. http://www.unibz.it/library/dl/thesis/00002275.pdf.  
+
+12. Faculty Wiki. https://www.inf.unibz.it/wiki/doku.php. [Online]  
+
+ 
+
+ 
+
+ 
+
+ 
+
+36 of 40 
+
+12  Appendix 
+
+a)  UML diagram of the API 
+
+ 
+
+ 
+
+37 of 40 
+
+b)  UML diagram of the internal structure of the program  
+
+ 
+
+38 of 40 
+
+ 
+
+c)  Schema diagram of the database 
+
+The  foreign  keys  of  the  tables  can  be  deduced  from 
+the names in the many to many tables. 
+
+ 
+
+ 
+39 of 40 
+
+d)  Used programs and versions 
+
+Name 
+Ruby 
+
+Rails 
+
+Eclipse 
+
+Aptana 
+(Eclipse plug-in) 
+RadRails 
+(Eclipse plug-in) 
+Ruby 
+development 
+tools 
+PostgreSQL 
+
+MySQL 
+
+CURL 
+
+Version 
+1.8.6  (2007-03-13 
+patch level 0) 
+
+1.2.3 
+
+3.3.0 
+
+Link 
+http://rubyinstaller.rubyforge.org/wiki/wiki.pl for 
+Windows 
+http://www.ruby-lang.org/en/ for other OS’s 
+http://www.rubyonrails.org/down 
+
+http://www.eclipse.org/downloads/ 
+
+1.5.0.00001 
+
+http://www.aptana.com/download_rails_rdt.php 
+
+0.8.0.200707021211 
+
+http://www.aptana.com/download_rails_rdt.php 
+
+0.9.0.707021729NGT  http://rubyeclipse.sourceforge.net/download.rdt.html 
+
+http://www.postgresql.org/download/ 
+
+http://dev.mysql.com/downloads/ 
+
+http://curl.haxx.se/download.html 
+
+8.2 
+
+5.0 
+
+(i586-pc-
+7.16.3 
+mingw32msvc) 
+libcurl/7.16.3 
+zlib/1.2.2 
+
+ 
+
+User manual 
+
+e)  User manual 
+
+ 
+
+40 of 40 
+
+

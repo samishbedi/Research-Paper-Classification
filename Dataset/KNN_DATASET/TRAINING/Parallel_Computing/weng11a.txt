@@ -1,0 +1,3550 @@
+Journal of Machine Learning Research 12 (2011) 267-300
+
+Submitted 9/09; Revised 7/10; Published 1/11
+
+A Bayesian Approximation Method for Online Ranking
+
+Ruby C. Weng
+Department of Statistics
+National Chengchi University
+Taipei 116, Taiwan
+
+Chih-Jen Lin
+Department of Computer Science
+National Taiwan University
+Taipei 106, Taiwan
+
+Editor: Thore Graepel
+
+CHW ENG@NCCU . EDU . TW
+
+C J L IN@C S I E .N TU . EDU . TW
+
+Abstract
+This paper describes a Bayesian approximation method to obtain online ranking algorithms for
+games with multiple teams and multiple players. Recently for Internet games large online ranking
+systems are much needed. We consider game models in which a k-team game is treated as several
+two-team games. By approximating the expectation of teams’ (or players’) performances, we derive
+simple analytic update rules. These update rules, without numerical integrations, are very easy to
+interpret and implement. Experiments on game data show that the accuracy of our approach is
+competitive with state of the art systems such as TrueSkill, but the running time as well as the code
+is much shorter.
+Keywords: Bayesian inference, rating system, Bradley-Terry model, Thurstone-Mosteller model,
+Plackett-Luce model
+
+1. Introduction
+
+Many have proposed online updating algorithms for paired comparison experiments. These online
+algorithms are especially useful when the number of teams to be ranked and the number of games are
+very large. For the ranking of many sports, possibly the most prominent ranking system in use today
+is Elo (1986). The Elo ranking system has been used successfully by leagues organized around two-
+player games, such as world football league, the US Chess Federation (USCF) or the World Chess
+Federation (FIDE), and a variety of others. Glickman (1999) proposed the Glicko updating system,
+which improves over Elo by incorporating the variability in parameter estimates. To the best of
+our knowledge, Glicko is the ﬁrst Bayesian ranking system. To begin, prio r to a rating period, a
+player’s skill (q) is assumed to follow a Gaussian distribution which can be characterized by two
+numbers: the average skill of the player ( µ ) and the degree of uncertainty in the player’s skill (s).
+Then, Glicko models the game outcomes by the Bradley-Terry model (Bradley and Terry, 1952) and
+updates players’ skills after a rating period. Glickman (1999) also reported that the Glicko system
+performs best when the number of games per player is around 5-10 in a rating period. Though
+the Elo and Glicko ranking systems have been successful, they are designed for two-player games.
+In video games a game often involves more than two players or teams. To address this problem,
+recently Microsoft Research developed TrueSkill (Herbrich et al., 2007), a ranking system for Xbox
+
+c(cid:13)2011 Ruby C. Weng and Chih-Jen Lin.
+
+W ENG AND L IN
+
+Live. TrueSkill is also a Bayesian ranking system using a Gaussian belief over a player’s skill,
+but it differs from Glicko in several ways. First, it is designed for multi-team/multi-player games,
+and it updates skills after each game rather than a rating period. Secondly, Glicko assumes that
+the performance difference follows the logistic distribution (the model is termed the Bradley-Terry
+model), while TrueSkill uses the Gaussian distribution (termed the Thurstone-Mosteller model).
+Moreover, TrueSkill models the draws and offers a way to measure the quality of a game between
+any set of teams. The way TrueSkill estimates skills is by constructing a graphical model and using
+approximate message passing. In the easiest case, a two-team game, the TrueSkill update rules are
+fairly simple. However, for games with multiple teams and multiple players, the update rules are
+not possible to write down as they require an iterative procedure.
+The present paper concerns the ranking of players from outcomes of multiple players or games.
+We consider a k-team game as a single match and discuss the possibility of obtaining efﬁcient
+update algorithms. We introduce a Bayesian approximation method to derive simple analytic rules
+for updating team strength in multi-team games. These update rules avoid a numerical integration
+and are easy to interpret and implement. Strength of players in a team are then updated by assuming
+that a team’s skill is the sum of skills of ts members. Our framework can be applied by considering
+various ranking models. In this paper, we demonstrate the use of the Bradley-Terry model, the
+Thurstone-Mosteller model, and the Plackett-Luce model. Experiments on game data show that the
+accuracy of our approach is competitive with the TrueSkill ranking system, but the running time as
+well as the code are shorter. Our method is faster because we employ analytic update rules rather
+than iterative procedures in TrueSkill.
+The organization of this paper is as follows. In Section 2, we brieﬂy review the modeling of
+ranked data. Section 3 presents our approximation method and gives update equations of using the
+Bradley-Terry model. Update rules of using other ranking models are given in Section 4. As Glicko
+is also based on the Bradley-Terry model, for a comparison purpose we describe its approximation
+procedures in Section 5. Experimental studies are provided in Section 6. Section 7 concludes the
+paper. Some notation is given in Table 1.
+
+2. Review of Models and Techniques
+
+This section reviews existing methods for modeling ranked data and discusses approximation tech-
+niques for Bayesian inference.
+
+2.1 Modeling Ranked Data
+
+Given the game outcome of k teams, we deﬁne r(i) as the rank of team i. If teams i1 , . . . , id are tied
+together, we have
+
+and let the team q ranked next have
+
+r(i1 ) = · · · = r(id ),
+
+r(q) = r(i1 ) + d .
+For example, if four teams participate in a game, their ranks may be
+
+r(1) = 2, r(2) = 2, r(3) = 4, r(4) = 1,
+
+(1)
+
+where teams 1 and 2 are both ranked the second. Then team 3, which ranked the next, has r(3) = 4.
+We also need the “inverse” of
+r, so that ¯r(i) indicates the index of the ith ranked team. However, the
+
+268
+
+A BAY E S IAN A P PROX IMAT ION M E THOD FOR ON L IN E RANK ING
+
+Explanation
+number of teams participating in a game
+number of players in team i
+strength of the jth player in team i
+prior distribution of qi j
+standardized quantity of qi j ; see (45)
+qi j
+strength of team i; qi = (cid:229)ni
+j=1
+uncertainty about the performance of team i
+performance of team i (Xi ∼ N (qi , b2
+i ) for Thurstone-Mosteller model)
+prior distribution of qi
+(cid:229)ni
+j=1 µ
+i j
+s2
+(cid:229)ni
+i j
+j=1
+standardized quantity of qi ; see (24)
+rank of team i in a game; smaller is better; see Section 2.1
+index of the ith ranked team; “inverse” of
+r; see Section 2.1
+draw margin (Thurstone-Mosteller model)
+probability density function of a standard normal distribution; see (66)
+cumulative distribution function of a standard normal distribution
+probability density function of a k-variate standard normal distribution
+cumulative distribution function of a k-variate standard normal distribution
+a small positive value to avoid s2
+i becoming negative; see (28) and (44)
+the game outcome
+expectation with respect to a random variable
+
+Table 1: Notation
+
+i j , s2
+i j )
+
+i , s2
+i )
+
+Notation
+k
+ni
+qi j
+N ( µ
+Zi j
+qi
+b2
+i
+Xi
+N ( µ
+i
+s2
+i
+Zi
+r(i)
+¯r(i):
+e
+f
+F
+fk
+Fk
+k
+D
+E (·)
+
+function r is not one-to-one if ties occur, so the inverse is not directly available. We choose ¯r to be
+any one-to-one mapping from {1, . . . , k} to {1, . . . , k} satisfying
+r( ¯r(i)) ≤ r( ¯r(i + 1)), ∀i.
+For example, if r is as in Equation (1), then ¯r could be
+
+(2)
+
+¯r(1) = 4, ¯r(2) = 1, ¯r(3) = 2, ¯r(4) = 3.
+
+We may have ¯r(2) = 2 and ¯r(3) = 1 instead, though in this paper choosing any ¯r satisfying (2) is
+enough.
+A detailed account of modeling ranked data is by Marden (1995). For simplicity, in this section
+we assume that ties do not occur though ties are handled in later sections. Two most commonly used
+models for ranked data are the Thurstone-Mosteller model (Thurstone, 1927) and the Bradley-Terry
+model. Suppose that each team is associated with a continuous but unobserved random variable Xi ,
+representing the actual performance. The observed ordering that team ¯r(1) comes in ﬁrst, team ¯r(2)
+comes in second and so on is then determined by the Xi ’s:
+
+X ¯r(1) > X ¯r(2) > · · · > X ¯r(k) .
+
+269
+
+(3)
+
+µ
+W ENG AND L IN
+
+Thurstone (1927) invented (3) and proposed using the normal distribution. The resulting likelihood
+associated with (3) is
+
+(5)
+
+(4)
+P(X ¯r(1) − X ¯r(2) > 0, . . . , X ¯r(k−1) − X ¯r(k) > 0),
+where X ¯r(i) − X ¯r(i+1) follows a normal distribution. In particular, if k = 2 and Xi follows N (qi , b2
+i ),
+where qi is the strength of team i and b2
+i is the uncertainty of the actual performance Xi , then
+
+P(Xi > Xq ) = F 
+qi − qq
+ ,
+
+qb2
+i + b2
+q
+where F denotes the cumulative distribution function of a standard normal density.
+Numerous papers have addressed the ranking problem using models like (5). However, most
+of them consider an off-line setting. That is, they obtain the likelihood using all available data and
+maximize the likelihood. Such an approach is suitable if data are not large. Recent attempts to
+extend this off-line approach to multiple players and multiple teams include Huang et al. (2006).
+However, for large systems which constantly have results being added/dropped, an online approach
+is more appropriate.
+The Elo system is an online rating scheme which models the probability of game output as (5)
+with bi = bq and, after each game, updates the strength qi by
+qi ← qi + K (s − P(i wins)),
+where K is some constant, and s = 1 if i wins and 0 otherwise. This formula is a very intuitive way
+to update strength after a game. More discussions of (6) can be seen in, for example, Glickman
+(1999). The Elo system with the logistic variant corresponds to the Bradley-Terry model (Bradley
+and Terry, 1952). The Bradley-Terry model for paired comparisons has the form
+
+(6)
+
+P(Xi > Xq ) =
+
+vi
+vi + vq
+
+,
+
+(7)
+
+where vi > 0 is the strength of team i. The model (7) dates back to Zermelo (1929) and can be
+derived in several ways. For instance, it can be obtained from (3) by letting Xi follow a Gumbel
+distribution with the cumulative distribution function
+P(Xi ≤ x) = exp(−exp(−(x − qi ))), where qi = log vi .
+Then Xi − Xq follows a logistic distribution with the cumulative distribution function
+eqq
+P(Xi − Xq ≤ x) =
+eqi−x + eqq
+Using x = 0 and P(Xi > Xq ) = 1 − P(Xi ≤ Xq ), we obtain (7). In fact, most currently used Elo variants
+for chess data use a logistic distribution rather than Gaussian because it is argued that weaker players
+have signiﬁcantly greater winning chances than the Gaussian model predic ts.1 Figure 1 shows i’s
+winning probability P(Xi > Xq ) against the skill difference qi − qq for the two models (5) and (8).
+q )1/2 in (5) are set as 4/√2p ≈ 1.6 so that the two winning probability curves have
+i + b2
+The (b2
+the same slope at qi = qq . Clearly, given that the two models closely match when two teams have
+
+(8)
+
+.
+
+270
+
+A BAY E S IAN A P PROX IMAT ION M E THOD FOR ON L IN E RANK ING
+
+y
+t
+i
+l
+i
+b
+a
+b
+o
+r
+p
+ 
+g
+n
+i
+n
+n
+i
+W
+
+1
+
+0.9
+
+0.8
+
+0.7
+
+0.6
+
+0.5
+
+0.4
+
+0.3
+
+0.2
+
+0.1
+
+0
+−6
+
+−4
+
+−2
+
+0
+− q
+q
+i
+q
+
+2
+
+4
+
+6
+
+Figure 1: Winning probability P(Xi > Xq ). Solid (blue): Gaussian distribution (5), Dashed (black):
+logistic distribution (8).
+
+about the same skill levels, the logistic model gives a weak team i a higher winning chance than the
+Gaussian model does.
+In addition to Elo and Glicko, other online systems have been proposed. For example, Menke
+and Martinez (2008) propose using Artiﬁcial Neural Networks. Thoug h this approach can handle
+multiple players per team, it aims to handle only two teams per game.
+For comparisons involving k ≥ 3 teams per game, the Bradley-Terry model has been generalized
+in various ways. The Plackett-Luce model (Marden, 1995) is one of such models. This model,
+motivated by a k-horse race, has the form
+
+q ¯rk
+e
+q ¯rk
+e
+
+.
+
+P( ¯r(1), . . . , ¯r(k)) =
+
+eq ¯r1
+eq ¯r2
+q ¯rk ×
+q ¯rk × · · · ×
+eq ¯r2 + · · · + e
+eq ¯r1 + · · · + e
+An intuitive explanation of this model is a multistage ranking in which one ﬁrst cho oses the most
+favorite, then chooses the second favorite out of the remaining, etc.
+When k ≥ 3, as the X ¯r(i) − X ¯r(i+1) ’s in (4) are dependent, the calculation of the joint probabil-
+ity (4) involves a (k − 1)-dimensional integration, which may be difﬁcult to calculate. Therefore,
+TrueSkill uses a factor graph and the approximate message passing (Kschischang et al., 2001) to
+infer the marginal belief distribution over the skill of each team. In fact, some messages in the fac-
+tor graph are non Gaussian and these messages are approximated via moment matching, using the
+Expectation Propagation algorithm (Minka, 2001).
+
+(9)
+
+2.2 Approximation Techniques for Bayesian Inference
+
+From a Bayesian perspective, both the observed data and the model parameters are considered
+random quantities. Let D denote the observed data, and q the unknown quantities of interest. The
+joint distribution of D and q is determined by the prior distribution P(q) and the likelihood P(D|q):
+P(D, q) = P(D|q)P(q).
+1. According to http://en.wikipedia.org/wiki/Elo_rating_system, USCF and FIDE use formulas based on the
+logistic distribution.
+
+271
+
+W ENG AND L IN
+
+=
+
+(10)
+
+After observing D, Bayes theorem gives the distribution of q conditional on D:
+P(q, D)
+P(q, D)
+P(q|D) =
+R P(q, D)dq .
+P(D)
+This is the posterior distribution of q, which is useful for estimation. Quantities about the posterior
+distribution such as moments, untiles, etc can be expressed in terms of posterior expectations of
+some functions g(q); that is,
+E [g(q)|D] = R g(q)P(q, D)dq
+R P(q, D)dq .
+The probability P(D), called evidence or marginal likelihood of the data, is useful for model selec-
+tion. Both P(q|D) and P(D) are major objects of Bayesian inference.
+The integrations involved in Bayesian inference are usually intractable. The approximation
+techniques can be divided into deterministic and nondeterministic methods. The nondeterministic
+method refers to the Monte Carlo integration such as Markov Chain Monte Carlo (MCMC) methods,
+which draw samples approximately from the desired distribution and forms sample averages to
+estimate the expectation. However, when it comes to sequential updating with new data, the MCMC
+methods may not be computationally feasible, the reason being that it does not make use of the
+analysis from the previous data; see, for example, Section 2.8 in Glickman (1993).
+The popular deterministic approaches include Laplace method, variational Bayes, expectation
+propagation, among others. The Laplace method is a technique for approximating integrals:
+Z en f (x)d x ≈ (cid:18) 2p
+n (cid:19) k
+2
+| − (cid:209)2 f (x0 )|− 1
+2 en f (x0 ) ,
+where x is k-dimensional, n is a large number, f : Rk → R is twice differentiable with a unique global
+maximum at x0 , and | · | is the determinant of a matrix. By writing P(q, D) = exp(log P(q, D)), one
+can approximate the integral R P(q, D)dq. This method has been applied in Bayesian statistics; for
+example, see Tierney and Kadane (1986) and Kass and Raftery (1995).
+The variational Bayes methods are a family of techniques for approximating these intractable
+integrals. They construct a lower bound on the marginal likelihood and then try to optimize this
+bound. They also provide an approximation to the posterior distribution which is useful for estima-
+tion.
+The Expectation Propagation algorithm (Minka, 2001) is an iterative approach to approximate
+posterior distributions. It tries to minimize Kullback-Leibler divergence between the true posterior
+and the approximated distribution. It can be viewed as an extension of assumed-density ﬁltering to
+batch situation. The TrueSkill system (Herbrich et al., 2007) is based on this algorithm.
+Now we review an identity for integrals in Lemma 1 below, which forms the basis of our approx-
+imation method. Some deﬁnitions are needed. A function f : Rk → R is called almost differentiable
+if there exists a function (cid:209) f : Rk → Rk such that
+f (z + y) − f (z) = Z 1
+0
+for z, y ∈ Rk . Of course, a continuously differentiable function f is almost differentiable with (cid:209) f
+equal to the gradient, and (11) is the indeﬁnite integral in multi-dimensional cas e.
+
+yT (cid:209) f (z + t y)dt
+
+(11)
+
+272
+
+A BAY E S IAN A P PROX IMAT ION M E THOD FOR ON L IN E RANK ING
+
+Given h : Rk → R, let h0 = R h(z)dFk (z) be a constant, hk (z) = h(z),
+h(z1 , . . . , z j , w)dFk− j (w), and
+h j (z1 , . . . , z j ) = ZRk− j
+¥
+j /2 Z
+g j (z1 , . . . , zk ) = ez2
+[h j (z1 , . . . , z j−1 , w) − h j−1 (z1 , . . . , z j−1 )]e−w2 /2dw,
+z j
+for −¥ < z1 , . . . , zk < ¥ and j = 1, . . . , k. Then let
+U h = [g1 , . . . , gk ]T
+and
+
+U 2h + (U 2h)T
+2
+where U 2h is the k × k matrix whose jth column is U g j and g j is as in (13).
+Let G be a measure of the form:
+
+V h =
+
+,
+
+dG(z) = f (z)fk (z)d z,
+
+(12)
+
+(13)
+
+(14)
+
+(15)
+
+where f is a real-valued function (not necessarily non-negative) deﬁned on Rk .
+
+Lemma 1 (W-Stein’s Identity) Suppose that dG is deﬁned as in (15), where f is almost differen-
+tiable. Let h be a real-valued function deﬁned on R k . Then,
+Z h(z)dG(z) = Z f (z)dFk (z) · Z h(z)dFk (z) + Z (U h(z))T (cid:209) f (z)dFk (z),
+provided all the integrals are ﬁnite.
+
+(16)
+
+Lemma 1 was given by Woodroofe (1989). The idea of this identity originated from Stein’s
+lemma (Stein, 1981), but the latter considers the expectation with respect to a normal distribution
+(i.e., the integral R h(z)dFk (z)), while the former studies the integration with respect to a “nearly
+normal distribution” G in the sense of (15). Stein’s lemma is famous and of interest because of its
+applications to James-Stein estimator (James and Stein, 1961) and empirical Bayes methods.
+The proof of this lemma is in Proposition 1 of Woodroofe (1989). For self-completeness, we
+sketch it for the 1-dimensional case in Appendix A. Essentially the proof is based on exchanging
+the order of integration (Fibini theorem), and it is the very idea for proving Stein’s lemma. Due to
+this reason, Woodroofe termed (16) a version of Stein’s identity. However, to distinguish it from
+Stein’s lemma, here we refer to it as W-Stein’s identity.
+Now we assume that ¶ f /¶z j , j = 1, . . . , k are almost differentiable. Then, by writing
+¶ f (z)
+k(cid:229)
+¶zi
+i=1
+and applying (16) with h and f replacing by gi and ¶ f /¶zi , we obtain
+¶ f
+dFk (z) + Z (U (gi ))T (cid:209) (cid:18) ¶ f
+¶ f
+¶zi (cid:19) dFk (z),
+dFk (z) = Fk (gi ) Z
+Z gi
+¶zi
+¶zi
+provided all the integrals are ﬁnite. Note that Fk (gi ) in the above equation is a constant deﬁned as
+Fk (gi ) = Z gi (z)fk (z)d z.
+
+(U h(z))T (cid:209) f (z) =
+
+gi (z)
+
+(17)
+
+273
+
+W ENG AND L IN
+
+By summing up both sides of (17) over i = 1, . . . , k, we can rewrite (16) as
+Z h(z) f (z)dFk (z) = Z f (z)dFk (z) · Z h(z)dFk (z) + (FkU h)T Z (cid:209) f (z)dFk (z)
++ Z tr (cid:2)(V h(z))(cid:209)2 f (z)(cid:3) dFk (z);
+see Proposition 2 of Woodroofe and Coad (1997) and Lemma 1 of Weng and Woodroofe (2000).
+Here FkU h = (Fk (g1 ), ..., Fk (gk ))T , “tr ” denotes the trace of a matrix, and (cid:209)2 f the Hessian matrix
+of f . An extension of this lemma is in Weng (2010).
+Let Z = [Z1 , . . . , Zk ]T be a k-dimensional random vector with the probability density
+Cfk (z) f (z),
+C = (cid:18)Z fk (z) f (z)d z(cid:19)−1
+is the normalizing constant. Lemma 1 can be applied to obtain expectations of functions of Z in the
+following corollary.
+
+where
+
+(18)
+
+(19)
+
+(20)
+
+Corollary 2 Suppose that Z has probability density (19). Then,
+Z f dFk = C−1 and E h(Z) = Z h(z)dFk (z) + E (cid:20)(U h(Z))T (cid:209) f (Z)
+f (Z) (cid:21) .
+Further, (18) and (20) imply
+E h(Z) = Z h(z)dFk (z) + (FkU h)T E (cid:20) (cid:209) f (Z)
+(cid:209)2 f (Z)
+f (Z) (cid:19)(cid:21) .
+f (Z) (cid:21) + E (cid:20)tr (cid:18)V h(Z)
+In particular, if h(z) = zi , then by (14) it follows U h(z) = ei (a function from Rk to Rk ); and if
+h(z) = zi z j and i < j, then U h(z) = zi e j , where {e1 , · · · , ek } denote the standard basis for Rk . For
+example, if k = 3 and h(z) = z1 z2 , then U h(z) = [0, z1 , 0]T and U 2h(z) is the matrix whose (1, 2)
+entry is 1 and the rest entries are zeros; see Appendix B for details. With these special h functions,
+(20) and (21) become
+E [Z] = E (cid:20) (cid:209) f (Z)
+f (Z) (cid:21) ,
+E [ZiZq ] = diq + E (cid:20) (cid:209)2 f (Z)
+f (Z) (cid:21)iq
+where diq = 1 if i = q and 0 otherwise, and [·]iq indicates the (i, q) component of a matrix.
+In the current context of online ranking, since the skill q is assumed to follow a Gaussian distri-
+bution, the update procedure is mainly for the mean and the variance. Therefore, (22) and (23) will
+be useful. The detailed approximation procedure is in the next section.
+
+i, q = 1, . . . , k,
+
+(21)
+
+(22)
+
+,
+
+(23)
+
+3. Method
+
+In this section, we ﬁrst present our proposed method for updating team a nd individual skills. Then,
+we give the detailed derivation for the Bradley-Terry model.
+
+274
+
+A BAY E S IAN A P PROX IMAT ION M E THOD FOR ON L IN E RANK ING
+
+3.1 Approximating the Expectations
+Let qi be the strength parameter of team i whose ability is to be estimated. Bayesian online rating
+systems such as Glicko and TrueSkill start by assuming that qi has a prior distribution N ( µ
+i , s2
+i )
+i and s2
+i known, next model the game outcome by some probability models, and then update
+with µ
+the skill (by either analytic or numerical approximations of the posterior mean and variance of qi )
+at the end of the game. These revised mean and variance are considered as prior information for the
+next game, and the updating procedure is repeated.
+Equations (22) and (23) can be applied to online skill updates. To start, suppose that team i has a
+strength parameter qi and assume that the prior distribution of qi is N ( µ
+i , s2
+i ). Upon the completion
+of a game, their skills are characterized by the posterior mean and variance of q = [q1 , . . . , qk ]T . Let
+D denote the result of a game and Z = [Z1 , . . . , Zk ]T with
+qi − µ
+si
+where k is the number of teams. The posterior density of Z given the game outcome D is
+P(z|D) = Cfk (z) f (z),
+where f (z) is the probability of game outcome P(D|z). Thus, P(z|D) is of the form (19). Subse-
+quently we omit D in all derivations.
+Next, we shall update the skill as the posterior mean and variance of q. Equations (22), (23) and
+the relation between Zi and qi in (24) give that
+i + siE [Zi ]
+i =E [qi ] = µ
+µ new
+i + siE (cid:20) ¶ f (Z)/¶Zi
+f (Z)
+
+, i = 1, . . . , k,
+
+Zi =
+
+(cid:21)
+
+(24)
+
+(25)
+
+i
+
+= µ
+
+and
+
+(snew
+i
+
+)2 =Var[qi ] = s2
+i Var[Zi ]
+=s2
+i (cid:0)E [Z 2
+i ] − E [Zi ]2(cid:1)
+i  1 + E (cid:20) (cid:209)2 f (Z)
+(cid:21)2! .
+f (Z) (cid:21)ii − E (cid:20) ¶ f (Z)/¶Zi
+=s2
+f (Z)
+The relation between the current and the new skills are explained below. By chain rule and the
+deﬁnition of Zi in (24), the second term on the right side of (25) can be written as
+siE (cid:20) ¶ f (Z)/¶Zi
+(cid:21) = E (cid:20) ¶ log f (Z)
+(cid:21) = E (cid:20) ¶ f (Z)/¶qi
+(cid:21) ,
+¶qi
+f (Z)
+f (Z)
+which is the average of the relative rate of change of f (the probability of game outcome) with
+respect to strength qi . For instance, suppose that team 1 beats team 2. Then, the larger q1 is, the
+more likely we have such an outcome. Hence, f is increasing in q1 , and the adjustment to team
+1’s skill is the average of the relative rate of change of team 1’s winning probability with respect
+to its strength q1 . On the other hand, a larger q2 is less likely to result in this outcome; hence, f is
+
+(26)
+
+275
+
+W ENG AND L IN
+
+decreasing in q2 and the adjustment to team 2’s skill will be negative. Similarly, we can write the
+last two terms on the right side of (26) as
+(cid:21)2! = E (cid:20) ¶2 log f (Z)
+i  E (cid:20) (cid:209)2 f (Z)
+f (Z) (cid:21)ii − E (cid:20) ¶ f (Z)/¶Zi
+s2
+¶q2
+f (Z)
+i
+which is the average of the rate of change of ¶(log f )/¶qi with respect to qi .
+We propose approximating expectations in (25) and (26) to obtain the update rules:
+
+(cid:21) ,
+
+where
+
+and
+
+Wi = si
+
+¶ f (z)/¶zi
+f (z)
+
+(27)
+(28)
+
+i + Wi ,
+i ← µ
+s2
+i ← s2
+i max(1 − Di , k),
+(cid:12)(cid:12)(cid:12)(cid:12)z=0
++ (cid:18) ¶ f (z)/¶zi
+¶2 f (z)/¶2 zi
+(cid:12)(cid:12)(cid:12)(cid:12)z=0(cid:19)2
+(cid:12)(cid:12)(cid:12)(cid:12)z=0
+f (z)
+f (z)
+¶
+¶zi (cid:18) ¶ f (z)/¶zi
+f (z) (cid:19)(cid:12)(cid:12)(cid:12)(cid:12)z=0
+.
+We set z = 0 so that q is replaced by µ . Such a substitution is reasonable as we expect that the
+posterior density of q to be concentrated on µ . Then the right-hand sides of (27)-(28) are functions
+of µ and s, so we can use the current values to obtain new estimates. Due to the approximation (30),
+1 − Di may be negative. Hence in (28) we set a small positive lower bound k to avoid a negative s2
+i .
+Further, we ﬁnd that the prediction results may be affected by how fast the variance s2
+i is reduced
+in (28). More discussion on this issue is in Section 3.5.
+
+Di = −
+= −
+
+(29)
+
+(30)
+
+3.2 Error Analysis of the Approximation
+
+This section discusses the error induced by evaluating the expectations in (25) and (26) at a single
+z = 0, and then suggests a correction by including the prior uncertainty of skill in the variance
+of the actual performance. For simplicity, below we only consider a two-team game using the
+Thurstone-Mosteller model. Another reason of using the Thurstone-Mosteller model is that we can
+exactly calculate the posterior probability. To begin, suppose that the variance of ith team’s actual
+i . Then, for the Thurstone-Mosteller model, the joint posterior density of (q1 , q2 )
+performance is b2
+is proportional to
+s2 (cid:19) F 
+
+f (cid:18) q1 − µ 1
+s1 (cid:19) f (cid:18) q2 − µ 2
+ ,
+
+276
+
+q1 − q2
+qb2
+1 + b2
+2
+
+µ
+A BAY E S IAN A P PROX IMAT ION M E THOD FOR ON L IN E RANK ING
+
+and the marginal posterior density of q1 is proportional to
+s2 (cid:19) F 
+
+f (cid:18) q1 − µ 1
+q1 − q2
+s1 (cid:19) f (cid:18) q2 − µ 2
+¥
+ dq2
+Z
+
+qb2
+−¥
+1 + b2
+2
+f (cid:18) q2 − µ 2
+= f (cid:18) q1 − µ 1
+¥
+q1
+s1 (cid:19) Z
+s2 (cid:19) Z
+1
+√2p(qb2
+−¥
+−¥
+1 + b2
+2 )
+s1 (cid:19) F 
+
+q1 − µ 2
+= s2f (cid:18) q1 − µ 1
+ ,
+
+qb2
+2 + s2
+1 + b2
+2
+where the last two equalities are obtained by writing the function F(·) as an integral of f (see (66))
+and then interchanging the orders of the double integral. From (31), the posterior mean of q1 given
+D is
+
+e− (y−q2 )2
+2 ) d ydq2
+2(b2
+1 +b2
+
+(31)
+
+.
+
+(32)
+
+and
+
+¥
+q1− µ 2
+q1− µ 1s1
+)F(
+−¥ q1f(
+)dq1
+√b2
+E (q1 ) = R
+2+s2
+1+b2
+2
+¥
+q1− µ 1s1
+q1− µ 2
+)dq1
+−¥ f(
+)F(
+√b2
+R
+1+b2
+2+s2
+2
+Again, by writing the function F(·) as an integral and interchanging the orders of the integrals, we
+obtain that the numerator and the denominator of the right side of (32) are respectively
+f(
+µ 1− µ 2
+
+i ) 
+) 
+F 
+√(cid:229)2
+)
+s2
+i +s2
+i=1 (b2
+µ 1 − µ 2
+i )
+1
+µ 1 +
+
+
+
+F(
+q(cid:229)2
+q(cid:229)2
+µ 1− µ 2
+i + s2
+i=1 (b2
+i + s2
+i=1 (b2
+√(cid:229)2
+i )
+i +s2
+i=1 (b2
+i )
+i ) 
+F 
+µ 1 − µ 2
+ .
+
+q(cid:229)2
+i + s2
+i=1 (b2
+Therefore, the exact posterior mean of q1 is
+f (cid:18)
+i ) (cid:19)
+µ 1− µ 2
+√(cid:229)2
+s2
+i=1 (b2
+i +s2
+1
+i ) (cid:19) .
+F (cid:18)
+q(cid:229)2
+i + s2
+i=1 (b2
+µ 1− µ 2
+i )
+√(cid:229)2
+i +s2
+i=1 (b2
+Now we check our estimation. According to (25), (27), and (29),
+E (q) = µ 1 + s1E (cid:20) ¶ f (Z)/¶Z1
+(cid:21)
+f (Z)
+¶ f (z)/¶z1
+(cid:12)(cid:12)(cid:12)(cid:12)z=0
+≈ µ 1 + s1
+,
+f (z)
+
+qi − µ
+ and zi =
+si
+277
+
+f (z) = F 
+
+
+q1 − q2
+qb2
+1 + b2
+2
+
+E (q1 ) = µ 1 +
+
+i
+
+, i = 1, 2.
+
+where
+
+(33)
+
+(34)
+
+(35)
+
+W ENG AND L IN
+
+The derivation later in (93) shows that (35) leads to the following estimation for E (q1 ):
+f (cid:18) µ 1− µ 2√b2
+2 (cid:19)
+s2
+1+b2
+1
+2 (cid:19) .
+F (cid:18) µ 1− µ 2√b2
+qb2
+1 + b2
+2
+1+b2
+The only difference between (33) and (36) is that the former uses b2
+1 + b2
+2 + s2
+1 + s2
+2 , while the latter
+has b2
+1 + b2
+2 . Therefore, the approximation from (34) to (35) causes certain bias. We can correct the
+error by substituting b2
+i with b2
+i + s2
+i when using our approximation method. In practice, we use
+i , where b2 is a constant.
+i = b2 + s2
+b2
+The above arguments also apply to the Bradley-Terry model. We leave the details in Appendix
+
+µ 1 +
+
+(36)
+
+C.
+
+3.3 Modeling Game Outcomes by Factorization
+
+=
+
+=
+
+f (z) =
+
+fq (z)
+
+=
+
+m(cid:229)
+q=1
+
+m(cid:229)
+q=1
+
+¶ log fq (z)
+¶zi
+
+f (z) and then calculate Wi , Di . Suppose that
+To derive update rules using (27)-(30), we must deﬁne
+there are k teams in a game. We shall consider models for which the f (z) in (19) can be factorized
+as
+m(cid:213)
+q=1
+for some m > 0. If fq (z) involves only several elements of z, the above factorization may lead to an
+easier gradient and Hessian calculation in (22) and (23). The expectation on the right side of (22)
+involves the following calculation:
+¶ f /¶zi
+f
+
+¶ log (cid:213)m
+q=1 fq (z)
+¶zi
+¶ fq/¶zi
+fq
+¶ fq /¶zi
+is feasible.
+Then all we need is to ensure that calculating
+fq
+Clearly the Plackett-Luce model (9) has the form of (37). However, the Thurstone’s model
+(3) with the Gaussian distribution can hardly be factorized into the form (37). The main reason
+is that the probability (4) of a game outcome involves a (k − 1)-dimensional integration, which is
+intractable. One may address this problem by modeling a k-team game outcome as (k − 1) two-team
+games (between all teams on neighboring ranks); that is,
+k−1(cid:213)
+i=1
+Alternatively, we may consider the game result of k teams as k(k − 1)/2 two-team games. Then
+k(cid:213)
+k(cid:213)
+f (z) =
+(40)
+P(outcome between team i and team q).
+i=1
+q=i+1
+Both (39) and (40) are of the form (37). In Section 3.5, we shall demonstrate the calculation to
+obtain update rules. Subsequently we refer to (39) as the partial-pair approach, while (40) as the
+full-pair approach.
+
+P(outcome between teams ranked ith and (i + 1)st).
+
+(37)
+
+(38)
+
+(39)
+
+f (z) =
+
+.
+
+278
+
+A BAY E S IAN A P PROX IMAT ION M E THOD FOR ON L IN E RANK ING
+
+3.4 Individual Skill Update
+
+Now, we consider the case where there are multiple players in each team. Suppose that the ith team
+has ni players, the jth player in the ith team has strength qi j , and the prior distribution of qi j is
+i j ). Let qi denote the strength of the ith team. As in Huang et al. (2006) and Herbrich et al.
+i j , s2
+N ( µ
+(2007), we assume that a team’s skill is the sum of its members’ skills. Thus,
+ni(cid:229)
+j=1
+
+qi j for i = 1, . . . , k,
+
+qi =
+
+(41)
+
+and the prior distribution of qi is
+
+qi ∼ N ( µ
+
+i , s2
+i ), where µ
+
+i =
+
+ni(cid:229)
+j=1
+
+i j and s2
+i =
+
+ni(cid:229)
+j=1
+
+s2
+i j .
+
+(42)
+
+Similar to (27)-(28), we propose updating the skill of the jth player in team i by
+
+s2
+Wi ,
+i j
+i j ← µ
+i j +
+s2
+i
+s2
+Di , k! ,
+i j max  1 −
+i j ← s2
+s2
+i j
+s2
+i
+where Wi and Di are deﬁned in (29) and (30), respectively and k is a small positive value to ensure
+i j . Equations (43) and (44) say that Wi , the mean skill change of team i, is partitioned
+a positive s2
+to ni parts with the magnitude proportional to s2
+i j . These rules can be obtained from the following
+derivation. Let Zi j be the normalized quantity of the random variable qi j ; that is,
+i j )/si j .
+Zi j = (qi j − µ
+
+(43)
+
+(45)
+
+(44)
+
+As in (27), we could update µ
+
+i j by
+
+i j ← µ
+where ¯f ( ¯z) is the probability of game outcomes and
+
+i j + si j
+
+¶ ¯f ( ¯z)/¶zi j
+¯f
+
+(cid:12)(cid:12)(cid:12)(cid:12) ¯z=0
+¯z = [z11 , . . . , z1n1 , . . . , zk1 , . . . , zknk ]T .
+
+,
+
+(46)
+
+Since we assume a team’s strength is the sum of its members’, from (24), (41), (42), and (45) we
+have
+(cid:229) j si j Zi j
+qi − µ
+si
+si
+hence, it is easily seen that ¯f ( ¯z) is simply a reparametrization of f (z) (deﬁned in Section 3.1):
+sk ! = ¯f ( ¯z)
+f (z) = f   n1(cid:229)
+sk j zk j
+j=1
+
+s1 j z1 j
+s1
+
+nk(cid:229)
+j=1
+
+Zi =
+
+(47)
+
+, . . . ,
+
+=
+
+i
+
+;
+
+279
+
+µ
+µ
+µ
+W ENG AND L IN
+
+With (47),
+
+si j
+si
+
+=
+
+·
+
+=
+
+¶zi
+¶zi j
+
+¶ ¯f ( ¯z)
+¶zi j
+
+¶ f (z)
+¶zi
+
+and (46) becomes
+
+¶ f (z)
+¶zi
+s2
+¶ f (z)/¶zi
+(cid:12)(cid:12)(cid:12)(cid:12)z=0
+i · si
+i j
+i j ← µ
+.
+i j +
+s2
+f
+Following the deﬁnition of Wi in (29) we obtain the update rule (43), which says that within team i
+i j is proportional to s2
+i j . The update rule (44) for the individual variance can be
+the adjustment to µ
+derived similarly.
+
+3.5 Example: Bradley-Terry Model (Full-pair)
+
+In this section, we consider the Bradley-Terry model and derive the update rules using the full-pair
+setting in (40). Following the discussion in Equations. (7)-(8), the difference Xi − Xq between two
+teams follows a logistic distribution. However, by comparing the Thurstone-Mosteller model (5)
+and the Bradley-Terry model (7), clearly the Bradley-Terry model lacks variance parameters b2
+i and
+b2
+q , which account for the performance uncertainty. We thus extend the Bradley-Terry model to
+include variance parameters; see Appendix C. The resulting model is
+eqi /ciq
+eqi /ciq + eqq /ciq
+
+P(team i beats q) ≡ f iq (z) =
+
+(48)
+
+,
+
+where
+
+i + si zi .
+i + b2
+iq = b2
+q and qi = µ
+c2
+The parameter bi is the uncertainty about the actual performance Xi . However, in the model speciﬁ-
+cation, the uncertainty of Xi is not related to si . Following the error analysis of the approximation in
+Section 3.2 for the Thurstone-Mosteller model, we show in Appendix C that s2
+i can be incorporated
+to
+
+i = s2
+b2
+i + b2 ,
+
+where b2 is some positive constant.
+There are several extensions to the Bradley-Terry model incorporating ties. In Glicko (Glick-
+man, 1999), a tie is treated as a half way between a win and a loss when constructing the likelihood
+function. That is,
+
+P(i draws with q) = (P(i beats q)P(q beats i))1/2
+= q f iq (z) fqi (z).
+By considering all pairs, the resulting f (z) is (40). To obtain update rules (27)-(28), we need to
+calculate ¶ f /¶zi . We see that terms related to zi in the product form of (40) are
+P(outcome of i and q), ∀q = 1, . . . , k, q 6= i.
+
+(52)
+
+(51)
+
+With (38) and (51),
+¶ f /¶zi
+f
+= (cid:229)
+q:r(q)<r(i)
+
+¶ fqi/¶zi
+fqi
+
++ (cid:229)
+q:r(q)>r(i)
+
+¶ f iq/¶zi
+f iq
+
++
+
+1
+2
+
+q:r(q)=r(i),q 6=i (cid:18) ¶ fqi/¶zi
+(cid:229)
+fqi
+
++
+
+¶ f iq/¶zi
+f iq (cid:19) .
+
+(53)
+
+280
+
+µ
+A BAY E S IAN A P PROX IMAT ION M E THOD FOR ON L IN E RANK ING
+
+Algorithm 1 Update rules using the Bradley-Terry model with full-pair
+i j , ∀i, ∀ j. Given b2 and k > 0. Decide a way to set
+i j , s2
+
+1. Given a game result and the current µ
+gq in (50)
+
+2. For i = 1, . . . , k, set
+
+i =
+
+ni(cid:229)
+j=1
+
+i j , s2
+i =
+
+ni(cid:229)
+j=1
+
+s2
+i j .
+
+3. For i = 1, . . . , k,
+3.1. Team skill update: obtain Wi and Di in (27) and (28) by the following steps.
+3.1.1. For q = 1, . . . , k, q 6= i,
+eµ
+i /ciq
+i + s2
+ciq = (s2
+q + 2b2 )1/2 ,
+ˆpiq =
+i /ciq + eµ q /ciq
+eµ
+ciq (cid:1)2 ˆpiq ˆpqi , where s = 
+1
+if r(q) > r(i),
+si
+1/2 if r(q) = r(i),
+
+if r(q) < r(i).
+0
+Di = (cid:229)
+Wi = (cid:229)
+hq .
+q:q 6=i
+q:q 6=i
+
+(s − ˆpiq ), hq = gq(cid:0)
+3.1.2. Calculate
+
+dq =
+
+s2
+i
+ciq
+
+dq ,
+
+,
+
+(49)
+
+(50)
+
+3.2. Individual skill update
+For j = 1, . . . , ni ,
+
+i j ← µ
+
+i j +
+
+s2
+i j
+s2
+i
+
+Wi ,
+
+i j max  1 −
+s2
+i j ← s2
+
+s2
+i j
+s2
+i
+
+Di , k! .
+
+=
+
+and
+
+Using (24) and (48), it is easy to calculate that
+¶ fqi
+−eqi /ciq eqq /ciq
+¶qi
+ciq (eqi /ciq + eqq /ciq )2 ·
+¶zi
+¶zi
+¶ f iq
+(eqi /ciq + eqq /ciq )eqi /ciq − eqi /ciq eqi /ciq
+¶zi
+ciq (eqi /ciq + eqq /ciq )2
+Therefore, an update rule following (27) and (29) is
+i + Wi ,
+i ← µ
+
+=
+
+= −si
+ciq
+
+· si =
+
+si
+ciq
+
+f iq fqi .
+
+f iq fqi
+
+(54)
+
+where
+
+i   (cid:229)
+Wi = s2
+q:r(q)<r(i)
+
+− ˆpiq
+ciq
+
++ (cid:229)
+q:r(q)>r(i)
+
+ˆpqi
+ciq
+
++
+
+1
+2
+
+q:r(q)=r(i),q 6=i (cid:18) − ˆpiq
+(cid:229)
+ciq
+
++
+
+ciq (cid:19)!
+ˆpqi
+
+281
+
+(55)
+
+(56)
+
+µ
+µ
+µ
+µ
+W ENG AND L IN
+
+and
+
+From (54),
+
+where
+
+s2
+i
+ciq
+
+(57)
+
+(58)
+
+(59)
+
+and similarly
+
+= −
+
+f iq fqi
+
+(s − ˆpiq ),
+
+if r(q) > r(i),
+if r(q) = r(i),
+if r(q) < r(i).
+
+eµ
+i /ciq
+ˆpiq ≡
+i /ciq + eµ q /ciq
+eµ
+is an estimate of P(team i beats team q). Since ˆpiq + ˆpqi = 1, (56) can be rewritten as
+where s = 
+1
+Wi = (cid:229)
+1
+2
+
+q:q 6=i
+0
+To apply (26) and (30) for updating si , we use (53) to obtain
+¶zi (cid:18) ¶ f iq/¶zi
+¶zi (cid:18) ¶ fqi/¶zi
+¶
+¶
+¶
+¶zi (cid:18) ¶ f /¶zi
+fqi (cid:19) + (cid:229)
+f iq (cid:19)
+f (cid:19) = (cid:229)
+q:r(q)>r(i)
+q:r(q)<r(i)
+¶zi (cid:18) ¶ f iq/¶zi
+¶zi (cid:18) ¶ fqi/¶zi
+q:r(q)=r(i),q 6=i (cid:18) ¶
+¶
+fqi (cid:19) +
+f iq (cid:19)(cid:19) .
+(cid:229)
+1
++
+2
+¶(− f iq/ciq )
+¶zi (cid:18) ¶ fqi/¶zi
+s2
+¶
+fqi (cid:19) =
+i
+¶zi
+c2
+iq
+¶zi (cid:18) ¶ f iq/¶zi
+¶
+s2
+f iq (cid:19) = −
+i
+(60)
+f iq fqi .
+c2
+iq
+From (30), by setting z = 0, Di should be the sum of (60) over all q 6= i. However, we mentioned
+in the end of Section 3.1 that controlling the reduction of s2
+i is sometimes important. In particular,
+i should not be reduced too fast. Hence we introduce an additional parameter gq so that the update
+s2
+rule is
+gqxq , k! ,
+i max  1 − (cid:229)
+i ← s2
+s2
+q:q 6=i
+s2
+xq =
+i
+ˆpiq ˆpqi
+c2
+iq
+is from (60) and gq ≤ 1 is decided by users; further discussions on the choice of gq are in Section 6.
+Algorithm 1 summarizes the procedure.
+The formulas (55) and (58) resemble the Elo system. The Elo treats qi as nonrandom and its
+update rule is in (6):
+qi ← qi + K (s − p∗iq ),
+where K is a constant (e.g., K = 32 in the USCF system for amateur players) and
+10qi /400
+10qi /400 + 10qq /400
+is the approximate probability that i beats q; see Equations. (11) and (12) in Glickman (1999). Ob-
+serve that p∗iq is simply a variance free and reparameterized version of ˆpiq in (57). As for Glicko, it is
+a Bayesian system but designed for paired comparisons over a rating period. Detailed comparisons
+with Glicko are in Section 5.
+
+p∗iq =
+
+282
+
+A BAY E S IAN A P PROX IMAT ION M E THOD FOR ON L IN E RANK ING
+
+Algorithm 2 Update rules using the Bradley-Terry model with partial-pair
+The procedure is the same as Algorithm 1 except Step 3:
+
+3. Let ¯r(a), a = 1, . . . , k be indices of teams ranked from the ﬁrst to the last
+
+For a = 1, . . . , k,
+3.1. Team skill update: let i ≡ ¯r(a) and obtain Wi and Di in (27) and (28) by the following
+steps.
+3.1.1. Deﬁne a set Q as
+
+if a = 1,
+if a = k,
+otherwise.
+
+{ ¯r(a + 1)}
+{ ¯r(a − 1)}
+{ ¯r(a − 1), ¯r(a + 1)}
+
+Q ≡ 
+
+For q ∈ Q
+Calculate dq , hq by the same way as (49)-(50) of Algorithm 1.
+3.1.2. Calculate
+Di = (cid:229)
+Wi = (cid:229)
+q∈Q
+q∈Q
+3.2 Individual skill update: same as Algorithm 1.
+
+dq
+
+and
+
+hq .
+
+(61)
+
+(62)
+
+4. Update Rules Using Other Ranking Models
+
+If we assume different distributions of the team performance Xi or model the game results by other
+ways than the Bradley-Terry model, the same framework in Sections 3.1-3.3 can still be applied. In
+this section, we present several variants of our proposed method.
+
+4.1 Bradley-Terry Model (Partial-pair)
+
+We now consider the partial-pair approach in (39). With the deﬁnition of ¯r in (2), the function f (z)
+can be written as
+
+f (z) =
+
+¯f ¯r(a) ¯r(a+1) (z),
+
+(63)
+
+k−1(cid:213)
+a=1
+
+where we deﬁne ¯f ¯r(a) ¯r(a+1) (z) as follows:
+i ≡ ¯r(a),
+q ≡ ¯r(a + 1),
+¯f iq = ( f iq
+if r(i) < r(q),
+p f iq fqi
+if r(i) = r(q).
+Note that f iq and fqi are deﬁned in (48) of Section 3.5. Since the deﬁnition of ¯ r in (2) ensures
+r(i) ≤ r(q), in (64) we do not need to handle the case of r(i) > r(q). By a derivation similar to that
+in Section 3.5, we obtain update rules in Algorithm 2. Clearly, Algorithm 2 differs from Algorithm
+1 in only Step 3. The reason is that ¶ f (z)/¶zi is only related to game outcomes between ¯r(a) and
+teams of adjacent ranks, ¯r(a − 1) and ¯r(a + 1). In (61), we let Q be the set of these teams. Thus,
+
+(64)
+
+283
+
+W ENG AND L IN
+
+Q contains at most two elements, and Wi and Di in (62) are calculated using dq and hq with q ∈ Q.
+Details of the derivation are in Appendix D.
+
+4.2 Thurstone-Mosteller Model (Full-pair and Partial-pair)
+
+In this section, we consider the Thurstone-Mosteller model by assuming that the actual performance
+of team i is
+Xi ∼ N (qi , b2
+i ),
+i + b2 as in Section 3.5. The performance difference Xi − Xq follows a normal distri-
+i = s2
+where b2
+q + 2b2 . If one considers partial pairs
+i + s2
+iq = s2
+bution N (qi − qq , c2
+iq ) with c2
+P(team i beats team q) = P(Xi > Xq ) = F (cid:18) qi − qq
+ciq (cid:19)
+and uses (51) to obtain P(i draws with q), then a derivation similar to that for the Bradley-Terry
+model leads to certain update rules. Instead, here we follow Herbrich et al. (2007) to let e be the
+draw margin that depends on the game mode and assume that the probabilities that i beats q and a
+draw occurs are respectively
+P(team i beats team q) = P(Xi > Xq + e) = F (cid:18) qi − qq − e
+ciq
+
+(cid:19)
+
+and
+
+P(team i draws with q) = P(|Xi − Xq | < e)
+=F (cid:18) e − (qi − qq )
+(cid:19) − F (cid:18) −e − (qi − qq )
+(cid:19) .
+ciq
+ciq
+We can then obtain f (z) using the full-pair setting (40). The way to derive update rules is similar to
+that for the Bradley-Terry model though some details are different. We summarize the procedure in
+Algorithm 3. Detailed derivations are in Appendix E.
+Interestingly, if k = 2 (i.e., two teams), then the update rules (if i beats q) in Algorithm 3 are
+reduced to
+
+(65)
+
+i +
+
+,
+
+,
+
+i ← µ
+
+i − µ q
+ciq
+i − µ q
+ciq
+
+e
+s2
+ciq (cid:19) ,
+V (cid:18) µ
+i
+ciq
+s2
+e
+ciq (cid:19) ,
+V (cid:18) µ
+q
+µ q ← µ q −
+ciq
+where the function V is deﬁned in (67). These update rules are the same as the case of
+k = 2
+in the TrueSkill system (see http://research.microsoft.com/en-us/projects/trueskill/
+details.aspx).
+As a comparison, we note that TrueSkill considers partial-pair and obtains players’ skills by a
+factor graph and the approximate message passing. In fact, some messages in the factor graph are
+non Gaussian and these messages are approximated via moment matching, using the Expectation
+Propagation algorithm (Minka, 2001). Their algorithm is effective, but simple update rules are not
+available for the cases of multiple teams/players.
+
+284
+
+µ
+A BAY E S IAN A P PROX IMAT ION M E THOD FOR ON L IN E RANK ING
+
+Algorithm 3 Update rules using Thurstone-Mosteller model with full-pair
+The procedure is the same as Algorithm 1 except Step 3.1.1:
+
+3.1.1 For q = 1, . . . , k; q 6= i,
+
+where
+
+)
+
+)
+
+)
+
+)
+
+,
+
+)
+
+,
+
+,
+
+,
+
+)
+e
+ciq
+
+dq =
+
+e
+ciq
+e
+ciq
+i
+,
+
+e
+ciq
+e
+ciq
+e
+ciq
+
+i− µ q
+ciq
+i− µ q
+ciq
+µ q− µ
+i
+ciq
+
+hq = (cid:0)
+
+if r(q) > r(i),
+if r(q) = r(i),
+if r(q) < r(i),
+
+if r(q) > r(i),
+if r(q) = r(i),
+if r(q) < r(i),
+
+ciq × 
+i− µ q
+V (
+s2
+ciq
+i− µ q
+˜V (
+i
+,
+ciq
+
+µ q− µ
+−V (
+ciq
+× 
+W (
+si
+ciq (cid:1)2
+˜W (
+
+W (
+i + s2
+ciq = (s2
+q + 2b2 )1/2 ,
+√2p e−x2 /2 , F(x) = Z x
+1
+f(x) =
+f(u)d u,
+−¥
+V (x, t ) = f(x − t )/F(x − t ), W (x, t ) = V (x, t )(V (x, t ) + (x − t )),
+f(t − x) − f(−t − x)
+˜V (x, t ) = −
+,
+F(t − x) − F(−t − x)
+(t − x)f(t − x) − (−(t + x))f(−(t + x))
+˜W (x, t ) =
+F(t − x) − F(−t − x)
+
++ ˜V (x, t )2 .
+
+(66)
+
+(67)
+
+(68)
+
+(69)
+
+4.3 Plackett-Luce Model
+
+We now discuss the situation of using the Plackett-Luce model. If ties are not allowed, an extension
+of the Plackett-Luce model (9) incorporating variance parameters is
+(cid:229)s∈Cq eqs /c ! ,
+q=1   eqq /c
+k(cid:213)
+
+k(cid:213)
+q=1
+
+fq (z) =
+
+f (z) =
+
+(70)
+
+where
+
+i
+
+zi =
+
+qi − µ
+si
+
+i + b2 )!1/2
+, c =   k(cid:229)
+(s2
+i=1
+Instead of the same c in eqq /c , similar to the Bradley-Terry model, we can deﬁne cq to sum up s2
+i , i ∈
+Cq . However, here we take the simpler setting of using the same c. Note that fq (z) corresponds
+to the probability that team q is the winner among teams in Cq . In (9), f (z) is represented using
+¯r(1), . . . , ¯r(k), but (70) is a reformulation using r(1), . . . , r(k).
+
+and Cq = {i : r(i) ≥ r(q)}.
+
+285
+
+µ
+µ
+µ
+µ
+W ENG AND L IN
+
+We extend this model to allow ties. If teams i1 , . . . , id are tied together, then r(i1 ) = · · · = r(id ).
+A generalization of the tie probability (51) gives the likelihood based on these d stages as:
+(cid:229)s:r(s)≥r(id ) eqs /c !1/d
+ 
+qid /c
+eqi1 /c
+e
+(cid:229)s:r(s)≥r(i1 ) eqs /c × · · · ×
+We can explain (71) as follows. Now d factors in (71) all correspond to the likelihood of the same
+rank, so we multiply them and take the d th root. The new f (z) becomes
+(cid:229)s∈Cq eqs /c !1/Aq
+q=1   eqq /c
+k(cid:213)
+(cid:229)s∈Cq eqs /c !1/Aq
+Aq = |{s : r(s) = r(q)}| and fq (z) =   eqq /c
+If ties do not occur, Aq = 1, so (72) goes back to (70). By calculations shown in Appendix F, the
+update rules are in Algorithm 4.
+
+q = 1, . . . , k.
+
+k(cid:213)
+q=1
+
+f (z) =
+
+fq (z) =
+
+,
+
+,
+
+where
+
+.
+
+(71)
+
+(72)
+
+5. Description of Glicko
+
+Since our Algorithm 1 and the Glicko system are both based on the Bradley-Terry model, it is of
+interest to compare these two algorithms. We describe the derivation of Glicko in this section. Note
+that notation in this section may be slightly different from other sections of this paper.
+Consider a rating period of paired comparisons. Assume that prior to a rating period the dis-
+tribution of a player’s strength q is N ( µ , s2 ), with µ and s2 known. Assume that, during the rating
+period, the player plays n j games against opponent j, where j = 1, . . . , m, and that the jth oppo-
+nent’s strength q j follows N ( µ
+j , s2
+j and s2
+j ), with µ
+j known. Let s jk be the outcome of the kth game
+against opponent j, with s jk = 1 if the player wins, s jk = 0.5 if the game results in a tie, and s jk = 0
+if the player loses. Let D be the collection of game results during this period. The interest lies in the
+marginal posterior distribution of q given D:
+P(q|D) = Z · · · Z P(q1 , . . . , qm |D)P(q|q1 , . . . , qm , D)dq1 · · · dqm ,
+where P(q|q1 , . . . , qm , D) is the posterior distribution of q conditional on opponents’ strengths,
+P(q|q1 , . . . , qm , D) (cid:181) f(q| µ , s2 )P(D|q, q1 , . . . , qm ).
+(76)
+Here P(D|q, q1 , . . . , qm ) is the likelihood for all parameters. The approximation procedure is de-
+scribed in steps (I)-(V) below, where step (I) is from Section 3.3 of Glickman (1999) and steps
+(II)-(IV) are summarized from his Appendix A.
+(I) Glickman (1999) stated that “The key idea is that the marginal posterior distrib ution of a
+player’s strength is determined by integrating out the opponents’ strengths over their prior distri-
+bution rather than over their posterior distribution.” That is, the posterior d istribution of opponents’
+strengths P(q1 , . . . , qm |D) is approximated by the prior distribution
+f(q1 | µ 1 , s2
+1 ) · · · f(qm | µ m , s2
+m ).
+286
+
+(75)
+
+A BAY E S IAN A P PROX IMAT ION M E THOD FOR ON L IN E RANK ING
+
+Algorithm 4 Update rules using the Plackett-Luce model
+The procedure is the same as Algorithm 1 except Step 3:
+
+3. Find and store
+
+,
+
+i + b2 )!1/2
+c =   k(cid:229)
+(s2
+i=1
+Aq = |{s : r(s) = r(q)}|,
+q = 1, . . . , k
+(cid:229)
+qs /c , q = 1, . . . , k, where Cq = {i : r(i) ≥ r(q)}.
+e
+s∈Cq
+
+For i = 1, . . . , k,
+3.1. Team skill update: obtain Wi and Di in (27) and (28) by the following steps.
+3.1.1. For q = 1, . . . , k,
+
+dq =
+
+hq =
+
+where
+
+3.1.2 Same as Algorithm 1.
+3.2 Same as Algorithm 1.
+
+cAq × 
+if q = i,
+1 − ˆpi,Cq
+s2
+i
+if r(q) ≤ r(i), q 6= i,
+− ˆpi,Cq
+
+0
+if r(q) > r(i),
+c2Aq × ( ˆpi,Cq (1 − ˆpi,Cq )
+gqs2
+i
+0
+eqi /c
+(cid:229)s∈Cq eqs /c .
+
+if r(q) ≤ r(i),
+if r(q) > r(i),
+
+ˆpi,Cq =
+
+Then, together with (75) and (76) it follows that, approximately
+m )P(D|q, q1 , . . . , qm )dq1 · · · dqm
+P(q|D) (cid:181) f(q| µ , s2 ) Z · · · Z f(q1 | µ 1 , s2
+1 ) · · · f(qm | µ m , s2
+j=1 (Z " n j(cid:213)
+k=1   (10(q−q j )/400 )s jk
+j )# dq j)
+1 + 10(q−q j )/400 ! f(q j | µ
+m(cid:213)
+(cid:181) f(q| µ , s2 )
+j , s2
+,
+{z
+}
+|
+P(D|q)
+where the last line follows by treating terms in the likelihood that do not depend on q (which
+correspond to games played between other players) as constant. We denote a term in (77) as P(D|q)
+for subsequent analysis.
+(II) P(D|q) in (77) is the likelihood integrated over the opponents’ prior strength distribution.
+Then, (77) becomes
+P(q|D) (cid:181) f(q| µ , s2 )P(D|q).
+287
+
+(78)
+
+(77)
+
+W ENG AND L IN
+
+Algorithm 5 Update rules of Glicko with a single game
+
+1 , s2
+1. Given a game result and the current µ 1 , µ 2 , s2
+2 . Set
+log 10
+400
+
+q =
+
+.
+
+g(s2
+i ) =
+
+1
+q1 +
+
+.
+
+3q2 s2
+ip2
+
+2. For i = 1, 2
+
+3. For i = 1, 2, set j 6= i and
+p∗j =
+
+1
+1 + 10−g(s2
+j )( µ
+
+i− µ
+
+4. Update rule: For i = 1, 2, set j 6= i
+
+(73)
+
+(74)
+
+.
+
+j )/400
+
+,
+
+(d2
+i )∗ = (cid:2)q2 (g(s2
+j ))2 p∗j (1 − p∗j )(cid:3)−1
+j )(si j − p∗j ), where si j = 
+g(s2
+
+
+1
+if i wins,
+1/2 if draw,
+0
+if i loses,
+
+i +
+
+i ← µ
+i ← (cid:18) 1
+s2
+s2
+i
+
+1
+s2
+i
+
++
+
+q
++ 1
+(d2
+i )∗
+i )∗ (cid:19)−1
+1
+(d2
+
+.
+
+(79)
+
+In this step, P(D|q) is approximated by a product of logistic cumulative distribution functions:
+Z (10(q−q j )/400 )s jk
+n j(cid:213)
+m(cid:213)
+P(D|q) ≈
+f(q j | µ
+j , s2
+j )dq j .
+1 + 10(q−q j )/400
+j=1
+k=1
+(III) In this step, P(D|q) is further approximated by a normal distribution. First, one approxi-
+mates each logistic cdf in the integrand of (79) by a normal cdf with the same mean and variance so
+that the integral can be evaluated in a closed form to a normal cdf. This yields the approximation
+j )/400(cid:17)s jk
+j )dq j ≈ (cid:16)10g(s2
+j )(q− µ
+Z (10(q−q j )/400 )s jk
+j , s2
+f(q j | µ
+1 + 10(q−q j )/400
+1 + 10g(s2
+j )(q− µ
+j )/400
+where g(s2
+j ) is deﬁned in (74). Therefore, the (approximate) marginal likelihood in (79 ) is
+j )/400(cid:17)s jk
+k=1 (cid:16)10g(s2
+j )(q− µ
+n j(cid:213)
+P(D|q) ≈
+1 + 10g(s2
+j )(q− µ
+j )/400
+Second, by central limit theorem we approximate this marginal likelihood (80) by a normal den-
+sity f(q| ˆq, d2 ), where ˆq is the mode of this marginal likelihood and d2 is minus of inverse of Hessian
+288
+
+m(cid:213)
+j=1
+
+(80)
+
+.
+
+,
+
+µ
+A BAY E S IAN A P PROX IMAT ION M E THOD FOR ON L IN E RANK ING
+
+of the log marginal likelihood evaluated at ˆq. Then, together with (78) we obtain an approximation:
+P(q|D) (cid:181) f(q| µ , s2 )f(q| ˆq, d2 )
+ˆq
+(cid:181) f  q (cid:12)(cid:12)
+d2 (cid:19)−1! .
+, (cid:18) 1
+1
+s2 +
+d2
+s2 +
+s2 + 1
+1
+d2
+Therefore, the update of µ and s2 (i.e., posterior mean and variance) is:
+ˆq
+1
+d2 (cid:19)−1
+s2 ← (cid:18) 1
+1
+s2 +
+d2
+d2
+( ˆq − µ ).
+and µ ←
+s2 +
+s2 + 1
+s2 + 1
+1
+1
+d2
+d2
+Note that we obtain ˆq by equating the derivative of log P(D|q) to zero, and approximating d2 by
+for ˆq. The expression of approximation for d2 is
+substituting µ
+d2 ≈ (cid:0)q2
+n j (g(s2
+j ))2 p j ( µ )(1 − p j ( µ ))(cid:1)−1
+where q is deﬁned in (73), g(s2
+j ) is deﬁned in (74) and
+
+m(cid:229)
+j=1
+
+= µ +
+
+(82)
+
+(81)
+
+,
+
+m(cid:229)
+j=1
+
+,
+
+j )/400
+
+,
+
+j )/400
+
+p j ( µ ) =
+
+If we deﬁne
+
+1
+1 + 10−g(s2
+j )(q− µ
+
+1
+1 + 10−g(s2
+j )( µ − µ
+which is an approximate probability that the player beats opponent j.
+(IV) Finally, ˆq − µ
+in (81) is approximated as follows. From (80) it follows that
+n j(cid:229)
+400 (cid:26)g(s2
+j ) (cid:18)s jk −
+j )/400 (cid:19)(cid:27) .
+log 10
+d
+dq log P(D|q) ≈
+k=1
+g(s2
+j )
+1 + 10−g(s2
+j )(q− µ
+then setting the right-hand side of (84) to zero gives
+n j(cid:229)
+m(cid:229)
+j=1
+k=1
+Then, a Taylor series expansion of h(q) around µ gives
+h( ˆq) ≈ h( µ ) + ( ˆq − µ )h′ ( µ ),
+
+g(s2
+j )s jk .
+
+h(q) =
+
+h( ˆq) =
+
+m(cid:229)
+j=1
+
+n j(cid:229)
+k=1
+
+where
+
+h′ ( µ ) = q
+
+m(cid:229)
+j=1
+
+n j(cid:229)
+(g(s2
+j ))2 p j ( µ ))(1 − p j ( µ )) = q
+k=1
+
+m(cid:229)
+j=1
+
+n j (g(s2
+j ))2 p j ( µ ))(1 − p j ( µ ))
+
+289
+
+(83)
+
+(84)
+
+(85)
+
+(86)
+
+(87)
+
+(88)
+
+µ
+µ
+W ENG AND L IN
+
+Game type
+Free for All
+Small Teams
+Head to Head
+Large Teams
+
+PL TM-full TrueSkill
+# games # players BT-full BT-partial
+30.59%
+30.82%
+32.40% 31.74% 44.65%
+60,022
+5,943
+33.97%
+33.97% 33.97% 36.46%
+27,539
+4,992
+35.23%
+32.53% 32.53% 32.41%
+32.44%
+32.53%
+1,672
+6,227
+37.30%
+37.30% 37.30% 39.37%
+1,199
+2,576
+38.15%
+
+Table 2: Data description and prediction errors by various methods. The method with the smallest
+error is bold-faced. The column “TrueSkill” is copied from a table in Herbr
+ich et al. (2007). Note
+that we use the same way as TrueSkill to calculate prediction errors.
+
+Game type
+PL TM-full
+BT-full
+Free for All
+31.24% 31.73% 33.13%
+Small Teams
+33.84% 33.84% 36.50%
+Head to Head
+32.55% 32.55% 32.74%
+Large Teams
+37.30% 37.30% 39.13%
+Table 3: Prediction errors using gq = 1/k in (50), where k is the number of teams in a game.
+
+with p j ( µ ) deﬁned in (83). Using (86), h( µ ) by (85), and (88), we can apply (87) to obtain an
+estimate of ˆq − µ . Then with (82), (81) becomes
+n j(cid:229)
+m(cid:229)
+q
+g(s2
+j )(s jk − p j ( µ )).
+µ ← µ +
+s2 + 1
+1
+d2
+j=1
+k=1
+However, when there is only one game, P(D|q) in (80) would have just one term (because
+m = 1 and n1 = 1), and it is a monotone function. Therefore, the mode ˆq of P(D|q) would be
+either ¥ or −¥ and the central limit theorem can not be applied. Although this problem seems to
+disappear when the approximation in step (IV) is employed, the justiﬁcation of th e whole procedure
+may be weak. In fact, the Glicko system treats a collection of games within a “ratin g period” to
+have simultaneous occurrences, and it works best when the number of games in a rating period is
+moderate, say an average of 5-10 games per player in a rating period.2 The Glicko algorithm for a
+single game is in Algorithm 5.
+
+6. Experiments
+
+We conduct experiments to assess the performance of our algorithms and TrueSkill on the game
+data set used by Herbrich et al. (2007). The data are generated by Bungie Studios during the beta
+testing of the Xbox title Halo 2.3 The set contains data from four different game types:
+• Free for All: up to 8 players in a game. Each team has a single player.
+• Small Teams: up to 12 players in 2 teams.4
+• Head to Head: 2 players in a game. Each player is considered as a team.
+• Large Teams: up to 16 players in 2 teams.
+2. According to http://math.bu.edu/people/mg/glicko/glicko.doc/glicko.html.
+3. Credits for the use of the Halo 2 Beta Data set are given to Microsoft Research Ltd. and Bungie.
+4. Herbrich et al. (2007) indicate that for “Small Teams,” each team ha
+s no more than 4 players, and for “Large Teams,”
+each has no more than 8. However, we ﬁnd a few exceptions.
+
+290
+
+A BAY E S IAN A P PROX IMAT ION M E THOD FOR ON L IN E RANK ING
+
+The numbers of games and players are given in Table 2. In the following, let BT, TM, and PL denote
+Bradley-Terry, Thurstone-Mosteller, and Plackett-Luce models, respectively; BT-full and BT-partial
+denote BT with full-pair and partial-pair, and similarly for TM-full and TM-partial. The TrueSkill
+code is obtained at http://blogs.technet.com/apg/archive/2008/06/16/trueskill-in-f.
+aspx.
+
+6.1 Implementation and Evaluation
+
+Below we discuss initial values and parameters. Generally we follow the setting in Herbrich et al.
+(2007).
+i = 25 and s2
+i = (25/3)2 , ∀i.
+• Initial µ
+• The additional variance of performance b2 = (25/6)2 .
+• e = 0.1 is the draw margin in (65) for the Thurstone-Mosteller model.
+• k = 0.0001 is the positive lower bound in (28) to avoid negative s2
+i . The result is insensitive
+to this parameter as in general 1 − Di is larger than k.
+• gq in (50) is set as si/ciq for BT-full. The same gq is applied to BT-partial and TM-full. For
+PL, we use gq = si/c. The use of gq is further discussed later in this section.
+The update rules for the Thurstone-Mosteller model need to calculate the cumulative distribution
+function F(x), which is not available in most programming languages. We adopt the same way as
+in TrueSkill to implement the function F(x). Moreover, if the Thurstone-Mosteller model is used,
+some numerical difﬁculties may occur. When x − t in (67) is small,
+f(x − t ) ≈ 0 and F(x − t ) ≈ 0,
+(89)
+so the calculation of V (x, t ) via f(x − t )/F(x − t ) is inaccurate. We employ the same safeguard as
+in TrueSkill:
+If F(x − t ) ≤ 2.222758749 × 10−162 , then V (x, t ) is assigned as −x + t .
+Note that −x + t is the limit of V (x, t ) when x − t → −¥. We also need some safeguards in calculat-
+ing ˜V and ˜W .
+We implement our methods in both C and F#. The F# code is used for the running time compar-
+ison with TrueSkill, which is also written in F#. On the same computer, TrueSkill takes 13 seconds
+to run the “Free for All” data, but BT-full needs only 1.2 seconds. Our me thod is more efﬁcient
+because it uses analytic update rules. In contrast, TrueSkill requires an iterative procedure. More-
+over, it is simpler to implement our update rules. Using F#, our code takes less than 100 lines, but
+TrueSkill needs more than 500 lines. Sources used for experiments in this paper are available at
+
+http://www.csie.ntu.edu.tw/˜ cjlin/papers/online_ranking
+For the evaluation of prediction results, following Herbrich et al. (2007), we consider the error
+of using the current µ
+to predict the outcome of the next game. We check only team pairs whose
+ranks are different. For example, if there are three teams A, B, and C and the rank of one game
+is (1, 1, 2), then only the two pairs (A,C) and (B,C) count. Further, if before the game we have
+µ A = µ C and the game output shows rank(A) < rank(C), it is considered a wrong prediction. This
+is a real-valued vector, but it does occur in early games because all
+situation seldom happens as µ
+players’ µ were set equally in the beginning. We have conﬁrmed with TrueSkill authors
+that these
+detailed settings are the same as what they used in Herbrich et al. (2007). The prediction error rate
+is the fraction of total team pairs (from the second to the last game) that are wrongly predicted.
+
+291
+
+W ENG AND L IN
+
+Game type
+Free for All
+
+PL TM-full TrueSkill
+BT-full BT-partial
+35.44%
+36.70% 36.31% 46.11%
+35.58%
+
+Table 4: Prediction errors (difﬁcult cases). Team pairs with rank diffe rences no more than two are
+considered. We consider only “Free for All” because the TrueSkill cod e provided by authors does
+not handle multi-player teams and we have not conducted suitable modiﬁcations . Moreover, under
+our selection rule, all games in “Head to Head” will be selected and results ar
+e the same as Table 2.
+Hence this set is not included either.
+
+Avg. Occurances Num. Pairs BT-full TrueSkill
+≤5
+23,567
+38.74%
+39.15%
+≤10
+69,145
+36.41%
+36.22%
+34.52%
+34.54%
+148,654
+≤20
+276,203
+≤40
+32.64%
+32.64%
+No restriction
+595,500
+30.59%
+30.74%
+(a) Free for All
+
+Num. Pairs BT-full TrueSkill
+2,367
+38.70%
+38.36%
+3,748
+34.61%
+35.17%
+33.02%
+33.29%
+4,852
+5,501
+32.61%
+32.61%
+5,715
+32.53%
+32.49%
+(b) Head to Head
+
+Table 5: Prediction errors for competitions where players have only played few games. Games
+with the average number of players’ past appearances no more than the value in the ﬁrst column
+are considered. The last row includes all games. The second column indicates the number of total
+team pairs used for the evaluation. The 30.74% and 32.49% rates by TrueSkill are slightly different
+from 30.82% and 32.44% in Table 2, respectively, because the former is from running the F# code
+provided by TrueSkill authors, but the latter is copied from Herbrich et al. (2007).
+
+6.2 Comparison on Prediction Errors
+
+We report the prediction error in Table 2 and make the following observations. First, BT-full, BT-
+partial, and PL have the same error rate except “Free for All.” This resu lt is reasonable as when every
+game involves only two teams, using full pairs, partial pairs or the Plackett-Luce model does not
+make any difference. Second, when the number of teams is more than two (i.e., Free for All), BT-
+full is better than BT-partial. The same observation holds when comparing TM-full and TM-partial
+(numbers not shown). A possible explanation is that the full-pair approach uses more information.
+Third, using the Bradley-Terry model yields superior results to the Thurstone-Mosteller model. The
+error of using TM-full on “Free for All” is very high. Besides, numerica l problems discussed in
+(89) do not occur for the Bradley-Terry model. Fourth, TM-full, which uses the same likelihood
+model as TrueSkill, is consistently worse than TrueSkill, indicating that the much faster, single-pass
+approximation may come at the expense of less accurate prediction. Finally, our proposed method
+for BT-full and PL is competitive with TrueSkill.
+The reason why TM-full performs poorly for “Free for All” in Table 2 migh t be that si quickly
+i becomes a huge positive/negative value. The parameter gq in (50) can help to
+goes to zero and µ
+control how fast the variance s2
+i is reduced. In Table 2, gq is set as si/ciq . Table 3 gives results of
+using gq = 1/k, where k is the number of teams in a game. For “Free for All,”
+k is around 8, so gq
+is quite small. Clearly, a slower reduction of s2
+i signiﬁcantly improves the performance of TM-full,
+while the results of BT-full and PL do not change much.
+We conduct a further comparison using only team pairs which are more difﬁc ult for prediction.
+viewed as difﬁcult cases
+For “Free for All,” the team pairs whose ranks in a game are closer can be
+
+292
+
+A BAY E S IAN A P PROX IMAT ION M E THOD FOR ON L IN E RANK ING
+
+for prediction. We take all pairs with rank differences no more than two and compare the prediction
+errors by our methods and TrueSkill. The results, shown in Table 4, are consistent with those in
+Table 2.
+After a team (or player) has played many games, the obtained ability becomes more accurate.
+To check the performance when teams have only played few games, we select games where the
+average number of players’ past appearances is small. We present results in Table 5. Clearly if
+players in a game have only played few games, the prediction is more difﬁcult.
+We also implement the single game version of Glicko (Algorithm 5) for “Head to He ad” and
+ﬁnd the prediction error to be 33.88%, a bit worse than those in Table 2. Suc h a result is expected
+as Glicko is not designed to update skills after each single game.
+Finally, we discuss how to apply our proposed technique in practice. Following the experimental
+results and the numerical concerns, TM is not recommended. Further as BT-full is slightly better
+than BT-partial, it seems that to factorize a multi-team game to several two-team games, we should
+use as much information as possible. Therefore, in applying our approximation, BT-full and PL
+may be the ﬁrst choice. As TM-full uses the same likelihood as TrueSkill and performs worse, our
+approximation, while very simple, may be more sensitive to the likelihood used.
+
+7. Discussion and Conclusions
+
+Huang and Frey (2008) propose a graphical model, cumulative distribution network (CDF), which
+can be used for online ranking. They experiment with the same data used by Herbrich et al. (2007)
+and report superior results. However, they use a full covariance matrix over all skills of all players.
+This setting provides more information for accurate predictions, but may not be practical for large-
+scale systems.
+Guiver and Snelson (2009) apply Power EP (expectation propagation) to perform Bayesian in-
+ference for parameters of the Plackett-Luce model. They conduct experiments in an ofﬂine setting
+on NASCAR 2002 car racing results and the MovieLens data set. It is worth studying the perfor-
+mance in online setting. We leave it for future work.
+In summary, this paper approximates the expectation of teams’ performances to derive simple
+update rules for online ranking. The proposed method is efﬁcient and ca n be easily applied to large-
+scale systems with multiple teams and multiple players. While the approximation of the expectation
+is only a kind of heuristics, experiments show that its application to BT-full and PL models is com-
+petitive with state of the art approaches such as TrueSkill. Further, the implementation is simpler
+and the running time is shorter.
+
+Acknowledgments
+
+The authors thank Ralf Herbrich and Thore Graepel of Microsoft Research Cambridge for providing
+their F# codes (Free for All and Head to Head) and for answering many questions.
+
+Appendix A. A Sketch of the Proof for Lemma 1
+
+We borrow a few lines from Woodroofe (1989) to sketch the proof for (16) in the 1-dimensional
+case. Let ′ denote the differentiation and Fh denote RR h(z)dF(z). By assumptions in Lemma 1, we
+293
+
+W ENG AND L IN
+
+have f (z) = R z
+−¥ f ′ (y)d y and
+h(z)dF(z)
+f (z)dF(z) · ZR
+h(z)dG(z) − ZR
+ZR
+f (z)f(z)[h(z) − Fh]d z = ZR n Z z
+f ′ (y)d yof(z)[h(z) − Fh]d z
+= ZR
+−¥
+¥
+f(z)[h(z) − Fh]d zo f ′ (y)d y = ZR
+= ZR n Z
+U h(y) f ′ (y)f(y)d y,
+y
+where the interchange of orders of integration is justiﬁed by assumed integr ability conditions.
+
+Appendix B. An Example on Calculating U h and V h in (14)
+
+We take k = 3 and h(z) = z1 z2 to illustrate the calculation of U h and V h. First by (12) we obtain
+h0 = Z z1 z2dF3 (z) = 0,
+h1 (z1 ) = Z h(z1 , w1 , w2 )dF2 (w1 , w2 ) = Z z1w1dF2 (w1 , w2 ) = 0,
+h2 (z1 , z2 ) = Z h(z1 , z2 , w)dF1 (w) = Z z1 z2dF(w) = z1 z2 ,
+h3 (z1 , z2 , z3 ) = h(z1 , z2 , z3 ) = z1 z2 .
+
+¥
+
+z1
+¥
+
+z2
+¥
+
+z1we−w2 /2dw = z1 ,
+
+Next from (13) it follows that
+¥
+1 /2 Z
+[h1 (w) − h0 ]e−w2 /2dw = 0,
+g1 (z) = ez2
+2 /2 Z
+2 /2 Z
+[h2 (z1 , w) − h1 (z1 )]e−w2 /2dw = ez2
+g2 (z) = ez2
+z2
+3 /2 Z
+[h3 (z1 , z2 , w) − h2 (z1 , z2 )]e−w2 /2dw = 0;
+g3 (z) = ez2
+z3
+hence, by (14) we have U h(z) = (g1 , g2 , g3 )T = (0, z1 , 0)T . Applying the same steps to gi gives
+U g1 = U g3 = [0, 0, 0]T and U g2 = [1, 0, 0]T . Therefore, by (14) we obtain
+0 0 0
+
+ = 
+0 0 0
+ + 
+
+2 
+0 0 0
+1
+0
+0 0 0
+0 1 0
+0
+1
+1
+2
+2 (cid:0)U 2h + (U 2h)T (cid:1) =
+1
+1 0 0
+0 0 0
+0 0
+ .
+
+
+
+
+
+2
+Appendix C. A Bradley-Terry Model with Variance Parameters
+Our approach is motivated by the relation between the normal model (5) and the Bradley-Terry
+model (7). To begin, we reparametrize vi in (7) as eqi /c and similarly for vq so that (7) can be written
+as
+e(qi−qq )/c
+1 + e(qi−qq )/c .
+Next, observe that the cumulative distribution function of a logistic distribution with mean 0 and
+variance (cp/√3)2 is
+
+P(Xi > Xq ) =
+
+V h =
+
+(90)
+
+F (x) =
+
+ex/c
+(1 + ex/c )
+
+,
+
+294
+
+A BAY E S IAN A P PROX IMAT ION M E THOD FOR ON L IN E RANK ING
+
+e−u2 /(2(cp/√3)2 )d u
+
+which can be approximated by the cumulative distribution function of a normal distribution with the
+same mean and variance. Therefore,
+e(qi−qq )/c
+qi−qq
+1
+1 + e(qi−qq )/c ≈ Z
+√2p(cp)/√3
+−¥
+= F (cid:18) qi − qq
+cp/√3 (cid:19) .
+The idea of approximating the logistic distribution in an integral by a Gaussian one has appeared
+in Aitchison and Begg (1976), Glickman (1993), and references therein. By comparing (91) with
+q ) and then replace vi and vq in (7) with eqi /c and eqq /c . In
+i + b2
+(5), it suggests to take c2 (cid:181) (b2
+summary, we have shown that (90) can be obtained by assuming that each team has a performance
+uncertainty parameter b2
+i , and that when teams i and q compete, their actual performance follow
+Gumbel distributions with cumulative distribution function
+
+(91)
+
+qi
+c
+
+))),
+
+.
+
+P(Xi ≤ x) = exp(−exp(−(x −
+i + b2
+where c2 = b2
+q . Note that this model presumes that a team’s actual performance depends on the
+team it competes with.
+Regarding the error induced by evaluating the expectations in (25) and (26), we can apply the
+same analysis in Section 3.2 to the Bradley-Terry model. Here we give details. By (48), the joint
+posterior density of (q1 , q2 ) is proportional to
+eq1 /c12
+s1 (cid:19) f (cid:18) q2 − µ 2
+f (cid:18) q1 − µ 1
+s2 (cid:19)
+eq1 /c12 + eq2 /c12
+Next, by an approximation like (91), the marginal posterior density of q1 is approximately propor-
+tional to
+f (cid:18) q1 − µ 1
+s1 (cid:19) Z f (cid:18) q2 − µ 2
+q1
+s1 (cid:19) Z
+−¥
+s1 (cid:19) F 
+q1 − µ 2
+≈ f (cid:18) q1 − µ 1
+
+q(ac12 )2 + s2
+2
+eq1 /c′12
+≈ f (cid:18) q1 − µ 1
+s1 (cid:19)
+,
+eq1 /c′12 + eq2 /c′12
+where a = p/√3 as in (91) and (c′12 )2 = a2 c2
+12 + s2
+2 . As in the previous paragraph, we can calculate
+the posterior mean of q1 , and again the result suggests that the bias induced by our approximation
+i + s2
+i with b2
+method can be reduced by substituting b2
+i .
+
+1
+√2p(ac12 )
+
+
+
+y−q2
+2(ac12 )2 d ydq2
+
+e−
+
+Appendix D. Derivations of Update Rules for the Bradley-Terry Model (Partial-pair)
+To calculate ¶ f /¶zi , if i = ¯r(a), then in (63) there are only two terms related to i:
+¯f ¯r(a−1) ¯r(a) (z) and ¯f ¯r(a) ¯r(a+1) (z).
+
+295
+
+W ENG AND L IN
+
+Deﬁne Q as in (61). Then,
+¶ f /¶zi
+f
+
+=
+
+Next,
+
++
+
+1
+2
+
++
+
+Deﬁne
+
+and
+
+(cid:229)
+q:q∈Q,r(q)<r(i)
+¶ f iq/¶zi
+f iq
+
+(cid:229)
+q:q∈Q,r(q)>r(i)
+¶zi (cid:18) ¶ f /¶zi
+¶
+f (cid:19) =
+
+¶ fqi/¶zi
++
+fqi
+¶ f iq/¶zi
+q:q∈Q,r(q)=r(i),q 6=i (cid:18) ¶ fqi/¶zi
+f iq (cid:19) .
+(cid:229)
+fqi
+¶zi (cid:18) ¶ fqi/¶zi
+¶zi (cid:18) ¶ f iq/¶zi
+¶
+¶
+fqi (cid:19) +
+f iq (cid:19)
+(cid:229)
+(cid:229)
+q:q∈Q,r(q)>r(i)
+q:q∈Q,r(q)<r(i)
+¶zi (cid:18) ¶ f iq/¶zi
+¶zi (cid:18) ¶ fqi/¶zi
+q:q∈Q,r(q)=r(i),q 6=i (cid:18) ¶
+¶
+fqi (cid:19) +
+f iq (cid:19)(cid:19) .
+(cid:229)
+1
++
+2
+These two results are almost the same as (53) and (59) used for the full-pair case. Hence dq and hq
+are calculated by the same way as in Algorithm 1, but for Wi and Di , instead of taking the sum over
+all q = 1, . . . , k; q 6= i, in (62) we sum up only elements in the set Q.
+Appendix E. Derivations of Update Rules for the Thurstone-Mosteller Model
+f iq (z) ≡ P(team i beats team q) = F (cid:18) qi − qq − e
+(cid:19)
+ciq
+¯f iq (z) ≡ P(team i draws with team q)
+(cid:19) − F (cid:18) −e − (qi − qq )
+=F (cid:18) e − (qi − qq )
+ciq
+ciq
+i . Then
+P(outcome of team i and q) = 
+
+Similar to the derivation for the Bradley-Terry model in (52) and (53),
+¶ fqi/¶zi
+¶ f iq/¶zi
+¶ f /¶zi
+= (cid:229)
++ (cid:229)
++ (cid:229)
+f iq
+fqi
+f
+q:r(q)=r(i)
+q:r(q)>r(i)
+q:r(q)<r(i)
+Using the relation between f and F in (66),
+(cid:19) = f (cid:18) qi − qq − e
+F (cid:18) qi − qq − e
+¶
+(cid:19) 1
+¶qi
+ciq
+ciq
+ciq
+qi−qq−e
+f(
+V (cid:18) qi − qq
+si
+¶qi
+)
+1
+ciq
+) ·
+¶zi
+qi−qq−e
+F(
+ciq
+ciq
+ciq
+ciq
+
+if r(i) > r(q),
+if r(i) < r(q),
+if r(i) = r(q).
+
+where qi = si zi + µ
+
+¶ ¯f iq/¶zi
+¯f iq
+
+.
+
+,
+
+e
+ciq (cid:19) ,
+
+¶ f iq/¶zi
+f iq
+
+=
+
+(92)
+
+(93)
+
+f iq (z)
+fqi (z)
+¯f iq (z)
+
+(cid:19) ,
+
+.
+
+Therefore,
+
+=
+
+296
+
+A BAY E S IAN A P PROX IMAT ION M E THOD FOR ON L IN E RANK ING
+
+where the function V is deﬁned in (67). Similarly,
+¶ fqi
+V (cid:18) qq − qi
+= −si
+¶zi
+ciq
+ciq
+
+For ¯f iq (q),
+
+,
+
+e
+ciq (cid:19) .
+
+e − (qi − qq )
+ciq
+
+) − f( −e − (qi − qq )
+ciq
+
+)(cid:19) ,
+
+i
+
+,
+
+so
+
+←µ
+
+i ←µ
+
+¶ ¯f iq
+¶zi
+
+= −si
+ciq
+
+¶ ¯f iq/¶zi
+¯f iq
+
+e
+ciq (cid:19) + (cid:229)
+q:r(q)>r(i)
+e
+ciq (cid:19)(cid:19).
+,
+
+= −si
+ciq (cid:18)f(
+) − f( −e−(qi−qq )
+e−(qi−qq )
+f(
+)
+ciq
+ciq
+e−(qi−qq )
+) − F( −e−(qi−qq )
+F(
+ciq
+ciq
+where the function ˜V is deﬁned in (68). Then the update rule is
+¶ f (z)/¶zi
+(cid:12)(cid:12)(cid:12)(cid:12)z=0
+i + si
+f
+V (cid:18) µ q − µ
+i (cid:18) (cid:229)
+−1
+i + s2
+ciq
+ciq
+q:r(q)<r(i)
+˜V (cid:18) µ
++ (cid:229)
+1
+i − µ q
+ciq
+ciq
+q:r(q)=r(i),q 6=i
+To update s, similar to (59), we have
+¶zi (cid:18) ¶ fqi/¶zi
+¶
+¶
+¶zi (cid:18) ¶ f /¶zi
+fqi (cid:19) + (cid:229)
+f (cid:19) = (cid:229)
+q:r(q)>r(i)
+q:r(q)<r(i)
+¶zi (cid:18) ¶ ¯f iq/¶zi
+¶
+¯f iq (cid:19) .
++ (cid:229)
+q:r(q)=r(i),q 6=i
+Using (93) and the fact that df(x)/d x = −xf(x)
+¶ f iq/¶zi
+¶
+¶zi
+f iq
+F d f
+d qi − f dF
+si
+¶(f/F)
+s2
+¶qi
+d qi
+i
+·
+=
+F2
+¶zi
+¶qi
+ciq
+ciq
+ciq  − (cid:18) qi − qq − e
+(cid:19) · V (cid:18) qi − qq
+s2
+i
+ciq
+ciq
+W (cid:18) qi − qq
+e
+s2
+ciq (cid:19) ,
+i
+,
+= −
+c2
+ciq
+iq
+where the function W is deﬁned in (67). Similarly,
+¶ fqi/¶zi
+¶
+s2
+i
+¶zi
+ciq
+fqi
+
+e
+ciq (cid:19) 1
+ciq −
+
+= −
+
+=
+
+=
+
+,
+
+W (cid:18) qq − qi
+ciq
+297
+
+,
+
+e
+ciq (cid:19) .
+
+si
+ciq
+
+˜V (cid:18) qi − qq
+ciq
+
+,
+
+e
+ciq (cid:19) ,
+
+(94)
+
+=
+
+)
+
+1
+ciq
+
+V (cid:18) µ
+
+i − µ q
+ciq
+
+,
+
+e
+ciq (cid:19)
+
+¶zi (cid:18) ¶ f iq/¶zi
+¶
+f iq (cid:19)
+
+1
+ciq
+
+V (cid:18) qi − qq
+ciq
+
+,
+
+ciq (cid:19)2!
+e
+
+(95)
+
+(96)
+
+µ
+W ENG AND L IN
+
+If r(i) = r(q), then we use (92) and (94) to calculate
+¶zi (cid:18) ¶ ¯f iq/¶zi
+¶
+¯f iq (cid:19) = −s2
+i
+ciq
+
+A =
+
+where
+
+and
+
+Hence
+
+)(cid:17)2 ,
+
+e−(qi−qq )
+ciq
+
+A − B
+) − F( −e−(qi−qq )
+(cid:16)F(
+ciq
+e − (qi − qq )
+) − F( −e − (qi − qq )
+ciq (cid:18)F(
+)(cid:19) ×
+1
+ciq
+ciq
+) − −e − (qi − qq )
+e − (qi − qq )
+(cid:18) e − (qi − qq )
+f(
+ciq
+ciq
+ciq
+e − (qi − qq )
+) − f( −e − (qi − qq )
+ciq (cid:18)f(
+B = −1
+ciq
+ciq
+
+)(cid:19)2
+
+.
+
+f( −e − (qi − qq )
+ciq
+
+)(cid:19)
+
+,
+
+)
+
+)
+
++ ˜V (cid:18) qi − qq
+ciq
+
+¶zi (cid:18) ¶ ¯f iq/¶zi
+¶
+¯f iq (cid:19)
+) − −e−(qi−qq )
+e−(qi−qq )
+f( −e−(qi−qq )
+e−(qi−qq )
+iq 
+f(
+= −s2
+ciq
+ciq
+ciq
+ciq
+i
+
+) − F( −e−(qi−qq )
+e−(qi−qq )
+F(
+c2
+ciq
+ciq
+˜W (cid:18) qi − qq
+e
+= −s2
+ciq (cid:19) ,
+i
+c2
+ciq
+iq
+where the function ˜W is deﬁned in (69). Combining (95), (96), and (97), the update rule for s2
+i is
+s2
+s2
+e
+e
+i (cid:18)1 − (cid:18) (cid:229)
+) + (cid:229)
+i − µ q
+µ q − µ
+i ←s2
+s2
+i
+i
+c2
+c2
+ciq
+ciq
+ciq
+ciq
+iq
+iq
+q:r(q)<r(i)
+q:r(q)>r(i)
+s2
+e
+)(cid:19)(cid:19).
+(cid:229)
+i − µ q
+i
+c2
+ciq
+ciq
+iq
+q:r(q)=r(i),q 6=i
+Appendix F. Derivations of Update Rules for the Plackett-Luce Model
+
+ciq (cid:19)2
+e
+
+
+˜W (
+
+W (
+
+W (
+
+)
+
+i
+
+,
+
+,
+
+,
+
+,
+
+(97)
+
+,
+
+so
+
+Using f (z) and fq (z) deﬁned in (72),
+(cid:229)s∈Cq eqs /c , !1/Aq
+fq (z) =   eqq /c
+¶ log((cid:229)s∈Cq eqs /c )
+Aq   ¶(qq/c)
+¶ log fq
+1
+¶qi −
+=
+¶zi
+¶qi
+1 − eqi /c
+
+if q = i,
+(cid:229)s∈Cq eqs /c
+− eqi /c
+if r(q) ≤ r(i), q 6= i,
+(cid:229)s∈Cq eqs /c
+
+if r(q) > r(i).
+0
+
+¶ fq/¶zi
+fq
+
+si
+cAq
+
+=
+
+=
+
+298
+
+! ¶qi
+¶zi
+
+(98)
+
+µ
+µ
+A BAY E S IAN A P PROX IMAT ION M E THOD FOR ON L IN E RANK ING
+
+From (38), the update rule is
+
+where
+
+i + Wi ,
+
+i ← µ
+
+=
+
+¶ fq (z)/¶zi
+(cid:12)(cid:12)(cid:12)(cid:12)z=0
+k(cid:229)
+Wi =si
+fq (z)
+q=1
+(cid:229)s∈Ci eµ s /c ! + (cid:229)
+Ai  1 −
+c   1
+s2
+eµ
+i /c
+i
+q:q 6=i,r(q)≤r(i) −
+To update s, similar to (59), we must calculate
+¶zi (cid:18) ¶ fq/¶zi
+¶
+fq (cid:19) , ∀q.
+
+1
+Aq
+
+(cid:229)s∈Cq eµ s /c ! .
+i /c
+eµ
+
+(99)
+
+From (98), if i ∈ Cq , then
+cAq   ¶
+(cid:229)s∈Cq eqs /c ! ·
+eqi /c
+s2
+si
+¶qi
+i
+(99) = −
+=
+¶zi
+¶qi
+c2Aq
+(cid:229)s∈Cq eqs /c ! .
+(cid:229)s∈Cq eqs /c  1 −
+eqi /c
+eqi /c
+s2
+i
+c2Aq
+
+=
+
+The update rule for s2
+i is
+
+((cid:229)s∈Cq eqs /c )eqi /c − (eqi /c )2
+((cid:229)s∈Cq eqs /c )2
+
+i  1 − (cid:229)
+i ← s2
+s2
+q:r(q)≤r(i)
+
+1
+c2Aq
+
+(cid:229)s∈Cq eµ s /c  1 −
+i /c
+eµ
+
+(cid:229)s∈Cq eµ s /c !! .
+i /c
+eµ
+
+References
+
+John Aitchison and Colin B. Begg. Statistical diagnosis when basic cases are not classiﬁed with
+certainty. Biometrika, 63:1–12, 1976.
+
+Ralph A. Bradley and Milton E. Terry. The rank analysis of incomplete block designs: I. the method
+of paired comparisons. Biometrika, 39:324–345, 1952.
+
+Arpad E. Elo. The Rating of Chessplayers, Past and Present. Arco Publishing, New York, 2nd
+edition, 1986.
+
+Mark E. Glickman. Paired Comparison Models with Time-varying Parameters. PhD thesis, Depart-
+ment of Statistics, Harvard University, 1993.
+
+Mark E. Glickman. Parameter estimation in large dynamic paired comparison experiments. Applied
+Statistics, 48:377–394, 1999.
+
+John Guiver and Edward Snelson. Bayesian inference for Plackett-Luce ranking model. In Pro-
+ceedings of the Twenty Sixth International Conference on Machine Learning (ICML), 2009.
+
+299
+
+µ
+W ENG AND L IN
+
+Ralf Herbrich, Tom Minka, and Thore Graepel. TrueSkillTM : A Bayesian skill rating system. In
+Advances in Neural Information Processing Systems 19. MIT Press, Cambridge, MA, 2007.
+
+Jim C. Huang and Brendan J. Frey. Cumulative distribution networks and the derivative-sum-
+product algorithm. In Proceedings of the Twenty-Fourth Conference on Uncertainty in Artiﬁcial
+Intelligence (UAI), 2008.
+
+Tzu-Kuo Huang, Ruby C. Weng, and Chih-Jen Lin. Generalized Bradley-Terry models and multi-
+class probability estimates. Journal of Machine Learning Research, 7:85–115, 2006. URL http:
+//www.csie.ntu.edu.tw/˜ cjlin/papers/generalBT.pdf.
+
+Willard D. James and Charles M. Stein. Estimation with quadratic loss.
+In Proceedings of the
+Fourth Berkeley Symposium on Mathematical Statistics and Probability, volume 1, pages 361–
+379, 1961.
+
+Robert E. Kass and Adrian E. Raftery. Bayes factors. Journal of the American Statistical Associa-
+tion, 90(430):773–795, 1995.
+
+Frank R. Kschischang, Brendan J. Frey, and Hans-Andrea Loeliger. Factor graphs and the sum-
+product algorithm. IEEE Transactions on Information Theory, 47(2):498–519, 2001.
+
+John I. Marden. Analyzing and Modeling Rank Data. Chapman & Hall, London, 1995.
+
+Joshua E. Menke and Tony R. Martinez. A Bradley-Terry artiﬁcial neu ral network model for indi-
+vidual ratings in group competitions. Neural Computing and Applications, 17:175–186, 2008.
+
+Thomas Minka. A Family of Algorithms for Approximate Bayesian Inference. PhD thesis, MIT,
+2001.
+
+Charles M. Stein. Estimation of the mean of a multivariate normal distribution. The Annals of
+Statistics, 9:1135–1151, 1981.
+
+Louis L. Thurstone. A law of comparative judgement. Psychological Reviews, 34:273–286, 1927.
+
+Luke Tierney and Joseph B. Kadane. Accurate approximations for posterior moments and marginal
+densities. Journal of the American Statistical Association, 81:82–86, 1986.
+
+Ruby C. Weng. A Bayesian Edgeworth expansion by Stein’s identity. Bayesian Analysis, 5(4):
+741–764, 2010.
+
+Ruby C. Weng and Michael Woodroofe. Integrable expansions for posterior distributions for multi-
+parameter exponential families with applications to sequential conﬁdence leve ls. Statistica Sinica,
+10:693–713, 2000.
+
+Michael Woodroofe. Very weak expansions for sequentially designed experiments: linear models.
+The Annals of Statistics, 17:1087–1102, 1989.
+
+Michael Woodroofe and D. Stephen Coad. Corrected conﬁdence sets
+experiments. Statistica Sinica, 7:53–74, 1997.
+
+for sequentially designed
+
+Ernst Zermelo. Die berechnung der Turnier-Ergebnisse als ein maximumproblem der wahrschein-
+lichkeitsrechnung. Mathematische Zeitschrift, 29:436–460, 1929.
+
+300
+
+

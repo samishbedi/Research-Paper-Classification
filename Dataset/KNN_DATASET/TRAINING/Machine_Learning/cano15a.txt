@@ -1,0 +1,224 @@
+Journal of Machine Learning Research 16 (2015) 491-494
+
+Submitted 11/11; Revised 7/14; Published 3/15
+
+A Classiﬁcation Module for Genetic Programming
+Algorithms in JCLEC
+
+Alberto Cano
+Jos´e Mar´ıa Luna
+Amelia Zafra
+Sebasti´an Ventura
+Department of Computer Science and Numerical Analysis
+Rabanales Campus, University of C´ordoba, 14071, C´ordoba, Spain
+
+acano@uco.es
+jmluna@uco.es
+azafra@uco.es
+sventura@uco.es
+
+Editor: Mikio Braun
+
+Abstract
+JCLEC-Classiﬁcation is a usable and extensible open source library for genetic program-
+ming classiﬁcation algorithms. It houses implementations of rule-based methods for clas-
+siﬁcation based on genetic programming, supporting multiple model representations and
+providing to users the tools to implement any classiﬁer easily. The software is written in
+Java and it is available from http://jclec.sourceforge.net/classification under the
+GPL license.
+Keywords:
+
+classiﬁcation, evolutionary algorithms, genetic programming, JCLEC
+
+1. Introduction
+
+In the last decade, the increasing interest in storing information has led to its automatic
+processing, discovering knowledge that is potentially useful. Data mining involves the use
+of data analysis tools to discover this knowledge previously unknown, valid patterns, and
+close relationships in databases. One of the most used data mining tasks is classiﬁcation,
+which learns from a set of training examples to produce predictions about future examples.
+The classiﬁcation models are being applied to enormous databases in areas such as
+bioinformatics, marketing, banks or web mining. Existing classiﬁcation libraries provide
+algorithms following many diﬀerent methodologies. However, it is diﬃcult to ﬁnd a library
+that contains GP (genetic programming) algorithms, an important evolutionary computa-
+tion paradigm. The conceptual diﬃculty of GP makes it diﬃcult to implement algorithms
+following this paradigm despite its algorithms perform well as it is proved by many re-
+searchers (Espejo et al., 2010).
+GP is an eﬃcient and ﬂexible heuristic technique that uses complex representations
+such as trees. This technique provides comprehensible models, which are useful in diﬀerent
+application domains. For instance, it is applied to supervised learning tasks like regression,
+classiﬁcation and unsupervised learning tasks like clustering and association. In classiﬁca-
+tion tasks, the application of GP is an important issue since it may oﬀer results that are
+comprehensible to humans. Additionally, it oﬀers interesting advantages such as ﬂexibility,
+and the possibility of using diﬀerent kinds of representations, e.g., decision trees, rule-based
+systems, discriminant functions, etc. An extension of GP is grammar-guided genetic pro-
+
+c(cid:13)2015 Alberto Cano, Jos´e Mar´ıa Luna, Amelia Zafra and Sebasti´an Ventura.
+
+Cano, Luna, Zafra and Ventura
+
+gramming (G3P), which makes the knowledge extracted more expressive and ﬂexible by
+means of a context-free grammar (McKay et al., 2010).
+This paper presents an open source software for researchers and end-users to develop
+classiﬁcation algorithms based on GP and G3P models. It is an intuitive and usable tool
+which extends the JCLEC evolutionary computation library (Ventura et al., 2007). The
+software presented includes some GP and G3P proposals described in literature, and pro-
+vides the necessary classes and methods to develop any kind of evolutionary algorithms for
+solving classiﬁcation problems easily.
+This paper is organized as follows. Firstly, Section 2 provides a description of the
+module, its structure and the way to use it. Finally, the documentation and the requirements
+of this module are outlined in Section 3.
+
+2. Description of the Module
+
+The classiﬁcation module is presented in this section, describing the library structure and
+its main characteristics.
+
+2.1 Structure of the Module
+
+The net.sf.jclec.problem.classiﬁcation.base package roots the hierarchical structure of the
+classiﬁcation module, and provides the abstract classes with the properties and methods
+that any classiﬁcation algorithm must contain, e.g., ClassiﬁcationAlgorithm, Classiﬁcation-
+Reporter, Rule and RuleBase. A new algorithm included in the module should inherit from
+these classes regardless the classiﬁcation model.
+In this context, we focus on rule-based
+classiﬁers which comprise one or more classiﬁcation rules, each of them being a knowledge
+representation model consisting of an antecedent and a consequent. The antecedent of each
+classiﬁcation rule is made up of a series of conditions to be met by an instance to consider
+that it belongs to the class speciﬁed by the consequent.
+Based on whether an algorithm uses a GP or G3P encoding, JCLEC-Classiﬁcation
+makes a diﬀerentiation between expression-tree and syntax-tree respectively. In such a way,
+each GP classiﬁcation individual is represented by means of the ExprTreeRuleIndividual
+class, which represents an individual, comprising all the features required to do it: the
+genotype, the phenotype and the ﬁtness function value. The nodes and functions in GP
+trees are deﬁned by the ExprTreeSpecies class. Similarly to GP individuals, the Syntax-
+TreeRuleIndividual class speciﬁes all the features required to represent a G3P individual,
+while the SyntaxTreeSpecies allows us to deﬁne the terminal and nonterminal symbols of the
+grammar used to generate individuals. Furthermore, the module allows to encode multiple
+syntax and expression trees for Pittsburgh style encodings or multi expression programming
+by means of the MultiExprTree and MultiSyntaxTree classes.
+In order to represent the phenotype of a rule-base individual, crisp and fuzzy rules are
+generated by using the CrispRule and FuzzyRule classes, respectively. These classes provide
+the antecedent of the rule in an expression-tree shape and the consequent assigned to this
+antecedent. In addition, methods to classify a whole data set or a particular instance are
+provided in these classes. These methods compute whether the antecedent of a rule satisﬁes
+an instance, returning the consequent of the rule, otherwise the instance is not covered by
+the antecedent and therefore no predictions can be made. Besides those packages that repre-
+
+492
+
+A Classification Module for JCLEC
+
+sent the main characteristics of any individual, the net.sf.jclec.problem.classiﬁcation.listener
+package to make reports for the train and test classiﬁcation processes is provided. This
+package contains the RuleBaseReporter class with methods to make reports specifying the
+classiﬁer features such as the rule base, the number of rules, the average number of condi-
+tions, the percentage of correct predictions, the percentage of correct predictions per class,
+the geometric mean, the kappa rate and the confusion matrix.
+Finally, it is noteworthy that several utility classes, which make it easy to load data from
+KEEL1 and ARFF2 formatted ﬁles, are provided by a dataset package. Three diﬀerent
+attribute types may be represented by this package, integer, continuous and categorical,
+and a number of characteristics from the data set are given, comprising type of attributes,
+number of classes, number of instances, etc.
+The module houses three G3P classiﬁcation algorithms (De Falco et al., 2001; Bo jarczuk
+et al., 2004; Tan et al., 2002), which can guide developers to write new algorithms.
+
+2.2 Usage of the Module
+
+Including new classiﬁcation algorithms in this module is very simple. We focus on the algo-
+rithm described by Bo jarczuk et al. (2004). This algorithm, which is provided in the module
+(see the net.sf.jclec.problem.classiﬁcation.algorithm.bojarczuk package), is constructed with
+only three additional classes. One of them, the BojarczukAlgorithm class is inherited from
+the ClassiﬁcationAlgorithm class and provides the own features of this algorithm.
+Another class required to be implemented is the evaluator, which computes the ﬁtness of
+the individuals. This class, named BojarczukEvaluator in this algorithm, inherits from the
+JCLEC core AbstractParal lelEvaluator class or from the AbstractEvaluator class, depending
+on whether the individuals are evaluated in a sequential or parallel way.
+Finally, a class to deﬁne the grammar to be followed in the individual generation stage
+is implemented. This class, named BojarczukSyntaxTreeSpecies in this example, inherits
+from the class SyntaxTreeSpecies since G3P individuals are deﬁned in this algorithm.
+Only deﬁning these three classes, the complete classiﬁcation algorithm is represented.
+Due to the core of this module is JCLEC, before an algorithm is ready to run, it is necessary
+to carry out a set-up process by using a conﬁguration ﬁle as shown in Figure 1. This
+conﬁguration ﬁle and the steps required to execute the algorithm are described in the
+JCLEC website. In this ﬁle we specify those parameters required such as the algorithm
+to be run, the parent selector, the genetic operators, the evaluator, etc. All the required
+parameters are provided by JCLEC, existing a numerous variety of them as it is described
+in the JCLEC speciﬁcation (Ventura et al., 2007).
+
+3. Documentation and Requirements
+
+The JCLEC-Classiﬁcation online documentation3 describes the software packages, presents
+a user oriented usage example, as well as developer information to include new algorithms,
+API reference and running tests. JCLEC requires Java 1.7, Apache commons logging 1.1,
+
+1. KEEL website at http://www.keel.es
+2. ARFF format description at http://www.cs.waikato.ac.nz/ml/weka/arff.html
+3. JCLEC documentation at http://jclec.sourceforge.net/data/JCLEC- classification.pdf
+
+493
+
+Cano, Luna, Zafra and Ventura
+
+<e x p e r i m e n t>
+< p r o c e s s a l g o r i t h m −t y p e = ‘ ‘ n e t . s f . j c l e c . p r o b l em . c l a s s i f i c a t i o n . b o j a r c z u k . B o j a r c z u k A l g o r i t h m ’ ’>
+<r a n d−g e n− f a c t o r y s e e d = ‘ ‘ 1 2 3 4 5 6 7 8 9 ’ ’
+t y p e = ‘ ‘ n e t . s f . j c l e c . u t i l . random . R a n e c u F a c t o r y ’ ’ />
+<p o p u l a t i o n − s i z e>1 0 0</ p o p u l a t i o n − s i z e>
+<max−o f −g e n e r a t i o n s>1 0 0</max−o f −g e n e r a t i o n s>
+<max−d e r i v − s i z e>2 0</max−d e r i v − s i z e>
+< d a t a s e t
+t y p e = ‘ ‘ n e t . s f . j c l e c . p r o b l em . u t i l . d a t a s e t . A r f f D a t a S e t ’ ’>
+< t r a i n −d a t a>d a t a / i r i s / i r i s −10−1 t r a . a r f f</ t r a i n −d a t a>
+< t e s t −d a t a>d a t a / i r i s / i r i s −10−1 t s t . a r f f</ t e s t −d a t a>
+< a t t r i b u t e −c l a s s −name>C l a s s</ a t t r i b u t e −c l a s s −name>
+</ d a t a s e t>
+< r e c o m b i n a t i o n −p r o b> 0 . 8</ r e c o m b i n a t i o n −p r o b>
+<c o p y−p r o b> 0 . 0 1</ c o p y−p r o b>
+< l i s t e n e r
+t y p e = ‘ ‘ n e t . s f . j c l e c . p r o b l em . c l a s s i f i c a t i o n . l i s t e n e r . R u l e B a s e R e p o r t e r ’ ’>
+< r e p o r t −d i r −name> r e p o r t s / r e p o r t F r e i t a s</ r e p o r t −d i r −name>
+< g l o b a l −r e p o r t −name>s u m m a r y F r e i t a s</ g l o b a l −r e p o r t −name>
+< r e p o r t −f r e q u e n c y>1 0</ r e p o r t −f r e q u e n c y>
+</ l i s t e n e r>
+</ p r o c e s s>
+</ e x p e r i m e n t>
+
+Figure 1: Sample conﬁguration ﬁle
+
+Apache commons collections 3.2, Apache commons conﬁguration 1.5, Apache commons lang
+2.4, and JUnit 3.8 (for running tests).
+
+Acknowledgments
+
+This research was supported by the Spanish Ministry of Science and Technology pro ject
+TIN-2011-22408, the Ministry of Education FPU grants AP2010-0041 and AP2010-0042,
+and FEDER funds.
+
+References
+
+C. C. Bo jarczuk, H. S. Lopes, A. A. Freitas, and E. L. Michalkiewicz. A constrained-syntax
+genetic programming system for discovering classiﬁcation rules: application to medical
+data sets. Artiﬁcial Intel ligence in Medicine, 30(1):27–48, 2004.
+
+I. De Falco, A. Della Cioppa, and E. Tarantino. Discovering interesting classiﬁcation rules
+with genetic programming. Applied Soft Computing, 1(4):257–269, 2001.
+
+P. G. Espejo, S. Ventura, and F. Herrera. A survey on the application of genetic program-
+ming to classiﬁcation. IEEE Transactions on Systems, Man, and Cybernetics, Part C,
+40(2):121–144, 2010.
+
+R. McKay, N. Hoai, P. Whigham, Y. Shan, and M. O’Neill. Grammar-based genetic pro-
+gramming: a survey. Genetic Programming and Evolvable Machines, 11:365–396, 2010.
+
+K. C. Tan, A. Tay, T. H. Lee, and C. M. Heng. Mining multiple comprehensible classiﬁcation
+rules using genetic programming.
+In Proceedings of the Evolutionary Computation on
+2002. CEC ’02, volume 2, pages 1302–1307, 2002.
+
+S. Ventura, C. Romero, A. Zafra, J.A. Delgado, and C. Herv´as. JCLEC: a Java framework
+for evolutionary computation. Soft Computing, 12:381–392, 2007.
+
+494
+
+

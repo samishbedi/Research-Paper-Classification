@@ -1,0 +1,1084 @@
+ 
+
+VOL. 3, NO. 5, May 2012                                                                                                               ISSN 2079-8407 
+Journal of Emerging Trends in Computing and Information Sciences 
+©2009-2012 CIS Journal. All rights reserved. 
+http://www.cisjournal.org 
+An Evaluative Study of Automation Software Applications and Database 
+Management Systems in Academic Libraries 
+1 S. Dhanavandan, 2 M.Tamizhchelvan 
+1Assistant Librarian, 2 Deputy Librarian 
+Gandhigram Rural Institute –Deemed University, Gandhigram-624 302, Dindigul Dt. TN. 
+1 dhanavandan@gmail.com , 2 tamizhchelvan@gmail.com 
+ 
+ABSTRACT 
+Library  automation  not  only  improves  the  image  of  the  library  services but  also provides  additional  services  to  the users with 
+the  existing  staff.  It  provides  equal  opportunities  to  all  staff  members  for  organizational  learning,  reengineering,  and 
+benchmarking.  The  present  study  demonstrates  and  elaborates  the  library  automation  software  and  it  types  used  in  self 
+financing  engineering  college  (SFEC)  libraries  in  duration  wise  analysis.  A  well  structured  questionnaire  was  distributed 
+among library professionals in engineering colleges in Tamil Nadu to evaluate the library automation software. 
+ 
+Keywords: Automation Software, DBMS, Self financing Engg. Colleges 
+ 
+1.  INTRODUCTION 
+ 
+The  term  library  automation  was  generally  used  in 
+the past for house keeping operations of the  library. Today it 
+has  expended  its  scope  and  includes  all  those  technologies 
+which  libraries  and  information  centres  use  for  collection, 
+processing, 
+storage, 
+retrieval, 
+dissemination, 
+and 
+transmission  of  all  types  of  information  at  local,  regional, 
+national, and international level. 
+ 
+
+According  to  Daniel,  library  automation  assured  a 
+great deal of importance in libraries in the mid-1960s.  Since 
+then,  it  has  become  a  house  hold  word  in  librarianship.  
+Library  automation  may  be  defined  as  the  application  of 
+automatic  and  semi  automatic  data  processing  machines  to 
+perform 
+functions 
+such 
+as 
+acquisition, 
+circulation 
+cataloguing,  reference  service,  and  serial  control. This  is  the 
+reason  for  the  librarian  to  urge  for  developing  e-resources 
+for the effectives and efficient library service. 
+ 
+2.  ICT IN LIBRARIES 
+ 
+
+The 
+communication 
+and 
+information 
+term, 
+technologies  (ICT),  refers  to  forms  of  technology  that  are 
+used 
+to 
+transmit,  store,  create,  share  or  exchange 
+information.  This  broad  definition  of  ICT  includes  such 
+technologies  as:  radio,  television,  video,  DVD,  telephone 
+(both  fixed  line  and  mobile  phones),  satellite  systems, 
+computer and network hardware and software; as well as the 
+equipment  and  services  associated  with  these  technologies, 
+such  as  videoconferencing  and  electronic  mail.  In  recent 
+years, there is a visible shift from the old ways to the modern 
+ways  of  information  delivery  systems.  With  the  advent  of 
+global  information  society,  information  and  communication 
+technologies are  increasingly being adopted as effective  tool 
+for  reaching  rural  communities.  Yet  the  benefits  of  the 
+information  revolution  are  still  much  debated,  particularly, 
+in the case of developing countries like India. 
+
+ 
+liberalization  policies 
+ However,  privatization, 
+ 
+aimed  at  increasing  competition  in  this  strategic  sector  have 
+increased  the  role  of  the  private  sector  in  providing  ICT 
+infrastructure.  They  have  also  hastened  the  adoption  by 
+many  developing  countries  of  new  networking  and 
+telecommunication  technologies,  helped  by  their  rapidly 
+declining  costs.  Still,  private  telecommunication  companies 
+hesitate  to  provide  infrastructure  for  rural  and  low-density 
+areas  and  Governments  still  have  a  critical  role  to  play  in 
+direct  investment,  creating  and  enabling  environment  or 
+such  interventions  as  setting  up  universal  access  funds  by 
+which  companies  can help Governments pay  for  community 
+networks  and public  access points. Recent  estimates  suggest 
+that  80  per  cent  of  total  ICT  expenditures  go  to  content,  15 
+per cent  to  software and application  technologies and only 5 
+per  cent  to  infrastructure.  In  recent  years,  the  Asian  and 
+Pacific region have invested more heavily than other regions 
+into  this  area,  channeling  close  to  10  per  cent  of  its 
+expenditure in basic ICT infrastructure.  
+ 
+ 
+Information  Communication  Technology  (ICT)  is 
+one  of  the  important  buzzwords  of  today’s  IT  world.  It  has 
+changed  the  society  into  information  society  and our way of 
+life.  It  has  been  integrated  in  every  walk  of  our  life.  Its 
+impact has been evident in railway, air reservations, banking 
+and 
+insurance  sectors,  postal  services,  biotechnology, 
+bioinformatics,  biomedical  sciences,  health  care  sector, 
+telemedicine,  media  and  communications, 
+teaching  –
+learning, 
+library  and 
+information 
+services,  printing 
+technology,  e-resources,  digitization  of  documents,  digital 
+library, 
+library  networking, 
+e-commerce,  & 
+trade, 
+entertainment, and what not? It has penetrated in everywhere 
+and  its makes our  life comfortable and easy. A major part of 
+the  functionality  of  the  computer  and  communication 
+technologies  will  be  vitalized  by  the  software  and  it  will 
+
+ 
+
+ 
+
+677 
+
+process 
+
+VOL. 3, NO. 5, May 2012                                                                                                               ISSN 2079-8407 
+Journal of Emerging Trends in Computing and Information Sciences 
+©2009-2012 CIS Journal. All rights reserved. 
+ 
+http://www.cisjournal.org 
+form a very significant part of  the cost of  total  ICT solution. 
+ICT  based  products &  services  in  libraries.  It  brings  out  the  
+This  in  fact  gives  ample  opportunity  for  the  Third World  to 
+revolution  and  save  tremendous  time  of  users  and  library 
+capitalize  on  the  ICT  trends.  While  the  computers  have 
+staff  for  collecting  and  disseminating  information.  The 
+grown  from  simple  bio-medic  or  mono  medic  devices  that 
+networking  of  libraries  has  dramatically  changed  the  old 
+understood  only  characters  and  numbers  to  Graphical  User 
+concept of  libraries  in new  information  storage  and  retrieval 
+Interface based ones to totally multi media and virtual reality 
+mechanism  has  now  become  very  faster,  easier  and 
+engines,  the  software  has  also  kept  pace  with  it.  Starting 
+specifically  the  computer  to  manual  card  system..  Library 
+from  the  era  of  scientific  computation  and  simple  data 
+automation  makes  the  provision  to  provide  the  ‘right 
+processing  chores,  it  has  matured,  traversed  the  path  of 
+information to right reader at the right time in a right form in 
+expert  systems  to  that  of  emulating  human  performance  to 
+a  right  personal  way’  it  is  the  basic  aim  of  libraries. 
+hear,  talk and  think and  the very  futuristic  software  that will 
+Information  communication  technology  is  not  only  highly 
+give superhuman powers  to  the computer. The vital  role  that 
+important  for  profit,  but  for  individual  academic  institution 
+software  innovation  will  play  in  the  future  will  be  the  basis 
+to  develop  and  promote  technological  improvement.  Hence 
+of  our  knowledge  society.  The  software  will  enable  the 
+the  call  of  the  day  is  to  care  and  share  not  only  information 
+computer  to  grow  from  raw  number  crunching  device  with 
+sources,  but  also  the  infrastructure  facilities  and  skilled 
+poor  knowledge  content  to  a  device  that  is  superhuman  in 
+manpower resources among the libraries.  
+every  aspect  of  qualitative  and  quantitative  computing  and 
+ 
+5.  LIBRARY AUTOMATION: Benefits  
+perception. 
+ 
+ 
+3.  SOFTWARE  
+•  Proven 
+development 
+ 
+management system.  
+ 
+The  new  digital  ICT  is  not  single  technology  but 
+•  The  circulation  is  one  of  the  most  affected  area  of 
+combination  of  hardware,  software,  multimedia,  and 
+library  services,  which  saved  a  lot  of  time  of  users 
+delivery  systems.  Today,  ICT  in  education  encompasses  a 
+as  well  as  staff;  The  transaction  of  books  and  
+great range of rapidly evolving technologies such as desktop, 
+library document  is very easy process,  so  there will 
+notebook,  and  handheld  computers,  digital  cameras,  local 
+be no queue of users in library; 
+area  networking,  Bluetooth,  the  Internet,  cloud  computing. 
+•  The  over  due  charges  fixed  by  the  staff  only  one 
+Starting  from  the  era  of  scientific  computation  and  simple 
+time and S/w will provide results automatically; 
+data  processing  chores,  it  has matured,  traversed  the  path  of 
+•  The users can search  information  from anywhere at 
+expert  systems  to  that  of  emulating  human  performance  to 
+any time through OPAC; It provides the multimedia 
+hear,  talk and  think and  the very  futuristic  software  that will 
+facility,  some  automation  S/w  gives  the  image  of 
+give superhuman powers  to  the computer. The vital  role  that 
+resources in OPAC 
+software  innovation  will  play  in  the  future  will  be  the  basis 
+•  The  Users  can  easily  do  the  reserve  the  books 
+of  our  knowledge  society.  The  software  will  enable  the 
+thorough OPAC  and  they  can  do  self  circulation  of 
+computer  to  grow  from  raw  number  crunching  device  with 
+library resources; 
+poor  knowledge  content  to  a  device  that  is  superhuman  in 
+•  The  library  automation    helps  to  avoid  the  theft  of 
+every  aspect  of  qualitative  and  quantitative  computing  and 
+library resources with RFID system; 
+perception.  Software  is  the  program  that  runs  the  computer 
+to  produce  the  required  results.  It  is,  in  fact,  the  most 
+important  component  of  the  automation  process.  Someone 
+said,  “A  computer  without  software  is  similar  to  a  man 
+without  his  brain,  or  a  library  with  neither  books  nor 
+librarians”. Therefore, on principle,  the selection of software 
+comes  before  hardware.  When  we  talk  about  library 
+software,  we  mean 
+library 
+the  software  needed  for 
+housekeeping  routines  and  information  retrieval  services. 
+Hundreds  of  library  packages  have  been  developed  and  run 
+successfully  in  advanced  countries  and  there  are  many 
+directories  and  other  tools  available  that  help  librarians  to 
+select suitable software for their libraries.  
+ 
+4.  LIBRARY AUTOMATION 
+ 
+The  application  of  computer  and  networking 
+technologies has  improved  the efficiency of  library  services. 
+Library  automation  was  first  giant  step  towards  the  use  of 
+
+ 
+6.  REVIEW OF LITEARTURE 
+ 
+ 
+Singh,  (2001)  identified  the  Indian  Institutes  of 
+Technology  (IITs)  have  been  recognized  all  over  the  world 
+as  centers  of  excellence  in  learning,  training  and  research  in 
+the  fields  of  engineering  and  technology.  This  paper 
+describes  the  present  state  of  computerization  in  six  IIT 
+libraries.  The  different  aspects  covered  are  hardware, 
+software,  applications,  databases,  CD-ROMs,  online  search 
+services, networking and marketing of products and services. 
+Future  plans  have  also  been  covered  where  available.  The 
+data  was  gathered  through  questionnaires.  In  addition, 
+annual  reports  and  other  primary  documents  of  the  libraries 
+were  used.  Ahmad  &  Iqbal  (2009)  found  that  the  Library 
+automation  fulfills  the  above  demand  of  libraries  by 
+providing  the  library  activities  as:  very  efficiently,  rapidly, 
+effectively,  adequately  and  economically.  Thus,  the  ICT 
+
+and 
+
+quality 
+
+ 
+
+ 
+
+678 
+
+Table 1: Questionnaire distributed among Sample 
+Institutions 
+ 
+
+VOL. 3, NO. 5, May 2012                                                                                                               ISSN 2079-8407 
+Journal of Emerging Trends in Computing and Information Sciences 
+©2009-2012 CIS Journal. All rights reserved. 
+ 
+http://www.cisjournal.org 
+made  possible  for  automation  in  libraries        Rai,  Namrata 
+engineering  colleges 
+in  Tamil  Nadu.  Nearly  200 
+(2011)  discussed  the  progress  of  library  management 
+questionnaires  were  distributed 
+library 
+the 
+among 
+software  and  to  trace  out  the  characteristics  and  trends  of 
+professionals  of  the  engineering  Colleges  libraries  in  Tamil 
+software  with  special  reference  to  packages  that  provide 
+Nadu.  Nearly  140  responses  were  received.  The  relevant 
+either web  interface  for  some  of  their modules  or  total web-
+data  are  collected  from      the  librarians  of      the      concerned 
+based solutions  for all management modules. The paper also 
+institutions by employing mailed questionnaire method.  The 
+seeks  to  compare  services  and  facilities  and  technologies 
+respondents  have  properly  answered  the  queries  posed  by 
+incorporated  in  library  automation  packages.  Breeding, 
+the  researcher. After completion of answering,  they  returned 
+Marshall  (2011)  looked  at  the  development  of  library 
+the  questionnaires  to  the  researcher..  The  general  data 
+technology,  focusing  on  library  automation,  integrated 
+interpretation  is  done  with  the  application  of  percentage 
+library  systems  (ILS),  and  the  use  of  open  source  software. 
+analysis, analysis of variance. 
+Additional  topics discussed  include  the competition between 
+ 
+10. ANALYSIS AND INTERPRETATIONS 
+supports of  ILS and proprietary  library  services vendors,  the 
+decreases  in  library  finance,  and  litigation  between  library 
+ 
+service  companies  over  the  violation  of  antitrust  laws. 
+Dhanavandan  discussed  the  Library  automation  not  only 
+improves  the  image  of  the  library  services  but  also  provides 
+additional  services  to  the  users  with  the  existing  staff.  It 
+provides  equal  opportunities  to  all  staff  members  for 
+organizational  learning,  reengineering,  and  benchmarking. 
+The  present  study  demonstrates  and  elaborates  the  library 
+automation  software  and  it  types  used  in  self  financing 
+engineering  college  (SFEC)  libraries  in  Tamil  Nadu.  the 
+religious minority and linguistic minority institution libraries 
+are fully equipped with library application software in Tamil 
+Nadu 
+ 
+7.  PURPOSE OF THE STUDY 
+ 
+ 
+The  purpose  of  library  automation  software  is  to 
+facilitate  access  to  details  of  electronic  information,  print 
+material.  Library  services  to  ensure  that  the  information 
+needs  of  the  user  community  are  met,  regardless  of  their 
+location.  It  enables  libraries  to  deliver  valuable  information 
+that  already  exists  within  library  walls  electronically  to 
+patrons.  To  create  new  digital  resources  locally,  and  to 
+integrate  local  digital  resources  with  remote  ones.  The 
+number  of  people  accessing  digital  collections  through  the 
+WWW  also  shows  explosive  rates  of  growth.  Finally, 
+internationalization 
+is  making  a  “global 
+information 
+environment” a reality.  
+ 
+8.  OBJECTIVES 
+ 
+
+ 
+ 
+As  per  the  above  Tale  1,  the  200  questionnaires 
+ 
+were  distributed  to  the  various  self  financing  engineering 
+college  libraries  in  Tamil  Nadu.140  respondents  are  replied 
+out  of  200  libraries. But,  rest  of  the  60  (30%)  libraries  from 
+the  self  financing  engineering  colleges  in Tamil Nadu  is  not 
+replied. 
+ 
+a.  Classification of Institutions 
+                The engineering colleges in Tamil Nadu have been 
+classified based on  the year of establishment  for  the purpose 
+of  analyzing.  Such  the  categories  are  Long,  Medium  and 
+institutions.  Long  Duration  Institutions 
+Short  duration 
+denotes  the  engineering  college  in  Tamil  Nadu  which  were 
+started  15  years  ago  i.e.,  prior  to  1995.    Medium  Duration 
+Institutions denotes the institutions which were started in the 
+last  10  years.  i.e.,  before  2005.  And,  Short  Duration 
+Institutions denotes the institutions which were started in the 
+after 2005. 
+ 
+
+Questionnaire 
+Received 
+140 
+(70.00) 
+
+Sl. No.  Questionnaire 
+Distributed 
+200 
+
+1 
+
+% 
+60 
+(30.00) 
+
+1.  To assess the library automation software 
+facilities available in the SFEC libraries. 
+2.  To identify library application software 
+packages. 
+3.  To assess the value and importance of library 
+application software     packages. 
+4.  To compare the software packages used by the 
+SFEC libraries. 
+
+ 
+9.  METHODOLOGY 
+ 
+This study analyzes  the status of  library automation 
+software  facilities  available 
+in 
+the 
+libraries  of  self 
+
+Table 2: Questionnaires received among SFEC Libraries 
+ 
+Duration of Institutions  No. of Received 
+Long Duration 
+18 
+
+% 
+12.86 
+
+Medium Duration 
+
+Short Duration 
+
+Total 
+
+70 
+
+52 
+
+140 
+
+50.00 
+
+37.14 
+
+100 
+
+ 
+
+Table  2  indicates  the  questionnaires  received  the 
+among  the  various  self  financing  engineering  colleges  in 
+Tamil Nadu towards the duration wise based on the year of  
+
+ 
+
+ 
+
+679 
+
+ 
+
+ 
+
+ 
+establishment.  18  libraries  (12.86)  of  the  long  duration 
+institutions  are  replied  the  questionnaires  and  70  libraries 
+(50.00%)  are  responding  from 
+the  medium  duration 
+institutions  and  52  libraries  (37.14)  of  the  short  duration 
+institutions are also replied. 
+ 
+Table 3: Status of Accreditation of SFE Colleges in Tamil 
+Nadu  
+Sl.No  Duration  NBA 
+
+VOL. 3, NO. 5, May 2012                                                                                                               ISSN 2079-8407 
+Journal of Emerging Trends in Computing and Information Sciences 
+©2009-2012 CIS Journal. All rights reserved. 
+http://www.cisjournal.org 
+ 
+ 
+Table  3  indicates  that  52.7  percent  of  the  self  financing 
+engineering  colleges  have  got  the  accreditation  either  from 
+ISO/NBA  or  from  both  which  belong  to  medium  duration. 
+24.3  percent  of  the  short  duration  institutions  have  acquired 
+the  accreditation  from  ISO/NBA  or  from  both.  22.9  percent 
+of  the  institutions which  belong  to  long  duration  institutions 
+have got  the accreditation from  ISO/NBA or  from both.  It  is 
+evident  from  the  discussion  that  majority  of  the  institution 
+(52.7%) are of the medium duration institutions. 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+
+8 
+(20.52) 
+5 
+(27.78) 
+16 
+(21.62) 
+
+18 
+(46.15) 
+8 
+(44.44) 
+34 
+(45.95) 
+
+13 
+(33.33) 
+5 
+(27.78) 
+24 
+(32.43) 
+
+3 
+
+  
+
+Short 
+
+Total 
+
+39 
+(52.7) 
+18 
+(24.3) 
+74 
+(100) 
+
+2  Medium 
+
+1 
+
+Long 
+
+6 
+(35.30) 
+
+8 
+(47.05) 
+
+3 
+(17.65) 
+
+17 
+(23.0) 
+
+NBA 
+ISO 
+
+Total 
+
+ISO 
+
+                (Figures in parentheses denote percentage) 
+
+ 
+Table 4: Library Application Software Used by the SFEC Libraries in Tamil Nadu  
+ 
+Long 
+Duration  Medium Duration 
+No. 
+Per. 
+No. 
+Per. 
+(33.33) 
+6 
+
+Short 
+Total 
+Duration 
+Per.  No. 
+No. 
+Per. 
+
+Software 
+
+(15.38) 
+
+34 
+
+(24.28) 
+
+20 
+
+(28.57) 
+
+8 
+
+Autolib 
+
+Nirmal 
+
+Libasoft 
+
+Lipsys 
+
+Lips I Net 
+
+Winsoft 
+
+Delplus 
+
+Slim++ 
+
+4 
+
+5 
+
+- 
+
+- 
+
+2 
+
+1 
+
+- 
+
+(22.2s2) 
+
+(27.28) 
+
+- 
+
+-- 
+
+(11.11) 
+
+(5.56) 
+
+- 
+
+3 
+
+17 
+
+3 
+
+2 
+
+2 
+
+2 
+
+3 
+
+(4.29) 
+
+3 
+
+(5.77) 
+
+(24.28) 
+
+10 
+
+(19.23) 
+
+(4.29) 
+
+(2.86) 
+
+(2.86) 
+
+(2.86) 
+
+(4.29) 
+
+6 
+
+2 
+
+1 
+
+4 
+
+3 
+
+(11.54) 
+
+(3.85) 
+
+(1.92) 
+
+(7.69) 
+
+(5.77) 
+
+- 
+
+- 
+
+- 
+
+- 
+
+4 
+
+2 
+
+(2.86) 
+
+Winsis 
+In house 
+Prepared 
+No  
+(11.54) 
+(1.43) 
+Software 
+Total 
+52 
+70 
+18 
+                        (Figures in parentheses denote percentage) 
+
+(21.43) 
+
+(7.69) 
+
+(9.61) 
+
+15 
+
+1 
+
+6 
+
+5 
+
+- 
+
+- 
+
+10 
+
+32 
+
+9 
+
+4 
+
+5 
+
+7 
+
+6 
+
+6 
+
+(7.14) 
+
+(22.85) 
+
+(6.42) 
+
+(2.85) 
+
+(3.59) 
+
+(5.00) 
+
+(4.28) 
+
+(4.28) 
+
+20 
+
+(14.28) 
+
+7 
+
+(5.00) 
+140 
+
+ 
+
+ 
+
+ 
+
+ 
+
+680 
+
+VOL. 3, NO. 5, May 2012                                                                                                               ISSN 2079-8407 
+Journal of Emerging Trends in Computing and Information Sciences 
+©2009-2012 CIS Journal. All rights reserved. 
+ 
+http://www.cisjournal.org 
+Data  presented  in  table  4  indicates  the  institutional 
+libraries  19.23  percent  of  the  libraries  have  Liba  soft 
+duration  wise  library  application  software  facilities  in  the 
+software.  It  could  be  seen  clearly  from  the  above  discussion 
+self  financing  engineering  colleges  in Tamil Nadu. Majority 
+that the long duration institutions occupy the first position in 
+of  the  long duration  institution  libraries  (33.33%) have Auto 
+possession  of  Auto  lib  and  medium  duration  and  short 
+lib  software  and    28.57  percent  in  the  case  of    medium 
+duration  institutions  have  the  first  position  in  Liba  soft 
+duration  institution  libraries.  In  the  case  of  short  duration 
+software. 
+ 
+
+ANOVA Summary: Result Library Application Software Vs Institutions 
+ANOVA 
+
+Source of 
+Variation 
+Rows 
+Columns 
+Error 
+Total 
+                          Source: Computed 
+
+SS 
+116.2222 
+440.8889 
+250.4444 
+807.5556 
+
+df 
+2 
+10 
+20 
+35 
+
+  
+
+MS 
+58.11111 
+40.08081 
+11.38384 
+
+ 
+  
+
+F 
+5.104703 
+3.520852 
+
+P-value 
+0.015095 
+0.00578 
+
+F crit 
+3.443361 
+2.258517 
+
+ 
+  
+
+ 
+  
+
+ 
+Table 5: Data Base Software Used by the SFEC Libraries in 
+Tamil Nadu 
+
+No 
+
+Long 
+
+Duration 
+
+The  anova  two  way  model  is  applied  for  further 
+discussion.    At  one  point  the  computed  anova  value  is  5.10 
+which  is greater  than  its  tabulated value at 5 percent  level of 
+Yes 
+significance.    Hence  variation  with  respect  to  library 
+18 
+application  software  used  in  the  libraries  is  statistically 
+0 
+(100.00) 
+identified  as  significant.    At  another  point  the  computed 
+anova  value  is  3.52 which  is  greater  than  its  tabulated  value 
+1 
+69 
+at 5 percent level of significance.  Hence, it  is found that the 
+(1.43) 
+(98.57) 
+variation in the library application software in the libraries of 
+6 
+46 
+self  financing  engineering  colleges  in  Tamil  Nadu  is 
+(11.54) 
+(88.46) 
+significant.     A similar result has been observed with respect 
+7 
+133 
+to duration wise of library application software in the library 
+ (5.00) 
+(95.00) 
+network of the selected self financing engineering colleges. 
+ 
+               (Figures in parentheses denote percentage) 
+ 
+ 
+The  table  5  indicates  the  institutional  duration  wise  database  software  facilities  in  the  self  financing  engineering 
+colleges  in Tamil Nadu. All  the  long duration has database  software  facilities  in  their  libraries. But only one medium duration 
+institution and six (11.54) institutions are not having database software facilities in their library premises. 
+ 
+
+Total 
+18 
+(100.00) 
+70 
+(100.00) 
+52 
+(100.00) 
+
+Medium 
+
+ Total 
+
+Short 
+
+140 
+
+ 
+
+ 
+
+Database 
+
+Table 6: Types of Data Base Software Used in SFEC Libraries in Tamil Nadu 
+ 
+Total 
+Per. 
+(30.82) 
+(28.57) 
+(25.56) 
+(15.03) 
+(100.00) 
+
+Medium 
+Duration 
+No. 
+Per. 
+(36.23) 
+25 
+(29.99) 
+20 
+(21.74) 
+15 
+(13.04) 
+9 
+69 
+
+Long 
+ Duration 
+Per. 
+No. 
+6 
+(33.33) 
+(33.33) 
+6 
+(22.22) 
+4 
+(11.11) 
+2 
+18 
+
+Short 
+ Duration 
+Per. 
+No. 
+10 
+(21.73) 
+(6.08) 
+12 
+(32.60) 
+15 
+(19.56) 
+9 
+46 
+
+No. 
+41 
+38 
+34 
+20 
+133 
+
+Oracle 
+MS Access 
+SQL Sever 
+Foxpro 
+Total 
+
+ 
+
+Table 32 presents data based on  institution duration 
+wise,  in  relation  to  Relational  Data  Base  Management 
+Software  use  pattern  in  the  self  financing  engineering 
+college  libraries.   Majority of  long duration  institutions have 
+M.S.  Access  (42.86%)  data  base  software.    Most  of  the 
+medium duration institutions (44.23%) have oracle and M.S.  
+
+Access  (36.53%)  in  their  libraries.    Majority  of  the  short 
+duration  institutions  have  SQL  server  (41.67%)  data  base 
+software.  It  could  be  seen  clearly  from  the  above  discussion 
+that  the  possession  of  SQL  and  Sybase  forms  of  data 
+management  system  is  common  among  long  duration 
+institutions than those of others. 
+
+ 
+
+ 
+
+681 
+
+ 
+
+ 
+[2]   Ahmad, Parvez and Iqbal, Jafar (2009), “Library      
+       Automation of Al-Barkaat Institute of Management     
+       Studies, Aligarh with the help of Alice for Window    
+        (AFW) Library Software”, Indian Journal of Library    
+        and Information Science, Vol.3No.2, 81-86. 
+ 
+[3]   Rai, Namrat., and Kumar, Shailendra(2011) “  
+Comparative  features  of  integrated  library  management 
+software  systems  available 
+in  Delhi.”  Electronic 
+Library; Vol. 29 No.1, 121-146. 
+
+ 
+[4]   Breeding, Marshall (2011) “The New Frontier “  
+Library Journal, Vol.136 No.6, 24-34. 
+
+ 
+[5]   Dhanavandan, S., (2012). Library Automation  
+        Software in Self Financing Engineering College     
+        Libraries: A Study”, Journal of Advances in Library      
+       and Information Science, Vol.1 No.1, 14-18.  
+ 
+ 
+
+ 
+Chi-square Summary Result 
+
+VOL. 3, NO. 5, May 2012                                                                                                               ISSN 2079-8407 
+Journal of Emerging Trends in Computing and Information Sciences 
+©2009-2012 CIS Journal. All rights reserved. 
+http://www.cisjournal.org 
+ 
+REFERENCES 
+ 
+[1]   Singh., S.P., (2001) “Computer applications in    
+Indian Institutes of Technology libraries”.     
+Electronic Library, Vol. 19No. 2, 92-101 
+
+Chi square calculated value 
+Degrees of freedom 
+Chi square table value 5% 
+
+18.90 
+6 
+12.6 
+
+ 
+
+Chi-square  test  is  applied  for  further  discussion.  
+The  computed  Chi-square  value  is  18.90  which  is  greater 
+than  its  tabulated  value  at  5  percent  level  of  significance.  
+Hence,  the  difference  among  the  institution  duration wise  is 
+statistically  identified  as  significant with  respect  to  database 
+software facility. 
+
+10. CONCLUSION 
+
+              The self financing engineering college libraries are 
+having  95  per  cent  of  the  colleges  use  the  library 
+automation  software.  In  the  case  of  different  commercial 
+library  softwares  the  Auto  lib  takes  the  first  position  and 
+Liba  soft  the  second  and  In  house  prepared  software  the 
+third  position  in  the  utilization  of  the  library  automation 
+software. But in the case of long duration institutions all the 
+libraries has automation facilities. 
+
+ 
+ 
+ 
+ 
+ 
+
+ 
+ 
+ 
+ 
+
+ 
+
+ 
+
+682 
+
+

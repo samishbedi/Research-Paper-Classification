@@ -1,0 +1,229 @@
+Journal of Machine Learning Research 16 (2015) 149-153
+
+Submitted 6/14; Revised 9/14; Published 1/15
+
+SAMOA: Scalable Advanced Massive Online Analysis
+
+Gianmarco De Francisci Morales
+Albert Bifet
+Yahoo Labs
+Av. Diagonal 177, 8th ﬂoor, 08018, Barcelona, Spain
+
+Editor: Geoﬀ Holmes
+
+gdfm@apache.org
+abifet@yahoo.com
+
+Abstract
+samoa (Scalable Advanced Massive Online Analysis) is a platform for mining big
+data streams.
+It provides a collection of distributed streaming algorithms for the most
+common data mining and machine learning tasks such as classiﬁcation, clustering, and
+regression, as well as programming abstractions to develop new algorithms. It features a
+pluggable architecture that allows it to run on several distributed stream processing engines
+such as Storm, S4, and Samza. samoa is written in Java, is open source, and is available
+at http://samoa-project.net under the Apache Software License version 2.0.
+Keywords: data streams, distributed systems, classiﬁcation, clustering, regression, tool-
+box, machine learning
+
+1. Introduction
+Big data is “data whose characteristics forces us to look beyond the traditional methods
+that are prevalent at the time” (Jacobs, 2009). Currently, there are two main ways to
+deal with big data: streaming algorithms and distributed computing (e.g., MapReduce).
+samoa aims at satisfying the future needs for big data stream mining by combining the two
+approaches in a single platform under an open source umbrella.
+Data mining and machine learning are well established techniques among web companies
+and startups. Spam detection, personalization, and recommendation are just a few of the
+applications made possible by mining the huge quantity of data available nowadays.
+The usual pipeline for mining and modeling data (what “data scientists” do) involves
+taking a sample from production data, cleaning and preprocessing it to make it amenable to
+modeling, training a model for the task at hand, and ﬁnally deploying it to production. The
+ﬁnal output of this process is a pipeline that needs to run (and be maintained) periodically
+in order to keep the model up to date.
+In order to cope with web-scale data sets, data scientists have resorted to paral lel and
+distributed computing. MapReduce (Dean and Ghemawat, 2004) is currently the de-facto
+standard programming paradigm in this area, mostly thanks to the popularity of Hadoop,1
+an open source implementation of MapReduce started at Yahoo. Hadoop and its ecosys-
+tem (e.g., Mahout2 ) have proven to be an extremely successful platform to support the
+aforementioned process at web scale.
+1. See http://hadoop.apache.org
+2. See http://mahout.apache.org
+
+c(cid:13)2015 Gianmarco De Francisci Morales and Albert Bifet.
+
+De Francisci Morales and Bifet
+
+Figure 1: Taxonomy of data mining tools.
+
+However, nowadays most data is generated in the form of a stream. Batch data is just a
+snapshot of streaming data obtained in an interval of time. Researchers have conceptualized
+and abstracted this setting in the streaming model.
+In this model data arrives at high
+speed, one instance at a time, and algorithms must process it in one pass under very strict
+constraints of space and time. Streaming algorithms make use of probabilistic guarantees
+to give fast approximated answers.
+On the one hand, MapReduce is not suited to express streaming algorithms. On the
+other hand, traditional sequential online algorithms are limited by the memory and band-
+width of a single machine. Distributed stream processing engines (DSPEs) are a new emer-
+gent family of MapReduce-inspired technologies that address this issue. These engines allow
+to express parallel computation on streams, and combine the scalability of distributed pro-
+cessing with the eﬃciency of streaming algorithms. Examples of these engines include
+Storm,3 S4,4 and Samza.5
+Alas, currently there is no common solution for mining big data streams, that is, for
+executing data mining and machine learning algorithms on a distributed stream processing
+engine. The goal of samoa is to ﬁll this gap, as exempliﬁed by Figure 1.
+
+2. Description
+samoa (Scalable Advanced Massive Online Analysis) is a platform for mining big
+data streams (De Francisci Morales, 2013). For a simple analogy, think of samoa as Mahout
+for streaming. As most of the rest of the big data ecosystem, it is written in Java.
+samoa is both a framework and a library. As a framework, it allows algorithm developers
+to abstract from the underlying execution engine, and therefore reuse their code on diﬀerent
+engines. It features a pluggable architecture that allows it to run on several distributed
+stream processing engines such as Storm, S4, and Samza. This capability is achieved by
+3. See http://storm.apache.org
+4. See http://incubator.apache.org/s4
+5. See http://samza.incubator.apache.org
+
+150
+
+Data Mining Distributed Batch Hadoop Mahout Stream Storm, S4, Samza SAMOA Non Distributed Batch R, WEKA,… Stream MOA SAMOA: Scalable Advanced Massive Online Analysis
+
+designing a minimal API that captures the essence of modern DSPEs. This API also allows
+to easily write new bindings to port samoa to new execution engines. samoa takes care of
+hiding the diﬀerences of the underlying DSPEs in terms of API and deployment.
+As a library, samoa contains implementations of state-of-the-art algorithms for dis-
+tributed machine learning on streams. For classiﬁcation, samoa provides the Vertical Ho-
+eﬀding Tree (VHT), a distributed version of a streaming decision tree (Domingos and Hul-
+ten, 2000). For clustering, it includes an algorithm based on CluStream (Aggarwal et al.,
+2003). For regression, a decision rule learner (Thu Vu et al., 2014). The library also includes
+meta-algorithms such as bagging and boosting.
+The platform is intended to be useful in both research and real world deployments.
+
+3. Architecture
+An algorithm in samoa is represented by a directed graph of nodes that communicate via
+messages along streams which connect pairs of nodes. Borrowing the terminology from
+Storm, this graph is called a Topology. Each node in a Topology is a Processor that sends
+messages through a Stream. A Processor is a container for the code implementing the
+algorithm. A Stream can have a single source but several destinations (akin to a pub-sub
+system). A Topology is built by using a TopologyBuilder, which connects the various pieces
+of user code to the platform code and performs the necessary bookkeeping in the background.
+The following is a code snippet to build a topology that joins two data streams in samoa.
+
+T o p o l o g y B u i l d e r b u i l d e r = n e w T o p o l o g y B u i l d e r ( ) ;
+P r o c e s s o r s o u r c e O n e = n e w S o u r c e P r o c e s s o r ( ) ;
+b u i l d e r . a d d P r o c e s s o r ( s o u r c e O n e ) ;
+S t r e a m s t r e a m O n e = b u i l d e r . c r e a t e S t r e a m ( s o u r c e O n e ) ;
+
+P r o c e s s o r s o u r c e T w o = n e w S o u r c e P r o c e s s o r ( ) ;
+b u i l d e r . a d d P r o c e s s o r ( s o u r c e T w o ) ;
+S t r e a m s t r e a m T w o = b u i l d e r . c r e a t e S t r e a m ( s o u r c e T w o ) ;
+
+P r o c e s s o r j o i n = n e w J o i n P r o c e s s o r ( ) ;
+b u i l d e r . a d d P r o c e s s o r ( j o i n ) . c o n n e c t I n p u t S h u f f l e ( s t r e a m O n e )
+. c o n n e c t I n p u t K e y ( s t r e a m T w o ) ;
+
+4. Machine Learning Algorithms
+The Vertical Hoeﬀding Tree (VHT) is a distributed extension of the VFDT (Domingos and
+Hulten, 2000). The VHT uses vertical parallelism to split the workload across several ma-
+chines. Vertical parallelism leverages the parallelism across attributes in the same example,
+rather than across diﬀerent examples in the stream. In practice, each training example is
+routed through the tree model to a leaf. There, the example is split into its constituting
+attributes, and each attribute is sent to a diﬀerent Processor instance that keeps track of
+suﬃcient statistics. This architecture has two main advantages over one based on horizontal
+parallelism. First, attribute counters are not replicated across several machines, thus reduc-
+ing the memory footprint. Second, the computation of the ﬁtness of an attribute for a split
+decision (via, e.g., entropy or information gain) can be performed in parallel. The drawback
+
+151
+
+De Francisci Morales and Bifet
+
+is that in order to get good performance, there must be suﬃcient inherent parallelism in
+the data. That is, the VHT works best for sparse data (e.g, bag-of-words models).
+samoa includes a distributed version of CluStream, an algorithm for clustering evolving
+data streams. CluStream keeps a small summary of the data received so far by computing
+micro-clusters online. These micro-clusters are further reﬁned to create macro-clusters by
+a micro-batch process, which is triggered periodically. The period can be conﬁgured via a
+command line parameter (e.g., every 10 000 examples).
+samoa also includes adaptive implementations of ensemble methods such as bagging and
+boosting. These methods include state-of-the-art change detectors such as as ADWIN (Bifet
+and Gavaldà, 2007), DDM (Gama et al., 2004), EDDM (Baena-García et al., 2006), and
+Page-Hinckley (Gama et al., 2014). These meta-algorithms are most useful in conjunction
+with external single-machine classiﬁers which can be plugged in samoa. For instance,
+connectors for moa (Bifet et al., 2010) are provided by the samoa-moa package.6
+The following listing shows how to download, build and run samoa.
+
+# d o w n l o a d a n d b u i l d S A M O A
+g i t c l o n e g i t @ g i t h u b . c o m : y a h o o / s a m o a . g i t
+c d s a m o a
+m v n p a c k a g e
+
+# d o w n l o a d t h e F o r e s t C o v e r T y p e d a t a s e t
+w g e t " h t t p : / / d o w n l o a d s . s o u r c e f o r g e . n e t / p r o j e c t / m o a - d a t a s t r e a m / D a t a s e t s /
+C l a s s i f i c a t i o n / c o v t y p e N o r m . a r f f . z i p "
+u n z i p " c o v t y p e N o r m . a r f f . z i p "
+
+# r u n S A M O A i n l o c a l m o d e
+b i n / s a m o a l o c a l t a r g e t / S A M O A - L o c a l - 0 . 2 . 0 - S N A P S H O T . j a r " P r e q u e n t i a l E v a l u a t i o n
+- l c l a s s i f i e r s . e n s e m b l e . B a g g i n g - s ( A r f f F i l e S t r e a m - f c o v t y p e N o r m . a r f f )
+- f 1 0 0 0 0 0 "
+
+5. Conclusions
+samoa is a platform for mining big data streams. It supports the most common machine
+learning tasks such as classiﬁcation, clustering, and regression. It also provides an API for
+algorithm developers that simpliﬁes implementing distributed streaming algorithms.
+samoa can be found at http://www.samoa-project.net/. The website includes a wiki,
+an API reference, and a developer’s manual. Several examples of how the software can be
+used are available. The code is hosted on GitHub. samoa contains a test suite that is run
+on each commit on the GitHub repository via a continuous integration server.7 Finally,
+samoa is released as open source software under the Apache Software License version 2.0.
+We are grateful to all the people who contributed to samoa,8 without whom the project
+could not have existed. We also thank Yahoo Labs Barcelona and its Web Mining group
+for the great support during the development of the project.
+
+6. See https://github.com/samoa- moa/samoa- moa
+7. See https://travis- ci.org/yahoo/samoa
+8. See http://samoa- project.net/contributors.html
+
+152
+
+SAMOA: Scalable Advanced Massive Online Analysis
+
+References
+Charu C. Aggarwal, Jiawei Han, Jianyong Wang, and Philip S. Yu. A framework for
+clustering evolving data streams. In VLDB ’03: 29th International Conference on Very
+Large Data Bases, pages 81–92, 2003.
+Manuel Baena-García, José del Campo-Ávila, Raúl Fidalgo, Albert Bifet, Ricard Gavaldá,
+and Rafael Morales-Bueno. Early drift detection method. In IWKDDS ’06: 4th Interna-
+tional Workshop on Know ledge Discovery from Data Streams, 2006.
+Albert Bifet and Ricard Gavaldà. Learning from time-changing data with adaptive win-
+dowing. In SDM ’07: Seventh SIAM International Conference on Data Mining, pages
+443–448, 2007.
+Albert Bifet, Geoﬀ Holmes, Richard Kirkby, and Bernhard Pfahringer. MOA: Massive
+Online Analysis. Journal of Machine Learning Research, 11:1601–1604, 2010.
+Gianmarco De Francisci Morales. SAMOA: A platform for mining big data streams. In
+RAMSS ’13: 2nd International Workshop on Real-Time Analysis and Mining of Social
+Streams @WWW ’13, 2013.
+Jeﬀrey Dean and Sanjay Ghemawat. Mapreduce: Simpliﬁed data processing on large clus-
+ters. In OSDI ’04: 6th Symposium on Operating Systems Design and Implementation,
+pages 137–150. USENIX Association, 2004.
+Pedro Domingos and Geoﬀ Hulten. Mining high-speed data streams.
+In KDD ’00: 6th
+International Conference on Know ledge Discovery and Data Mining, pages 71–80, 2000.
+João Gama, Pedro Medas, Gladys Castillo, and Pedro Pereira Rodrigues. Learning with
+drift detection. In SBIA ’04: 17th Brazilian Symposium on Artiﬁcial Intel ligence, pages
+286–295, 2004.
+João Gama,
+Indre Zliobaite, Albert Bifet, Mykola Pechenizkiy, and Abdelhamid
+Bouchachia. A survey on concept drift adaptation. ACM Computing Surveys, 46(4),
+2014.
+Adam Jacobs. The pathologies of big data. Communications of the ACM, 52(8):36–44,
+August 2009.
+Anh Thu Vu, Gianmarco De Francisci Morales, João Gama, and Albert Bifet. Distributed
+adaptive model rules for mining big data streams. In BigData ’14: Second IEEE Inter-
+national Conference on Big Data, 2014.
+
+153
+
+

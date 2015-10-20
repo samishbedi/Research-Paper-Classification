@@ -1,0 +1,5914 @@
+RELATIONAL 
+
+COMPLETENESS  OF  DATA  BASE  SUBLANGUAGES 
+
+E.  F.  Codd 
+
+IBM  Research 
+San  Jose, 
+
+Laboratory 
+California 
+
+near 
+future, 
+ABSTRACT: 
+In 
+the 
+interrogating 
+to  be  proposed 
+for 
+a 
+theoretical 
+to  provide 
+attempts 
+capability 
+a  selection 
+complete 
+of  any  host 
+independently 
+language 
+
+we   can  expect 
+a  great 
+variety 
+and  updating 
+data 
+bases. 
+which  may  be  used 
+basis 
+in  a  proposed 
+is  provided 
+in  which 
+the 
+sublanguage 
+
+of 
+languages 
+This 
+paper 
+to  determine 
+how 
+data 
+sublanguage 
+may  be  embedded. 
+
+A  relational 
+algorithm 
+(based 
+relational 
+
+on 
+
+algebra 
+is  presented 
+the 
+calculus) 
+algebra. 
+
+are  defined. 
+calculus 
+and  a  relational 
+relation-defining 
+an  arbitrary 
+reducing 
+for 
+equivalent 
+a  semantically 
+into 
+expression 
+
+Then, 
+
+an 
+expression 
+of 
+the 
+
+Finally, 
+oriented 
+optimal 
+
+regarding 
+the 
+some  opinions 
+are 
+sublanguages 
+algebra-oriented 
+versus 
+data 
+discriminating 
+search 
+and  highly 
+authorization 
+
+stated 
+
+relative 
+from 
+
+merits 
+of 
+the 
+standpoint 
+schemes. 
+
+calculus- 
+of 
+
+RJ  987 
+March 
+Computer 
+
+Hl7041) 
+6,  1972 
+Sciences 
+
+1 
+
+1. 
+
+INTRODUCTION 
+
+In 
+
+the 
+
+near 
+
+future 
+
+we   can  expect 
+
+a  great 
+
+variety 
+
+of 
+
+languages 
+
+to  be 
+
+proposed 
+
+for 
+
+interrogating 
+
+and  updating 
+
+data 
+
+bases. 
+
+When 
+
+the 
+
+computation- 
+
+oriented 
+
+components 
+
+of 
+
+such  a 
+
+language 
+
+are 
+
+removed, 
+
+we   refer 
+
+to 
+
+the 
+
+remaining 
+
+storage 
+
+and 
+
+retrieval 
+
+oriented 
+
+sublanguage 
+
+as  a  data 
+
+sublanguaqe. 
+
+A  data 
+
+sublanguage 
+
+may  be  embedded 
+
+in  a  general 
+
+purpose 
+
+programming 
+
+language, 
+
+or 
+
+it  may  be  stand-alone 
+
+-- 
+
+in  which 
+
+case, 
+
+it 
+
+is 
+
+commonly 
+
+called 
+
+a  query 
+
+language 
+
+(even 
+
+though 
+
+it  may  contain 
+
+provision 
+
+for 
+
+simple 
+
+updating 
+
+as  well 
+
+as  querying). 
+
+This 
+
+paper 
+
+attempts 
+
+to  establish 
+
+a 
+
+theoretical 
+
+basis 
+
+which  may  be 
+
+used 
+
+to  determine 
+
+how  complete 
+
+a  selection 
+
+capability 
+
+is  provided 
+
+in  a 
+
+proposed 
+
+data 
+
+sublanguage 
+
+independently 
+
+of  any  host 
+
+language 
+
+in  which 
+
+the 
+
+sublanguage 
+
+may  be  embedded. 
+
+The 
+
+selection 
+
+capability 
+
+under 
+
+discussion 
+
+is 
+
+a  basic 
+
+non-statistical 
+
+one. 
+
+In  a  practical 
+
+environment 
+
+it  would 
+
+need 
+
+to 
+
+be  augmented 
+
+by  a  counting 
+
+and 
+
+summing 
+
+capability, 
+
+together 
+
+with 
+
+the 
+
+capability 
+
+of 
+
+invoking 
+
+any  one  of  a 
+
+finite 
+
+set  of 
+
+library 
+
+functions 
+
+tailored 
+
+to 
+
+that 
+
+environment. 
+
+In  previous 
+
+papers  Cl  4 
+
+we   proposed 
+
+a  relational 
+
+model 
+
+of  data. 
+
+With 
+
+this  model 
+
+any 
+
+formatted 
+
+data 
+
+base 
+
+is 
+
+viewed 
+
+as  a  collection 
+
+of 
+
+time-varying 
+
+relations 
+
+of  assorted 
+
+degrees. 
+
+In  Section 
+
+2  of 
+
+this 
+
+paper, 
+
+we   define 
+
+a 
+
+collection 
+
+of  operations 
+
+on 
+
+relations 
+
+,  and 
+
+this 
+
+collection 
+
+is 
+
+called 
+
+a 
+
+relational 
+
+algebra. 
+
+This 
+
+algebra 
+
+may  be  used 
+
+for 
+
+a  variety 
+
+of  purposes. 
+
+For 
+
+example, 
+
+a  query 
+
+language 
+
+could 
+
+be  directly 
+
+based 
+
+on 
+
+it 
+
+(however, 
+
+we   would 
+
+propose 
+
+that 
+
+domain 
+
+names 
+
+be  used 
+
+instead 
+
+of  domain 
+
+numbers). 
+
+Later 
+
+sections 
+
+of 
+
+this 
+
+paper 
+
+support 
+
+its 
+
+use  as  a  yardstick 
+
+of 
+
+selective 
+
+power  of  algebra- 
+
+oriented 
+
+data 
+
+sublanguages. 
+
+For  each 
+
+such 
+
+language, 
+
+one  would 
+
+investigate 
+
+,whether 
+
+there 
+
+is  any  operation 
+
+of 
+
+the 
+
+relational 
+
+algebra 
+
+which 
+
+cannot 
+
+be 
+
+defined 
+
+in 
+
+the 
+
+candidate 
+
+language. 
+
+An 
+
+information 
+
+proposed 
+
+by  R.  Bosak. 
+
+algebra 
+t-51 
+
+with 
+
+a  rather 
+
+different 
+
+orientation 
+
+was  
+
+In  Section 
+
+3,  we   define 
+
+an  applied 
+
+predicate 
+
+calculus--the 
+
+relational 
+
+calculus-- 
+---- 
+
+and 
+
+introduce 
+
+a  number 
+
+of 
+
+concepts 
+
+related 
+
+to  meaningful 
+
+and 
+
+reasonable 
+
+queries. 
+
+These 
+
+concepts 
+
+are 
+
+somewhat 
+
+related 
+
+to 
+
+those 
+
+of  J.  L. 
+
+Kuhns. 
+
+[6,7,81 
+
+However, 
+
+his 
+
+relational 
+
+data 
+
+file 
+
+is 
+
+less 
+
+structured 
+
+than 
+
+this 
+
+author's 
+
+relational 
+
+model. 
+
+A  data 
+
+sublanguage 
+
+(called 
+
+ALPHA), 
+
+founded 
+
+directly 
+
+on 
+
+the 
+
+relational 
+
+calculus, 
+
+has  been 
+
+informally 
+
+described 
+
+in 
+
+[4]. 
+
+This 
+
+calculus 
+
+can  also 
+
+be 
+
+used 
+
+as  a  means 
+
+of  comparing 
+
+calculus-oriented 
+
+data 
+
+sublanguages 
+
+with 
+
+one 
+
+another. 
+
+In  Section 
+
+4,  we   provide 
+
+an  algorithm 
+
+for 
+
+translating 
+
+an  arbitrary 
+
+alpha 
+
+expression 
+
+into 
+
+a  semantically 
+
+equivalent 
+
+sequence 
+
+of  operations 
+
+in 
+
+the 
+
+relational 
+
+algebra. 
+
+This 
+
+algorithm 
+
+demonstrates 
+
+that 
+
+the 
+
+relational 
+
+algebra 
+
+has  at 
+
+least 
+
+the 
+
+selective 
+
+power 
+
+of 
+
+the 
+
+relational 
+
+calculus. 
+
+As  a 
+
+consequence, 
+
+we   may  shortcut 
+
+the  work  of 
+
+comparing 
+
+any  given 
+
+algebra-oriented 
+
+data 
+
+sublanguage 
+
+LA  with 
+
+any  given 
+
+calculus-oriented 
+
+language 
+
+LC 
+
+by 
+
+comparing 
+
+L A  with 
+
+the 
+
+relational 
+
+algebra 
+
+and 
+
+LC  with 
+
+the 
+
+relational 
+
+calculus, 
+
+as 
+
+indicated 
+
+in  Fig. 
+
+1. 
+
+In 
+
+this 
+
+figure, 
+
+the  Project 
+
+MAC  system 
+
+called 
+
+MACAIMS 
+
+is 
+
+cited 
+
+as  an  example 
+
+of  an  algebra-oriented 
+
+language 
+
+bee  Dl>. 
+
+In 
+
+section 
+
+5,  we   consider 
+
+the 
+
+pros 
+
+and  cons 
+
+of  data 
+
+sublanguages 
+
+founded 
+
+on  a  relational 
+
+algebra 
+
+versus 
+
+those 
+
+founded 
+
+on  a  relational 
+
+calculus. 
+
+CALCULUS-ORIENTED  LANGUAGES 
+
+Fig.  1: 
+
+COMPARISON %-lEME  FOR DATA  %J?al ANGUAm 
+
+4 
+
+2. 
+
+A  RELATIONAL 
+
+ALGEBRA 
+
+2.1 
+
+Objective 
+
+The  primary 
+
+purpose 
+
+of 
+
+this 
+
+algebra 
+
+is 
+
+to  provide 
+
+a  collection 
+
+of 
+
+operations 
+
+on 
+
+relations 
+
+of  all 
+
+degrees 
+
+(not 
+
+necessarily 
+
+binary) 
+
+suitable 
+
+for 
+
+selecting 
+
+data 
+
+from 
+
+a  relational 
+
+data 
+
+base. 
+
+The 
+
+relations 
+
+to  be 
+
+operated 
+
+upon  are 
+
+assumed 
+
+to  be  normalized; 
+
+that 
+
+is, 
+
+the 
+
+domains 
+
+on  which 
+
+they 
+
+are  defined 
+
+are 
+
+simple 
+
+(see 
+
+[2,3] 
+
+and  below). 
+
+In  Section 
+
+4,  we   shall 
+
+discuss 
+
+the 
+
+selective 
+
+power  of 
+
+this 
+
+collection 
+
+of  operations. 
+
+&Data 
+
+selection 
+
+is 
+
+viewed 
+
+as 
+
+the 
+
+formation 
+
+(by 
+
+some  operation 
+
+of 
+
+the 
+
+algebra) 
+
+of  a  new  normalized 
+
+relation 
+
+from 
+
+the 
+
+existing 
+
+collection 
+
+of 
+
+relations. 
+
+Presentation 
+
+operations 
+
+such  as  ordering 
+
+a  relation 
+
+by  values 
+
+in  one  or  more 
+
+of 
+
+its 
+
+domains 
+
+and 
+
+factoring 
+
+a  normalized 
+
+relation 
+
+into 
+
+un- 
+
+normalized 
+
+form 
+
+are  discussed 
+
+elsewhere 
+
+(see 
+
+[4] 
+
+and  Appendix). 
+
+These 
+
+latter 
+
+operations 
+
+have  no  effect 
+
+on 
+
+the 
+
+information 
+
+content 
+
+of 
+
+retrieved 
+
+data. 
+
+For  notational 
+
+and  expository 
+
+convenience, 
+
+we   deal  with 
+
+domain-ordered 
+
+relations; 
+
+that 
+
+is, 
+
+the 
+
+individual 
+
+domains 
+
+of  a  given 
+
+relation 
+
+can  be 
+
+identified 
+
+as 
+
+the 
+
+first, 
+
+second, 
+
+third, 
+
+and 
+
+so  on. 
+
+As  pointed 
+
+out 
+
+in 
+
+[l], 
+
+however, 
+
+in  many  practical 
+
+data 
+
+bases 
+
+the 
+
+relations 
+
+are  of 
+
+such 
+
+high 
+
+degree 
+
+that 
+
+names 
+
+rather 
+
+than 
+
+position 
+
+numbers 
+
+would 
+
+be  used 
+
+to 
+
+identify 
+
+domains 
+
+when  actually 
+
+storing 
+
+or 
+
+retrieving 
+
+information. 
+
+2.2 
+
+Introductory 
+
+Definitions 
+
+Our  aim 
+
+in 
+
+this 
+
+section 
+
+is 
+
+to  define 
+
+the 
+
+kinds 
+
+of  domains 
+
+(simple 
+
+and 
+
+compound) 
+
+and 
+
+the 
+
+kinds 
+
+of 
+
+relations 
+
+(normalized) 
+
+which 
+
+are  operands 
+
+for 
+
+the  operations 
+
+to  be  subsequently 
+
+defined. 
+
+5 
+
+The  Cartesian 
+
+product 
+
+of 
+
+two  sets 
+
+C,  D 
+
+is  denoted 
+
+C  x  D,  and 
+
+is 
+
+defined 
+
+by: 
+
+C  x  D  = 
+
+{(c,d): 
+
+c  E  C  A  d  E  D}. 
+
+The  expanded 
+
+Cartesian 
+
+product 
+
+x 
+
+of 
+
+n 
+
+sets 
+
+D,,  D2, 
+
+.  .  .  .  Dn 
+
+is 
+
+defined 
+
+by: 
+
+x(D,,D2,...,D,) 
+
+=  C(dl,d2,...,dn): 
+
+dj  E  Dj 
+
+for 
+
+j  =  1,  2, 
+
+.  .  .  ,  nl. 
+
+The  elements 
+
+of 
+
+such  a  set 
+
+are 
+
+called 
+
+n-tuples, 
+
+or 
+
+just 
+
+tuples 
+
+for 
+
+short. 
+
+When 
+
+n  =  1, 
+
+~$1 
+
+=  D, 
+
+since 
+
+no  distinction 
+
+is  made  between 
+
+a 
+
+l-tuple 
+
+and 
+
+its 
+
+only 
+
+component. 
+
+Suppose 
+
+d  = 
+
+(d,, 
+
+d2, 
+
+.  .  .  .  dm) 
+
+and 
+
+e  = 
+
+(e,, 
+
+e2, 
+
+.  .  .  .  en). 
+
+The 
+
+concatenation 
+
+of 
+
+d  with 
+
+e 
+
+is 
+
+the 
+
+(m  +  n)-tuple 
+
+defined 
+
+by 
+
+dne= 
+
+(d,,d2 
+
+,...,  dm,e,,e2 
+
+,...,  enI. 
+
+R 
+
+is  a  relation 
+
+on 
+
+the 
+
+sets 
+
+D,,  D2, 
+
+a.., 
+
+x(+ 
+
+D2, 
+
+.  .  .  .  D,,). 
+
+A  relation 
+
+is  accordingly 
+
+if 
+
+Dn 
+a  special 
+
+it 
+
+is  a  subset 
+
+kind 
+
+of 
+
+set. 
+
+of 
+
+Its 
+
+members 
+
+are  all 
+
+n-tuples 
+
+where 
+
+n 
+
+is  a  constant 
+
+called 
+
+the 
+
+degree 
+
+of 
+
+the 
+
+relation. 
+
+Relations 
+
+of  degree 
+
+1  are 
+
+called 
+
+unary, 
+
+degree 
+
+2  binary, 
+
+degree 
+
+3 
+
+ternary, 
+
+degree 
+
+n  n-ary. 
+
+The 
+
+sets 
+
+on  which 
+
+a  relation 
+
+is  defined 
+
+are 
+
+called 
+
+its 
+
+underlying 
+
+domains. 
+
+For  data 
+
+base 
+
+purposes, 
+
+we   are 
+
+concerned 
+
+with 
+
+data 
+
+consisting 
+
+of 
+
+integers 
+
+and  character 
+
+strings 
+
+(other 
+
+types 
+
+of  primitive 
+
+elements 
+
+may  be 
+
+included 
+
+in 
+
+this 
+
+definition 
+
+if 
+
+desired, 
+
+with 
+
+only  minor 
+
+changes 
+
+in 
+
+some 
+
+of 
+
+the 
+
+definitions 
+
+below). 
+
+A  simple 
+
+domain 
+
+is  a  set 
+
+all 
+
+of  whose  elements 
+
+are 
+
+integers, 
+
+or  a  set 
+
+all 
+
+of  whose  elements 
+
+are 
+
+character 
+
+strings. 
+
+A  relation 
+
+defined 
+
+on  simple 
+
+domains 
+
+alone 
+
+is 
+
+said 
+
+to  be  simple 
+
+normal. 
+
+In 
+
+the 
+
+remainder 
+
+of 
+
+this 
+
+paper, 
+
+whenever 
+
+the 
+
+term 
+
+relation 
+
+is  used  without 
+
+further 
+
+qualification, 
+
+it  means 
+
+simple 
+
+normal 
+
+relation. 
+
+A  compound 
+
+domain 
+
+is 
+
+the 
+
+expanded 
+
+Cartesian 
+
+product 
+
+of  a 
+
+finite 
+
+number 
+
+(say 
+
+k, 
+
+k  2  1)  of 
+
+simple 
+
+domains; 
+
+k 
+
+is 
+
+called 
+
+the 
+
+degree 
+
+of 
+
+the 
+
+compound 
+
+domain. 
+
+Two  simple 
+
+domains 
+
+are 
+
+union-compatible 
+
+if 
+
+both 
+
+are  domains 
+
+of 
+
+integers 
+
+or  both 
+
+are  domains 
+
+of  character 
+
+strings. 
+
+Two  compound 
+
+domains 
+
+D,  E 
+
+are 
+
+union-compatible 
+
+if 
+
+they 
+
+the 
+
+same  degree 
+
+(say 
+
+m)  and 
+
+for 
+
+every 
+
+j 
+
+the 
+
+simple 
+
+domain 
+
+of 
+
+D 
+
+is  union-compatible 
+
+with 
+
+simple 
+
+domain 
+
+of 
+
+E. 
+
+Two  relations 
+
+R,  S 
+
+are 
+
+union-compatible 
+
+if 
+
+(j=l,Z,...,m) 
+
+the 
+
+jth 
+
+are  of 
+.th 
+J 
+
+the 
+
+compound 
+
+domains 
+
+of 
+
+which 
+
+R 
+
+and 
+
+S 
+
+are 
+
+subsets 
+
+are  union-compatible. 
+
+2.3 
+
+Definitions 
+
+of 
+
+the  Operations 
+
+The  operations 
+
+to  be  defined 
+
+fall 
+
+naturally 
+
+into 
+
+two  classes: 
+
+the 
+
+traditional 
+
+set 
+
+operations 
+
+(Cartesian 
+
+product, 
+
+union, 
+
+intersection, 
+
+difference) 
+
+and 
+
+less 
+
+traditional 
+
+operations 
+
+on 
+
+relations 
+
+(projection, 
+
+join, 
+
+division, 
+
+restriction). 
+
+We  consider 
+
+the 
+
+traditional 
+
+set 
+
+operations 
+
+first. 
+
+2.3.1 
+
+Traditional 
+
+Set  Operations 
+
+-  The  usual 
+
+Cartesian 
+
+product 
+
+R  x  S 
+
+relation 
+
+R 
+
+(degree 
+
+m) 
+
+with 
+
+relation 
+
+S 
+
+(degree 
+
+n) 
+
+is  a  relation 
+
+of 
+
+of 
+
+degree 
+
+2,  using 
+
+the 
+
+definition 
+
+given 
+
+in  Section 
+
+2.2 
+
+above. 
+
+The  Cartesian 
+
+product 
+
+employed 
+
+in 
+
+the 
+
+relational 
+
+algebra, 
+
+however, 
+
+yields 
+
+an  expanded 
+
+product, 
+
+, 
+
+a  relation 
+
+R  @  S,  whose  degree 
+
+is 
+
+m  +  n. 
+
+This 
+
+product 
+
+is  defined 
+
+by 
+
+R  a  S  =  {(rns): 
+
+r  E  R  A  s  E  Sl. 
+
+Union 
+
+(u), 
+
+intersection 
+
+(n), 
+
+difference 
+
+(-) 
+
+are 
+
+defined 
+
+in 
+
+the 
+
+usual 
+
+way,  except 
+
+that 
+
+they 
+
+are  applicable 
+
+only 
+
+to  pairs 
+
+of  union-compatible 
+
+normal 
+
+relations. 
+
+2.3.2 
+
+Projection 
+
+-  Suppose 
+
+r 
+
+is  a 
+
+tuple 
+
+of 
+
+the  m-ary 
+
+j  =  1,  2, 
+
+.  .  .  . 
+
+m 
+
+the 
+
+notation 
+
+r[j] 
+
+designates 
+
+the 
+
+relation 
+.th 
+J 
+
+R. 
+
+For 
+
+component 
+
+of 
+
+r. 
+
+For  other 
+
+values 
+
+of 
+
+j, 
+
+r[j] 
+
+is  undefined. 
+
+We  extend 
+
+the 
+
+notation 
+
+to  a 
+
+list 
+
+A  = 
+
+(j,, 
+
+j,, 
+
+.  .  .  , 
+
+jk) 
+
+of 
+
+integers 
+
+(not 
+
+necessarily 
+
+distinct) 
+
+from 
+
+the 
+
+set 
+
+(1, 
+
+2, 
+
+.  .  .  .  m) 
+
+as 
+
+follows 
+
+rl31  =  bCj,l, 
+
+r&l, 
+
+. . .  ,  r[jk]). 
+
+When 
+
+the 
+
+list 
+
+A 
+
+is  empty, 
+
+r[A] 
+
+=  r. 
+
+Let 
+
+R 
+
+be  a  relation 
+
+of  degree 
+
+m,  and 
+
+A 
+
+a 
+
+list 
+
+of 
+
+integers 
+
+(not 
+
+necessarily 
+
+distinct) 
+
+from 
+
+the 
+
+set 
+
+(1, 
+
+2, 
+
+.  .  .  .  m}. 
+
+Then, 
+
+the 
+
+projection 
+
+of 
+
+R 
+
+on 
+
+A 
+
+is  defined 
+
+by 
+
+RCA]  =  {r[A]: 
+
+r  E  R}. 
+
+Note 
+
+that 
+
+when 
+
+A 
+
+is  a  permutation 
+
+of 
+
+the 
+
+list 
+
+(1, 
+
+2, 
+
+.  .  .  ,  m-1,  R[Al 
+
+is  a  relation 
+
+whose  domains 
+
+are 
+
+the 
+
+same  as 
+
+those 
+
+of 
+
+R 
+
+except 
+
+for 
+
+a  change 
+
+in  order 
+
+of  appearance. 
+
+In  Fig. 
+
+2,  we   exhibit 
+
+some  examples 
+
+of  projection. 
+
+Later 
+
+we   shall 
+
+make 
+
+use  of 
+
+the 
+
+fact 
+
+that 
+
+projection 
+
+provides 
+
+an  algebraic 
+
+counterpart 
+
+to 
+
+the 
+
+existential 
+
+quantifier. 
+
+. 
+
+. 
+
+R(D,  D2  D3) 
+
+a 
+
+b 
+
+C 
+
+d 
+
+e 
+
+2 
+
+1 
+
+3 
+
+3 
+
+2 
+
+f  
+
+9 
+
+f  
+
+g 
+
+f  
+
+RI1 I@,  > 
+
+R[zl(D, > 
+
+R[31 (D, > 
+
+f  
+
+9 
+
+R[Wl(D, 
+
+f  
+
+9 
+
+f  
+
+9 
+
+D2) 
+
+2 
+
+1 
+
+3 
+
+3 
+
+R[3;2,21@, 
+
+D2 
+
+O3) 
+
+f  
+
+9 
+
+f  
+
+9 
+
+2 
+
+1 
+
+3 
+
+3 
+
+2 
+
+1 
+
+3 
+
+3 
+
+Figure 
+
+2 
+
+A  ternary 
+
+relation 
+
+R 
+
+and 
+
+five 
+
+of 
+
+its  many  projections. 
+
+9 
+
+2.3.3 
+
+Join 
+
+-  Let 
+
+8  denote 
+
+any  of 
+
+the 
+
+relations 
+
+=, 
+
+f, 
+
+<,  5,  >,  and 
+
+2. 
+
+The 
+
+o-join 
+
+of 
+
+relation 
+
+R 
+
+on  domain 
+
+A  with 
+
+relation 
+
+S 
+
+on  domain 
+
+B 
+
+is 
+
+defined 
+
+by 
+
+R[A  8  B]S  =  {(r?): 
+
+r  c  R  A  s  E  S  A  (r[A] 
+
+0  s[bl)L 
+
+providing 
+
+every 
+
+element 
+
+of 
+
+RCA] 
+
+is  e-comparable 
+
+with 
+
+every 
+
+element 
+
+of 
+
+S[B]. 
+
+Note 
+
+that 
+
+x 
+
+is  B-comparable 
+
+with 
+
+y 
+
+if 
+
+xey 
+
+is  either 
+
+true 
+
+or 
+
+false 
+
+(not 
+
+undefined). 
+
+In  Fig. 
+
+3,  we   exhibit 
+
+some  examples 
+
+of 
+
+joins. 
+
+R(A 
+a 
+a 
+
+b 
+
+c 
+c 
+
+B 
+11 
+2 
+
+12 
+
+2 
+3 
+
+C) 
+
+1 
+
+5 
+3 
+
+S(D 
+2 
+3 
+
+4 
+
+E) 
+u 
+v 
+u 
+
+R[C  =  C]S(A 
+bl 
+c 
+
+B 
+
+3 
+
+C 
+2 
+3 
+
+D 
+2 
+3 
+
+E) 
+u 
+v 
+
+R[B  =  D]S(A 
+a 
+c 
+c 
+
+B 
+212 
+2 
+3 
+
+C 
+
+D 
+
+5 
+3 
+
+2 
+3 
+
+E) 
+u 
+u 
+v 
+
+R[C  >  D]S(A 
+
+c 
+c 
+c 
+c 
+
+B 
+
+3 
+2 
+2 
+2 
+
+C 
+
+3 
+5 
+5 
+5 
+
+D 
+
+2 
+2 
+3 
+4 
+
+E) 
+
+u 
+u 
+v 
+u 
+
+Figure 
+
+3 
+
+Relations 
+
+R,S 
+
+and 
+
+three 
+
+joins 
+
+10 
+
+Note 
+
+that 
+
+R[C  <  D]S  u  R[C  =  D]S  u  R[C  >  D]S  =  R  QD S. 
+
+The  most 
+
+commonly 
+
+needed 
+
+join 
+
+is 
+
+the 
+
+join 
+
+on 
+
+=,  which  we   call 
+
+the 
+
+equi-join. 
+
+In 
+
+the 
+
+case 
+
+of 
+
+the 
+
+equi-join, 
+
+two  of 
+
+the 
+
+domains 
+
+of 
+
+the 
+
+resulting 
+
+relation 
+
+are 
+
+identical 
+
+in 
+
+content. 
+
+If  one  of 
+
+the 
+
+redundant 
+
+domains 
+
+is 
+
+removed 
+
+by  projection, 
+
+the 
+
+resu 
+
+It 
+
+is 
+
+the 
+
+natural 
+
+join 
+
+of 
+
+the 
+
+given 
+
+relations 
+
+as  defined 
+
+in 
+
+[2]. 
+
+2.3.4 
+
+Division 
+
+-  Suppose 
+
+T 
+
+is  a  binary 
+
+relation. 
+
+The 
+
+image 
+
+set  of 
+
+x 
+
+under 
+
+T 
+
+is  defined 
+
+by 
+
+gT(‘)  =  {y:  b,y>  E  J-1. 
+
+Consider 
+
+the 
+
+question 
+
+of  dividing 
+
+a  relation 
+
+R 
+
+of  degree 
+
+m 
+
+by  a  relation 
+
+S 
+
+of  degree 
+
+n. 
+
+Let 
+
+A  be  a  domain-identifying 
+
+for 
+
+R,  and 
+
+let 
+
+?i 
+
+denote 
+
+the 
+
+domain-identifying 
+
+list 
+
+list 
+
+(without 
+
+repetitions) 
+
+that 
+
+is 
+
+complementary 
+
+to 
+
+A  and 
+
+in  ascending 
+
+order. 
+
+For  example, 
+
+if 
+
+the 
+
+degree 
+
+m  of 
+
+R  were  5 
+
+and 
+
+A  =  (2,5), 
+
+then 
+
+A  = 
+
+(1,3,4). 
+
+We  treat 
+
+the 
+
+dividend 
+
+R 
+
+as 
+
+if 
+
+it  were  a 
+
+binary 
+
+relation 
+
+with 
+
+the 
+
+(possibly 
+
+compound) 
+
+domains 
+
+K,  A 
+
+in 
+
+that 
+
+order. 
+
+Accordingl.y, 
+
+given 
+
+any 
+
+tuple 
+
+r  E  R,  we   can  speak 
+
+of 
+
+the,image 
+
+set 
+
+g,(r[K]), 
+
+and  we   note 
+
+that 
+
+this 
+
+is  a  subset 
+
+of 
+
+RCA]. 
+
+Providing 
+
+R[A] 
+
+and 
+
+S[B] 
+
+are 
+
+union-compatible, 
+
+the  division 
+
+of 
+
+R  on 
+
+. 
+
+A 
+
+by 
+
+S 
+
+on 
+
+B 
+
+is  defined 
+
+by 
+
+R[A 
+
+t  B]S  = 
+
+Ir[m: 
+
+r  E  R  A  S[B] 
+
+c_  g,(r[K])}. 
+
+11 
+
+Note 
+
+that, 
+
+when 
+
+R 
+
+is  empty, 
+
+R  divided 
+
+by 
+
+S 
+
+is  empty, 
+
+even 
+
+if 
+
+S 
+
+is 
+
+also 
+
+empty. 
+
+In  Fig. 
+
+4,  we   exhibit 
+
+two  examples 
+
+of  division. 
+
+These 
+
+examples 
+
+show 
+
+that 
+
+projection 
+
+on 
+
+the 
+
+dividend 
+
+preceding 
+
+division 
+
+can  have  a  different 
+
+effect 
+
+from 
+
+division 
+
+followed 
+
+by  projection 
+
+on 
+
+the 
+
+quotient. 
+
+R(A 
+1 
+2 
+
+3 
+4 
+
+P 
+11 
+'11 
+
+11 
+12 
+
+C) 
+x 
+y 
+
+z 
+x 
+
+S(D 
+
+X 
+
+X 
+
+Y 
+
+0 
+1 
+2 
+
+1 
+
+R[B,C][C 
+
+t  D]S  =  (111. 
+
+Figure 
+
+4 
+
+Division 
+
+of 
+
+R 
+
+by 
+
+S 
+
+Later 
+
+we   shall 
+
+see 
+
+that 
+
+division 
+
+provides 
+
+an  algebraic 
+
+counterpart 
+
+to 
+
+the 
+
+universal 
+
+quantifier. 
+
+operations 
+
+already 
+
+introduced: 
+
+Actually, 
+t 
+
+division 
+
+is  definable 
+
+in 
+
+terms 
+
+of 
+
+the 
+
+R[C  +  D]S  =  R[a 
+
+-((R[a 
+
+@  S[D])- 
+
+R)[a. 
+
+2.3.5 
+
+Restriction 
+
+-  Suppose 
+
+R 
+
+is  a  relation 
+
+and 
+
+A,  B 
+
+are  domain-identifying 
+
+lists 
+
+for 
+
+R. 
+
+Let 
+
+8 
+
+denote 
+
+any  of 
+
+the 
+
+relations 
+
+=, 
+
+f, 
+
+<, 
+
+s,  >,  and 
+
+2. 
+
+The  e-restriction 
+
+of 
+
+R 
+
+on  domains 
+
+A,  B 
+
+is  defined 
+
+by 
+
+R[A  8  B]  =  {r: 
+
+r  E  R  A  (r[A] 
+
+8  r[B])>, 
+
+t 
+
+This 
+
+observation 
+
+klas  made  by  Paul  Healey 
+
+of 
+
+IBY  Research, 
+
+San 
+
+Jose. 
+
+12 
+
+providing 
+
+every 
+
+element 
+
+of 
+
+R[A] 
+
+is  &comparable 
+
+with 
+
+every 
+
+element 
+
+of 
+
+R[B]. 
+
+In  Fig. 
+
+5,  we   exhibit 
+
+two  examples 
+
+of 
+
+restriction. 
+
+. 
+
+RjA 
+
+P 
+
+9 
+
+q 
+
+r 
+
+R[B  =  C](A 
+
+r 
+
+R[B  >  C](A 
+
+P 
+
+9 
+
+B 
+
+2 
+
+2 
+
+5 
+
+3 
+
+B 
+
+3 
+
+B 
+
+2 
+
+5 
+
+C) 
+
+1 
+
+3 
+
+4 
+
+3 
+
+C) 
+
+3 
+
+C) 
+
+1 
+
+4 
+
+Figure 
+
+5 
+
+A  relation 
+
+R 
+
+and 
+
+two  of 
+
+its 
+
+restrictions. 
+
+This 
+
+operation 
+
+is 
+
+introduced 
+
+because 
+
+of 
+
+its 
+
+direct 
+
+use 
+
+in  Section 
+
+4. 
+
+It 
+
+is  definable 
+
+in 
+
+terms 
+
+of 
+
+the  B-join 
+
+already 
+
+introduced. 
+
+Thus, 
+
+R[A  0  B]  = 
+
+(R& 
+
+=A??](R[A][A 
+
+8  B]R[B]))[L], 
+
+where 
+
+L 
+
+is  a 
+
+list 
+
+identifying 
+
+all 
+
+the 
+
+domains 
+
+of 
+
+R 
+
+in  ascending 
+
+order, 
+
+and  A% 
+
+denotes 
+
+the 
+
+concatenation 
+
+of 
+
+list 
+
+A  with 
+
+list 
+
+B. 
+
+The  e-join 
+
+of 
+
+R 
+
+with 
+
+S 
+
+is 
+
+likewise 
+
+definable 
+
+in 
+
+terms 
+
+of  Cartesian 
+
+product 
+
+and  e-restriction: 
+
+R[A  8  B]S  = 
+
+(R  8  S)[A  8  B]. 
+
+13 
+
+2.4 
+
+Sample  Queries 
+
+Suppose 
+
+a  data 
+
+base 
+
+includes 
+
+the 
+
+following 
+
+two 
+
+relations: 
+
+Symbol 
+
+Relation 
+
+Name 
+
+Domain 
+
+1 
+
+Domain 
+
+2 
+
+Domain 
+
+3 
+
+S 
+
+T 
+
+suppliers 
+
+SUPPlY 
+
+supplier 
+
+supplier 
+
+f  
+
+# 
+
+supplier 
+
+name 
+
+location 
+
+part 
+
+# 
+
+Table 
+
+1  below 
+
+lists 
+
+nine 
+
+queries, 
+
+along 
+
+with 
+
+appropriate 
+
+algebraic 
+
+expressions 
+
+E 
+
+for 
+
+them. 
+
+n 
+
+Find 
+
+the 
+
+supplier 
+
+numbers 
+
+of 
+
+the 
+
+suppliers 
+
+each  of  whom  supplies: 
+
+j  
+
+1. 
+
+2. 
+
+3. 
+
+4. 
+
+5. 
+
+6. 
+
+7. 
+
+8. 
+
+9. 
+
+Item 
+
+j 
+
+Something 
+
+Nothing 
+
+Part 
+
+15 
+
+Something, 
+
+but 
+
+not 
+
+part 
+
+15 
+
+riot 
+
+part 
+
+15 
+
+A  part 
+
+other 
+
+than 
+
+15 
+
+Part 
+
+15  only 
+
+At 
+
+least 
+
+parts 
+
+12, 
+
+13, 
+
+15 
+
+All 
+
+parts 
+
+supplied 
+
+T[ll 
+SC1 1  -  T[ll 
+
+(T[2=1]{15} 
+
+T[ll 
+-0 
+SD1  -0 
+
+(T[Z=l](T[Z] 
+043 
+T[Z+l]{lZ, 
+
+T[W]T 
+
+Ej 
+
+1 
+
+-  115 ~>>>rN 
+
+13, 
+
+15) 
+
+Table 
+
+1 
+
+Examples 
+
+of  Algebraic 
+
+Expressions 
+
+14 
+
+n 
+
+Find 
+
+the 
+
+locations 
+
+of 
+
+those 
+
+suppliers 
+
+each  of  whom  supplies 
+
+item 
+
+j 
+
+in 
+
+the 
+
+table 
+
+above 
+
+(S[l 
+
+= 
+
+lIEj)['I. 
+
+These 
+
+examples 
+
+demonstrate 
+
+that 
+
+reasonably 
+
+complicated 
+
+queries 
+
+can  be  concisely 
+
+expressed 
+
+in 
+
+terms 
+
+of 
+
+the 
+
+relational 
+
+algebra. 
+
+15 
+
+3. 
+
+RELATIONAL 
+
+CALCULUS 
+
+Having 
+
+defined 
+
+a  relational 
+
+algebra, 
+
+we   now  consider 
+
+an  applied 
+
+predicate 
+
+calculus 
+
+which  may  also 
+
+be  used 
+
+in 
+
+the 
+
+formulation 
+
+of  queries 
+
+on  any  data 
+
+base 
+
+consisting 
+
+of  a 
+
+finite 
+
+collection 
+
+of 
+
+relations 
+
+in 
+
+simple 
+
+normal 
+
+form. 
+
+3.1 
+
+Alphabets, 
+
+Terms, 
+
+and  Formulae 
+
+The  alphabets 
+
+for 
+
+this 
+
+calculus 
+
+are 
+
+listed 
+
+in  Table 
+
+2  below: 
+
+Individual 
+
+Constants 
+
+Index 
+
+Constants 
+
+Tuple 
+
+Variables 
+
+Predicate 
+
+Constants 
+
+monadic 
+
+d,yadic 
+
+Logical 
+
+Symbols 
+
+Delimiters 
+
+a,, 
+
+a2, 
+
+a3¶ 
+
+..+ 
+
+1,  2,  3,  4, 
+
+.  .  . 
+
+r,, 
+
+r2, 
+
+r3, 
+
+.  .  . 
+
+P,' 
+
+P*, 
+
+P3' 
+
+**a 
+
+=, 
+
+<,  >, 
+
+I, 
+
+2,  # 
+
+"91 
+
+3,  v,  A, 
+Cl 
+0 
+
+9 
+
+Table 
+
+2 
+
+The  Alphabets 
+
+of 
+
+the  Relational 
+
+Calculus 
+
+Under 
+
+the 
+
+intended 
+
+interpretation, 
+
+a  one-to-one 
+
+correspondence 
+
+is 
+
+established 
+
+between 
+
+the  monadic 
+
+predicates 
+
+(as  many  as  are  needed) 
+
+and 
+
+the 
+
+relations 
+
+in 
+
+the 
+
+given 
+
+data 
+
+base. 
+
+Suppose 
+
+the 
+
+relations 
+
+are 
+
+R,,  R2, 
+
+Then, 
+
+Pj 
+
+indicates 
+
+membership 
+
+of 
+
+tuples 
+
+in 
+
+relation 
+
+Rj 
+
+(j 
+
+=  1,  2, 
+
+A  monadic 
+
+predicate 
+
+followed 
+
+by  a 
+
+tuple 
+
+variable 
+
+is 
+
+called 
+
+a  range 
+
+term. 
+
+The 
+
+range 
+
+term 
+
+Pjr 
+
+is 
+
+interpreted 
+
+as  stating 
+
+that 
+
+tuple 
+
+variable 
+
+r 
+
+has 
+
+relation 
+
+as 
+
+its 
+
+range. 
+
+R. 
+J 
+
+.  .  .  .  RN' 
+.  .  .  .  N). 
+
+16 
+
+An 
+
+indexed 
+
+tuple 
+
+has 
+
+the 
+
+form 
+
+r[N] 
+
+where 
+
+r 
+
+is  a 
+
+tuple 
+
+variable 
+
+and 
+
+N 
+
+is  an 
+
+index 
+
+constant. 
+
+Its 
+
+purpose 
+
+is 
+
+to 
+
+identify 
+
+the 
+
+Nth 
+
+component 
+
+of  a 
+
+tuple 
+
+r. 
+
+Let 
+
+6 
+
+be  one  of 
+
+the 
+
+predicate 
+
+symbols 
+
+=, 
+
+f, 
+
+<,  5,  >,  and 
+
+2. 
+
+Let 
+
+X,n 
+
+be 
+
+indexed 
+
+tuples 
+
+and 
+
+cx  an 
+
+individual 
+
+constant. 
+
+Then, 
+
+A@J  and 
+
+XBa 
+
+are 
+
+called 
+
+join 
+
+terms. 
+
+The 
+
+terms 
+
+of 
+
+the 
+
+relational 
+
+calculus 
+
+are  of  only 
+
+two 
+
+types: 
+
+range 
+
+terms 
+
+and 
+
+join 
+
+terms. 
+
+The  well-formed 
+
+formulae 
+
+(abbreviated 
+
+WFF)  of 
+
+the 
+
+relational 
+
+calculus 
+
+are  defined 
+
+recursively 
+
+as 
+
+follows: 
+
+1. 
+
+2. 
+
+3. 
+
+4. 
+
+Any 
+
+term 
+
+is  a  WFF; 
+
+If 
+
+If 
+
+If 
+
+r 
+
+is  a  WFF,  so 
+
+is 
+
+1I'; 
+
+I-1, 
+
+r2 
+
+are  WFFs, 
+
+so  are 
+
+(T, 
+
+v  r2) 
+
+and 
+
+(r, 
+
+A  r2); 
+
+r 
+
+is  a  WFF  in  which 
+
+r 
+
+occurs 
+
+as  a 
+
+free 
+
+variable, 
+
+then 
+
+3r(r) 
+
+and  Wr(r) 
+
+are  WFFs; 
+
+5. 
+
+No  other 
+
+formulae 
+
+are  WFFs. 
+
+The  usual 
+
+conventions 
+
+are 
+
+adopted 
+
+for 
+
+saving 
+
+parentheses 
+
+and  avoiding 
+
+duplicate 
+
+use  of  bound 
+
+variables. 
+
+Table 
+
+3  gives 
+
+examples 
+
+of  WFFs  of 
+
+the 
+
+relational 
+
+calculus. 
+
+17 
+
+WFFs  with 
+
+no 
+
+range 
+
+terms 
+
+r,Dl  > al 
+
+3r,  (r,  C31  >  al  1 
+3q  (r,  i31  =  r&W 
+A (r&l1  =  a$) 
+Vr,3r2((r, 
+IiS1  =  r$l) 
+(r,C31  =  r,CW  A 3r3h$11  =  al > 
+
+WFFs  with 
+
+range 
+
+terms 
+
+only 
+
+‘gr3 
+
+‘gr3  A  P7r2 
+
+‘f3 
+P5r3 
+
+” 
+‘sr3 
+A  lP6r3 
+
+Range-Separable 
+
+WFFs 
+
+P8r, 
+
+*  (r, 
+
+[31  =  al  > 
+
+P7r2 
+
+*  C-y-, 
+
+(r,  C31  =  r2K-4 
+
+WFFs  not  Range-Separable 
+
+b-g, 
+
+v 
+
+(r,  C31  =  al  1 
+
+P7r2 
+
+A  3r,Ur, 
+
+[31  =  r21N) 
+
+v  Qf,) 
+
+lP8r, 
+
+*  (r,C31 
+
+=  al  1 
+
+Free  Variables 
+
+rl 
+none 
+
+r2 
+none 
+
+'v2 
+
+rl 
+
+r2 
+
+rl 
+
+r2 
+
+rl 
+
+Table 
+
+3 
+
+Examples 
+
+of  WFFs  of 
+
+the  Relational 
+
+Calculus 
+
+18 
+
+3.2 
+
+Range  Separability 
+
+With 
+
+each 
+
+tuple 
+
+variable 
+
+in  a  WFF,  we   need 
+
+to  associate 
+
+a  clearly 
+
+defined 
+
+' 
+
+range. 
+
+The 
+
+following 
+
+definitions 
+
+are 
+
+aimed 
+
+at 
+
+this 
+
+goal. 
+
+A  range  WFF  is  a  quantifier-free 
+
+WFF,  all 
+
+of  whose 
+
+terms 
+
+are 
+
+range 
+
+terms. 
+
+A  range  WFF  over 
+-- 
+
+r 
+- 
+
+is  a  range  WFF  whose  only 
+
+free 
+
+variable 
+
+is 
+
+r. 
+
+A 
+
+proper 
+
+range  WFF  over 
+
+r 
+
+is  a  range  WFF  over 
+
+r 
+
+satisfying 
+
+two  constraints: 
+
+the 
+
+syntactic 
+
+constraint 
+
+that 
+
+either 
+
+1 
+
+does 
+
+not  occur 
+
+at  all 
+
+or 
+
+that 
+
+it 
+
+immediately 
+
+follows 
+
+A;  and 
+
+the 
+
+semantic 
+
+constraint 
+
+that, 
+
+whenever 
+
+r 
+
+occurs 
+
+in 
+
+two  or 
+
+more 
+
+range 
+
+terms, 
+
+the 
+
+range 
+
+predicates 
+
+in 
+
+those 
+
+terms  must 
+
+be  associated 
+
+with 
+
+relations 
+
+which 
+
+are  union-compatible. 
+
+The 
+
+syntactic 
+
+constraint 
+
+prohibits 
+
+specifying 
+
+the 
+
+range 
+
+of  a 
+
+tuple 
+
+variable 
+
+r 
+
+by  merely 
+
+stating 
+
+that 
+
+relation 
+
+R 
+
+(say) 
+
+is  not 
+
+the 
+
+range 
+
+of 
+
+r. 
+
+The 
+
+two  constraints 
+
+together 
+
+prohibit 
+
+tuple 
+
+variables 
+
+from 
+
+having 
+
+ranges 
+
+which 
+
+are  other 
+
+than 
+
+the 
+
+given 
+
+relations 
+
+or 
+
+rela- 
+
+tions 
+
+which 
+
+can  be  generated 
+
+from 
+
+them 
+
+by  applying 
+
+union, 
+
+intersection, 
+
+and 
+
+difference 
+
+to  union-compatible 
+
+pairs 
+
+of 
+
+relations. 
+
+Both 
+
+bound 
+
+and 
+
+free 
+
+variables 
+
+must 
+
+have 
+
+clearly 
+
+defined 
+
+ranges. 
+
+Suppose 
+
+A 
+
+is  a  WFF  having 
+
+r 
+
+as  a 
+
+free 
+
+variable, 
+
+but 
+
+containing 
+
+no 
+
+range 
+
+term 
+
+in 
+
+r. 
+
+Let 
+
+r 
+
+be  a  proper 
+
+range  WFF  over 
+
+r. 
+
+To 
+
+introduce 
+
+r 
+
+into 
+
+Ir(A) 
+
+or 
+
+Vr(A), 
+
+we   replace 
+
+3r 
+
+by 
+
+3rr, 
+
+and 
+
+Vr 
+
+by  Wrr. 
+
+These 
+
+are 
+
+called 
+
+range-coupled 
+
+quantifiers 
+
+and  are  defined 
+
+by 
+
+the  equations: 
+
+W(A)  =  3r(r  A a) 
+
+VI’(A) 
+
+=  Wr(lr 
+
+v  A). 
+
+Now,  we   can  define 
+
+a  class 
+
+of  WFFs  having 
+
+clearly 
+
+defined 
+
+ranges 
+
+for 
+
+all 
+
+its 
+
+variables. 
+
+A  WFF  is 
+
+range-separable 
+
+if 
+
+it 
+
+is  a  conjunction 
+
+of 
+
+the 
+
+form 
+
+19 
+
+where 
+
+1) 
+
+2) 
+
+u,  A u* A  . . .  A un A  v, 
+
+nzl; 
+
+u, 
+
+through 
+
+Un 
+
+are 
+
+proper 
+
+range  WFFs  over 
+
+n 
+
+distinct 
+
+tuple 
+
+variables; 
+
+3) 
+
+V 
+
+is  either 
+
+null 
+
+(in  which 
+
+case 
+
+the 
+
+formula 
+
+is 
+
+simply 
+
+u, 
+
+*  u2" 
+
+.  .  .  A  un), 
+
+or 
+
+it 
+
+is  a  WFF  with 
+
+the 
+
+three 
+
+properties: 
+
+a) 
+
+b) 
+
+every 
+
+quantifier 
+
+in 
+
+V 
+
+is 
+
+range-coupled; 
+
+every 
+
+free 
+
+variable 
+
+in 
+
+V  belongs 
+
+to 
+
+the 
+
+set  whose 
+
+ranges 
+
+are 
+
+specified 
+
+by  U,,  U2, 
+
+.  .  .  ,  un; 
+
+c) 
+
+V 
+
+is  devoid 
+
+of 
+
+range 
+
+terms. 
+
+One  consequence 
+
+of 
+
+these 
+
+requirements 
+
+if 
+
+that 
+
+a  range-separable 
+
+wFF  
+
+has  at 
+
+least 
+
+one 
+
+free 
+
+variable. 
+
+3.3 
+
+Alpha 
+
+Expressions 
+
+If 
+
+the 
+
+range-separable 
+
+WFFs  of 
+
+the 
+
+relational 
+
+calculus 
+
+were  used  as 
+
+relation-defining 
+
+expressions 
+
+without 
+
+further 
+
+augmentation, 
+
+they  would 
+
+lack 
+
+the  much-needed 
+
+capability 
+
+of  defining 
+
+projections 
+
+of 
+
+relations. 
+
+Accordingly, 
+
+we   consider 
+
+simple 
+
+alpha 
+
+expressions 
+
+of 
+
+the 
+
+form 
+
+(t,, 
+
+t2’ 
+
+***,  $1 
+
+:  w 
+
+where 
+
+1) 
+
+2) 
+
+w  
+
+is  a  range-separable 
+
+WFF  of 
+
+the 
+
+relational 
+
+calculus; 
+
+t,, 
+
+tp 
+
+.  .  .  , 
+
+tk 
+
+are  distinct 
+
+terms, 
+
+each 
+
+consisting 
+
+of  a 
+
+tuple 
+
+variable 
+
+or  an 
+
+indexed 
+
+tuple 
+
+variable; 
+
+20 
+
+3) 
+
+the 
+
+set 
+
+of 
+
+tuple 
+
+variables 
+
+occurring 
+
+in 
+
+t,, 
+
+t2, 
+
+.  .  .  . 
+
+tk 
+
+is 
+
+precisely 
+
+the 
+
+set  of 
+
+free 
+
+variables 
+
+in 
+
+w .  
+
+Set 
+
+brackets 
+
+{  1 
+
+are  omitted 
+
+because 
+
+they 
+
+are 
+
+syntactically 
+
+superfluous. 
+
+The 
+
+list 
+
+(t,, 
+
+t2, 
+
+.  .  .  . 
+
+tk) 
+
+is 
+
+called 
+
+the 
+
+target 
+
+list 
+
+and 
+
+w  
+
+the  qualification 
+
+expression. 
+
+Suppose 
+
+pl  y  p2, 
+
+their 
+
+first 
+
+occurrence 
+
+.  .  .  ,  on 
+in 
+the 
+
+are 
+
+the 
+
+distinct 
+
+tuple 
+
+variables 
+
+in  order 
+
+of 
+
+target 
+
+list 
+
+of  a  simple 
+
+alpha 
+
+expression 
+
+z: 
+
+z  =  (t,, 
+
+t2’ 
+
+***, 
+
+t,) 
+
+:  w .  
+
+Suppose 
+
+that 
+
+relations 
+
+S,, 
+
+S2, 
+
+.  .  .  .  Sn 
+
+(not 
+
+necessarily 
+
+distinct) 
+
+are 
+
+the 
+
+ranges 
+
+of 
+
+q, 
+
+p2, 
+
+.  .  .  , 
+
+jection 
+
+of 
+
+that 
+
+subset 
+
+'rt' 
+of 
+
+respectively. 
+
+Then, 
+
+z 
+
+denotes 
+
+a  certain 
+
+pro- 
+
+S,  @  S2  @I  .  .  .  @  Sn  whose  elements 
+
+satisfy 
+
+the 
+
+qualification 
+
+expression 
+
+w .  
+
+The  projection 
+
+in  question 
+
+is 
+
+indicated 
+
+in  an 
+
+obvious 
+
+way   by 
+
+the 
+
+indices 
+
+associated 
+
+with 
+
+the 
+
+tuple 
+
+variables. 
+
+Now  follow 
+
+examples 
+
+of  queries 
+
+in 
+
+the 
+
+form 
+
+of  simple 
+
+alpha 
+
+expressions. 
+
+The  data 
+
+base  of  Section 
+
+2.4 
+
+is  assumed. 
+
+Predicates 
+
+pl' 
+
+p2 
+
+are 
+
+the 
+
+range 
+
+predicates 
+
+for 
+
+relations 
+
+S  (suppliers) 
+
+and 
+
+T 
+
+(supply), 
+
+respectively. 
+
+8 
+
+8 
+
+Find 
+
+the 
+
+supplier 
+
+number 
+
+of 
+
+those 
+
+suppliers 
+
+who  supply 
+
+part 
+
+15. 
+
+r2D  1  :  P,r2 
+,_ 
+
+A  (r,[2] 
+
+=  15). 
+
+Find 
+
+the 
+
+supplier 
+
+numbers 
+
+of 
+
+those 
+
+suppliers 
+
+who  supply 
+
+something 
+
+other 
+
+than 
+
+part 
+
+15. 
+
+r2D  1  :  P2r2 
+
+h  (r2[2] 
+
+#  15). 
+
+21 
+
+8 
+
+Find 
+
+the 
+
+supplier 
+
+names 
+
+and 
+
+locations 
+
+of 
+
+those 
+
+suppliers 
+
+who  supply 
+
+part 
+
+15. 
+
+(r,[Z], 
+
+r,[3]): 
+
+P,r, 
+
+A  JP2r2(r2[2] 
+
+=  15  A  r,[lJ 
+
+=  r,[l]). 
+
+n 
+
+Find 
+
+the 
+
+locations 
+
+of  suppliers 
+
+and 
+
+the  parts 
+
+being 
+
+supplied 
+
+b.v 
+
+them 
+
+(omitting 
+
+those 
+
+suppliers 
+
+who  are 
+
+supplying 
+
+no  parts 
+
+at 
+
+this 
+
+time). 
+
+(r,[3], 
+
+r,[Z]): 
+
+P,r, 
+
+A  P2r2 
+
+A  (r,[l] 
+
+=  r2[1]). 
+
+The 
+
+concept 
+
+of 
+
+simple 
+
+alpha 
+
+expression 
+
+can  be  generalized 
+
+without 
+
+losing 
+
+its 
+
+desirable 
+
+range 
+
+properties. 
+
+An  alpha 
+
+expression 
+
+is 
+
+recursively 
+
+defined 
+
+as 
+
+follows: 
+
+1) 
+
+2) 
+
+Every 
+
+simple 
+
+alpha 
+
+expression 
+
+is  an  alpha 
+
+expression; 
+
+If 
+
+t:  w ,  
+
+and 
+
+t:  w2  
+
+are  alpha 
+
+expressions, 
+
+so  are 
+
+t: 
+
+t: 
+
+t: 
+
+(w ,  
+
+v  w2 )  
+
+(w ,   A  lw2) 
+
+(w ,   A  w,); 
+
+3) 
+
+No  other 
+
+expressions 
+
+are  alpha 
+
+expressions. 
+
+While 
+
+it 
+
+is  doubtful 
+
+that  many  queries 
+
+will 
+
+attain 
+
+the 
+
+complexity 
+
+of  alpha 
+
+expressions 
+
+of 
+
+the 
+
+non-simple 
+
+kind, 
+
+it  would 
+
+be  artificial 
+
+to  exclude 
+
+them 
+
+from 
+
+the 
+
+theory. 
+
+3.4 
+
+Relational 
+
+Completeness 
+
+Now  we   can 
+
+introduce 
+
+a  basic 
+
+notion 
+
+of  selective 
+
+power. 
+
+An  algebra 
+
+or 
+
+calculus 
+
+is 
+
+relationally 
+
+complete 
+
+if, 
+
+given 
+
+any 
+
+finite 
+
+collection 
+
+of 
+
+relations 
+
+22 
+
+R,,  R2, 
+
+calculus 
+
+. .  . .  RN 
+permit 
+
+in 
+
+simple 
+
+normal 
+
+form, 
+
+the 
+
+expressions 
+
+of 
+
+the 
+
+algebra 
+
+or 
+
+definition 
+
+of  any 
+
+relation 
+
+definable 
+
+from 
+
+R,,  R2, 
+
+.  .  .  .  RN 
+
+by  alpha 
+
+expressions 
+
+(using 
+
+a  set 
+
+of 
+
+N 
+
+range 
+
+predicates 
+
+in  one-to-one 
+
+correspondence 
+
+with 
+
+R,,  R2, 
+
+.  .  .  ,  RN). 
+
+We  shall 
+
+apply 
+
+this 
+
+notion 
+
+in  Section 
+
+4 
+
+to 
+
+the 
+
+algebra 
+
+of  Section 
+
+2. 
+
+

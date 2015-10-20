@@ -1,0 +1,1405 @@
+IEEE TRANSACTIONS ON PARALLEL AND DISTRIBUTED SYSTEMS, VOL. 25, NO. 2, FEBRUARY 2014
+
+363
+
+A Scalable Two-Phase Top-Down
+Specialization Approach for Data
+Anonymization Using MapReduce on Cloud
+
+Xuyun Zhang, Laurence T. Yang, Sen ior Member, IEEE, Chang L iu, and J in jun Chen, Member, IEEE
+
+Abstract—A large number of cloud services require users to share private data like electronic health records for data analysis or
+mining, bringing privacy concerns. Anonymizing data sets via generalization to satisfy certain privacy requirements such as k-
+anonymity is a widely used category of privacy preserving techniques. At present, the scale of data in many cloud applications
+increases tremendously in accordance with the Big Data trend, thereby making it a challenge for commonly used software tools to
+capture, manage, and process such large-scale data within a tolerable elapsed time. As a result, it is a challenge for existing
+anonymization approaches to achieve privacy preservation on privacy-sensitive large-scale data sets due to their insufficiency of
+scalability. In this paper, we propose a scalable two-phase top-down specialization (TDS) approach to anonymize large-scale data sets
+using the MapReduce framework on cloud. In both phases of our approach, we deliberately design a group of innovative MapReduce
+jobs to concretely accomplish the specialization computation in a highly scalable way. Experimental evaluation results demonstrate
+that with our approach, the scalability and efficiency of TDS can be significantly improved over existing approaches.
+
+Index Terms—Data anonymization, top-down specialization, MapReduce, cloud, privacy preservation
+
+Ç
+
+1 INTRODUCTION
+C LOUD computing, a disruptive trend at present, poses a
+significant impact on current IT industry and research
+communities [1],
+[2],
+[3]. Cloud computing provides
+massive computation power and storage capacity via
+utilizing a large number of commodity computers together,
+enabling users to deploy applications cost-effectively with-
+out heavy infrastructure investment. Cloud users can
+reduce huge upfront investment of IT infrastructure, and
+concentrate on their own core business. However, numer-
+ous potential customers are still hesitant to take advantage
+of cloud due to privacy and security concerns [4], [5].
+The research on cloud privacy and security has come to the
+picture [6], [7], [8], [9].
+Privacy is one of the most concerned issues in cloud
+computing, and the concern aggravates in the context of
+cloud computing although some privacy issues are not new
+
+. X. Zhang is with the School of Computer Science and Technology,
+Huazhong University of Science and Technology, Wuhan 430074, China,
+and the Faculty of Engineering and IT, University of Technology, PO Box
+123, Broadway, Sydney, NSW 2007, Australia.
+E-mail: xyzhanggz@gmail.com.
+. L.T. Yang is with the School of Computer Science and Technology,
+Huazhong University of Science and Technology, Wuhan 430074, China,
+and the Department of Computer Science, St. Francis Xavier University,
+Annex 11B, Antigonish, NS B2G 2W5, Canada.
+E-mail: ltyang@stfx.ca.
+. C. Liu and J. Chen are with the Faculty of Engineering and IT, University
+of Technology, PO Box 123, Broadway, Sydney, NSW 2007, Australia.
+E-mail: {changliu.it, jinjun.chen}@gmail.com.
+
+Manuscript received 16 Sept. 2012; revised 19 Jan. 2013; accepted 6 Feb. 2013;
+published online 22 Feb. 2013.
+Recommended for acceptance by X. Li, P. McDaniel, R. Poovendran, and
+G. Wang.
+For information on obtaining reprints of this article, please send e-mail to:
+tpds@computer.org, and reference IEEECS Log Number
+TPDSSI-2012-09-0909.
+Digital Object Identifier no. 10.1109/TPDS.2013.48.
+
+[1], [5]. Personal data like electronic health records and
+financial transaction records are usually deemed extremely
+sensitive although these data can offer significant human
+benefits if they are analyzed and mined by organizations
+such as disease research centres. For instance, Microsoft
+HealthVault [10], an online cloud health service, aggregates
+data from users and shares the data with research institutes.
+Data privacy can be divulged with less effort by malicious
+cloud users or providers because of the failures of some
+traditional privacy protection measures on cloud [5]. This
+can bring considerable economic loss or severe social
+reputation impairment to data owners. Hence, data privacy
+issues need to be addressed urgently before data sets are
+analyzed or shared on cloud.
+Data anonymization has been extensively studied and
+widely adopted for data privacy preservation in noninter-
+active data publishing and sharing scenarios [11]. Data
+anonymization refers to hiding identity and/or sensitive
+data for owners of data records. Then, the privacy of an
+individual can be effectively preserved while certain
+aggregate information is exposed to data users for diverse
+analysis and mining. A variety of anonymization algorithms
+with different anonymization operations have been pro-
+posed [12], [13], [14], [15]. However, the scale of data sets
+that need anonymizing in some cloud applications increases
+tremendously in accordance with the cloud computing and
+Big Data trends [1], [16]. Data sets have become so large that
+anonymizing such data sets is becoming a considerable
+challenge for traditional anonymization algorithms. The
+researchers have begun to investigate the scalability
+problem of large-scale data anonymization [17], [18].
+Large-scale data processing frameworks like MapReduce
+[19] have been integrated with cloud to provide powerful
+computation capability for applications. So, it is promising
+
+1045-9219/14/$31.00 ß 2014 IEEE
+
+Published by the IEEE Computer Society
+
+364
+
+IEEE TRANSACTIONS ON PARALLEL AND DISTRIBUTED SYSTEMS, VOL. 25, NO. 2, FEBRUARY 2014
+
+to adopt such frameworks to address the scalability
+problem of anonymizing large-scale data for privacy
+preservation. In our research, we leverage MapReduce, a
+widely adopted parallel data processing framework, to
+address the scalability problem of the top-down specializa-
+tion (TDS) approach [12] for large-scale data anonymiza-
+tion. The TDS approach, offering a good tradeoff between
+data utility and data consistency, is widely applied for data
+anonymization [12], [20], [21], [22]. Most TDS algorithms are
+centralized, resulting in their inadequacy in handling large-
+scale data sets. Although some distributed algorithms have
+been proposed [20], [22], they mainly focus on secure
+anonymization of data sets from multiple parties, rather
+than the scalability aspect. As the MapReduce computation
+paradigm is relatively simple, it is still a challenge to design
+proper MapReduce jobs for TDS.
+In this paper, we propose a highly scalable two-phase
+TDS approach for data anonymization based on MapReduce
+on cloud. To make full use of the parallel capability of
+MapReduce on cloud, specializations required in an anon-
+ymization process are split into two phases. In the first one,
+original data sets are partitioned into a group of smaller data
+sets, and these data sets are anonymized in parallel,
+producing intermediate results. In the second one, the
+intermediate results are integrated into one, and further
+anonymized to achieve consistent k-anonymous [23] data
+sets. We leverage MapReduce to accomplish the concrete
+computation in both phases. A group of MapReduce jobs is
+deliberately designed and coordinated to perform speciali-
+zations on data sets collaboratively. We evaluate our
+approach by conducting experiments on real-world data
+sets. Experimental results demonstrate that with our
+approach, the scalability and efficiency of TDS can be
+improved significantly over existing approaches.
+The major contributions of our research are threefold.
+First, we creatively apply MapReduce on cloud to TDS for
+data anonymization and deliberately design a group of
+innovative MapReduce jobs to concretely accomplish the
+specializations in a highly scalable fashion. Second, we
+propose a two-phase TDS approach to gain high scalability
+via allowing specializations to be conducted on multiple
+data partitions in parallel during the first phase. Third,
+experimental results show that our approach can signifi-
+cantly improve the scalability and efficiency of TDS for data
+anonymization over existing approaches.
+The remainder of this paper is organized as follows:
+The next section reviews related work, and analyzes the
+scalability problem in existing TDS algorithms. In Section 3,
+we briefly present preliminary for our approach. Section 4
+formulates the two-phase TDS approach, and Section 5
+elaborates algorithmic details of MapReduce jobs. We
+empirically evaluate our approach in Section 6. Finally, we
+conclude this paper and discuss future work in Section 7.
+
+2 RELATED WORK AND PROBLEM ANALYSIS
+2.1 Related Work
+Recently, data privacy preservation has been extensively
+investigated [11]. We briefly review related work below.
+
+LeFevre et al. [17] addressed the scalability problem of
+anonymization algorithms via introducing scalable decision
+trees and sampling techniques. Iwuchukwu and Naughton
+[18] proposed an R-tree index-based approach by building a
+spatial
+index over data sets, achieving high efficiency.
+However, the above approaches aim at multidimensional
+generalization [15], thereby failing to work in the TDS
+approach. Fung et al. [12], [20], [21] proposed the TDS
+approach that produces anonymous data sets without the
+data exploration problem [11]. A data structure Taxonomy
+Indexed PartitionS (TIPS)
+is exploited to improve the
+efficiency of TDS. But the approach is centralized, leading
+to its inadequacy in handling large-scale data sets.
+Several distributed algorithms are proposed to preserve
+privacy of multiple data sets retained by multiple parties.
+Jiang and Clifton [24] and Mohammed et al. [22] proposed
+distributed algorithms to anonymize vertically partitioned
+data from different data sources without disclosing privacy
+information from one party to another. Jurczyk and Xiong
+[25] and Mohammed et al.
+[20] proposed distributed
+algorithms to anonymize horizontally partitioned data sets
+retained by multiple holders. However, the above distrib-
+uted algorithms mainly aim at securely integrating and
+anonymizing multiple data sources. Our research mainly
+focuses on the scalability issue of TDS anonymization, and
+is, therefore, orthogonal and complementary to them.
+As to MapReduce-relevant privacy protection, Roy et al.
+[26]
+investigated the data privacy problem caused by
+MapReduce and presented a system named Airavat in-
+corporating mandatory access control with differential
+privacy. Further, Zhang et al. [27] leveraged MapReduce
+to automatically partition a computing job in terms of data
+security levels, protecting data privacy in hybrid cloud. Our
+research exploits MapRedue itself to anonymize large-scale
+data sets before data are further processed by other
+MapReduce jobs, arriving at privacy preservation.
+
+2.2 Problem Analysis
+We analyze the scalability problem of existing TDS
+approaches when handling large-scale data sets on cloud.
+The centralized TDS approaches in [12], [20], and [21]
+exploits the data structure TIPS to improve the scalability
+and efficiency by indexing anonymous data records and
+retaining statistical information in TIPS. The data structure
+speeds up the specialization process because indexing
+structure avoids frequently scanning entire data sets and
+storing statistical results circumvents recomputation over-
+heads. On the other hand, the amount of metadata retained
+to maintain the statistical information and linkage informa-
+tion of record partitions is relatively large compared with
+data sets themselves,
+thereby consuming considerable
+memory. Moreover, the overheads incurred by maintaining
+the linkage structure and updating the statistic information
+will be huge when date sets become large . Hence ,
+centralized approaches probably suffer from low efficiency
+and scalability when handling large-scale data sets.
+There is an assumption that all data processed should
+fit
+in memory for the centralized approaches [12] .
+Unfortunately, this assumption often fails to hold in most
+data-intensive cloud applications nowadays.
+In cloud
+environments, computation is provisioned in the form of
+
+ZHANG ET AL.: A SCALABLE TWO-PHASE TOP-DOWN SPECIALIZATION APPROACH FOR DATA ANONYMIZATION USING MAPREDUCE ON...
+
+365
+
+virtual machines (VMs). Usually, cloud compute services
+offer several flavors of VMs. As a result, the centralized
+approaches are difficult in handling large-scale data sets
+well on cloud using just one single VM even if the VM has
+the highest computation and storage capability.
+A distributed TDS approach [20] is proposed to address
+the distributed anonymization problem which mainly
+concerns privacy protection against other parties, rather
+than scalability issues. Further, the approach only employs
+information gain, rather than its combination with privacy
+loss, as the search metric when determining the best
+specializations. As pointed out in [12], a TDS algorithm
+without considering privacy loss probably chooses a
+specialization that leads to a quick violation of anonymity
+requirements. Hence,
+the distributed algorithm fails to
+produce anonymous data sets exposing the same data
+utility as centralized ones. Besides, the issues like commu-
+nication protocols and fault tolerance must be kept in mind
+when designing such distributed algorithms. As such, it is
+inappropriate to leverage existing distributed algorithms to
+solve the scalability problem of TDS.
+
+3 PRELIMINARY
+3.1 Basic Notations
+We describe several basic notations for convenience. Let D
+denote a data set containing data records. A record r 2 D
+has the form r ¼ hv1 ; v2 ; . . . ; vm ; svi, where m is the number
+of attributes, vi , 1  i  m, is an attribute value and sv is a
+sensitive value like diagnosis. The set of sensitive values is
+denoted as SV . An attribute of a record is denoted as Attr,
+and the taxonomy tree of this attribute is denoted as T T . Let
+DOM represent the set of all domain values in T T . The
+quasi-identifier of a record is denoted as qid ¼ hq1 ; q2 ; . . . ;
+qm i, where qi 2 DOMi . Quasi-identifiers , representing
+groups of anonymous records, can lead to privacy breach
+if they are too specific that only a small group of people are
+linked to them [11]. Quasi-identifier set is denoted as
+QID ¼ hAttr1 ; Attr2 ; . . . ; Attrm i. The set of the records with
+qid is defined as QI-group [28], denoted by QIGðqidÞ. QI is
+the acronym of quasi-identifier.
+Without loss of generality, we adopt k-anonymity [23] as
+the privacy model herein, i.e., for any qid 2 QID, the size
+of GðqidÞ must be zero or at
+least k. Otherwise,
+the
+individuals owning such a quasi-identifier can be linked to
+sensitive information with higher confidence than ex-
+pected, resulting in privacy breach. The k-anonymity
+privacy model can combat such a privacy breach because
+it ensures that an individual will not be distinguished from
+other at least k   1 ones. The anonymity parameter k is
+specified by users according to their privacy requirements.
+In the TDS approach, a data set is anonymized via
+performing specialization operations. A specialization
+operation is to replace a domain value with all its child
+values. Formally, a specialization operation is represented
+as spec : p ! ChildðpÞ, where p is a domain value and
+ChildðpÞ  DOM is the set of all the child values of p. The
+domain values of an attribute form a “cut” through its
+taxonomy tree [11]. The cut of attribute Attri , denoted as
+Cuti , 1  i  m,
+is a subset of values in DOMi  Cuti
+contains exactly one value in each root-to-leaf path in
+
+taxonomy tree T Ti . The cuts of all attributes determine the
+anonymity of a data set. To capture the degree of
+anonymization intuitively during the specialization pro-
+cess, we give the subsequent definition.
+
+Definition 1. (Anonymization Level). A vector of cuts of all
+attributes is defined as anonymization level, denoted as AL.
+Formally, AL ¼ hCut1 ; Cut2 ; . . . ; Cutm i, where Cuti , 1 
+i  m is the cut of taxonomy tree T Ti .
+
+Anonymization level can intuitively represent the anon-
+ymization degree of a data set, i.e., the more specific AL a
+data set has, the less degree of anonymization it corre-
+sponds to. Thus, TDS approaches employ anonymization
+level to track and manage the specialization process.
+MapReduce notations can be found in Appendix A.1,
+which can be found on the Computer Society Digital
+Library at http://doi.ieeecomputersociety.org/10.1109/
+TPDS.2013.48, (All appendices are included in the supple-
+mental file).
+
+3.2 Top-Down Specialization
+Generally, TDS is an iterative process starting from the
+topmost domain values in the taxonomy trees of attributes.
+Each round of iteration consists of three main steps, namely,
+finding the best specialization, performing specialization
+and updating values of the search metric for the next round
+[12]. Such a process is repeated until k-anonymity is
+violated, to expose the maximum data utility. The goodness
+of a specialization is measured by a search metric. We adopt
+the information gain per privacy loss (IGPL), a tradeoff
+metric that considers both the privacy and information
+requirements, as the search metric in our approach. A
+specialization with the highest IGPL value is regarded as
+the best one and selected in each round. We briefly describe
+how to calculate the value of IGPL subsequently to make
+readers understand our approach well. Interested readers
+can refer to [11] for more details.
+Given a specialization spec : p ! ChildðpÞ, the IGPL of
+the specialization is calculated by
+IGP LðspecÞ ¼ IGðspecÞ=ðP LðspecÞ þ 1Þ:
+ð1Þ
+The term IGðspecÞ is the information gain after perform-
+ing spec, and P LðspecÞ is the privacy loss. IGðspecÞ and
+P LðspecÞ can be computed via statistical
+information
+derived from data sets. Let Rx denote the set of original
+records containing attribute values that can be generalized
+to x. jRx j is the number of data records in Rx . Let I ðRx Þ be
+
+
+the entropy of Rx . Then, IGðspecÞ is calculated by
+X
+jRc j
+jRp j
+c2ChildðpÞ
+Let jðRx ; svÞj denote the number of the data records with
+
+
+
+
+sensitive value sv in Rx . I ðRx Þ is computed by
+X
+jRx ; svj
+jðRx ; svÞj
+jRx j
+jRx j
+
+IGðspecÞ ¼ I ðRp Þ  
+
+I ðRx Þ ¼  
+
+:
+
+ð3Þ
+
+I ðRc Þ;
+
+ð2Þ
+
+sv2SV
+
+: log2
+
+The anonymity of a data set is defined by the minimum
+group size out of all QI-groups, denoted as A, i.e., A ¼
+minqid2QID fjQIGðqidÞjg, where jQIGðqidÞj
+is the size of
+
+4 TWO-PHASE TOP-DOWN SPECIALIZATION
+(TPTDS)
+
+ð4Þ
+
+IEEE TRANSACTIONS ON PARALLEL AND DISTRIBUTED SYSTEMS, VOL. 25, NO. 2, FEBRUARY 2014
+366
+T opj 2 DOMj , 1  j  m, is the topmost domain value in
+QIGðqidÞ. Let Ap ðspecÞ denote the anonym ity before
+performing spec, while Ac ðspecÞ be that after performing
+T Ti . AL0
+i is the resultant intermediate anonymization level.
+intermediate anonymization
+In the second phase, all
+spec. Privacy loss caused by spec is calculated by
+levels are merged into one. The merged anonymization
+P LðspecÞ ¼ Ap ðspecÞ   Ac ðspecÞ:
+level is denoted as ALI . The merging process is formally
+represen ted a s fun c t ion mergeðhAL0
+p iÞ !
+1 ; AL0
+2 ; . . . ; AL0
+ALI . The function will be detailed in Section 4.3. Then,
+the whole data set D is further anonymized based on ALI ,
+achieving k-anonymity finally, i.e., MRT DSðD; k; ALI Þ !
+AL , where AL denotes the final anonymization level.
+Ultimately, D is concretely anonymized according to AL ,
+described in Section 4.4. Above all, Algorithm 1 depicts the
+sketch of the two-phase TDS approach.
+
+The sketch of
+the TPTDS approach is elaborated in
+Section 4.1. Three components of the TPTDS approach,
+namely, data partition, anonymization level merging, and
+data specialization are detailed in Sections 4.2, 4.3, and
+4.4, respectively.
+
+4.1 Sketch of Two-Phase Top-Down Specialization
+We propose a TPTDS approach to conduct the computation
+required in TDS in a highly scalable and efficient fashion.
+The two phases of our approach are based on the two levels
+of parallelization provisioned by MapReduce on cloud.
+Basically, MapReduce on cloud has two levels of paralle-
+lization, i.e., job level and task level. Job level parallelization
+means that multiple MapReduce jobs can be executed
+simultaneously to make full use of cloud infrastructure
+resources. Combined with cloud, MapReduce becomes
+more powerful and elastic as cloud can offer infrastructure
+resources on demand ,
+for example, Amazon E lastic
+MapReduce service [29]. Task level parallelization refers
+to that multiple mapper/reducer tasks in a MapReduce job
+are executed simultaneously over data splits. To achieve
+high scalability, we parallelizing multiple jobs on data
+partitions in the first phase, but the resultant anonymization
+levels are not
+identical. To obtain finally consistent
+anonymous data sets, the second phase is necessary to
+integrate the intermediate results and further anonymize
+entire data sets. Details are formulated as follows.
+In the first phase, an original data set D is partitioned
+into smaller ones. Let Di , 1  i  p, denote the data sets
+P
+partitioned from D the, where p is the number of partitions,
+and D ¼
+i¼1 Di , Di \ Dj ¼ , 1  i < j  p. The details of
+p
+how to partition D will be discussed in Section 4.2.
+Then, we run a subroutine over each of the partitioned
+data sets in parallel to make full use of the job level
+parallelization of MapReduce. The subroutine is a MapRe-
+duce version of centralized TDS (MRTDS) which concretely
+conducts the computation required in TPTDS. MRTDS
+anonymizes data partitions to generate intermediate anon-
+ymization levels. An intermediate anonymization level
+means that further specialization can be performed without
+violating k-anonymity. MRTDS only leverages the task level
+parallelization of MapReduce. More details of MRTDS will
+b e e l a b o r a t ed in S e c t i on 5 . Fo rm a l l y ,
+l e t
+fun c t i on
+MRT DS ðD; k; ALÞ ! AL0 represent a MRTDS routine that
+anonymizes data set D to satisfy k-anonymity from anon-
+ymization level AL to AL0 . Thus, a series of functions
+MRT DS ðDi ; kI ; AL0 Þ ! AL0
+i , 1  i  p, are executed simul-
+taneously in the first phase. The term kI denotes the
+intermediate anonymity parameter, usually given by appli-
+cation domain experts. Note that kI should satisfy kI  k to
+ensure privacy preservation. AL0 is the initial anonymiza-
+tion level, i.e., AL0 ¼ hfT op1 g; fT op2 g; . . . ; fT opm gi, where
+
+ALGORITHM 1. SKETCH OF TWO-PHASE TDS (TPTDS).
+Input: Data set D, anonymity parameters k, kI and
+the number of partitions p.
+Output: Anonymous data set D .
+1: Partition D into Di ,1  i  p.
+2: Execute MRT DS ðDi ; kI ; AL0 Þ ! AL0
+i , 1  i  p in
+parallel as multiple MapReduce jobs.
+3: Merge all intermediate anonymization levels into one,
+p Þ ! ALI .
+mergeðAL0
+1 ; AL0
+2 ; . . . ; AL0
+4: Execute MRT DS ðD; k; ALI Þ ! AL to achieve
+k-anonymity.
+5: Specialize D according to AL , Output D .
+In essential, TPTDS divides specialization operations
+required for anonymization into the two phases. Let SP1i ,
+1  i  p, denote the specialization sequence on Di in the
+first phase, i.e., SP1i ¼ hspeci1 ; speci2 ; . . . ; speciji i, where ji is
+the number of specializations. The first common subse-
+quence of SP1i , 1  i  p, is denoted as SP I . Let SP2 denote
+the specialization sequence in the second phase. SP2 is
+determined by ALI rather than kI . Specifically, more
+specific ALI implies smaller SP2 . Throughout TPTDS, the
+specializations in the set SP I [ SP2 come into effect for
+S
+anonymization. The specializations in the set SP Extra ¼
+ð
+i¼1 SP1i Þ=SP I are extra overheads introduced by TPTDS.
+p
+The influence of p and kI on the efficiency is analyzed as
+follows. Greater p means higher degree of parallelization in
+the first phase, and less kI indicates more computation is
+conducted in the first phase. Thus, greater p and less kI can
+improve the efficiency. However, greater p and less kI
+S
+probably lead to larger SP Extra , thereby degrading the
+overall efficiency. Usually, greater p causes smaller SP I and
+p
+i¼1 SP1i , and less kI result in larger SP1i .
+larger
+The basic idea of TPTDS is to gain high scalability by
+making a tradeoff between scalability and data utility. We
+expect that slight decrease of data utility can lead to high
+scalability. The influence of p and kI on the data utility is
+analyzed as follows. The data utility produced via TPTDS is
+roughly determined by SP I [ SP2 . Greater p means that the
+specializations in SP I are selected according to IGPL values
+from smaller data sets, resulting in exposing less data
+utility. However, greater p also implies smaller SP I but
+larger SP2 , which means more data utility can be produced
+because specializations in SP2 are selected according an
+entire data set. Larger kI indicates larger SP2 , generating
+more data utility.
+In terms of the above analysis, the optimization of the
+trade-off between scalability and data utility can be fulfilled
+
+ZHANG ET AL.: A SCALABLE TWO-PHASE TOP-DOWN SPECIALIZATION APPROACH FOR DATA ANONYMIZATION USING MAPREDUCE ON...
+
+367
+
+by tuning p and kI . It is hard to quantitatively formulate the
+relationships between TPTDS performance and the two
+parameters due to they are data set content specific. But
+users can leverage the qualitative relationships analyzed
+above to tune performance heuristically.
+
+4.2 Data Partition
+When D is partitioned into Di , 1  i  p, it is required that the
+distribution of data records in Di is similar to D. A data record
+here can be treated as a point in an m-dimension space,
+where m is the number of attributes. Thus, the intermediate
+anonymization levels derived from Di , 1  i  p, can be more
+similar so that we can get a better merged anonymization
+level. Random sampling technique is adopted to partition D,
+which can satisfy the above requirement. Specifically, a
+random number rand, 1  rand  p, is generated for each
+data record. A record is assigned to the partition Drand .
+Algorithm 2 shows the MapReduce program of data
+partition. Note that the number of Reducers should be equal
+to p, so that each Reducer handles one value of rand, exactly
+producing p resultant files. Each file contains a random
+sample of D.
+
+ALGORITHM 2. DATA PARTITION MAP & REDUCE.
+Input: Data record (IDr , r), r 2 D, partition parameter p.
+Output: Di , 1  i  p.
+Map: Generate a random number rand,
+where 1  rand  p; emit (rand, r).
+Reduce: For each rand, emit (null, list(r)).
+Once partitioned data sets Di , 1  i  p, are obtained, we
+run MRT DS ðDi ; kI ; AL0 Þ on these data sets in parallel to
+i , 1  i  p.
+derive intermediate anonymization levels AL
+
+4.3 Anonymization Level Merging
+All intermediate anonymization levels are merged into one
+in the second phase. The merging of anonymization levels is
+completed by merging cuts. Specifically, let Cuta in AL0
+a
+and Cutb in AL0
+b be two cuts of an attribute. There exist
+domain values qa 2 Cuta and qb 2 Cutb that satisfy one of
+the three conditions: qa is identical to qb , qa is more general
+than qb , or qa is more specific than qb . To ensure that the
+merged intermediate anonymization level ALI never
+violates privacy requirements, the more general one is
+selected as the merged one, for example, qa will be selected
+if qa is more general than or identical to qb . For the case of
+multiple anonymization levels, we can merge them in the
+same way iteratively. The following lemma ensures that
+ALI still complies privacy requirements.
+i , 1  i  p,
+Lemma 1. If intermediate anonymization levels AL0
+satisfy kI -anonymity, the merged intermediate anonymization
+l ev e l ALI w i l l sa t i s f ie s k 0 -anonym i ty , wh e r e ALI  
+mergeðhAL0
+p iÞ, k0  kI .
+1 ; AL0
+2 ; . . . ; AL0
+
+further anonymize the entire data sets to produce final k-
+anonymous data sets in the second phase.
+
+4.4 Data Specialization
+An original data set D is concretely specialized for
+anonymization in a one-pass MapReduce job. After obtain-
+ing the merged intermediate anonymization level ALI , we
+run MRT DS ðD; k; ALI Þ on the entire data set D, and get the
+final anonymization level AL . Then, the data set D is
+anonymized by replacing original attribute values in D with
+the responding domain values in AL .
+the data
+Details of Map and Reduce functions of
+specialization MapReduce job are described in Algorithm
+3. The Map function emits anonymous records and its
+count. The Reduce function simply aggregates these anon-
+ymous records and counts their number. An anonymous
+record and its count represent a QI-group. The QI-groups
+constitute the final anonymous data sets.
+
+ALGORITHM 3. DATA SPECIALIZATION MAP & REDUCE.
+Input: Data record (IDr , r), r 2 D. ; Anonymization
+level AL .
+Output: Anonymous record (r , countÞ.
+Map: Construct anonymous record r ¼ p1 ; hp2 ; . . . ; pm ; svi,
+pi , 1  i  m, is the parent of a specialization in current
+P
+AL and is also an ancestor of vi in r; emit (r ; count).
+Reduce: For each r , sum  
+count; emit (r , sum).
+
+5 MAPREDUCE VERSION OF CENTRALIZED TDS
+
+We elaborate the MRTDS in this section. MRTDS plays a
+core role in the two-phase TDS approach, as it is invoked in
+both phases to concretely conduct computation. Basically, a
+practical MapReduce program consists of Map and Reduce
+functions, and a Driver that coordinates the macro execution
+of jobs. In Section 5.1, we describe the MRTDS Driver. The
+Map and Reduce functions are detailed in Sections 5.2 and
+5.3. Finally, we present the implementation in Section 5.4.
+
+5.1 MRTDS Driver
+Usually, a single MapReduce job is inadequate to accom-
+plish a complex task in many applications. Thus, a group of
+MapReduce jobs are orchestrated in a driver program to
+achieve such an objective. MRTDS consists of MRTDS
+Driver and two types of jobs, i.e., IGPL Initialization and
+IGPL Update. The driver arranges the execution of jobs.
+Algorithm 4 frames MRTDS Driver where a data set is
+anonymized by TDS. It is the algorithmic design of function
+MRT DS ðD; k; ALÞ ! AL0 mentioned in Section 4.2. Note
+that we leverage anonymization level to manage the process
+of anonymization. Step 1 initializes the values of informa-
+tion gain and privacy loss for all specializations, which can
+be done by the job IGPL Initialization.
+
+The proof of Lemma 1 can be found in Appendix B.1,
+which is available in the online supplemental material. Our
+approach can ensure the degree of data privacy preserva-
+tion, as TPTDS produces k-anonymous data sets finally.
+Lemma 1 ensures that the first phase produces consistent
+anonymous data sets that satisfy higher degree of privacy
+preservation than users’ specification. Then, MRTDS can
+
+ALGORITHM 4. MRTDS DRIVER.
+Input: Data set D, anonymization level AL and
+k-anonymity parameter k.
+Output: Anonymization level AL0 .
+1: Initialize the values of search metric IGPL, i.e., for each
+specialization spec 2 [m
+j¼1Cutj . The IGPL value of spec is
+computed by job IGPL Initialization.
+
+IEEE TRANSACTIONS ON PARALLEL AND DISTRIBUTED SYSTEMS, VOL. 25, NO. 2, FEBRUARY 2014
+compute jRp j, jðRp ; svÞj, jRc j, and jðRc ; svÞj. Step 1 gets the
+potential specialization for the attribute values in r. Then
+Step 2 emits key-value pairs containing the information of
+specialization, sensitive value, and the count information of
+this record. According to the above information, we
+compute information gain for a potential specialization in
+the corresponding Reduce function. Step 3 aims at comput-
+ing the current anonymity Ap ðspecÞ, while Step 4 is to
+compute anonymity Ac ðspecÞ after potential specializations.
+The symbol “#” is used to identify whether a key is emitted
+to compute information gain or anonymity loss, while the
+symbol “$” is employed to differentiate the cases whether a
+key is for computing Ap ðspecÞ or Ac ðspecÞ.
+Algorithm 6 specifies the Reduce function. The first step is
+to accumulate the values for each input key. If a key is for
+computing information gain, then the corresponding statis-
+tical information is updated in Step 2.1. I ðRp Þ, I ðRc Þ, and
+IGðspecÞ are calculated if all the count information they need
+has been computed in Steps 2.2 and 2.3 in terms of (2) and (3).
+A salient MapReduce feature that intermediate key-value
+pairs are sorted in the shuffle phase makes the computation
+of IGðspecÞ sequential with respect to the order of specializa-
+tions arriving at the same reducer. Hence, the reducer just
+needs to keep statistical information for one specialization at
+a time, which makes the reduce algorithm highly scalable.
+
+368
+2: while 9 spec 2 [m
+j¼1Cutj is valid
+2.1: Find the best specialization from ALi , specBest .
+2.2: Update ALi to ALiþ1 .
+2.3: Update information gain of the new specializations
+in ALiþ1 , and privacy loss for each specialization via
+job IGPL Update.
+end while
+AL0   AL.
+Step 2 is iterative. First, the best specialization is selected
+from valid specializations in current anonymization level
+as described in Step 2.1. A specialization spec is a valid one
+if it satisfies two conditions. One is that its parent value is
+not a leaf, and the other is that the anonymity Ac ðspecÞ > k,
+i.e., the data set is still k-anonymous if spec is performed.
+Then,
+is modified via
+the current anonymization level
+performing the best specialization in Step 2.2, i.e., remov-
+ing the old specialization and inserting new ones that are
+derived from the old one. In Step 2.3, information gain of
+the newly added specializations and privacy loss of all
+specializations need to be recomputed, which are accom-
+plished by job IGPL Update. The iteration continues until all
+specializations become invalid, achieving the maximum
+data utility.
+MRTDS produces the same anonymous data as the
+centralized TDS in [12], because they follow the same steps.
+MTRDS mainly differs from centralized TDS on calculating
+IGPL values. However, calculating IGPL values dominates
+the scalability of TDS approaches, as it requires TDS
+algorithms to count the statistical information of data sets
+iteratively. MRTDS exploits MapReduce on cloud to make
+the computation of IGPL parallel and scalable. We present
+IGPL Initialization and IGPL Update subsequently.
+
+5.2 IGPL Initialization Job
+The Map and Reduce functions of the job IGPL Initialization
+are described in Algorithms 5 and 6, respectively. The main
+task of IGPL Initialization is to initialize information gain
+and privacy loss of all specializations in the initial
+anonymization level AL. According to (2) and (3), the
+statistical information jRp j, jðRp ; svÞj, jRc j, and jðRc ; svÞj is
+required for each specialization to calculate information
+gain. In terms of (4), the number of records in each current
+QI-group needs computing, so does the number of records
+in each QI-group after potential specializations.
+
+ALGORITHM 5. IGPL INITIALIZATION MAP.
+Input: Data record (IDr , r), r 2 D; anonymization level AL.
+Output: Intermediate key-value pair (key, countÞ.
+1: For each attribute value vi in r, find its specialization in
+current AL: spec. Let p be the parent in spec, and c be the
+p’s child value that is also an ancestor of vi in T Ti .
+2: For each vi , emit (hp; c; svi; count).
+3: Construct quasi-identifier qid ¼ hp1 ; p2 ; . . . ; pm i, where
+pi , 1  i  m, is the parent of a specialization in current
+AL. Emitðhqid ; $; #i; count).
+4: For each i 2 ½1; m, replace pi in qid with its child ci ,
+where ci is also the ancestor of vi . Let the resultant
+quasi-identifier be qid. Emitðhqid; pi ; #i; count).
+Algorithm 5 describes the Map function. The input is
+data sets that consist of a number of records. IDr is the
+sequence number of the record r. Steps 1 and 2 are to
+
+.
+
+ALGORITHM 6. IGPL INITIALIZATION REDUCE.
+Input: Intermediate key-value pair (key, listðcountÞ).
+Output: Information gain (spec; IGðspecÞ) and anonymity
+P
+(spec, Ac ðspec)), (spec, Ap ðspec)) for all specializations.
+1: For each key, sum  
+count.
+2: For each key, if key:sv 6¼ #, update statistical counts:
+
+
+j   sum þ Rc
+2.1: jðRc ; svÞj   sum, Rc
+j,
+j
+j
+jðRp ; svÞj   sum þ jðRp ; svÞj, jRp j   sum þ Rp
+2.2: If all sensitive values for child c have arrived,
+compute I ðRc Þ according to (3).
+2.3: If all children c for parent p have arrived, compute
+I ðRp Þ and IGðspecÞ. Emit (spec; IGðspecÞ).
+3: For each key, if key:sv ¼ #, update anonymity.
+3.1: If key:c ¼ $ and sum < Ap ðspecÞ, update current
+anonymity: Ap ðspecÞ   sum.
+3.2: If key:c 6¼ $ and sum < Ac ðspec), update potential
+anonymity of spec : Ac ðspecÞ   sum.
+4: Emit (spec, Ap ðspec)) and emit (spec, Ac ðspec)).
+To compute the anonymity of data sets before and after a
+specialization, Step 3.1 finds the smallest number of records
+out of all current QI-groups, and Step 3.2 finds all the
+smallest number of records out of all potential QI-groups
+for each spec ia l izat ion . Step 4 em its the resu lts of
+anonymity. Note that there may be more than one key-
+value pair (spec, AðspecÞ) for one specialization in output
+files if more than one reducer is set. But we can find the
+smallest anonymity value in the driver program. Then in
+terms of (4), the privacy loss P LðspecÞ is computed. Finally,
+IGP LðspecÞ for each specialization is obtained by (1).
+
+5.3 IGPL Update Job
+The IGPL Update job dominates the scalability and efficiency
+of MRTDS, since it is executed iteratively as described in
+Algorithm 4. So far, iterative MapReduce jobs have not been
+
+ZHANG ET AL.: A SCALABLE TWO-PHASE TOP-DOWN SPECIALIZATION APPROACH FOR DATA ANONYMIZATION USING MAPREDUCE ON...
+
+369
+
+well supported by standard MapReduce framework like
+Hadoop [30]. Accordingly, Hadoop variations like Haloop
+[31] and Twister [32] have been proposed recently to
+support efficient iterative MapReduce computation. Our
+approach is based on the standard MapReduce framework
+to facilitate the discussion herein.
+The IGPL Update job is quite similar to IGPL Initialization,
+except that it requires less computation and consumes less
+network bandwidth. Thus, the former is more efficient than
+the latter. Algorithm 7 describes the Map function of IGPL
+Update. The Reduce function is the same as IGPL Initializa-
+tion, already described in Algorithm 3.
+
+ALGORITHM 7. IGPL UPDATE MAP.
+Input: Data record (IDr , r), r 2 D; Anonymization level AL.
+Output: Intermediate key-value pair (key, countÞ.
+1: Let attr be the attribute of the last best specialization. The
+value of this attribute in r is v. Find its specialization in
+current AL: spec. Let p be the parent in spec, and c be p’s
+child that is also an ancestor of v; Emit (hp; c; svi; count).
+2: Construct quasi-identifier qid ¼ hp1 ; p2 ; . . . ; pm i, pi ,
+1  i  m, is the parent of a specialization in current AL
+and is also an ancestor of vi in r.
+3: For each i 2 ½1; m, replace pi in qid with its child ci if the
+specialization related to pi is valid, where ci is also the
+ancestor of vi . Let the resultant quasi-identifier be qid.
+Emit (hqid; pi ; #i; count).
+After a specialization spec is selected as the best
+candidate, it is required to compute the information gain
+for the new specializations derived from spec. So, Step 1 in
+Algorithm 7 only emits the key-value pairs for the new
+specializations, rather than all in Algorithm 5. Note that it is
+unnecessary to recompute the information gain of other
+specializations because conducting the selected specializa-
+tion never affects the information gain of others. Compared
+with IGPL Initialization, only a part of data is processed and
+less network bandwidth is consumed.
+On the contrary, the anonymity values of other specia-
+lizations will be influenced with high probability because
+splitting QI-groups according to spec changes the minim-
+ality of the smallest QI-group in last round. Therefore, we
+need to compute Ac ðspecÞ for all specializations in AL,
+described in Step 2 and 3 of Algorithm 7. Yet Ap ðspecÞ can
+be directly obtained from the statistical information kept by
+the last best specialization. Note that if the specialization
+related to pi
+in Step 3 is not valid, no resultant quasi-
+identifier will be created.
+Since the IGPL Update job dominates the scalability and
+efficiency of MRTDS, we briefly analyze its complexity as
+follows. Let n denote all the records in a data set, m be the
+number of attributes, s be the number of mappers, and t be
+the number of reducers. As a mapper emits (m þ 1) key-
+takes Oð1Þ space and Oðm  n=sÞ time.
+value pairs,
+it
+Similarly, a reducer takes Oð1Þ space and Oðm  n=tÞ time.
+Note that a reducer only needs Oð1Þ space due to the
+MapReduce feature that the key-value pairs are sorted in
+the shuffle phase. Otherwise, the reducer needs more space
+to accumulate statistic information for a variety of specia-
+lizations. The communication cost is O(m  n) according to
+the map function, but communication traffics can be
+reduced heavily by optimization techniques like Combiner.
+
+Fig. 1. Execution framework overview of MRTDS.
+
+5.4 Implementation and Optimization
+To elaborate how data sets are processed in MRTDS, the
+execution framework based on standard MapReduce is
+depicted in Fig. 1. The solid arrow lines represent the data
+flows in the canonical MapReduce framework. From Fig. 1,
+we can see that
+the iteration of MapReduce jobs is
+controlled by anonymization level AL in Driver. The data
+flows for handling iterations are denoted by dashed arrow
+lines. AL is dispatched from Driver to all workers including
+Mappers and Reducers via the distributed cache mechanism.
+The value of AL is modified in Driver according to the
+output of the IGPL Initialization or IGPL Update jobs. As the
+amount of such data is extremely small compared with data
+sets that will be anonymized,
+they can be efficiently
+transmitted between Driver and workers.
+We adopt Hadoop [30], an open-source implementation
+of MapReduce, to implement MRTDS. Since most of Map
+and Reduce functions need to access current anonymization
+level AL, we use the distributed cache mechanism to pass
+the content of AL to each Mapper or Reducer node as shown
+in Fig. 1. Also, Hadoop provides the mechanism to set
+simple global variables for Mappers and Reducers. The best
+specialization is passed into the Map function of IGPL
+Update job in this way. The partition hash function in the
+shuffle phase is modified because the two jobs require that
+the key-value pairs with the same key:p field rather than
+entire key should go to the same Reducer.
+To reduce communication traffics, MRTDS exploits
+combiner mechanism that aggregates the key-value pairs
+with the same key into one on the nodes running Map
+functions. To further reduce the traffics, MD5 (Message
+Digest Algorithm) is employed to compress the records
+transmitted for anonymity computation, i.e., (hMD5ðqidÞ;
+pi ; #i; count) is emitted in Step 4 of Algorithm 5 and Step 3
+of Algorithm 7. MD5ðqidÞ is fixed-length and usually
+shorter than qid. As anonymity computation causes the
+most traffic as it emits m key-value pairs for each original
+record, this can considerably reduce network traffics. The
+Reduce function in Algorithm 6 can still correctly compute
+anonymity without being aware of the content of qid.
+
+6 EVALUATION
+6.1 Overall Comparison
+To evaluate the effectiveness and efficiency of our two-
+phase approach, we compare it with the centralized TDS
+
+370
+
+IEEE TRANSACTIONS ON PARALLEL AND DISTRIBUTED SYSTEMS, VOL. 25, NO. 2, FEBRUARY 2014
+
+approach proposed in [12], denoted as CentTDS. CentTDS
+is the state-of-the-art approach for TDS anonymization.
+Scalability and data utility are considered for the effective-
+ness. For scalability, we check whether both approaches
+can still work and scale over large-scale data sets. Data
+utility is measured by the metric ILoss, a general purpose
+data metric proposed in [28]. Literally,
+ILoss means
+information loss caused by data anonymization. Basically,
+higher ILoss indicates less data utility. How to calculate
+ILoss can be found in Appendix A.2, which is available in
+the online supplemental material. The ILoss of CentTDS
+and TPTDS are denoted as ILCent and ILT P , respectively.
+The execution time of CentTDS and TPTDS are denoted as
+TCent and TT P , respectively.
+We roughly compare TPTDS and CentTDS as follows.
+TPTDS can scale over more computation nodes with the
+volume of data sets increasing, thereby gaining higher
+scalability. CentTDS will suffer from low scalability on
+large-scale data sets because it requires too much memory,
+while TPTDS can linearly scale over data sets of any size.
+Correspondingly, TT P is often less than TC ent for large-scale
+data sets. But note that, TC ent can be less than TT P due to
+extra overheads engendered by TPTDS when the scale of
+data sets or the MapReduce cluster is small. TPTDS is
+to MRTDS if parameter p ¼ 1 or kI  kmax ,
+equivalent
+where kmax is the number of all records. As MRTDS
+produces the same anonymous data as centralized TDS, the
+value of ILT P is equal to ILCent when p ¼ 1 or kI  kmax . In
+other cases, ILT P is probably greater than ILC ent , as some
+specializations selected in TPTDS are not globally optimal.
+The overheads of our approach are mainly introduced by
+the MapReduce built-in operations and the parallelization
+in the first phase of TPTDS. Built-in MapReduce operations
+like data splitting and key-value pair sorting and transmis-
+sion will cause overheads. The overheads are hard to
+quantitatively measure as they are implementation-, con-
+figuration-, and algorithm-specific. The extra specializations
+in the first phase incur overheads affecting the efficiency of
+TPTDS heavily. The relationship between the extra over-
+heads and parameters p and kI is qualitatively described in
+Section 4.1. The one-pass job partitioning original data sets
+also generates overheads.
+
+6.2 Experiment Evaluation
+
+6.2.1 Experiment Settings
+Our experiments are conducted in a cloud environment
+named U-Cloud. U-Cloud is a cloud computing environ-
+ment at
+the University of Technology Sydney (UTS).
+The system overview of U-Cloud has been depicted in
+Fig. 2. The computing facilities of this system are located
+among several labs at UTS. On top of hardware and Linux
+operating system (Ubuntu), we install KVM virtualization
+software [33] that virtualizes the infrastructure and provides
+unified computing and storage resources. To create virtua-
+lized data centers, we install OpenStack open source cloud
+environment [34] for global management, resource schedul-
+ing and interaction with users. Further, Hadoop [30] clusters
+are built based on the OpenStack cloud platform to facilitate
+large-scale data processing.
+
+Fig. 2. Change of execution time w.r.t. data size: TPTDS versus
+CentTDS.
+
+We use Adult data set [35], a public data set commonly
+used as a de facto benchmark for testing anonymization
+algorithms [12], [20]. We generate data sets by enlarging the
+Adult data set according to the approach in [20]. More
+details of experiment data are described in Appendix C.1,
+which is available in the online supplemental material.
+Both TPTDS and CentTDS are implemented in Java.
+Further, TPTDS is implemented with standard Hadoop
+MapReduce API and executed on a Hadoop cluster built on
+OpenStack. CentTDS is executed on a VM with type m1.large.
+The m1.large type has four virtual CPUs and 8-GB Memory.
+The maximum heap size of Java VM is set as 4 GB when
+running CentTDS. The Hadoop cluster consists of 20 VMs
+with type m1.medium which has two virtual CPUs and 4-GB
+Memory. The k-anonymity parameter is set as 50 throughout
+all experiments. Each round of experiment is repeated
+20 times. The mean of the measured results is regarded as
+the representative.
+
+6.2.2 Experiment Process and Results
+We conduct three groups of experiments in this section to
+evaluate the effectiveness and efficiency of our approach. In
+the first one, we compare TPTDS with CentTDS from the
+perspectives of scalability and efficiency. In the other two,
+we investigate on the tradeoff between scalability and data
+utility via adjusting configurations. Generally, the execution
+time and ILoss are affected by three factors, namely, the
+size of a data set (S ), the number of data partitions (p), and
+the intermediate anonymity parameter (kI ). How the three
+factors influence the execution time and ILoss of TPTDS is
+observed in the following experiments.
+In the first group, we measure the change of execution
+time TCent and TT P with respect to S when p ¼ 1. The size
+S varies from 50 MB to 2.5 GB. The 2.5 GB data set contains
+nearly 2:5  107 data records. The scale of data sets in our
+experiments is much greater than that in [12] and [20].
+Thus, the data sets in our experiments are big enough to
+evaluate the effectiveness of our approach in terms of
+data volume or the number of data records. Note that
+ILC ent ¼ ILT P because TPTDS is equivalent to MRTDS
+when p ¼ 1. So, we just demo the results of execution time.
+The results of the first group of experiments are depicted
+in Fig. 2.
+Fig. 2a shows the change of TT P and TC ent with respect to
+the data size ranging from 50 to 500 MB. From Fig. 2a,
+we can see that both TT P and TC ent go up when data size
+increases although some slight
+fluctuations exist. The
+fluctuations are mainly caused by the content of data sets.
+TC ent surges from tens of seconds to nearly 10,000 seconds,
+
+ZHANG ET AL.: A SCALABLE TWO-PHASE TOP-DOWN SPECIALIZATION APPROACH FOR DATA ANONYMIZATION USING MAPREDUCE ON...
+
+371
+
+Fig. 3. Change of execution time and ILoss w.r.t. intermediate anonymity
+parameter.
+
+Fig. 4. Change in execution time and ILoss w.r.t. number of partitions.
+
+while TT P increase slightly. The dramatic increase of TC ent
+illustrates that
+the overheads incurred by maintaining
+linkage structure and updating statistic information rise
+considerably when data size increases. Before the point S ¼
+250 MB, TT P is greater than TCent . But after the point, TT P is
+greater than TC ent , and the difference between TCent and TT P
+becomes larger and larger with the size of data sets
+increasing. The trend of TT P and TC ent indicates that TPTDS
+becomes more efficient compared with CentTDS for large-
+scale data sets.
+In our experiments, CentTDS fails due to insufficient
+memory when the size of data set is greater than 500 MB.
+Hence, CentTDS suffers from scalability problem for large-
+scale data sets. To further evaluate the scalability and
+efficiency of TPTDS, we run TPTDS over data sets with
+larger sizes. Fig. 2b shows the change of TT P with respect to
+the data size ranging from 500 MB to 2.5 GB. It can be seen
+from Fig. 2b that TT P grows linearly and stably with respect
+to the size of data sets. Based on the tendency of TT P , we
+maintain that TPTDS is capable of scaling over large-scale
+data sets efficiently.
+The above experimental results demonstrate that our
+approach can significantly improve the scalability and
+efficiency compared with the state-of-the-art TDS approach
+when anonymizing large-scale data sets.
+In the last two groups, we explore the change of TT P and
+ILT P with respect to parameters kI and p, respectively. We
+use the values TT P and ILT P of MRTDS as baselines to
+evaluate the effectiveness of TPTDS, since TPTDS makes
+trade-offs between scalability and data utility based on
+MRTDS. As MRTDS has the same data utility as CentTDS,
+the ILoss of MRTDS is the lower bound of ILoss for TPTDS.
+For convenience, the baseline execution time and ILoss are
+denoted as TBase and ILBase , respectively. The values of
+TBase and ILBase are calculated by setting p ¼ 1. TBase and
+ILBase never vary with respect to kI and p, but we plot them
+in figures for intuitive comparison. In both groups, we set
+the size of data sets as 500 MB which is large enough for
+evaluation according to the results in the first group.
+In the second group, p is set as 3. The value of p (p > 1) is
+selected randomly and does not affect our analysis as what
+we want to see is the trend of TT P and ILT P with respect to
+kI . Interesting readers can try other values. The conclusions
+will be the same. The results of this group are depicted in
+Fig. 3. As the number of records in the data set is around
+5,000,000, kI varies within [50, 5,000,000]. For conciseness,
+kI is indicated by Exp which is the exponent of the scientific
+notation of kI , i.e., kI ¼ 5  10Exp . So, Exp ranges from 1 to 6.
+Fig. 3a shows the change of execution time TT P against TBase
+
+with respect to kI , while Fig. 3b shows the change of ILT P
+against ILBase with respect to kI .
+From Fig. 3a, it is seen that TT P is not greater than TBase at
+each kI value, meaning that TPTDS can be more efficient
+than the baseline. TT P decreases with kI increasing and hits
+the bottom at Exp ¼ 4. Then, it goes up after Exp ¼ 4 and
+arrives at the baseline. The change of TT P illustrates high
+scalability and efficiency can be obtained by setting kI as a
+neither too great nor too little value. As to ILoss, Fig. 3b
+presents that ILT P is lightly greater than ILBase within the
+overall domain, illustrating that splitting computation in
+two phases leads to higher ILoss. ILT P is getting less in
+relation to the rise of kI and reaches the baseline at Exp ¼ 6.
+This trend of ILT P reveals that the less computation is
+conducted in the first phase, the lower ILoss is incurred. At
+the point Exp ¼ 4, TT P reduces by nearly 50 percent
+compared to the baseline while the ILT P only grows by
+less than 10 percent. In terms of this observation, TPTDS
+can gain higher efficiency than the baseline at the cost of
+slight increase of ILoss, via properly tuning parameter kI .
+In the third group, kI is set as 50,000. The value is selected
+randomly and does not affect our analysis because what we
+want to see is the trend of TT P and ILT P with respect to the
+number of partitions. The number of partitions varies from 1
+to 20. The results of this group are presented in Fig. 4. Fig. 4a
+demos the change of execution time TT P against TBase with
+respect to p, while Fig. 4b shows the change of ILT P against
+ILBase with respect to p.
+Fig. 4a shows that TT P varies a lot with respect to p.
+Before the point p ¼ 12, TT P is less than the baseline,
+meaning that parallelization of MapReduce jobs brings
+benefits. On the contrary, TT P is greater than the baseline
+after the point, resulting in low efficiency. When p < 16, TT P
+drops first and grows with the increase of p. In terms of the
+above observation, parallelization of multiple jobs also
+engenders overheads, and only proper degree of job level
+parallelization can advance scalability and efficiency. From
+Fig. 4b, ILT P is not less than the baseline with the growth of
+p, showing that parallelization of multiple jobs can indeed
+engender higher ILoss as cost. ILT P increases first and then
+drops subsequently when p is getting greater. When p ¼ 4,
+ILT P is nearly 50 percent of the baseline, while ILT P only
+increase by less than 10 percent. Similar to kI , TPTDS can
+gain higher efficiency than the baseline at the cost of slight
+increase of ILoss, via properly tuning parameter p.
+The second and third groups of experiments show that
+TPTDS can gain high scalability at certain cost of data utility,
+and it can offer an optimized tradeoff between efficiency
+and data utility with tuning well-tuned parameters.
+
+372
+
+IEEE TRANSACTIONS ON PARALLEL AND DISTRIBUTED SYSTEMS, VOL. 25, NO. 2, FEBRUARY 2014
+
+As a conclusion, all the experimental results demonstrate
+that our approach significantly improves the scalability and
+efficiency of TDS over existing TDS approaches.
+
+7 CONCLUSIONS AND FUTURE WORK
+
+In this paper, we have investigated the scalability problem
+of large-scale data anonymization by TDS, and proposed a
+highly scalable two-phase TDS approach using MapReduce
+on cloud. Data sets are partitioned and anonymized in
+parallel in the first phase, producing intermediate results.
+Then, the intermediate results are merged and further
+anonymized to produce consistent k-anonymous data sets
+in the second phase. We have creatively applied MapRe-
+duce on cloud to data anonymization and deliberately
+designed a group of
+innovative MapReduce jobs to
+concretely accomplish the specialization computation in a
+highly scalable way. Experimental results on real-world
+data sets have demonstrated that with our approach, the
+scalability and efficiency of TDS are improved significantly
+over existing approaches.
+In cloud environment, the privacy preservation for data
+analysis, share and mining is a challenging research issue
+due to increasingly larger volumes of data sets, thereby
+requiring intensive investigation. We will investigate the
+adoption of our approach to the bottom-up generalization
+algorithms for data anonymization. Based on the contribu-
+tions herein, we plan to further explore the next step on
+scalable privacy preservation aware analysis and schedul-
+ing on large-scale data sets. Optimized balanced scheduling
+strategies are expected to be developed towards overall
+scalable privacy preservation aware data set scheduling.
+
+REFERENCES
+S. Chaudhuri, “What Next?: A Half-Dozen Data Management
+[1]
+Research Goals for Big Data and the Cloud,” Proc. 31st Symp.
+Principles of Database Systems (PODS ’12), pp. 1-4, 2012.
+[2] M. Armbrust, A. Fox, R. Griffith, A.D. Joseph, R. Katz, A.
+Konwinski, G. Lee, D. Patterson, A. Rabkin, I. Stoica, and M.
+Zaharia, “A View of Cloud Computing,” Comm. ACM, vol. 53,
+no. 4, pp. 50-58, 2010.
+[3] L. Wang, J. Zhan, W. Shi, and Y. Liang, “In Cloud, Can Scientific
+Communities Benefit from the Economies of Scale?,” IEEE Trans.
+Parallel and Distributed Systems, vol. 23, no. 2, pp.296-303, Feb.
+2012.
+[4] H. Takabi, J.B.D. Joshi, and G. Ahn, “Security and Privacy
+Challenges in Cloud Computing Environments,” IEEE Security
+and Privacy, vol. 8, no. 6, pp. 24-31, Nov. 2010.
+[5] D. Zissis and D. Lekkas, “Addressing Cloud Computing Security
+Issues,” Future Generation Computer Systems, vol. 28, no. 3, pp. 583-
+592, 2011.
+[6] X. Zhang, C. Liu, S. Nepal, S. Pandey, and J. Chen, “A Privacy
+Leakage Upper-Bound Constraint Based Approach for Cost-
+Effective Privacy Preserving of Intermediate Data Sets in Cloud,”
+IEEE Trans. Parallel and Distributed Systems, to be published, 2012.
+[7] L. Hsiao-Ying and W.G. Tzeng, “A Secure Erasure Code-Based
+Cloud Storage System with Secure Data Forwarding,” IEEE Trans.
+Parallel and Distributed Systems, vol. 23, no. 6, pp. 995-1003, 2012.
+[8] N. Cao, C. Wang, M. Li, K. Ren, and W. Lou, “Privacy-Preserving
+Multi-Keyword Ranked Search over Encrypted Cloud Data,” Proc.
+IEEE INFOCOM, pp. 829-837, 2011.
+P. Mohan, A. Thakurta, E. Shi, D. Song, and D. Culler, “Gupt:
+Privacy Preserving Data Analysis Made Easy,” Proc. ACM
+SIGMOD Int’l Conf. Management of Data (SIGMOD ’12), pp. 349-
+360, 2012.
+[10] Microsoft HealthVault, http://www.microsoft.com/health/ww/
+products/Pages/healthvault.aspx, 2013.
+
+[9]
+
+[19]
+
+[11] B.C.M. Fung, K. Wang, R. Chen, and P.S. Yu, “Privacy-Preserving
+Data Publishing: A Survey of Recent Devel- opments,” ACM
+Computing Surveys, vol. 42, no. 4, pp. 1-53, 2010.
+[12] B.C.M. Fung, K. Wang, and P.S. Yu, “Anonymizing Classification
+Data for Privacy Preservation,” IEEE Trans. Knowledge and Data
+Eng., vol. 19, no. 5, pp. 711-725, May 2007.
+[13] X. Xiao and Y. Tao, “Anatomy: Simple and Effective Privacy
+Preservation,” Proc. 32nd Int’l Conf. Very Large Data Bases (VLDB
+’06), pp. 139-150, 2006.
+[14] K. LeFevre, D.J. DeWitt, and R. Ramakrishnan, “Incognito:
+Efficient Full-Domain K -Anonymity,” Proc. ACM SIGMOD Int’l
+Conf. Management of Data (SIGMOD ’05), pp. 49-60, 2005.
+[15] K. LeFevre, D.J. DeWitt, and R. Ramakrishnan, “Mondrian
+Multidimensional K -Anonymity,” Proc. 22nd Int’l Conf. Data
+Eng. (ICDE ’06), 2006.
+[16] V. Borkar, M.J. Carey, and C. Li, “Inside ‘Big Data Management’:
+Ogres, Onions, or Parfaits?,” Proc. 15th Int’l Conf. Extending
+Database Technology (EDBT ’12), pp. 3-14, 2012.
+[17] K. LeFevre, D.J. DeWitt, and R. Ramakrishnan, “Workload-Aware
+Anonymization Techniques for Large-Scale Data Sets,” ACM
+Trans. Database Systems, vol. 33, no. 3, pp. 1-47, 2008.
+[18] T. Iwuchukwu and J.F. Naughton, “K-Anonymization as Spatial
+Indexing: Toward Scalable and Incremental Anonymization,”
+Proc. 33rd Int’l Conf. Very Large Data Bases (VLDB ’07), pp. 746-757,
+2007.
+J. Dean and S. Ghemawat, “Mapreduce: Simplified Data Proces-
+sing on Large Clusters,” Comm. ACM, vol. 51, no. 1, pp. 107-113,
+2008.
+[20] N. Mohammed, B. Fung, P.C.K. Hung, and C.K. Lee, “Centralized
+and Distributed Anonymization for High-Dimensional Healthcare
+Data,” ACM Trans. Knowledge Discovery from Data, vol. 4, no. 4,
+Article 18, 2010.
+[21] B. Fung, K. Wang, L. Wang, and P.C.K. Hung, “Privacy-
+Preserving Data Publishing for Cluster Analysis,” Data and
+Knowledge Eng., vol. 68, no. 6, pp. 552-575, 2009.
+[22] N. Mohammed, B.C. Fung, and M. Debbabi, “Anonymity Meets
+Game Theory: Secure Data Integration with Malicious Partici-
+pants,” VLDB J., vol. 20, no. 4, pp. 567-588, 2011.
+[23] L. Sweeney, “k-Anonymity: A Model for Protecting Privacy,” Int’l
+J. Uncertainty, Fuzziness and Knowledge-Based Systems, vol. 10, no. 5,
+pp. 557-570, 2002.
+[24] W. Jiang and C. Clifton, “A Secure Distributed Framework for
+Achieving k-Anonymity,” VLDB J., vol. 15, no. 4, pp. 316-333,
+2006.
+[25] P. Jurczyk and L. Xiong, “Distributed Anonymization: Achieving
+Privacy for Both Data Subjects and Data Providers,” Proc. 23rd
+Ann. IFIP WG 11.3 Working Conf. Data and Applications Security
+XXIII (DBSec ’09), pp. 191-207, 2009.
+I. Roy, S.T.V. Setty, A. Kilzer, V. Shmatikov, and E. Witchel,
+“Airavat: Security and Privacy for Mapreduce,” Proc. Seventh
+USENIX Conf. Networked Systems Design and Implementation (NSDI
+’10), pp. 297-312, 2010.
+[27] K. Zhang, X. Zhou, Y. Chen, X. Wang, and Y. Ruan, “Sedic:
+Privacy-Aware Data Intensive Computing on Hybrid Clouds,”
+Proc. 18th ACM Conf. Computer and Comm. Security (CCS ’11),
+pp. 515-526, 2011.
+[28] X. Xiao and Y. Tao, “Personalized Privacy Preservation,” Proc.
+ACM SIGMOD Int’l Conf. Management of Data (SIGMOD ’06),
+pp. 229-240, 2006.
+[29] Amazon Web Services, “Amazon Elastic Mapreduce,” http://
+aws.amazon.com/elasticmapreduce/, 2013.
+[30] Apache, “Hadoop,”http://hadoop.apache.org, 2013.
+[31] Y. Bu, B. Howe, M. Balazinska, and M.D. Ernst, “The Haloop
+Approach to Large-Scale Iterative Data Analysis,” VLDB J., vol. 21,
+no. 2, pp. 169-190, 2012.
+J. Ekanayake, H. Li, B. Zhang, T. Gunarathne, S.-H. Bae, J. Qiu,
+and G. Fox, “Twister: A Runtime for Iterative Mapreduce,” Proc.
+19th ACM Int’l Symp. High Performance Distributed Computing
+(HDPC ’10), pp. 810-818, 2010.
+[33] KVM, http://www.linux-kvm.org/page/Main_Page, 2013.
+[34] OpenStack, http://openstack.org/, 2013.
+[35] UCI Machine Learning Repository, ftp://ftp.ics.uci.edu/pub/
+machine-learning-databases/, 2013.
+
+[26]
+
+[32]
+
+ZHANG ET AL.: A SCALABLE TWO-PHASE TOP-DOWN SPECIALIZATION APPROACH FOR DATA ANONYMIZATION USING MAPREDUCE ON...
+
+373
+
+Xuyun Zhang received the bachelor’s and
+master’s degrees in computer science from
+Nanjing University, China. He is currently work-
+ing toward the PhD degree at the Faculty of
+Engineering and IT, University of Technology,
+Sydney, Australia. His research interests include
+cloud computing, privacy and security, Big Data,
+MapReduce, and OpenStack. He has published
+several papers in refereed international journals
+including IEEE Transactions on Parallel and
+Distributed Systems (TPDS).
+
+Laurence T. Yang received the BE degree in
+computer science and technology from Tsin-
+ghua University, China, and the PhD degree in
+computer science from the University of Victoria,
+Canada. He is a professor in the School of
+Computer Science and Technology, Huazhong
+University of Science and Technology, China
+and in the Department of Computer Science, St.
+Francis Xavier University, Canada. His current
+research interests include parallel and distribu-
+ted computing, embedded and ubiquitous computing. His research has
+been supported by National Sciences and Engineering Research
+Council, Canada and Canada Foundation for Innovation. He is a senior
+member of the IEEE.
+
+Chang Liu is currently working toward the PhD
+degree at the University of Technology Sydney,
+Australia. His research interests include cloud
+computing, resource management, cryptogra-
+phy, and data security.
+
+Jinjun Chen rece ived the PhD degree in
+computer science and software engineering
+from Swinburne University of Technology, Aus-
+tralia. He is an associate professor from the
+Faculty of Engineering and IT, University of
+Technology Sydney (UTS), Australia. He is the
+director of Lab of Cloud Computing and Dis-
+tributed Systems at UTS. His research interests
+include cloud computing, Big Data, workflow
+management, privacy and security, and related
+various research topics. His research results have been published in
+more than 100 papers in high-quality journals and at conferences,
+including IEEE Transactions on Service Computing, ACM Transactions
+on Autonomous and Adaptive Systems, ACM Transactions on Software
+Engineering and Methodology (TOSEM), IEEE Transactions on Soft-
+ware Engineering (TSE), and IEEE Transactions on Parallel and
+Distributed Systems (TPDS). He received Swinburne Vice-Chancellor’s
+Research Award for early career researchers (2008), IEEE Computer
+Society Outstanding Leadership Award (2008-2009) and (2010-2011),
+IEEE Computer Society Service Award (2007), Swinburne Faculty of
+ICT Research Thesis Excellence Award (2007). He is an associate
+editor for the IEEE Transactions on Parallel and Distributed Systems. He
+is the vice chair of IEEE Computer Society’s Technical Committee on
+Scalable Computing (TCSC), vice chair of Steering Committee of
+Australasian Symposium on Parallel and Distributed Computing,
+founder and coordinator of IEEE TCSC Technical Area on Workflow
+in Scalable Computing Environments,
+Management
+founder and
+steering committee co-chair of
+International Conference on Cloud
+and Green Computing, and International Conference on Big Data
+and Distributed Systems. He is a member of the IEEE.
+
+. For more information on this or any other computing topic,
+please visit our Digital Library at www.computer.org/publications/dlib.
+
+

@@ -1,0 +1,1478 @@
+Journal of Machine Learning Research 16 (2015) 77-102
+
+Submitted 7/14; Published 1/15
+
+Statistical Topological Data Analysis using Persistence
+Landscapes
+
+Peter Bubenik
+Department of Mathematics
+Cleveland State University
+Cleveland, OH 44115-2214, USA
+
+Editor: David Dunson
+
+peter.bubenik@gmail.com
+
+Abstract
+
+We deﬁne a new topological summary for data that we call the persistence landscape. Since
+this summary lies in a vector space, it is easy to combine with tools from statistics and
+machine learning, in contrast to the standard topological summaries. Viewed as a random
+variable with values in a Banach space, this summary obeys a strong law of large numbers
+and a central limit theorem. We show how a number of standard statistical tests can be
+used for statistical inference using this summary. We also prove that this summary is
+stable and that it can be used to provide lower bounds for the bottleneck and Wasserstein
+distances.
+
+Keywords:
+topological data analysis, statistical topology, persistent homology, topolog-
+ical summary, persistence landscape
+
+1. Introduction
+
+Topological data analysis (TDA) consists of a growing set of methods that provide insight
+to the “shape” of data (see the surveys Ghrist, 2008; Carlsson, 2009). These tools may
+be of particular use in understanding global features of high dimensional data that are not
+readily accessible using other techniques. The use of TDA has been limited by the diﬃculty
+of combining the main tool of the sub ject, the barcode or persistence diagram with statistics
+and machine learning. Here we present an alternative approach, using a new summary that
+we call the persistence landscape. The main technical advantage of this descriptor is that
+it is a function and so we can use the vector space structure of its underlying function
+space. In fact, this function space is a separable Banach space and we apply the theory of
+random variables with values in such spaces. Furthermore, since the persistence landscapes
+are sequences of piecewise-linear functions, calculations with them are much faster than
+the corresponding calculations with barcodes or persistence diagrams, removing a second
+serious obstruction to the wider use of topological methods in data analysis.
+
+Notable successes of TDA include the discovery of a subgroup of breast cancers by
+Nicolau et al. (2011), an understanding of the topology of the space of natural images by
+Carlsson et al. (2008) and the topology of orthodontic data by Heo et al. (2012), and the
+detection of genes with a periodic proﬁle by Dequ´eant et al. (2008). De Silva and Ghrist
+(2007b,a) used topology to prove coverage in sensor networks.
+
+c(cid:13)2015 Peter Bubenik.
+
+Bubenik
+
+In the standard paradigm for TDA, one starts with data that one encodes as a ﬁnite
+set of points in Rn or more generally in some metric space. Then one applies some ge-
+ometric construction to which one applies tools from algebraic topology. The end result
+is a topological summary of the data. The standard topological descriptors are the bar-
+code and the persistence diagram (Edelsbrunner et al., 2002; Zomorodian and Carlsson,
+2005; Cohen-Steiner et al., 2007), which give a multiscale representation of the homology
+(Hatcher, 2002) of the geometric construction. Roughly, homology in degree 0 describes
+the connectedness of the data; homology in degree 1 detects holes or tunnels; homology
+in degree 2 captures voids; and so on. Of particular interest are the homological features
+that persist as the resolution changes. We will give precise deﬁnitions and an illustrative
+example of this method, called persistent homology or topological persistence, in Section 2.
+Now let us take a statistical view of this paradigm. We consider the data to be sampled
+from some underlying abstract probability space. Composing the constructions above, we
+consider our topological summary to be a random variable with values in some summary
+space S . In detail, the probability space (Ω, F , P ) consists of a sample space Ω, a σ -algebra
+F of events, and a probability measure P . Composing our constructions gives a function
+X : (Ω, F , P ) → (S , A, P∗ ), where S is the summary space, which we assume has some
+metric, A is the corresponding Borel σ -algebra, and P∗ is the probability measure on S
+obtained by pushing forward P along X . We assume that X is measurable and thus X is
+a random variable with values in S .
+Here is a list of what we would like to be able to do with our topological summary. Let
+X1 , . . . , Xn be a sample of independent random variables with the same distribution as X .
+We would like to have a good notion of the mean µ of X and the mean X n of the sample;
+know that X n converges to µ; and be able to calculate X n (ω), for ω ∈ Ω, eﬃciently. We
+would like to have information the diﬀerence X n − µ, and be able to calculate approximate
+conﬁdence intervals related to µ. Given two such samples for random variables X and
+Y with values in our summary space, we would like to be able to test the hypothesis
+that µX = µY . In order to answer these questions we also need an eﬃcient algorithm for
+calculating distances between elements of our summary space. In this article, we construct a
+topological summary that we call the persistence landscape which meets these requirements.
+Our basic idea is to convert the barcode into a function in a somewhat additive manner.
+The are many possible variations of this construction that may result in more suitable
+summary statistics for certain applications. Hopefully, the theory presented here will also
+be helpful in those situations.
+We remark that while the persistence landscape has a corresponding barcode and persis-
+tence diagram, the mean persistence landscape does not. This is analogous to the situation
+in which an integer-valued random variable having a Poisson distribution has a summary
+statistic, the rate parameter, that is not an integer.
+We also remark that the reader may restrict our Banach space results results to the
+perhaps more familiar Hilbert space setting. However we will need this generality to prove
+stability of the persistence landscape for, say, functions on the n-dimensional sphere where
+n > 2.
+There has been progress towards combining the persistence diagram and statistics (Mi-
+leyko et al., 2011; Turner et al., 2014; Munch et al., 2013; Chazal et al., 2013; Fasy et al.,
+2014). Blumberg et al. (2014) give a related statistical approach to TDA. Kovacev-Nikolic
+
+78
+
+Persistence Landscapes
+
+et al. (2014) use the persistence landscape deﬁned here to study the maltose binding complex
+and Chazal et al. (2014) apply the bootstrap to the persistence landscape. The persistence
+landscape is related to the well group deﬁned by Edelsbrunner et al. (2011).
+In Section 2 we provide the necessary background and deﬁne the persistence landscape
+and give some of its properties. In Section 3 we introduce the statistical theory of persistence
+landscapes, which we apply to a few examples in Section 4. In Section 5 we prove that the
+persistence landscape is stable and that it provides lower bounds for the previously deﬁned
+bottleneck and Wasserstein distances.
+
+2. Topological Summaries
+
+The two standard topological summaries of data are the barcode and the persistence diagram.
+We will deﬁne a new closely-related summary, the persistence landscape, and then compare
+it to these two previous summaries. All of these summaries are derived from the persistence
+module, which we now deﬁne.
+
+2.1 Persistence Modules
+
+The main algebraic ob ject of study in topological data analysis is the persistence module.
+A persistence module M consists of a vector space Ma for all a ∈ R and linear maps
+M (a ≤ b) : Ma → Mb for all a ≤ b such that M (a ≤ a) is the identity map and for all
+a ≤ b ≤ c, M (b ≤ c) ◦ M (a ≤ b) = M (a ≤ c).
+There are many ways of constructing a persistence module. One example starts with a
+set of points X = {x1 , . . . , xn} in the plane M = R2 as shown in the top left of Figure 1.
+resulting union, Xr = (cid:83)n
+To help understand this conﬁguration, we “thicken” each point, by replacing each point,
+x, with Bx (r) = {y ∈ M | d(x, y) ≤ r}, a disk of ﬁxed radius, r, centered at x. The
+i=1 Br (xi ), is shown in Figure 1 for various values of r. For each
+r, we can calculate H (Xr ), the homology of the resulting union of disks. To be precise,
+H (−) denotes Hk (−, F), the singular homology functor in degree k with coeﬃcients in a
+ﬁeld F. So H (Xr ) is a vector space that is the quotient of the k-cycles modulo those that
+are boundaries. As r increases, the union of disks grows, and the resulting inclusions induce
+maps between the corresponding homology groups. More precisely, if r ≤ s, the inclusion
+r : Xr (cid:44)→ Xs induces a map H (ιs
+r ) : H (Xr ) → H (Xs ). The images of these maps are the
+ιs
+persistent homology groups. The collection of vector spaces H (Xr ) and linear maps H (ιs
+r )
+is a persistence module. Note that this construction works for any set of points in Rn or
+more generally in a metric space.
+The union of balls Xr has a nice combinatorial description. The ˇCech complex, ˇCr (X ),
+of the set of balls {Bxi (r)} is the simplicial complex whose vertices are the points {xi} and
+whose k-simplices correspond to k + 1 balls with nonempty intersection (see Figure 1). This
+is also called the nerve. It is a basic result that if the ambient space is Rn , Xr is homotopy
+equivalent to its ˇCech complex (Borsuk, 1948). So to obtain the singular homology of the
+union of balls, one can calculate the simplicial homology of the corresponding ˇCech complex.
+The ˇCech complexes { ˇCr (X )} together with the inclusions ˇCr (X ) ⊆ ˇCs (X ) for r ≤ s form a
+ﬁltered simplicial complex. Applying simplicial homology we obtain a persistence module.
+There exist eﬃcient algorithms for calculating the persistent homology of ﬁltered simplicial
+complexes (Edelsbrunner et al., 2002; Milosavljevi´c et al., 2011; Chen and Kerber, 2013).
+
+79
+
+Bubenik
+
+Figure 1: A growing union of balls and the 1-skeleton of the corresponding ˇCech complex.
+As the radius grows, features—such as connected components and holes—appear
+and disappear. Here, the complexes illustrate the births and deaths of three holes,
+homology classes in degree one. The corresponding birth-death pairs are plotted
+as part of the top left of Figure 2.
+
+The ˇCech complex is often computationally expensive, so many variants have been used
+in computational topology. A larger, but simpler complex called the Rips complex has as
+vertices the points xi and has k-simplices corresponding to k + 1 balls with all pairwise
+intersections nonempty. Other possibilities include the witness complexes of de Silva and
+Carlsson (2004), graph induced complexes by Dey et al. (2013) and complexes built using
+kernel density estimators and triangulations of the ambient space (Bubenik et al., 2010).
+Some of these are used in the examples in Section 4.
+Given any real-valued function f : S → R on a topological space S , we can deﬁne the
+associated persistence module, M (f ), where M (f )(a) = H (f −1 ((∞, a])) and M (f )(a ≤ b)
+is induced by inclusion. Taking f to be the the minimum distance to a ﬁnite set of points,
+X , we obtain the ﬁrst example.
+
+2.2 Persistence Landscapes
+
+In this section we deﬁne a number of functions derived from a persistence module. Examples
+of each of these are given in Figure 2.
+Let M be a persistence module. For a ≤ b, the corresponding Betti number of M , is
+given by the dimension of the image of the corresponding linear map. That is,
+β a,b = dim(im(M (a ≤ b))).
+
+(1)
+
+Lemma 1 If a ≤ b ≤ c ≤ d then β b,c ≥ β a,d .
+
+Proof Since M (a ≤ d) = M (c ≤ d) ◦ M (b ≤ c) ◦ M (a ≤ b), this follows from (1).
+Our simplest function, which we call the rank function is the function λ : R2 → R given
+(cid:40)
+β b,d
+0
+
+if b ≤ d
+otherwise.
+
+by
+
+λ(b, d) =
+
+80
+
+Persistence Landscapes
+
+Now let us change coordinates so that the resulting function is supported on the upper
+half plane. Let
+d − b
+b + d
+m =
+,
+and h =
+.
+2
+2
+(cid:40)
+The rescaled rank function is the function λ : R2 → R given by
+if h ≥ 0
+βm−h,m+h
+0
+otherwise.
+
+λ(m, h) =
+
+(2)
+
+Much of our theory will apply to these simple functions. However, the following version,
+which we will call the persistence landscape, will have some advantages.
+First let us observe that for a ﬁxed t ∈ R, β t−•,t+• is a decreasing function. That is,
+
+Lemma 2 For 0 ≤ h1 ≤ h2 ,
+
+β t−h1 ,t+h1 ≥ β t−h2 ,t+h2 .
+Proof Since t − h2 ≤ t − h1 ≤ t + h1 ≤ t + h2 , by Lemma 1, β t−h2 ,t+h2 ≤ β t−h1 ,t+h1 .
+
+Deﬁnition 3 The persistence landscape is a function λ : N × R → R, where R denotes
+the extended real numbers, [−∞, ∞]. Alternatively, it may be thought of as a sequence of
+functions λk : R → R, where λk (t) = λ(k , t). Deﬁne
+λk (t) = sup(m ≥ 0 | β t−m,t+m ≥ k).
+
+The persistence landscape has the following properties.
+1. λk (t) ≥ 0,
+Lemma 4
+2. λk (t) ≥ λk+1 (t), and
+
+3. λk is 1-Lipschitz.
+
+The ﬁrst two properties follow directly from the deﬁnition. We prove the third in the
+appendix.
+To help visualize the graph of λ : N × R → R, we can extend it to a function λ : R2 → R
+(cid:40)
+by setting
+λ((cid:100)x(cid:101), t),
+if x > 0,
+if x ≤ 0.
+0,
+We remark that the non-persistent Betti numbers, {dim(M (t))}, of a persistence module
+M can be read oﬀ from the diagonal of the rank function, the m-axis of the rescaled rank
+function, and from the support of the persistence landscape.
+
+λ(x, t) =
+
+(3)
+
+81
+
+Bubenik
+
+Figure 2: Persistence landscapes for the homology in degree 1 of the example in Figure 1.
+For the rank function (top left) and rescaled rank function (top right) the values
+of the functions on the corresponding region are given. The top left graph also
+contains the three points of the corresponding persistence diagram. Below the
+top right graph is the corresponding barcode. We also have the corresponding
+persistence landscape (bottom left) and its 3d-version (bottom right). Notice
+that λ1 gives a measure of the dominant homological feature at each point of the
+ﬁltration.
+
+82
+
+24681012246810120birthdeath11223002468101220λ1λ2λ32468101220112230Persistence Landscapes
+
+Figure 3: Means of persistence diagrams and persistence landscapes. Top left: the rescaled
+persistence diagrams {(6, 6), (10, 6)} and {(8, 4), (8, 8)} have two (Fr´echet) means:
+{(7, 5), (9, 7)} and {(7, 7), (9, 5)}.
+In contrast their corresponding persistence
+landscapes (top right and bottom left) have a unique mean (bottom right).
+
+2.3 Barcodes and Persistence Diagrams
+
+All of the information in a (tame) persistence module is completely contained in a multiset
+of intervals called a barcode (Zomorodian and Carlsson, 2005; Crawley-Boevey, 2012; Chazal
+et al., 2012). Mapping each interval to its endpoints we obtain the persistence diagram.
+There exist maps in both directions between these topological summaries and our func-
+tions. For an example of corresponding persistence diagrams, barcodes and persistence
+landscapes, see Figure 2. Informally, the persistence diagram consists of the “upper-left
+corners” in our rank function. In the other direction, λ(b, d) counts the number of points
+in the persistence diagram in the upper left quadrant of (b, d). Informally, the barcode con-
+sists of the “bases of the triangles” in the rescaled rank function, and the other direction is
+obtained by “stacking isosceles triangles” whose bases are the intervals in the barcode. We
+invite the reader to make the mappings precise. For example, given a persistence diagram
+{(bi , di )}n
+i=1 ,
+
+λk (t) = kth largest value of min(t − bi , di − t)+ ,
+
+where c+ denotes max(c, 0). The fact that barcodes are a complete invariant of persistence
+modules is central to these equivalences.
+The geometry of the space of persistence diagrams makes it hard to work with. For
+example, sets of persistence diagrams need not have a unique (Fr´echet) mean (Mileyko
+et al., 2011).
+In contrast, the space of persistence landscapes is very nice. So a set of
+persistence landscapes has a unique mean (4). See Figure 3.
+Compared to the persistence diagram, the barcode has extra information on whether or
+not the endpoints of the intervals are included. This ﬁner information is seen in the rank
+
+83
+
+24681012141624681002468101214162468100λ1λ22468101214162468100λ1λ22468101214162468100λ1λ2Bubenik
+
+function and rescaled rank function, but not in the persistence landscape. However when
+we pass to the corresponding Lp space in Section 2.4, this information disappears.
+2.4 Norms for Persistence Landscapes
+everywhere, for 1 ≤ p < ∞, (cid:107)f (cid:107)p = (cid:2)(cid:82) |f |pdµ(cid:3) 1
+Recall that for a measure space (S , A, µ), and a function f : S → R deﬁned µ-almost
+p , and (cid:107)f (cid:107)∞ = ess sup f = inf {a | µ{s ∈
+S | f (s) > a} = 0}. For 1 ≤ p ≤ ∞, Lp (S ) = {f : S → R | (cid:107)f (cid:107)p < ∞} and deﬁne
+Lp (S ) = Lp (S )/ ∼, where f ∼ g if (cid:107)f − g(cid:107)p = 0.
+On R and R2 we will use the Lebesgue measure. On N × R, we use the product of the
+∞(cid:88)
+counting measure on N and the Lebesgue measure on R. For 1 ≤ p < ∞ and λ : N × R → R,
+(cid:107)λk (cid:107)p
+(cid:107)λ(cid:107)p
+p =
+p ,
+k=1
+where λk (t) = λ(k , t). By Lemma 4(2), (cid:107)λ(cid:107)∞ = (cid:107)λ1(cid:107)∞ . If we extend f to λ : R2 → R, as
+in (3), we have (cid:107)λ(cid:107)p = (cid:107)λ(cid:107)p , for 1 ≤ p ≤ ∞.
+If λ is any of our functions corresponding to a barcode that is a ﬁnite collection of ﬁnite
+intervals, then λ ∈ Lp (S ) for 1 ≤ p ≤ ∞, where S equals N × R or R2 .
+Let λbd and λmh denote the rank function and the rescaled rank function corresponding
+to a persistence landscape λ, and let D be the corresponding persistence diagram. Let
+pers2 (D) denote the sum of the squares of the lengths of the intervals in the corresponding
+barcode, and let pers∞ (D) be the length of the longest interval.
+1. (cid:107)λ(cid:107)1 = (cid:107)λmh(cid:107)1 = 1
+2 (cid:107)λbd(cid:107)1 = 1
+Proposition 5
+4 pers2 (D), and
+2. (cid:107)λ(cid:107)∞ = (cid:107)λ1(cid:107)∞ = 1
+2 pers∞ (D).
+Proof
+1. To see that (cid:107)λ(cid:107)1 = (cid:107)λmh(cid:107) we remark that both are the volume of the same solid. The
+change of coordinates implies that (cid:107)λmh(cid:107)1 = 1
+2 (cid:107)λbd(cid:107)1 . If D = {(bi , di )}, then each
+i (2hi )2 = 4 (cid:80)
+i . Finally, pers2 (D) = (cid:80)
+(cid:80)
+i to the volume (cid:107)λmh(cid:107)1 , where hi = di−bi
+. So (cid:107)λmh(cid:107)1 =
+point (bi , di ) contributes h2
+2
+i h2
+i h2
+i .
+2. Lemma 4(2) implies that (cid:107)λ(cid:107)∞ = (cid:107)λ1(cid:107)∞ . If D = {(bi , di )}, then (cid:107)λ(cid:107)∞ = supi
+
+.
+
+di−bi
+2
+
+We remark that the quantities in 1 and 2 also equal W2 (D , ∅)2 and W∞ (D , ∅) respectively
+(see Section 5 for the corresponding deﬁnitions).
+
+3. Statistics with Landscapes
+
+Now let us take a probabilistic viewpoint. First, we assume that our persistence landscapes
+lie in Lp (S ) for some 1 ≤ p < ∞, where S equals N × R or R2 . In this case, Lp (S ) is a
+separable Banach space. When p = 2 we have a Hilbert space; however, we will not use this
+structure. In some examples, the persistence landscapes will only be stable for some p > 2
+(see Theorem 16).
+
+84
+
+Persistence Landscapes
+
+3.1 Landscapes as Banach Space Valued Random Variables
+Let X be a random variable on some underlying probability space (Ω, F , P ), with corre-
+sponding persistence landscape Λ, a Borel random variable with values in the separable
+Banach space Lp (S ). That is, for ω ∈ Ω, X (ω) is the data and Λ(ω) = λ(X (ω)) =: λ is the
+corresponding topological summary statistic.
+Now let X1 , . . . , Xn be independent and identically distributed copies of X , and let
+Λ1 , . . . , Λn be the corresponding persistence landscapes. Using the vector space structure
+of Lp (S ), the mean landscape Λ
+n
+n
+n
+n(cid:88)
+is given by the pointwise mean. That is, Λ
+(ω) = λ
+,
+where
+i=1
+
+λi (k , t).
+
+1
+n
+
+n
+λ
+
+(k , t) =
+
+(4)
+
+Let us interpret the mean landscape. If B1 , . . . , Bn are the barcodes corresponding to the
+persistence landscapes λ1 , . . . , λn , then for k ∈ N and t ∈ R, λ
+n
+(k , t) is the average value
+of the largest radius interval centered at t that is contained in k intervals in the barcodes
+B1 , . . . , Bn .
+For those used to working with persistence diagrams, it is tempting to try to ﬁnd
+a persistence diagram whose persistence landscape is closest to a given mean landscape.
+While this is an interesting mathematical question, we would like to suggest that the more
+important practical issue is using the mean landscape to understand the data.
+We would like to be able to say that the mean landscape converges to the expected
+persistence landscape. To say this precisely we need some notions from probability in
+Banach spaces.
+
+3.2 Probability in Banach Spaces
+
+Here we present some results from probability in Banach spaces. For a more detailed
+exposition we refer the reader to Ledoux and Talagrand (2011).
+Let B be a real separable Banach space with norm (cid:107)·(cid:107). Let (Ω, F , P ) be a probability
+space, and let V : (Ω, F , P ) → B be a Borel random variable with values in B . The
+V−→ B (cid:107)·(cid:107)−−→ R is a real-valued random variable. Let B∗ denote the
+composite (cid:107)V (cid:107) : Ω
+topological dual space of continuous linear real-valued functions on B . For f ∈ B∗ , the
+V−→ B f−→ R is a real-valued random variable.
+given by E (Y ) = (cid:82) Y dP = (cid:82)
+composite f (V ) : Ω
+For a real-valued random variable Y : (Ω, F , P ) → R, the mean or expected value, is
+Ω Y (ω) dP (ω). We call an element E (V ) ∈ B the Pettis
+integral of V if E (f (V )) = f (E (V )) for all f ∈ B∗ .
+Proposition 6 If E (cid:107)V (cid:107) < ∞, then V has a Pettis integral and (cid:107)E (V )(cid:107) ≤ E (cid:107)V (cid:107).
+Now let (Vn )n∈N be a sequence of independent copies of V . For each n ≥ 1, let Sn =
+V1 + · · · + Vn . For a sequence (Yn ) of B-valued random variables, we say that (Yn ) converges
+almost surely to a B-valued random variable Y , if P (limn→∞ Yn = Y ) = 1.
+n Sn ) → E (V ) almost surely if and only
+Theorem 7 (Strong Law of Large Numbers) ( 1
+if E (cid:107)V (cid:107) < ∞.
+
+85
+
+Bubenik
+
+For a sequence (Yn ) of B-valued random variables, we say that (Yn ) converges weakly
+to a B-valued random variable Y , if limn→∞ E (ϕ(Yn )) = E (ϕ(Y )) for all bounded contin-
+uous functions ϕ : B → R. A random variable G with values in B is said to be Gaus-
+sian if for each f ∈ B∗ , f (G) is a real valued Gaussian random variable with mean zero.
+The covariance structure of a B-valued random variable, V , is given by the expectations
+E [(f (V ) − E (f (V )))(g(V ) − E (g(V )))], where f , g ∈ B ∗ . A Gaussian random variable is
+determined by its covariance structure. From Hoﬀmann-Jørgensen and Pisier (1976) we
+have the following.
+Theorem 8 (Central Limit Theorem) Assume that B has type 2. (For example B =
+Lp (S ), with 2 ≤ p < ∞.) If E (V ) = 0 and E ((cid:107)V (cid:107)2 ) < ∞ then 1√
+n Sn converges weakly to a
+Gaussian random variable G(V ) with the same covariance structure as V .
+
+3.3 Convergence of Persistence Landscapes
+
+Now we will apply the results of the previous section to persistence landscapes.
+Theorem 7 directly implies the following.
+
+Theorem 9 (Strong Law of Large Numbers for persistence landscapes)
+n → E (Λ) almost surely if and only if E (cid:107)Λ(cid:107) < ∞.
+Λ
+Theorem 10 (Central Limit Theorem for peristence landscapes) Assume p ≥ 2.
+√
+If E (cid:107)Λ(cid:107) < ∞ and E ((cid:107)Λ(cid:107)2 ) < ∞ then
+n − E (Λ)] converges weakly to a Gaussian
+n[Λ
+random variable with the same covariance structure as Λ.
+Proof Apply Theorem 8 to V = λ(X ) − E (λ(X )).
+
+Next we apply a functional to the persistence landscapes to obtain a real-valued random
+variable that satisﬁes the usual central limit theorem.
+Corollary 11 Assume p ≥ 2, E (cid:107)Λ(cid:107) < ∞ and E ((cid:107)Λ(cid:107)2 ) < ∞. For any f ∈ Lq (S ) with
+(cid:90)
+1
+p + 1
+q = 1, let
+S
+
+f Λ = (cid:107)f Λ(cid:107)1 .
+
+Y =
+
+(5)
+
+Then
+
+√
+
+n[Y n − E (Y )]
+d−→ N (0, Var(Y )).
+where d denotes convergence in distribution and N (µ, σ2 ) is the normal distribution with
+mean µ and variance σ2 .
+Proof Since V = Λ − E (Λ) satisﬁes the central limit theorem in Lp (S ), for any g ∈ Lp (S )∗ ,
+law with mean 0 and variance E (g(V )2 ). If we take g(h) = (cid:82)
+the real random variable g(V ) satisﬁes the central limit theorem in R with limiting Gaussian
+S f h, where f ∈ Lq (S ), with
+q = 1, then g(V ) = Y − E (Y ) and E (g(V )2 ) = Var(Y ).
+p + 1
+1
+
+(6)
+
+86
+
+Persistence Landscapes
+
+3.4 Conﬁdence Intervals
+
+The results of Section 3.3 allow us to obtain approximate conﬁdence intervals for the ex-
+pected values of functionals on persistence landscapes.
+Assume that λ(X ) satisﬁes the conditions of Corollary 11 and that Y is a corresponding
+real random variable as deﬁned in (5). By Corollary 11 and Slutsky’s theorem we may
+use the normal distribution to obtain the approximate (1 − α) conﬁdence interval for E (Y )
+using
+∗ Sn√
+Y n ± z
+(cid:80)n
+,
+n
+i=1 (Yi − Y n )2 , and z ∗ is the upper α
+2 critical value for the normal
+
+n = 1
+where S 2
+n−1
+distribution.
+
+3.5 Statistical Inference using Landscapes I
+
+Here we apply the results of Section 3.3 to hypothesis testing using persistence landscapes.
+Let X1 , . . . , Xn be an iid copies of the random variable X and let X (cid:48)
+1 , . . . , X (cid:48)
+n(cid:48) be an iid
+copies of the random variable X (cid:48) . Assume that the corresponding persistence landscapes
+Λ, Λ(cid:48) lie in Lp (S ), where p ≥ 2. Let f ∈ Lq (S ), where 1
+q = 1. Let Y and Y (cid:48) be deﬁned
+(cid:80)n
+p + 1
+as in (5). Let µ = E (Y ) and µ(cid:48) = E (Y (cid:48) ). We will test the null hypothesis that µ = µ(cid:48) .
+(cid:80)n
+First we recall that the sample mean Y = 1
+i=1 Yi is an unbiased estimator of µ and the
+i=1 (Yi − Y )2 is an unbiased estimator of Var(Y ) and similarly
+n
+Y = 1
+sample variance s2
+n−1
+Y (cid:48) . By Corollary 11, Y and Y (cid:48) are asymptotically normal.
+for Y (cid:48) and s2
+We use the two-sample z-test. Let
+(cid:113) S 2
+Y − Y (cid:48)
+S 2
+Y (cid:48)
+Y
+n +
+n(cid:48)
+where the denominator is the standard error for the diﬀerence. From this standard score a
+p-value may be obtained from the normal distribution.
+
+z =
+
+,
+
+3.6 Choosing a Functional
+To apply the above results, one needs to choose a functional, f ∈ Lq (S ). This choice will
+need to be made with an understanding of the data at hand. Here we present a couple of
+options.
+(cid:40)
+If each λ = Λ(ω) is supported by {1, . . . , K } × [−B , B ], take
+if t ∈ [−B , B ] and k ≤ K
+1
+0
+otherwise.
+
+f (k , t) =
+
+(7)
+
+Then (cid:107)f Λ(cid:107)1 = (cid:107)Λ(cid:107)1 .
+If the parameter values for which the persistence landscape is nonzero are bounded
+by ±B , then we have a nice choice of functional for the persistence landscape that is
+the ﬁrst K dominant homological features. That is, using f in (7), (cid:107)f λ(cid:107)1 = (cid:80)K
+unavailable for the (rescaled) rank function. We can choose a functional that is sensitive of
+k=1(cid:107)Λk (cid:107)1 .
+87
+
+Bubenik
+
+(cid:107)f Λ(cid:107)1 = (cid:80)∞
+Under this weaker assumption we can also take fk (t) = 1
+kr χ[−B ,B ] , where r > 1. Then
+kr (cid:107)Λk (t)(cid:107)1 .
+1
+k=1
+The condition that λ is supported by N× [−B , B ] can often be enforced by using reduced
+homology or by applying extended persistence (Cohen-Steiner et al., 2009; Bubenik and
+Scott, 2014) or by simply truncating the intervals in the corresponding barcode at some
+ﬁxed values. We remark that certain experimental data may have bounds on the number
+of intervals. For example, in the protein data considered using the ideas presented here in
+Kovacev-Nikolic et al. (2014), the simplicial complexes have a ﬁxed number of vertices.
+
+3.7 Statistical Inference using Landscapes II
+
+The functionals suggested in Section 3.6 in the hypothesis test given in Section 3.5 may not
+have enough power to discriminate between two groups with diﬀerent persistence in some
+T 2 test. For example, consider Y = ((cid:82) (Λ1 − Λ(cid:48)
+1 ), . . . , (cid:82) (ΛK − Λ(cid:48)
+examples.
+To increase the power, one can apply a vector of functionals and then apply Hotelling’s
+K )), where K (cid:28) n1 + n2 − 2.
+This alternative will not be suﬃcient if the persistence landscapes are translates of each
+other, (see Figure 7). An additional approach is to compute the distance between the mean
+landscapes of the two groups and obtain a p-value using a permutation test. This is done
+in the Section 4.3. This test has been applied to persistence diagrams and barcodes (Chung
+et al., 2009; Robinson and Turner, 2013).
+
+4. Examples
+
+The persistent homologies in this section were calculated using javaPlex (Tausz et al.,
+2011) and Perseus by Nanda (2013). Another publicly available alternative is Dionysus
+by Morozov (2012).
+In Section 4.2 we use Matlab code courtesy of Eliran Subag that
+implements an algorithm from Wood and Chan (1994).
+
+4.1 Linked Annuli
+
+We start with a simple example to illustrate the techniques. Following Munch et al. (2013),
+we sample 200 points from the uniform distribution on the union of two annuli. We then
+calculate the corresponding persistence landscape in degree one using the Vietoris-Rips
+complex. We repeat this 100 times and calculate the mean persistence landscape. See
+Figure 4.
+Note that in the degree one barcode of this example, it is very likely that there will be
+one large interval, one smaller interval born at around the same time, and all other intervals
+are smaller and die around the time the larger two intervals are born.
+
+4.2 Gaussian Random Fields
+
+The topology of Gaussian random ﬁelds is of interest in statistics. The Euler characteristic of
+superlevel sets of a Gaussian random ﬁeld may be calculated using the Gaussian Kinematic
+Formula of Adler and Taylor (2007). The persistent homology of Gaussian random ﬁelds
+
+88
+
+Persistence Landscapes
+
+Figure 4: 200 points were sampled from a pair of linked annuli. Here we show the points
+and a corresponding union of balls and 1-skeleton of the ˇCech complex. This was
+repeated 100 times. Next we show two of the degree one persistence landscapes
+and the mean degree one persistence landscape.
+
+89
+
+010203040506070809010001020304001020304050607080901000102030400102030405060708090100010203040Bubenik
+
+Figure 5: Mean landscapes of Gaussian random ﬁelds. The graph of a Gaussian random
+ﬁeld on [0, 1]2 (top left) and its corresponding mean landscapes (middle row) in
+degrees 0 and 1. The 0-isosurface of a Gaussian random ﬁeld on [0, 1]3 (top right)
+and the corresponding mean landscapes in degrees 0, 1 and 2 (bottom row).
+
+has been considered by Adler et al. (2010) and its expected Euler characteristic has been
+obtained by Bobrowski and Borman (2012).
+Here we consider a stationary Gaussian random ﬁeld on [0, 1]2 with autocovariance
+function γ (x, y) = e−400(x2+y2 ) . See Figure 5. We sample this ﬁeld on a 100 by 100 grid,
+and calculate the persistence landscape of the sublevel set. For homology in degree 0, we
+truncate the inﬁnite interval at the maximum value of the ﬁeld. We calculate the mean
+persistence landscapes in degrees 0 and 1 from 100 samples (see Figure 5, where we have
+rescaled the ﬁltration by a factor of 100).
+In the Gaussian random ﬁeld literature, it is more common to consider superlevel sets.
+However, by symmetry, the expected persistence landscape in this case is the same except
+for a change in the sign of the ﬁltration.
+We repeat this calculation for a similar Gaussian random ﬁeld on [0, 1]3 , this time using
+reduced homology. See Figure 5. This time we sample on a 25 × 25 × 25 grid.
+
+90
+
+Persistence Landscapes
+
+4.3 Torus and Sphere
+
+Here we combine persistence landscapes and statistical inference to discriminate between
+iid samples of 1000 points from a torus and a sphere in R3 with the same surface area, using
+the uniform surface area measure as described by Diaconis et al. (2012) (see Figure 6). To
+be precise, we use the torus given by (r − 2)2 + z 2 = 1 in cylindrical coordinates, and the
+sphere given by r2 = 2π in spherical coordinates.
+For these points, we construct a ﬁltered simplicial complex as follows. First we trian-
+gulate the underlying space using the Coxeter–Freudenthal–Kuhn triangulation, starting
+with a cubical grid with sides of length 1
+2 . Next we smooth our data using a triangular
+kernel with bandwidth 0.9. We evaluate this kernel density estimator at the vertices of our
+simplicial complex. Finally, we ﬁlter our simplicial complex as follows. For ﬁltration level
+−r, we include a simplex in our triangulation if and only if the kernel density estimator has
+values greater than or equal to r at all of its vertices. Three stages in the ﬁltration for one
+of the samples are shown in (see Figure 6). We then calculate the persistence landscape of
+this ﬁltered simplicial complex for 100 samples and plot the mean landscapes (see Figure 6).
+We observe that the large peaks correspond to the Betti numbers of the torus and sphere.
+Since the support of the persistence landscapes is bounded, we can use the integral of
+the landscapes to obtain a real valued random variable that satisﬁes (6). We use a two-
+sample z-test to test the null hypothesis that these random variables have equal mean. For
+the landscapes in dimensions 0 and 2 we cannot reject the null hypothesis. In dimension 1
+we do reject the null hypothesis with a p-value of 3 × 10−6 .
+We can also choose a functional that only integrates the persistence landscape λ(k , t) for
+certain ranges of k . In dimension 1, with k = 1 or k = 2 there is a statistically signiﬁcant
+diﬀerence (p-values of 10−8 and 3 × 10−6 ), but not for k > 2. In dimension 2, there is not
+a signiﬁcant diﬀerence for k = 1, but there is a signiﬁcant diﬀerence for k > 1 (p-value
+< 10−4 ).
+Now we increase the diﬃculty by adding a fair amount of Gaussian noise to the point
+samples (see Figure 7) and using only 10 samples for each surface. This time we calculate
+the L2 distances between the mean landscapes. We use the permutation test with 10,000
+repetitions to determine if this distance is statistically signiﬁcant. There is a signiﬁcant
+diﬀerence in dimension 0, with a p value of 0.0111. This is surprising, since the mean
+landscapes look very similar. However, on closer inspection, they are shifted slightly (see
+Figure 7). Note that we are detecting a geometric diﬀerence, not a topological one. This
+shows that this statistic is quite powerful. There is also a signiﬁcant diﬀerence in dimensions
+1 and 2, with p values of 0.0000 and 0.0000, respectively.
+
+5. Landscape Distance and Stability
+
+In this section we deﬁne the landscape distance and use it to show that the persistence
+landscape is a stable summary statistic. We also show that the landscape distance gives
+lower bounds for the bottleneck and Wasserstein distances. We defer the proofs of the
+results of this section to the appendix.
+Let M and M (cid:48) be persistence modules as deﬁned in Section 2.1 and let λ and λ(cid:48) be their
+corresponding persistence landscapes as deﬁned in Section 2.2. For 1 ≤ p ≤ ∞, deﬁne the
+
+91
+
+Bubenik
+
+Figure 6: We sample 1000 points for a torus and sphere, 100 times each, construct the
+corresponding ﬁltered simplicial complexes and calculate persistent homology. In
+columns 1, 2 and 3, we have the mean persistence landscape in dimension 0, 1
+and 2 of the torus in row 3 and the sphere in row 4.
+
+92
+
+Persistence Landscapes
+
+Figure 7: We again sample 1000 points sampled from a torus (top left) and sphere (top
+middle), this time with Gaussian noise. We show the torus from the perspective
+that makes it easiest to see the hole in the middle. We calculate persistent
+homology from 10 samples. In columns 1, 2 and 3, we have the mean persistence
+landscape in dimension 0, 1 and 2, respectively, with the torus in row 2 and the
+sphere in row 3. The top right is a graph of the diﬀerence between the mean
+landscapes in dimension 0.
+
+93
+
+Bubenik
+
+p-landscape distance between M and M (cid:48) by
+(cid:48)(cid:107)p .
+) = (cid:107)λ − λ
+(cid:48)
+Λp (M , M
+Similarly, if λ and λ(cid:48) are the persistence landscapes corresponding to persistence diagrams
+D and D (cid:48) (Section 2.3), then we deﬁne
+
+(cid:48)
+
+) = (cid:107)λ − λ(cid:107)p .
+Λp (D , D
+Given a real valued function f : X → R on a topological space X , let M (f ) denote be
+the corresponding persistence module deﬁned at the end of Section 2.1.
+Theorem 12 (∞-Landscape Stability Theorem) Let f , g : X → R. Then
+Λ∞ (M (f ), M (g)) ≤ (cid:107)f − g(cid:107)∞ .
+
+Thus the persistence landscape is stable with respect to the supremum norm. We remark
+that there are no assumptions on f and g , not even the q-tame condition of Chazal et al.
+of x. If D = {xj }, let Persk (D) = (cid:80)
+(2012).
+Let D be a persistence diagram. For x = (b, d) ∈ D , let (cid:96) = d − b denote the persistence
+j (cid:96)k
+j denote the degree-k total persistence of D .
+Now let us consider a persistence diagram to be an equivalence class of multisets of pairs
+(b, d) with b ≤ d, where D ∼ D (cid:113) {(t, t)} for any t ∈ R. That is, to any persistence diagram,
+we can freely adjoin points on the diagonal. This is reasonable, since points on the diagonal
+have zero persistence. Each persistence diagram has a unique representative ˆD without any
+points on the diagonal. We set |D| = | ˆD |. We also remark that Persk (D) is well deﬁned.
+By allowing ourselves to add as many points on the diagonal as necessary, there exists
+∼=−→ D (cid:48) can be
+bijections between any two persistence diagrams. Any bijection ϕ : D
+represented by ϕ : xj (cid:55)→ x(cid:48)
+j , where j ∈ J with |J | = |D | + |D (cid:48) |. For a given ϕ, let
+j ) and εj = (cid:107)xj − x(cid:48)
+j (cid:107)∞ = max(|bj − b(cid:48)
+j |, |dj − d(cid:48)
+j |).
+xj = (bj , dj ), x(cid:48)
+j = (b(cid:48)
+j , d(cid:48)
+The bottleneck distance (Cohen-Steiner et al., 2007) between persistence diagrams D
+and D (cid:48) is given by
+
+W∞ (D , D
+
+(cid:48)
+
+εj ,
+
+) = inf
+sup
+∼=−→D (cid:48)
+j
+ϕ:D
+where the inﬁmum is taken over all bijections from D to D (cid:48) . It follows that for the empty
+persistence diagram ∅, W∞ (D , ∅) = 1
+2 supj (cid:96)j .
+The ∞-landscape distance is bounded by the bottleneck distance.
+Theorem 13 For persistence diagrams D and D (cid:48) ,
+) ≤ W∞ (D , D
+(cid:48)
+Λ∞ (D , D
+).
+For p ≥ 1, the p-Wasserstein distance (Cohen-Steiner et al., 2010) between D and D (cid:48)
+ 1
+(cid:88)
+is given by
+p
+j
+
+) = inf
+∼=−→D (cid:48)
+ϕ:D
+
+Wp (D , D
+
+εp
+j
+
+.
+
+(cid:48)
+
+(cid:48)
+
+94
+
+Persistence Landscapes
+
+(cid:96)j εp
+j
+
+.
+
+W p (D , D
+
+(cid:48)
+
+) = inf
+∼=−→D (cid:48)
+ϕ:D
+
+We remark that the Wasserstein distance gives equal weighting to the εj while the land-
+scape distance gives a stronger weighting to εj if xj has larger persistence. The landscape
+distance is most closely related to a weighted version of the Wasserstein distance that we
+ 1
+(cid:88)
+now deﬁne. The persistence weighted p-Wasserstein distance between D and D (cid:48) is given by
+p
+j
+Note that it is asymmetric.
+For the remainder of the section we assume that D and D (cid:48) are ﬁnite. The following
+result bounds the p-landscape distance. Recall that (cid:96)j is the persistence of xj ∈ D and
+when ϕ : xj (cid:55)→ x(cid:48)
+j , εj = (cid:107)xj − x(cid:48)
+j (cid:107)∞
+ n(cid:88)
+ .
+Theorem 14 If n = |D | + |D | then
+n(cid:88)
+)p ≤ min
+2
+∼=−→D (cid:48)
+p + 1
+ϕ:D
+j=1
+j=1
+(cid:19)
+(cid:18)
+(cid:104)
+(cid:105)−1
+From this we can obtain a lower bound on the p-Wasserstein distance.
+1, 1
+.
+2
+
+Corollary 15 Wp (D , D (cid:48) )p ≥ min
+
+W∞ (D , ∅) + 1
+p+1
+
+Λp (D , D (cid:48) )p
+
+(cid:48)
+
+Λp (D , D
+
+(cid:96)j εp
+j +
+
+εp+1
+j
+
+For our ﬁnal stability theorem, we use ideas from Cohen-Steiner et al. (2010). Let
+f : X → R be a function on a topological space. We say that f is tame if for all but ﬁnitely
+many a ∈ R, the associated persistence module M (f ) is constant and ﬁnite dimensional
+on some open interval containing a. For such an f , let D(f ) denote the corresponding
+If X is a metric space we say that f is Lipschitz if there is some
+persistence diagram.
+constant c such that |f (x) − f (y)| ≤ c d(x, y) for all x, y ∈ X . We let Lip(f ) denote
+the inﬁmum of all such c. We say that a metric space X implies bounded degree-k total
+persistence if there is a constant CX,k such that Persk (D(f )) ≤ CX,k for all tame Lipschitz
+functions f : X → R such that Lip(f ) ≤ 1. For example, as observed by Cohen-Steiner
+et al. (2010), if X is the n-dimensional sphere, then X = S n has bounded k-persistence for
+k = n + δ for any δ > 0, but does not have bounded k-persistence for k < n.
+
+Theorem 16 (p-Landscape stability theorem) Let X be a triangulable, compact met-
+ric space that implies bounded degree-k total persistence for some real number k ≥ 1, and
+let f and g be two tame Lipschitz functions. Then
+Λp (D(f ), D(g))p ≤ C (cid:107)f − g(cid:107)p−k∞ ,
+for al l p ≥ k , where C = CX,k (cid:107)f (cid:107)∞ (Lip(f )k + Lip(g)k ) + CX,k+1
+
+p+1 (Lip(f )k+1 + Lip(g)k+1 ).
+1
+
+Thus the persistence diagram is stable with respect to the p-landscape distance if p > k ,
+where X has bounded degree-k total persistence. This is the same condition as for the
+stability of the p-Wasserstein distance in Cohen-Steiner et al. (2010). Equivalently, the
+
+95
+
+Bubenik
+
+persistence landscape is stable with respect to the p-norm if p > k , where X has bounded
+degree-k total persistence.
+
+Acknowledgments
+
+The author would like to thank Robert Adler, Frederic Chazal, Herbert Edelsbrunner,
+Giseon Heo, Sayan Mukherjee and Stephen Rush for helpful discussions. Thanks to Junyong
+Park for suggesting Hotelling’s T 2 test. Also thanks to the anonymous referees who made a
+number of helpful comments to improve the exposition. In addition, the author gratefully
+acknowledges the support of the Air Force Oﬃce of Scientiﬁc Research (AFOSR grant
+FA9550-13-1-0115).
+
+Appendix A. Proofs
+Proof [Proof of Lemma 4(3)] We will prove that λk is 1-Lipschitz. That is, |λk (t) − λk (s)| ≤
+|t − s|, for all s, t ∈ R.
+Let s, t ∈ R. Without loss of generality, assume that λk (t) ≥ λk (s) ≥ 0. If λk (t) ≤ |t− s|,
+then λk (t) − λk (s) ≤ λk (t) ≤ |t − s| and we are done. So assume that λk (t) > |t − s|.
+Let 0 < h < λk (t) − |t − s|. Then t − λk (t) < s − h < s + h < t + λk (t). Thus, by
+Lemma 1 and Deﬁnition 3, β s−h,s+h ≥ k . It follows that λk (s) ≥ λk (t) − |t − s|. Thus
+λk (t) − λk (s) ≤ |t − s|.
+
+Theorems 12 and 13 follow from the next result which is of independent interest. Follow-
+ing Chazal et al. (2009), we say that two persistence modules M and M (cid:48) are ε-interleaved
+if for all a ∈ R there exist linear maps ϕa : Ma → M (cid:48)
+a → Ma+ε such that for
+a+ε and ψ : M (cid:48)
+all a ∈ R, ψa+ε ◦ ϕa = M (a ≤ a + 2ε) and ϕa+ε ◦ ψa = M (cid:48) (a ≤ a + 2ε) and for all a ≤ b
+M (cid:48) (a + ε ≤ b + ε) ◦ ϕa = ϕb ◦ M (a ≤ b) and M (a + ε ≤ b + ε) ◦ ψa = ψb ◦ M (cid:48) (a ≤ b). For
+persistence modules M and M (cid:48) deﬁne the interleaving distance between M and M (cid:48) by
+dI (M , M ) = inf (ε | M and M
+(cid:48)
+Theorem 17 Λ∞ (M , M (cid:48) ) ≤ dI (M , M (cid:48) ).
+Proof Assume that M and M (cid:48) are ε-interleaved. Then for t ∈ R and m ≥ ε, the map
+M (t − m ≤ t + m) factors through the map M (cid:48) (t − m + ε ≤ t + m − ε). So by Lemma 1,
+β t−m+ε,t+m−ε (M (cid:48) ) ≥ β t−m,t+m (M ). Thus by Deﬁnition 3, λ(cid:48) (k , t) ≥ λ(k , t) − ε for all k ≥ 1.
+It follows that (cid:107)λ − λ(cid:48)(cid:107)∞ ≤ ε.
+
+are ε-interleaved).
+
+Proof [Proof of Theorem 12] Combining Theorem 17 with the stability theorem of Bubenik
+and Scott (2014), we have Λ∞ (M (f ), M (g)) ≤ dI (M (f ), M (g)) ≤ (cid:107)f − g(cid:107)∞ .
+
+Proof [Proof of Theorem 13] For a persistence diagram D , consider the persistence mod-
+ule given by the corresponding sum of interval modules (Chazal et al., 2012), M (D) =
+⊕(a,b)∈ ˆD
+I(a, b). Combining Theorem 17 with Theorem 4.9 of Chazal et al. (2012) we have
+
+96
+
+Persistence Landscapes
+
+(cid:48)
+
+(k , t)|p
+
+k (t)|p dt
+(cid:48)
+
+|λk (t) − λ
+
+|λk (t) − λ
+
+Λ∞ (M (D), M (D (cid:48) )) ≤ dI (M (D), M (D (cid:48) )) ≤ W∞ (D , D (cid:48) ).
+∼=−→ D (cid:48) with ϕ(xj ) = x(cid:48)
+j . Let λ = λ(D) and
+
+Proof [Proof of Theorem 14] Let ϕ : D
+(cid:90)
+λ(cid:48) = λ(D (cid:48) ). So Λp (D , D (cid:48) )p = (cid:107)λ − λ(cid:48)(cid:107)p
+p .
+(cid:90)
+|λ(k , t) − λ
+(cid:48)(cid:107)p
+(cid:107)λ − λ
+n(cid:88)
+p =
+(cid:90) n(cid:88)
+k=1
+k=1
+Fix t. Let uj (t) = λ({xj })(1, t) and vj (t) = λ({x(cid:48)
+j })(1, t). For each t, let u(1) (t) ≤ · · · ≤
+u(n) (t) denote an ordering of u1 (t), . . . , un (t) and deﬁne v(k) (t) for 1 ≤ k ≤ n similarly.
+Then u(k) (t) = λk (t) and v(k) (t) = λ(cid:48)
+k (t) (see Figure 2). We obtain the result from the
+(cid:90) n(cid:88)
+following where the two inequalities are proven in Lemmata 18 and 19.
+|u(k) (t) − v(k) (t)|p dt
+(cid:90) n(cid:88)
+k=1
+|uk (t) − vk (t)|p dt
+(cid:90)
+n(cid:88)
+k=1
+=
+≤ n(cid:88)
+j=1
+j=1
+
+|uj (t) − vj (t)|p dt
+n(cid:88)
+j=1
+
+2
+p + 1
+
+(cid:107)λ − λ
+
+(cid:48)(cid:107)p
+p =
+
+k (t)|p dt
+(cid:48)
+
+(cid:96)j εp
+j +
+
+εp+1
+j
+
+.
+
+=
+
+=
+
+≤
+
+|uj − vj |p .
+
+Lemma 18 Let u1 , . . . , un ∈ R and v1 , . . . , vn ∈ R. Order them u(1) ≤ · · · ≤ u(n) and
+n(cid:88)
+|u(j ) − v(j ) |p ≤ n(cid:88)
+v(1) ≤ · · · ≤ v(n) . Then
+j=1
+j=1
+Proof Assume u1 < · · · < un , v1 < · · · < vn , and p ≥ 1. Let u and v denote (u1 , . . . , un )
+given by fn (σ) = (cid:80)n
+and (v1 , . . . , vn ). Let Σn denote the symmetric group on n letters and let fn : Σn → R be
+j=1 |uj − vσ(j ) |p . We will prove by induction that if fn (σ) is minimal
+then σ is the identity, which we denote by 1.
+For n = 1 this is trivial. For n = 2 assume without loss of generality that u1 = 0, u2 = 1
+and 0 ≤ v1 < v2 . Let 1 and τ denote the elements of Σ2 . Then f (1) = vp
+1 + |1 − v2 |p and
+1 − |1 − v1 |p < vp
+2 + |1 − v1 |p . Notice that f (1) < f (τ ) if and only if vp
+2 − |1 − v2 |p .
+f (τ ) = vp
+The result follows from checking that g(x) = xp − |1 − x|p is an increasing function for x ≥ 0.
+
+97
+
+Bubenik
+
+Now assume that the statement is true for some n ≥ 2. Assume that fn+1 (σ∗ ) is minimal.
+denotes omission. Since fn+1 (σ∗ ) is minimal for u and v , it follows that (cid:80)n
+Fix 1 ≤ i ≤ n + 1. Let u(cid:48) = (u1 , . . . , ˆui , . . . , un+1 ) and v (cid:48) = (v1 , . . . , ˆvσ∗ (i) , . . . , vn+1 ), where ˆ·
+j=1,j (cid:54)=i |uj − vσ∗ (j ) |
+is minimal for u(cid:48) and v (cid:48) . By the induction hypothesis, for 1 ≤ j < k ≤ n + 1 and j, k (cid:54)= i,
+Hence (cid:80)n
+j=1 |u(j ) − v(j ) |p ≤ (cid:80)n
+σ∗ (j ) < σ∗ (k). Therefore σ∗ = 1. Thus, by induction, the statement is true for all n.
+j=1 |uj − vj |p if u(1) < · · · < u(n) and v(1) < · · · < v(n) . The
+statement in the lemma follows by continuity.
+
+Lemma 19 Let x = (b, d) and x(cid:48) = (b(cid:48) , d(cid:48) ) where b ≤ d and b(cid:48) ≤ d(cid:48) . Let (cid:96) = d − b and
+ε = (cid:107)x − x(cid:48)(cid:107)∞ . Then (cid:107)λ({x}) − λ({x(cid:48)})(cid:107)p
+p ≤ (cid:96)εp + 2
+p+1 εp+1 .
+Proof Let λ = λ({x}) and λ(cid:48) = λ({x(cid:48)}). First λk = λ(cid:48)
+k = 0 for k > 1; so (cid:107)λ − λ(cid:48)(cid:107)p =
+1(cid:107)p . Second λ1 (t) = (h − |t − m|)+ , where h = d−b
+(cid:107)λ1 − λ(cid:48)
+2 , m = b+d
+2 , and y+ = max(y , 0),
+and similarly for λ(cid:48)
+0 εp dt + 2 (cid:82) ε
+p = 2 (cid:82) h
+1 (see Figure 2).
+1(cid:107)p
+Fix x and ε. As x(cid:48) moves along the square (cid:107)x − x(cid:48)(cid:107)∞ = ε, (cid:107)λ1 − λ(cid:48)
+p has a maximum
+if x(cid:48) = (a − ε, b + ε). In this case (cid:107)λ1 − λ(cid:48)
+1(cid:107)p
+0 tp dt = (cid:96)εp + 2
+p+1 εp+1 .
+responding {εj }. Assume that Wp (D , D (cid:48) ) ≤ 1. Then Wp (D , D (cid:48) )p = (cid:80)n
+∼=−→ D (cid:48) be a minimizer for Wp (D , D (cid:48) ), with cor-
+Proof [Proof of Corollary 15] Let ϕ : D
+j ≤ 1. So for
+j=1 εp
+1 ≤ j ≤ n, εj ≤ 1. Combining this with Theorem 14, we have that
+(cid:18)
+(cid:19)
+)p ≤ n(cid:88)
+(cid:96)j +
+Λp (D , D
+j=1
+2 (cid:96)j , (cid:96)j ≤ 2 W∞ (D , ∅). Hence
+Since W∞ (D , ∅) = max 1
+(cid:18)
+W∞ (D , ∅) +
+)p ≤ 2
+(cid:48)
+1
+(cid:104)
+p + 1
+
+2
+p + 1
+(cid:19)
+
+)p .
+(cid:105)−1
+
+Wp (D , D
+
+Λp (D , D
+
+εp
+j .
+
+(8)
+
+(9)
+
+(cid:48)
+
+(cid:48)
+
+Therefore Wp (D , D (cid:48) )p ≥ 1 or Wp (D , D (cid:48) )p ≥ 1
+2
+statement of the corollary follows.
+
+W∞ (D , ∅) + 1
+p+1
+
+Λp (D , D (cid:48) )p . The
+
+Theorem 16 follows from the following corollary to Theorem 14 which is of independent
+interest.
+Corollary 20 Let p ≥ k ≥ 1. Then
+(cid:20)
+
+(cid:48)
+
+)p ≤ W∞ (D , D
+
+(cid:48)
+
+)p−k
+
+W∞ (D , ∅)(Persk (D) + Persk (D
+
+(cid:48)
+
+))+
+
+Λp (D , D
+
+(cid:21)
+))
+
+1
+p + 1
+
+(Persk+1 (D) + Persk+1 (D
+
+(cid:48)
+
+98
+
+Persistence Landscapes
+
+(cid:96)(cid:48)
+Proof Let ϕ be a minimizer for W∞ (D , D (cid:48) ) with corresponding {εj }. If εj >
+(cid:96)j
+j
+2 then
+2 +
+) and similarly for x(cid:48)
+bj +dj
+bj +dj
+modify ϕ to pair xj = (bj , dj ) with ¯xj = (
+,
+j . Note that
+2
+2
+(cid:96)(cid:48)
+2 and (cid:107)x(cid:48)
+j − ¯x(cid:48)
+(cid:107)xj − ¯xj (cid:107)∞ =
+j (cid:107)∞ =
+2 , so ϕ is still a minimizer for W∞ (D , D (cid:48) ).
+(cid:96)j
+j
+Recall that for all j , (cid:96)j ≤ 2 W∞ (D , ∅). Since ϕ is a minimizer for W∞ (D , D (cid:48) ), for all j ,
+εj ≤ W∞ (D , D (cid:48) ). So applying our choice of ϕ to Theorem 14 we have,
+2 W∞ (D , ∅)
+ .
+n(cid:88)
+n(cid:88)
+)p ≤ W∞ (D , D
+)p−k
+(cid:48)
+Λp (D , D
+(cid:16)
+(cid:17)q ≤ 1
+j ≤ (cid:16) (cid:96)j
+j )q (cid:17)
+j=1
+j=1
+the convexity of α(x) = xq for q ≥ 1. Thus (cid:80)n
+(cid:96)(cid:48)
+for q ≥ 1, where the right hand side follows by
+((cid:96)j )q + ((cid:96)(cid:48)
+Now εq
+j
+2 +
+2
+2
+2 (Persq (D) + Persq (D (cid:48) )) for q ≥ 1.
+j ≤ 1
+j=1 εq
+The result follows.
+
+2
+p + 1
+
+(cid:48)
+
+εk
+j +
+
+εk+1
+j
+
+Proof [Proof of Theorem 16] Theorem 16 follows from Corollary 20 by the following two ob-
+servations. First, by the stability theorem of Cohen-Steiner et al. (2007), W∞ (D(f ), D(g)) ≤
+(cid:107)f − g(cid:107)∞ and W∞ (D(f ), ∅) ≤ (cid:107)f (cid:107)∞ . Second, if Persq (D(f )) ≤ CX,q for all tame Lips-
+chitz functions f : X → R with Lip(f ) ≤ 1, then for general tame Lipschitz functions,
+Persq (D(f )) ≤ CX,q Lip(f )q .
+
+References
+
+Robert J. Adler and Jonathan E. Taylor. Random Fields and Geometry. Springer Mono-
+graphs in Mathematics. Springer, New York, 2007. ISBN 978-0-387-48112-8.
+
+Robert J. Adler, Omer Bobrowski, Matthew S. Borman, Eliran Subag, and Shmuel Wein-
+berger. Persistent homology for random ﬁelds and complexes. In Borrowing Strength:
+Theory Powering Applications—a Festschrift for Lawrence D. Brown, volume 6 of Inst.
+Math. Stat. Col lect., pages 124–143. Inst. Math. Statist., Beachwood, OH, 2010.
+
+Andrew J. Blumberg, Itamar Gal, Michael A. Mandell, and Matthew Pancia. Robust
+statistics, hypothesis testing, and conﬁdence intervals for persistent homology on metric
+measure spaces. Found. Comput. Math., 14(4):745–789, 2014.
+ISSN 1615-3375. doi:
+10.1007/s10208-014-9201-4. URL http://dx.doi.org/10.1007/s10208-014-9201-4.
+
+Omer Bobrowski and Matthew Strom Borman. Euler integration of Gaussian random ﬁelds
+and persistent homology. J. Topol. Anal., 4(1):49–70, 2012. ISSN 1793-5253.
+
+Karol Borsuk. On the imbedding of systems of compacta in simplicial complexes. Fund.
+Math., 35:217–234, 1948. ISSN 0016-2736.
+
+Peter Bubenik and Jonathan A. Scott. Categoriﬁcation of persistent homology. Discrete
+Comput. Geom., 51(3):600–627, 2014. ISSN 0179-5376.
+
+99
+
+Bubenik
+
+Peter Bubenik, Gunnar Carlsson, Peter T. Kim, and Zhi-Ming Luo. Statistical topology
+In Algebraic Methods in
+via Morse theory persistence and nonparametric estimation.
+Statistics and Probability II, volume 516 of Contemp. Math., pages 75–92. Amer. Math.
+Soc., Providence, RI, 2010.
+
+Gunnar Carlsson. Topology and data. Bul l. Amer. Math. Soc. (N.S.), 46(2):255–308, 2009.
+ISSN 0273-0979.
+
+Gunnar Carlsson, Tigran Ishkhanov, Vin de Silva, and Afra Zomorodian. On the local
+behavior of spaces of natural images. Int. J. Comput. Vision, 76(1):1–12, 2008. ISSN
+0920-5691.
+
+Fr´ed´eric Chazal, David Cohen-Steiner, Marc Glisse, Leonidas J. Guibas, and Steve Y.
+Oudot. Proximity of persistence modules and their diagrams. In Proceedings of the 25th
+Annual Symposium on Computational Geometry, SCG ’09, pages 237–246, New York,
+NY, USA, 2009. ACM. ISBN 978-1-60558-501-7.
+
+Frederic Chazal, Vin de Silva, Marc Glisse, and Steve Oudot. The structure and stability
+of persistence modules. arXiv:1207.3674 [math.AT], 2012.
+
+Fr´ed´eric Chazal, Marc Glisse, Catherine Labru`ere, and Bertrand Michel. Optimal rates of
+convergence for persistence diagrams in topological data analysis. 2013. arXiv:1305.6239
+[math.ST].
+
+Fr´ed´eric Chazal, Brittany Terese Fasy, Fabrizio Lecci, Alessandro Rinaldo, and Larry
+Wasserman. Stochastic convergence of persistence landscapes and silhouettes. Symposium
+on Computational Geometry (SoCG), 2014.
+
+Chao Chen and Michael Kerber. An output-sensitive algorithm for persistent homology.
+Comput. Geom., 46(4):435–447, 2013. ISSN 0925-7721.
+
+Moo K. Chung, Peter Bubenik, and Peter T. Kim. Persistence diagrams in cortical surface
+data. In Information Processing in Medical Imaging (IPMI) 2009, volume 5636 of Lecture
+Notes in Computer Science, pages 386–397, 2009.
+
+David Cohen-Steiner, Herbert Edelsbrunner, and John Harer. Stability of persistence dia-
+grams. Discrete Comput. Geom., 37(1):103–120, 2007. ISSN 0179-5376.
+
+David Cohen-Steiner, Herbert Edelsbrunner, and John Harer. Extending persistence using
+Poincar´e and Lefschetz duality. Found. Comput. Math., 9(1):79–103, 2009. ISSN 1615-
+3375.
+
+David Cohen-Steiner, Herbert Edelsbrunner, John Harer, and Yuriy Mileyko. Lipschitz
+functions have Lp -stable persistence. Found. Comput. Math., 10(2):127–139, 2010. ISSN
+1615-3375.
+
+William Crawley-Boevey. Decomposition of pointwise ﬁnite-dimensional persistence mod-
+ules. arXiv:1210.0819 [math.RT], 2012.
+
+100
+
+Persistence Landscapes
+
+Vin de Silva and Gunnar Carlsson. Topological estimation using witness complexes. Euro-
+graphics Symposium on Point-Based Graphics, 2004.
+
+Vin De Silva and Robert Ghrist. Coverage in sensor networks via persistent homology.
+Algebr. Geom. Topol., 7:339–358, 2007a.
+
+Vin De Silva and Robert Ghrist. Homological sensor networks. Notic. Amer. Math. Soc.,
+54(1):10–17, 2007b.
+
+Mary-Lee Dequ´eant, Sebastian Ahnert, Herbert Edelsbrunner, Thomas M. A. Fink, Earl F.
+Glynn, Gaye Hattem, Andrzej Kudlicki, Yuriy Mileyko, Jason Morton, Arcady R. Mushe-
+gian, Lior Pachter, Maga Rowicka, Anne Shiu, Bernd Sturmfels, and Olivier Pourqui´e.
+Comparison of pattern detection methods in microarray time series of the segmentation
+clock. PLoS ONE, 3(8):e2856, 08 2008.
+
+Tamal Krishna Dey, Fengtao Fan, and Yusu Wang. Graph induced complex on point data. In
+Proceedings of the Twenty-ninth Annual Symposium on Computational Geometry, SoCG
+’13, pages 107–116, New York, NY, USA, 2013. ACM. ISBN 978-1-4503-2031-3.
+
+Persi Diaconis, Susan Holmes, and Mehrdad Shahshahani. Sampling from a manifold.
+arXiv:1206.6913 [math.ST], 2012.
+
+Herbert Edelsbrunner, David Letscher, and Afra Zomorodian. Topological persistence and
+simpliﬁcation. Discrete Comput. Geom., 28(4):511–533, 2002. ISSN 0179-5376. Discrete
+and computational geometry and graph drawing (Columbia, SC, 2001).
+
+Herbert Edelsbrunner, Dmitriy Morozov, and Amit Patel. Quantifying transversality by
+measuring the robustness of intersections. Found. Comput. Math., 11(3):345–361, 2011.
+ISSN 1615-3375.
+
+Brittany Terese Fasy, Fabrizio Lecci, Alessandro Rinaldo, Larry Wasserman, Sivaraman
+Balakrishnan, and Aarti Singh. Conﬁdence sets for persistence diagrams. Ann. Statist.,
+42(6):2301–2339, 2014. ISSN 0090-5364. doi: 10.1214/14-AOS1252. URL http://dx.
+doi.org/10.1214/14-AOS1252.
+
+Robert Ghrist. Barcodes: the persistent topology of data. Bul l. Amer. Math. Soc. (N.S.),
+45(1):61–75, 2008. ISSN 0273-0979.
+
+Allen Hatcher. Algebraic Topology. Cambridge University Press, Cambridge, 2002. ISBN
+0-521-79160-X; 0-521-79540-0.
+
+Giseon Heo, Jennifer Gamble, and Peter T. Kim. Topological analysis of variance and the
+maxillary complex. J. Amer. Statist. Assoc., 107(498):477–492, 2012. ISSN 0162-1459.
+
+J. Hoﬀmann-Jørgensen and G. Pisier. The law of large numbers and the central limit
+theorem in Banach spaces. Ann. Probability, 4(4):587–599, 1976.
+
+Violeta Kovacev-Nikolic, Giseon Heo, Dragan Nikoli´c, and Peter Bubenik. Using cycles in
+high dimensional data to analyze protein binding. 2014. arXiv:1412.1394 [stat.ME].
+
+101
+
+Bubenik
+
+Michel Ledoux and Michel Talagrand. Probability in Banach Spaces. Classics in Mathemat-
+ics. Springer-Verlag, Berlin, 2011. ISBN 978-3-642-20211-7. Isoperimetry and processes,
+Reprint of the 1991 edition.
+
+Yuriy Mileyko, Sayan Mukherjee, and John Harer. Probability measures on the space of
+persistence diagrams. Inverse Problems, 27(12):124007, 22, 2011. ISSN 0266-5611.
+
+Nikola Milosavljevi´c, Dmitriy Morozov, and Primoˇz ˇSkraba. Zigzag persistent homology in
+matrix multiplication time. In Computational Geometry (SCG’11), pages 216–225. ACM,
+New York, 2011.
+
+Dimitriy Morozov. Dionysus: a C++ library with various algorithms for computing per-
+sistent homology. Software available at http://www.mrzv.org/software/dionysus/,
+2012.
+
+Elizabeth Munch, Paul Bendich, Katharine Turner, Sayan Mukherjee, Jonathan Mat-
+tingly, and John Harer. Probabilistic fr´echet means and statistics on vineyards. 2013.
+arXiv:1307.6530 [math.PR].
+
+Vidit Nanda. Perseus: the persistent homology software. Software available at http:
+//www.math.rutgers.edu/~vidit/perseus/index.html, 2013.
+
+Monica Nicolau, Arnold J. Levine, and Gunnar Carlsson. Topology based data analysis
+identiﬁes a subgroup of breast cancers with a unique mutational proﬁle and excellent
+survival. Proc. Nat. Acad. Sci., 108(17):7265–7270, 2011.
+
+Andrew Robinson and Katharine Turner. Hypothesis testing for topological data analysis.
+2013. arXiv:1310.7467 [stat.AP].
+
+Andrew Tausz, Mikael Vejdemo-Johansson, and Henry Adams. Javaplex: a research soft-
+ware package for persistent (co)homology. Software available at http://code.google.
+com/javaplex, 2011.
+
+Katharine Turner, Yuriy Mileyko, Sayan Mukherjee, and John Harer. Fr´echet means for
+distributions of persistence diagrams. Discrete Comput. Geom., 52(1):44–70, 2014.
+
+Andrew T. A. Wood and Grace Chan. Simulation of stationary Gaussian processes in [0, 1]d .
+J. Comput. Graph. Statist., 3(4):409–432, 1994. ISSN 1061-8600.
+
+Afra Zomorodian and Gunnar Carlsson. Computing persistent homology. Discrete Comput.
+Geom., 33(2):249–274, 2005. ISSN 0179-5376.
+
+102
+
+

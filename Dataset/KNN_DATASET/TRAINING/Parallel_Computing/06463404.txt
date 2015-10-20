@@ -1,0 +1,1384 @@
+384
+
+IEEE TRANSACTIONS ON PARALLEL AND DISTRIBUTED SYSTEMS, VOL. 25, NO. 2, FEBRUARY 2014
+
+Decentralized Access Control with Anonymous
+Authentication of Data Stored in Clouds
+
+Sushmita Ruj, Member, IEEE, Mi los Sto jmenov ic, Member, IEEE, and
+Amiya Nayak, Sen ior Member, IEEE
+
+Abstract—We propose a new decentralized access control scheme for secure data storage in clouds that supports anonymous
+authentication. In the proposed scheme, the cloud verifies the authenticity of the series without knowing the user’s identity before storing
+data. Our scheme also has the added feature of access control in which only valid users are able to decrypt the stored information. The
+scheme prevents replay attacks and supports creation, modification, and reading data stored in the cloud. We also address user
+revocation. Moreover, our authentication and access control scheme is decentralized and robust, unlike other access control schemes
+designed for clouds which are centralized. The communication, computation, and storage overheads are comparable to centralized
+approaches.
+
+Index Terms—Access control, authentication, attribute-based signatures, attribute-based encryption, cloud storage
+
+Ç
+
+1 INTRODUCTION
+R ESEARCH in cloud computing is receiving a lot of
+attention from both academic and industrial worlds.
+In cloud computing, users can outsource their computation
+and storage to servers (also called clouds) using Internet.
+This frees users from the hassles of maintaining resources
+on-site. Clouds can provide several types of services like
+applications (e.g., Google Apps, Microsoft online), infra-
+structures (e.g., Amazon’s EC2, Eucalyptus, Nimbus), and
+platforms to help developers write applications (e.g.,
+Amazon’s S3, Windows Azure).
+Much of the data stored in clouds is highly sensitive, for
+example, medical records and social networks. Security and
+privacy are, thus, very important issues in cloud comput-
+ing. In one hand, the user should authenticate itself before
+initiating any transaction, and on the other hand, it must be
+ensured that the cloud does not tamper with the data that is
+outsourced. User privacy is also required so that the cloud
+or other users do not know the identity of the user. The
+cloud can hold the user accountable for the data it
+outsources, and likewise, the cloud is itself accountable
+for the services it provides. The validity of the user who
+stores the data is also verified. Apart from the technical
+solutions to ensure security and privacy, there is also a need
+for law enforcement.
+
+. S. Ruj is with Indian Statistical Institute, 203 B.T. Road, Kolkata 700108,
+India. E-mail: sush@isical.ac.in.
+. M. Stojmenovic is with the Univerzitet Singidunum, Danijelova 32,
+Belgrade 11000, Serbia. E-mail: mstojmenovic@singidunum.ac.rs.
+. A. Nayak is with the School of Electrical Engineering and Computer
+Science, University of Ottawa, 800 King Edward, Ottawa K1N6N5, ON,
+Canada. E-mail: anayak@site.uottawa.ca.
+
+Manuscript received 30 Sept. 2012; revised 28 Dec. 2012; accepted 11 Jan.
+2013; published online 14 Feb. 2013.
+Recommended for acceptance by X. Li, P. McDaniel, R. Poovendran, and
+G. Wang.
+For information on obtaining reprints of this article, please send e-mail to:
+tpds@computer.org, and reference IEEECS Log Number
+TPDSSI-2012-09-1006.
+Digital Object Identifier no. 10.1109/TPDS.2013.38.
+
+Recently, Wang et al. [2] addressed secure and depend-
+able cloud storage. Cloud servers prone to Byzantine
+failure, where a storage server can fail in arbitrary ways
+[2]. The cloud is also prone to data modification and server
+colluding attacks. In server colluding attack, the adversary
+can compromise storage servers, so that it can modify data
+files as long as they are internally consistent. To provide
+secure data storage,
+the data needs to be encrypted.
+However, the data is often modified and this dynamic
+property needs to be taken into account while designing
+efficient secure storage techniques.
+Efficient search on encrypted data is also an important
+concern in clouds. The clouds should not know the query
+but should be able to return the records that satisfy the
+query. This is achieved by means of searchable encryption
+[3], [4]. The keywords are sent to the cloud encrypted, and
+the cloud returns the result without knowing the actual
+keyword for the search. The problem here is that the data
+records should have keywords associated with them to
+enable the search. The correct records are returned only
+when searched with the exact keywords.
+Security and privacy protection in clouds are being
+explored by many researchers. Wang et al. [2] addressed
+storage security using Reed-Solomon erasure-correcting
+codes. Authentication of users using public key crypto-
+graphic techniques has been studied in [5]. Many homo-
+morphic encryption techniques have been suggested [6], [7]
+to ensure that the cloud is not able to read the data while
+performing computations on them. Using homomorphic
+encryption, the cloud receives ciphertext of the data and
+performs computations on the ciphertext and returns the
+encoded value of the result. The user is able to decode the
+result, but the cloud does not know what data it has
+operated on. In such circumstances, it must be possible for
+the user to verify that the cloud returns correct results.
+Accountability of clouds is a very challenging task and
+involves technical
+issues and law enforcement. Neither
+clouds nor users should deny any operations performed or
+requested. It is important to have log of the transactions
+performed; however, it is an important concern to decide
+
+1045-9219/14/$31.00 ß 2014 IEEE
+
+Published by the IEEE Computer Society
+
+RUJ ET AL.: DECENTRALIZED ACCESS CONTROL WITH ANONYMOUS AUTHENTICATION OF DATA STORED IN CLOUDS
+
+385
+
+how much information to keep in the log. Accountability
+has been addressed in TrustCloud [8]. Secure provenance
+has been studied in [9].
+Considering the following situation: A law student,
+Alice, wants to send a series of reports about some
+malpractices by authorities of University X to all
+the
+professors of University X , research chairs of universities in
+the country, and students belonging to Law department in
+all universities in the province. She wants to remain
+anonymous while publishing all evidence of malpractice.
+She stores the information in the cloud. Access control is
+important in such case, so that only authorized users can
+access the data. It is also important to verify that the
+information comes from a reliable source. The problems of
+access control, authentication, and privacy protection
+should be solved simultaneously. We address this problem
+in its entirety in this paper.
+Access control in clouds is gaining attention because it is
+important that only authorized users have access to valid
+service. A huge amount of information is being stored in the
+cloud, and much of this is sensitive information. Care
+should be taken to ensure access control of this sensitive
+information which can often be related to health, important
+documents (as in Google Docs or Dropbox) or even
+personal information (as in social networking). There are
+broadly three types of access control: user-based access control
+(UBAC), role-based access control (RBAC), and attribute-based
+access control (ABAC). In UBAC, the access control
+list
+contains the list of users who are authorized to access data.
+This is not feasible in clouds where there are many users. In
+RBAC (introduced by Ferraiolo and Kuhn [10]), users are
+classified based on their individual roles. Data can be
+accessed by users who have matching roles. The roles are
+defined by the system. For example, only faculty members
+and senior secretaries might have access to data but not the
+junior secretaries. ABAC is more extended in scope, in
+which users are given attributes, and the data has attached
+access policy. Only users with valid set of attributes,
+satisfying the access policy, can access the data. For
+instance, in the above example certain records might be
+accessible by faculty members with more than 10 years of
+research experience or by senior secretaries with more than
+8 years experience. The pros and cons of RBAC and ABAC
+are discussed in [11]. There has been some work on ABAC
+in clouds (for example, [12], [13], [14], [15], [16]). All these
+work use a cryptographic primitive known as attribute-
+based encryption (ABE). The eXtensible access control
+markup language [17] has been proposed for ABAC in
+clouds [18].
+An area where access control is widely being used is
+health care. Clouds are being used to store sensitive
+information about patients to enable access to medical
+professionals, hospital staff, researchers, and policy makers.
+It is important to control the access of data so that only
+authorized users can access the data. Using ABE,
+the
+records are encrypted under some access policy and stored
+in the cloud. Users are given sets of attributes and
+corresponding keys. Only when the users have matching
+set of attributes, can they decrypt the information stored in
+the cloud. Access control in health care has been studied in
+[12] and [13].
+
+Access control is also gaining importance in online social
+networking where users (members) store their personal
+information, pictures, videos and share them with selected
+groups of users or communities they belong to. Access
+control in online social networking has been studied in [19].
+Such data are being stored in clouds. It is very important
+that only the authorized users are given access to those
+information. A similar situation arises when data is stored
+in clouds, for example, in Dropbox, and shared with certain
+groups of people.
+It is just not enough to store the contents securely in the
+cloud but it might also be necessary to ensure anonymity of
+the user. For example, a user would like to store some
+sensitive information but does not want to be recognized.
+The user might want to post a comment on an article, but
+does not want his/her identity to be disclosed. However,
+the user should be able to prove to the other users that he/
+she is a valid user who stored the information without
+revealing the identity. There are cryptographic protocols
+like ring signatures [20], mesh signatures [21], group
+signatures [22], which can be used in these situations. Ring
+signature is not a feasible option for clouds where there are
+a large number of users. Group signatures assume the pre-
+existence of a group which might not be possible in clouds.
+Mesh signatures do not ensure if the message is from a
+single user or many users colluding together. For these
+reasons, a new protocol known as attribute-based signature
+(ABS) has been applied. ABS was proposed by Maji et al.
+[23]. In ABS, users have a claim predicate associated with a
+message. The claim predicate helps to identify the user as
+an authorized one, without revealing its identity. Other
+users or the cloud can verify the user and the validity of the
+message stored. ABS can be combined with ABE to achieve
+authenticated access control without disclosing the identity
+of the user to the cloud.
+Existing work [12], [13], [14], 15], [16], [18], [38] on access
+control in cloud are centralized in nature. Except [38] and
+[18], all other schemes use ABE. The scheme in [38] uses a
+symmetric key approach and does not support authentica-
+tion. The schemes [12], [13], [16] do not support authentica-
+tion as well. Earlier work by Zhao et al. [15] provides
+privacy preserving authenticated access control in cloud.
+However, the authors take a centralized approach where a
+single key distribution center (KDC) distributes secret keys
+and attributes to all users. Unfortunately, a single KDC is
+not only a single point of failure but difficult to maintain
+because of the large number of users that are supported in a
+cloud environment. We, therefore, emphasize that clouds
+should take a decentralized approach while distributing
+secret keys and attributes to users. It is also quite natural for
+clouds to have many KDCs in different locations in the
+world. Although Yang et al. [34] proposed a decentralized
+approach, their technique does not authenticate users, who
+want to remain anonymous while accessing the cloud. In an
+earlier work, Ruj et al. [16] proposed a distributed access
+control mechanism in clouds. However, the scheme did not
+provide user authentication. The other drawback was that a
+user can create and store a file and other users can only read
+the file. Write access was not permitted to users other than
+the creator. In the preliminary version of this paper [1], we
+
+386
+
+IEEE TRANSACTIONS ON PARALLEL AND DISTRIBUTED SYSTEMS, VOL. 25, NO. 2, FEBRUARY 2014
+
+extend our previous work with added features that enables
+to authenticate the validity of
+the message without
+revealing the identity of the user who has stored informa-
+tion in the cloud. In this version we also address user
+revocation, that was not addressed in [1]. We use ABS
+scheme [24] to achieve authenticity and privacy. Unlike
+[24], our scheme is resistant to replay attacks, in which a
+user can replace fresh data with stale data from a previous
+write, even if it no longer has valid claim policy. This is an
+important property because a user, revoked of its attributes,
+might no longer be able to write to the cloud. We, therefore,
+add this extra feature in our scheme and modify [24]
+appropriately. Our scheme also allows writing multiple
+times which was not permitted in our earlier work [16].
+
+1.1 Our Contributions
+The main contributions of this paper are the following:
+
+1. Distributed access control of data stored in cloud so
+that only authorized users with valid attributes can
+access them.
+2. Authentication of users who store and modify their
+data on the cloud.
+3. The identity of the user is protected from the cloud
+during authentication.
+4. The architecture is decentralized, meaning that there
+can be several KDCs for key management.
+5. The access control and authentication are both
+collusion resistant, meaning that no two users can
+collude and access data or authenticate themselves,
+if they are individually not authorized.
+6. Revoked users cannot access data after they have
+been revoked.
+7. The proposed scheme is resilient to replay attacks. A
+writer whose attributes and keys have been revoked
+cannot write back stale information.
+8. The protocol supports multiple read and write on
+the data stored in the cloud.
+9. The costs are comparable to the existing centralized
+approaches, and the expensive operations are mostly
+done by the cloud.
+
+1.2 Organization
+The paper is organized as follows: Related work is
+presented in Section 2. The mathematical background and
+assumptions are detailed in Section 3. We present our
+privacy preserving access control scheme in Section 4
+followed by a real life example in Section 5. The security
+is analyzed in Section 6. Computation complexity is
+discussed in Section 7, and comparison with other work is
+presented in Section 8. We conclude in Section 9.
+
+2 RELATED WORK
+
+ABE was proposed by Sahai and Waters [26]. In ABE, a user
+has a set of attributes in addition to its unique ID. There are
+two classes of ABEs. In key-policy ABE or KP-ABE (Goyal
+et al. [27]), the sender has an access policy to encrypt data. A
+writer whose attributes and keys have been revoked cannot
+write back stale information. The receiver receives attributes
+and secret keys from the attribute authority and is able to
+
+decrypt
+In
+it has matching attributes.
+information if
+Ciphertext-policy, CP-ABE ([28], [29]), the receiver has the
+access policy in the form of a tree, with attributes as leaves
+and monotonic access structure with AND, OR and other
+threshold gates.
+All the approaches take a centralized approach and
+allow only one KDC, which is a single point of failure.
+Chase [30] proposed a multiauthority ABE, in which there
+are several KDC authorities (coordinated by a trusted
+authority) which distribute attributes and secret keys to
+users. Multiauthority ABE protocol was studied in [31] and
+[32], which required no trusted authority which requires
+every user to have attributes from at all the KDCs. Recently,
+Lewko and Waters [35] proposed a fully decentralized ABE
+where users could have zero or more attributes from each
+authority and did not require a trusted server. In all these
+cases, decryption at user’s end is computation intensive. So,
+this technique might be inefficient when users access using
+their mobile devices. To get over this problem, Green et al.
+[33] proposed to outsource the decryption task to a proxy
+server, so that
+the user can compute with minimum
+resources (for example, hand held devices). However, the
+presence of one proxy and one KDC makes it less robust
+than decentralized approaches. Both these approaches had
+no way to authenticate users, anonymously. Yang et al. [34]
+presented a modification of [33], authenticate users, who
+want to remain anonymous while accessing the cloud.
+To ensure anonymous user authentication ABSs were
+introduced by Maji et al. [23]. This was also a centralized
+approach. A recent scheme by Maji et al. [24] takes a
+decentralized approach and provides authentication without
+disclosing the identity of the users. However, as mentioned
+earlier in the previous section it is prone to replay attack.
+
+3 BACKGROUND
+
+In this section, we present our cloud storage model,
+adversary model and the assumptions we have made in
+the paper. Table 1 presents the notations used throughout
+the paper. We also describe mathematical background used
+in our proposed solution.
+
+3.1 Assumptions
+We make the following assumptions in our work:
+
+1. The cloud is honest-but-curious, which means that
+the cloud administrators can be interested in view-
+ing user’s content, but cannot modify it. This is a
+valid assumption that has been made in [12] and
+[13]. Honest-but-curious model of adversaries do not
+tamper with data so that they can keep the system
+functioning normally and remain undetected.
+2. Users can have either read or write or both accesses
+to a file stored in the cloud.
+3. All communications between users/clouds are se-
+cured by secure shell protocol, SSH.
+
+3.2 Formats of Access Policies
+Access policies can be in any of the following formats:
+1) Boolean functions of attributes, 2) linear secret sharing
+scheme (LSSS) matrix, or 3) monotone span programs. Any
+access structure can be converted into a Boolean function
+
+RUJ ET AL.: DECENTRALIZED ACCESS CONTROL WITH ANONYMOUS AUTHENTICATION OF DATA STORED IN CLOUDS
+
+387
+
+TABLE 1
+Notations
+
+3.4 Attribute-Based Encryption
+ABE with multiple authorities as proposed by Lewko and
+Waters [35] proceeds as follows [16]:
+
+3.4.1 System Initialization
+Select a prime q, generator g of G0 , groups G0 and GT of
+order q, a map e : G0  G0 ! GT , and a hash function H :
+f0; 1g ! G0 that maps the identities of users to G0 . The
+T
+hash function used here is SHA-1. Each KDC Aj 2 A has a
+Lj ¼  for
+set of attributes Lj . The attributes disjoint (Li
+i 6¼ j). Each KDC also chooses two random exponents
+i ; yi 2 ZZq . The secret key of KDC Aj is
+SK ½j ¼ fi ; yi ; i 2 Lj g:
+The public key of KDC Aj is published
+P K ½j ¼ feðg; gÞi ; gyi ; i 2 Lj g:
+
+ð2Þ
+
+ð1Þ
+
+3.4.2 Key Generation and Distribution by KDCs
+User Uu receives a set of attributes I ½j; u from KDC Aj , and
+corresponding secret key ski;u for each i 2 I ½j; u
+ð3Þ
+ski;u ¼ gi H ðuÞyi ;
+where i ; yi 2 SK ½j. Note that all keys are delivered to the
+user securely using the user’s public key, such that only that
+user can decrypt it using its secret key.
+
+3.4.3 Encryption by Sender
+The encryption function is ABE :EncryptðM SG; X Þ. Sender
+decides about the access tree X . LSSS matrix R can be
+derived as described in Section 3.2. Sender encrypts
+message M SG as follows:
+1. Choose a random seed s 2 ZZq and a random vector
+v 2 ZZh
+q , with s as its first entry; h is the number of
+leaves in the access tree (equal to the number of rows
+in the corresponding matrix R).
+2. Calculate x ¼ Rx  v, where Rx is a row of R.
+3. Choose a random vector w 2 ZZh
+q with 0 as the first
+entry.
+4. Calculate !x ¼ Rx  w.
+For each row Rx of R, choose a random x 2 ZZq .
+5.
+6. The following parameters are calculated:
+C0 ¼ M SGeðg; gÞs ;
+C1;x ¼ eðg; gÞx eðg; gÞðxÞ x ; 8x;
+C2;x ¼ gx 8x;
+C3;x ¼ gyðxÞ x g!x 8x;
+where ðxÞ is mapping from Rx to the attribute i that
+is located at the corresponding leaf of the access tree.
+7. The ciphertext C is sent by the sender (it also
+includes the access tree via R matrix):
+C ¼ hR; ; C0 ; fC1;x ; C2;x ; C3;x ; 8xgi:
+
+ð4Þ
+
+ð5Þ
+
+3.4.4 Decryption by Receiver
+The decryption function is ABE :DecryptðC ; fski;u gÞ, where
+C is given by (5). Receiver Uu takes as input ciphertext C ,
+secret keys fski;u g, group G0 , and outputs message msg. It
+
+[35]. An example of a Boolean function is ðða1 ^ a2 ^ a3 Þ _
+ða4 ^ a5 ÞÞ ^ ða6 _ a7 ÞÞ, where a1 ; a2 ; . . . ; a7 are attributes.
+Let Y : f0; 1gn ! f0; 1g be a monotone Boolean function
+[24]. A monotone span program for Y over a field IF is an
+l  t matrix M with entries in IF, along with a labeling
+function a : ½l ! ½n that associates each row of M with an
+input variable of Y , such that, for every ðx1 ; x2 . . . ; xn Þ 2
+f0; 1gn , the following condition is satisfied:
+Y ðx1 ; x2 ; . . . ; xn Þ ¼ 1 , 9v 2 IF1l : vM
+¼ ½1; 0; 0; . . . ; 0 and ð8i : xaðiÞ
+¼ 0 ) vi ¼ 0Þ:
+In other words, Y ðx1 ; x2 ; . . . ; xn Þ ¼ 1 if and only if the rows
+of M indexed by fijxaðiÞ ¼ 1g span the vector ½1; 0; 0; . . . ; 0.
+Span programs can be constructed from Boolean functions in
+a similar way as shown later in Section 5.
+
+3.3 Mathematical Background
+We will use bilinear pairings on elliptic curves. Let G be a
+cyclic group of prime order q generated by g. Let GT be a
+group of order q. We can define the map e : G  G ! GT .
+The map satisfies the following properties:
+eðaP ; bQÞ ¼ eðP ; QÞab for all P ; Q 2 G and a; b 2 ZZq ,
+1.
+ZZq ¼ f0; 1; 2; . . . ; q   1g.
+2. Nondegenerate: eðg; gÞ 6¼ 1.
+Bilinear pairing on elliptic curves groups is used. We do
+not discuss the pairing functions which mainly use Weil and
+Tate pairings [36] and computed using Miller’s algorithm.
+The choice of curve is an important consideration because it
+determines the complexity of pairing operations.
+
+388
+
+IEEE TRANSACTIONS ON PARALLEL AND DISTRIBUTED SYSTEMS, VOL. 25, NO. 2, FEBRUARY 2014
+
+2.
+
+obtains the access matrix R and mapping  from C . It then
+T
+executes the following steps:
+1. Uu calculates the set of attributes fðxÞ : x 2 Xg
+Iu
+that are common to itself and the access matrix. X is
+the set of rows of R.
+For each of these attributes, it checks if there is a
+subset X 0 of rows of R, such that
+the vector
+ð1; 0; . . . ; 0Þ is their linear combination .
+P
+If not ,
+decryption is impossible. If yes, it calculates con-
+stants cx 2 ZZq , such that
+x2X 0 cxRx ¼ ð1; 0; . . . ; 0Þ.
+3. Decryption proceeds as follows:
+For each x 2 X 0 , decðxÞ ¼ C1;x eðH ðuÞ;C3;x Þ
+a.
+eðskðxÞ;u ;C2;x Þ .
+b. Uu computes M SG ¼ C0 =x2X 0 decðxÞ.
+3.5 Attribute-Based Signature Scheme
+ABS scheme [24] has the following steps.
+
+3.5.1 System Initialization
+Select a prime q, and groups G1 and G2 , which are of order
+q. We define the mapping ^e : G1  G1 ! G2 . Let g1 ; g2 be
+generators of G1 and hj be generators of G2 , for j 2 ½tmax ,
+for arbitrary tmax . Let H be a hash function. Let A0 ¼ ha0
+0 ,
+where a0 2 ZZ
+is chosen at random. ðT S ig; T V erÞ mean
+q
+T S ig is the private key with which a message is signed and
+T V er is the public key used for verification. The secret key
+for the trustee is T SK ¼ ða0 ; T S igÞ and public key is
+T P K ¼ ðG1 ; G2 ; H; g1 ; A0 ; h0 ; h1 ; . . . ; htmax ; g2 ; T V erÞ.
+
+3.5.2 User Registration
+For a user with identity Uu the KDC draws at random
+Kbase 2 G. Let K0 ¼ K 1=a0
+base . The following token  is output
+ ¼ ðu; Kbase ; K0 ; Þ;
+ð6Þ
+where  is signature on ukKbase using the signing key T S ig.
+
+3.5.3 KDC Setup
+Choose a; b 2 ZZ
+j , Bij ¼ hb
+q randomly and compute: Aij ¼ ha
+j ,
+for Ai 2 AA, j 2 ½tmax . The private key of ith KDC is
+ASK ½i ¼ ða; bÞ and public key AP K ½i ¼ ðAij ; Bij jj 2 ½tmax Þ.
+
+3.5.4 Attribute Generation
+The token verification algorithm verifies the signature
+contained in  using the signature verification key T V er in
+T P K . This algorithm extracts Kbase from  using ða; bÞ
+from ASK ½i and computes Kx ¼ K 1=ðaþbxÞ
+, x 2 J ½i; u. The
+base
+key Kx can be checked for consistency using algorithm
+
+ 
+ABS :K eyCheckðT P K ; AP K ½i;  ; Kx Þ, which checks
+¼ ^eðKbase ; hj Þ;
+Kx ; AijBx
+^e
+ij
+for all x 2 J ½i; u and j 2 ½tmax .
+
+3.5.5 Sign
+The algorithm
+ABS :S ignðT P K ; fAP K ½i : i 2 AT ½ug;
+ ; fKx : x 2 Ju g; M SG; Y Þ;
+
+has input the public key of the trustee, the secret key of the
+signer, the message to be signed and the policy claim Y . The
+
+policy claim is first converted into the span program
+M 2 ZZlt
+, with rows labeled with attributes. Mx denotes
+q
+row x of M . Let 0 denote the mapping from rows to the
+attributes. So, 0 ðxÞ is the mapping from Mx to attribute x. A
+vec tor v is compu ted tha t sa t is f ies the ass ignmen t
+fx : x 2 J ½i; ug. Compute  ¼ HðM SGkY Þ. Choose r0 2 ZZ
+
+
+ 
+ 
+q
+and ri 2 ZZq ; i 2 Ju , and compute:
+Y ¼ K r0
+ri ð8i 2 Ju Þ;
+base ; Si ¼
+r0 :
+K vi
+
+ 
+i
+
+g2 g
+1
+
+ð7Þ
+
+0 ; Pj ¼ i2AT ½u
+W ¼ K r0
+The signature is calculated as
+ ¼ ðY ; W ; S1 ; S2 ; . . . ; St ; P1 ; P2 ; . . . ; Pt Þ:
+
+AijB0 ðiÞ
+ij
+
+Mij ri ð8j 2 ½tÞ:
+
+ð8Þ
+
+ð9Þ
+
+3.5.6 Verify
+Algorithm
+ABS :V erif yðT P K ;  ¼ ðY ; W ; S1 ; S2 ; . . . ; St ;
+P1 ; P2 ; . . . ; Pt Þ; M SG; Y Þ;
+converts Y to the corresponding monotone program
+M 2 ZZlt
+, with rows labeled with attributes. Compute  ¼
+q
+HðM SGkY Þ.
+If Y ¼ 1, ABS :V erif y ¼ 0 mean ing fa lse .
+Otherwise, the following constraints are checked
+^eðW ; A0 Þ ¼? ^eðY ; h0 Þ;
+
+
+ 
+
+
+
+ 
+; j ¼ 1;
+^eðY ; h1 Þ^e
+g2 g
+1 ; P1
+g2 g
+^e
+; j > 1;
+1 ; Pj
+
+ 
+Si ; Ai0 jB0 ðiÞ
+i2l ^e
+i0 j
+where i0 ¼ AT ½i.
+
+ð11Þ
+
+ð10Þ
+
+¼?
+
+Mij
+
+4 PROPOSED PRIVACY PRESERVING
+AUTHENTICATED ACCESS CONTROL SCHEME
+
+In this sect ion , we propose our pr ivacy preserv ing
+authenticated access control scheme. According to our
+scheme a user can create a file and store it securely in the
+cloud. This scheme consists of use of the two protocols ABE
+and ABS, as discussed in Sections 3.4 and 3.5, respectively.
+We will first discuss our scheme in details and then provide
+a concrete example to demonstrate how it works. We refer
+to the Fig. 1. There are three users, a creator, a reader, and
+writer. Creator Alice receives a token  from the trustee,
+who is assumed to be honest. A trustee can be someone like
+the federal government who manages social
+insurance
+numbers etc. On presenting her id (like health/social
+insurance number), the trustee gives her a token  . There
+are multiple KDCs (here 2), which can be scattered. For
+example, these can be servers in different parts of the world.
+A creator on presenting the token to one or more KDCs
+receives keys for encryption/decryption and signing. In the
+Fig. 1, SK s are secret keys given for decryption, Kx are keys
+for signing. The message M SG is encrypted under the
+access policy X . The access policy decides who can access
+the data stored in the cloud. The creator decides on a claim
+policy Y , to prove her authenticity and signs the message
+under this claim. The ciphertext C with signature is c, and is
+sent to the cloud. The cloud verifies the signature and stores
+
+389
+RUJ ET AL.: DECENTRALIZED ACCESS CONTROL WITH ANONYMOUS AUTHENTICATION OF DATA STORED IN CLOUDS
+ ¼ ABS :S ignðPublic key of trustee; Public key of KDCs;
+token; signing key; message; access claimÞ:
+
+The following information is then sent in the cloud
+ð13Þ
+c ¼ ðC ;  ; ; Y Þ:
+The cloud on receiving the information verifies the
+access claim using the algorithm ABS :verif y. The creator
+checks the value of V ¼ ABS :V erif yðT P K ; ; c; Y Þ. If V ¼ 0,
+then authentication has failed and the message is discarded.
+Else, the message ðC ;  Þ is stored in the cloud.
+
+4.2 Reading from the Cloud
+When a user requests data from the cloud, the cloud sends
+the ciphertext C using SSH protocol. Decryption proceeds
+using algorithm ABE :DecryptðC ; fski;u gÞ and the message
+M SG is calculated as given in Section 3.4.4.
+
+4.3 Writing to the Cloud
+To write to an already existing file, the user must send its
+message with the claim policy as done during file creation.
+The cloud verifies the claim policy, and only if the user is
+authentic, is allowed to write on the file.
+
+4.4 User Revocation
+We have just discussed how to prevent replay attacks. We
+will now discuss how to handle user revocation. It should
+be ensured that users must not have the ability to access
+data, even if they possess matching set of attributes. For this
+reason, the owners should change the stored data and send
+updated information to other users. The set of attributes Iu
+possessed by the revoked user Uu is noted and all users
+change their stored data that have attributes i 2 Iu . In [13],
+revocation involved changing the public and secret keys of
+the minimal set of attributes which are required to decrypt
+the data. We do not consider this approach because here
+different data are encrypted by the same set of attributes, so
+such a minimal set of attributes is different for different
+users. Therefore, this does not apply to our model. Once
+the attributes Iu are identified, all data that possess the
+attributes are collected. For each such data record, the
+following steps are then carried out:
+1. A new value of s, snew 2 ZZq is selected.
+2. The first entry of vector vnew is changed to new snew .
+3. x ¼ Rx vnew is calculated, for each row x corre-
+sponding to leaf attributes in Iu .
+4. C1;x is recalculated for x.
+5. New value of C1;x is securely transmitted to the cloud.
+6. New C0 ¼ M eðg; gÞsnew is calculated and stored in the
+cloud.
+7. New value of C1;x is not stored with the data, but is
+transmitted to users, who wish to decrypt the data.
+We note here that the new value of C1;x is not stored in
+the cloud but transmitted to the nonrevoked users who have
+attribute corresponding to x. This prevents a revoked user to
+decrypt the new value of C0 and get back the message.
+
+5 REAL LIFE EXAMPLE
+
+We now revisit the problem we stated in the introduction.
+We will use a relaxed setting. Suppose Alice is a law
+student and wants to send a series of reports about
+
+Fig. 1. Our secure cloud storage model.
+
+the ciphertext C . When a reader wants to read, the cloud
+sends C . If the user has attributes matching with access
+policy, it can decrypt and get back original message.
+Write proceeds in the same way as file creation. By
+designating the verification process to the cloud, it relieves
+the individual users from time consuming verifications.
+When a reader wants to read some data stored in the cloud,
+it tries to decrypt it using the secret keys it receives from the
+KDCs. If it has enough attributes matching with the access
+policy, then it decrypts the information stored in the cloud.
+
+4.1 Data Storage in Clouds
+A user Uu first registers itself with one or more trustees. For
+simplicity we assume there is one trustee. The trustee gives
+it a token  ¼ ðu; Kbase ; K0 ; Þ, where  is the signature on
+ukKbase signed with the trustees private key T S ig (by (6)).
+The KDCs are given keys P K ½i; SK ½i for encryption/
+decryption and ASK ½i; AP K ½i for signing/verifying. The
+user on presenting this token obtains attributes and secret
+keys from one or more KDCs. A key for an attribute x
+belonging to KDC Ai is calculated as Kx ¼ K 1=ðaþbxÞ
+, where
+base
+ða; bÞ 2 ASK ½i. The user also receives secret keys skx;u for
+encrypting messages. The user then creates an access policy
+X which is a monotone Boolean function. The message is
+then encrypted under the access policy as
+C ¼ ABE :EncryptðM SG; X Þ:
+ð12Þ
+The user also constructs a claim policy Y to enable the cloud
+to authenticate the user. The creator does not send the
+message M SG as is, but uses the time stamp  and creates
+HðC Þk . This is done to prevent replay attacks. If the time
+stamp is not sent, then the user can write previous stale
+message back to the cloud with a valid signature, even
+when its claim policy and attributes have been revoked. The
+original work by Maji et al. [24] suffers from replay attacks.
+In their scheme, a writer can send its message and correct
+signature even when it no longer has access rights. In our
+scheme a writer whose rights have been revoked cannot
+create a new signature with new time stamp and, thus,
+cannot write back stale information.
+then signs the
+It
+message and calculates the message signature as
+
+390
+
+IEEE TRANSACTIONS ON PARALLEL AND DISTRIBUTED SYSTEMS, VOL. 25, NO. 2, FEBRUARY 2014
+
+Later when a valid user, say Bob wants to modify any of
+these reports he also attaches a set of claims which the cloud
+verifies. For example, Bob is a research chair and might
+send a claim “Research chair” or “Department head” which
+is then verified by the cloud. It then sends the encrypted
+data to the Bob. Since Bob is a valid user and has matching
+attributes, he can decrypt and get back the information.
+If Bob wants to read the contents without modifying
+them, then there is no need to attach a claim. He will be able
+to decrypt only if he is a Professor in University X or a
+Research chair in one of the universities X ; Y ; Z or a student
+belonging to Department of Law in university X .
+Here it is to be noted that the attributes can belong to
+several KDCs. For example, the Professors belonging to
+university X have credentials given by the university X ,
+and the Ph.D. degree from a University P, the student
+counselor might be a psychologist authorized by the
+Canadian Psychological Association and assigned an
+employee number by a university,
+the research chairs
+can be jointly appointed by the universities X , Y , Z and
+the government. The students can have credentials from
+the university and also a department.
+the
+for example,
+Initially, Alice goes to a trustee,
+Canadian health service and presents her a health insurance
+number or federal agency presents her a social insurance
+number. Either or both of these trustees can give her
+token(s)  ¼ ðu; Kbase ; K0 ; Þ. With the token she approaches
+the KDCs in the university X and department D and
+obtains the secret keys for decryption and for keys Kx and
+Ky for signing the assess policy. She can also access the
+public keys AP K ½i of other KDCs. The entire process is
+carried on in the following way:
+
+5.1 Data Storage in Clouds
+Let the data be denoted by M SG, X is the access policy
+
+((Prof AND Uni. X) OR
+(Research Chair AND ((Uni X OR Uni Y) OR Uni Z)) OR
+((Student AND Dept Law)AND Uni X).
+
+Alice encrypts the data and obtains the ciphertext
+C ¼ EncðM SG; X Þ:
+Alice also decides on a claim policy Y which is shown in
+Fig. 2. From the matrix, v ¼ ð1; 1; 0; 0; 0Þ can be calculated.
+The values of Y ; W ; S1 ; S2 ; S3 ; S4 ; S5 ; P1 ; P2 can be calcu-
+lated.  ¼ HðM SGkY Þ. The current time stamp  is attached
+to the ciphertext to prevent replay attacks. The signature 
+is calculated as ABS :S ign. The ciphertext
+c ¼ ðC ;  ; ; Y Þ:
+
+is then send to the cloud. The cloud verifies the signature
+using the function ABS :V erif y as given in (11). If Alice has
+valid credentials then the ciphertext ðC ;  Þ is stored, else it
+is discarded.
+
+5.2 Reading from the Cloud and Modifying Data
+Suppose Bob wants to access the records stored by Alice.
+Bob then decrypts the message M SG using his secret keys
+using function ABE :Decrypt. Writing proceeds like file
+creation. It is to be noted that the time  is added to the data
+so that even if Bob’s credentials are revoked, he cannot
+write stale data in the cloud.
+
+Fig. 2. Example of claim policy.
+
+malpractices by authorities of University X to all
+the
+professors of University X , Research chairs of universities
+X ; Y ; Z and students belonging to Law department
+in
+university X . She wants to remain anonymous, while
+publishing all evidence. All information is stored in the
+cloud. It is important that users should not be able to know
+her identity, but must trust that the information is from a
+valid source. For this reason she also sends a claim message
+which states that she “Is a law student” or “Is a student
+counselor” or “Professor at university X .” The tree
+corresponding to the claim policy is shown in Fig. 2.
+The leaves of the tree consists of attributes and the
+intermediary nodes consists of Boolean operators. In this
+example the attributes are “Student,” “Prof,” “Dept Law,”
+“Uni X,” “Counselor.” The above claim policy can be
+written as a Boolean function of attributes as
+
+((Student AND Dept Law) OR (Prof AND Uni X)) OR
+(Student Counselor).
+
+Boolean functions can also be represented by access tree,
+with attributes at the leaves and ANDð^Þ and ORð_Þ as the
+intermediate nodes and root. Boolean functions can be
+converted to LSSS matrix as below: Let v½x be parents
+vector. If node x ¼ AND, then the left child is ðv½xj1Þ, and
+the right child is ð0; . . . ; 1Þ. If x ¼ OR, then both children
+also have unchanged vector v½x. Finally, pad with 0s in
+front, such that all vectors are of equal length. The proof of
+validity of the algorithm is given in [25]. We do not present
+it here due to lack of space.
+0
+1
+Using this algorithm, the span program for this policy is
+CCCCA:
+BBBB@
+
+1
+1
+0  1
+1
+1
+0  1
+1
+0
+An assignment v ¼ ðv1 ; v2 ; v3 ; v4 ; v5 Þ satisfies this span
+program if vM ¼ ð1; 0Þ.
+The cloud should verify that Alice indeed satisfies this
+claim. Since she is a law student, v ¼ ð1; 1; 0; 0; 0Þ and is a
+valid assignment. As a valid user she can then store all the
+encrypted records under the set of access policy that she has
+decided. The access policy in case of Alice is
+
+M ¼
+
+((Prof AND Uni. X) OR
+(Research Chair AND ((Uni X OR Uni Y) OR Uni Z)) OR
+((Student AND Dept Law)AND Uni X).
+
+RUJ ET AL.: DECENTRALIZED ACCESS CONTROL WITH ANONYMOUS AUTHENTICATION OF DATA STORED IN CLOUDS
+
+391
+
+6 SECURITY OF THE PROTOCOL
+
+In this section, we will prove the security of the protocol.
+We will show that our scheme authenticates a user who
+wants to write to the cloud. A user can only write provided
+the cloud is able to validate its access claim. An invalid user
+cannot receive attributes from a KDC, if it does not have the
+credentials from the trustee. If a user’s credentials are
+revoked, then it cannot replace data with previous stale
+data, thus preventing replay attacks.
+
+Theorem 1. Our access control scheme is secure (no outsider or
+cloud can decrypt ciphertexts), collusion resistant and allows
+access only to authorized users.
+
+Proof. We first show that no unauthorized user can access
+data from the cloud. We will first prove the validity of
+our scheme. A user can decrypt data if and only if it has a
+matching set of attributes. This follows from the fact that
+P
+access structure S (and hence matrix R) is constructed if
+and only if there exists a set of rows X 0 in R, and linear
+constants cx 2 ZZq , such that
+x2X 0 cxRx ¼ ð1; 0; . . . ; 0Þ. A
+proof of this appear in [25, Chapter 4].
+We note that
+decðxÞ ¼ C1;x eðH ðuÞ; C3;x Þ
+eðskðxÞ;u ; C2;x Þ ¼ eðg; gÞx eðH ðuÞ; gÞ!x :
+
+ð14Þ
+
+Thus,
+
+ð15Þ
+
+x2X 0 decðxÞ
+¼ x2X 0 ðeðg; gÞx eðH ðuÞ; gÞ!x Þcx
+¼ eðg; gÞs :
+Equation (15) above holds because x ¼ Rx  v and
+!x ¼ Rx  w, where v  ð1; 0; . . . ; 0Þ ¼ r and !  ð1; 0; . . . ;
+0Þ ¼ 0. C0 =x2X 0 decðxÞ ¼ C0 =eðg; gÞs ¼ M .
+P
+For an invalid user, there does not exists attributes
+x2X 0 cxRx ¼
+correspond ing to rows x, such tha t
+ð1; 0; . . . ; 0Þ. Thus, eðg; gÞs cannot be calculated.
+We next show that two or more users cannot collude
+P
+and gain access to data that they are not individually
+supposed to access. Suppose that there exist attributes
+x2X cxRx ¼
+ðxÞ f r om t h e c o l l ud e r s , su c h th a t
+ð1; 0; . . . ; 0Þ. However, eðH ðuÞ; gÞ!x needs to be calculated
+according to (15). Since different users have different
+values of eðH ðuÞ; gÞ, even if they combine their attributes,
+they cannot decrypt the message.
+We next observe that the cloud cannot decode stored
+data. This is because it does not posses the secret keys
+ski;u (by (3)). Even if it colludes with other users, it
+cannot decrypt data which the users cannot themselves
+decrypt, because of the above reason (same as collusion
+of users). The KDCs are located in different servers and
+are not owned by the cloud. For this reason, even if some
+(but not all) KDCs are compromised, the cloud cannot
+tu
+decode data.
+Theorem 2. Our authentication scheme is correct, collusion
+secure, resistant to replay attacks, and protects privacy of
+the user.
+
+Proof. We first note that only valid users registered with the
+trustee(s) receive attributes and keys from the KDCs. A
+
+TABLE 2
+Notations
+
+user’s token is  ¼ ðu; Kbase ; K0 ; Þ, where  is signature
+on ukKbase with T S ig belonging to the trustee. An invalid
+user with a different user-id cannot create the same
+signature because it does not know T S ig.
+We next show that only a valid user with valid
+access claim is only able to store the message in the
+cloud. This follows from the functions ABS :S ign and
+ABS :V erif y given in Section 3.5. A user who wants to
+create a file and tries to make a false access claim,
+cannot do so, because it will not have attribute keys Kx
+from the related KDCs. At the same time since the
+message is encrypted, a user without valid access
+policy cannot decrypt and change the information.
+Two users cannot collude and create an access policy
+consisting of attributes shared between them. Suppose,
+there are two users A and B who have attributes xA and
+xB , respectively. They have the following information
+KbaseA ; KxA and KbaseB ; KxB , respectively. A new value of
+KxB ¼ K 1=ðaþbx0 Þ
+cannot be calculated by B, because it
+does not know the values of ða; bÞ. Thus, the authentica-
+baseA
+tion is collusion secure.
+Our scheme is resistant to replay attacks. If a writer’s
+access claims are revoked, it cannot replace a data with
+stale information from previous writes. This is because it
+has to attach a new time stamp  and sign the message
+HðC Þk again. Since it does not have attributes, it cannot
+tu
+have a valid signature.
+
+The mathematical proofs of security of our scheme
+follows from the security proofs of [23], [35] and has been
+omitted for the lack of space.
+
+7 COMPUTATION COMPLEXITY
+
+In this section, we present the computation complexity of
+the privacy preserving access control protocol. We will
+calculate the computations required by users (creator,
+reader, writer) and that by the cloud. Table 2 presents
+notations used for different operations.
+The creator needs to encrypt the message and sign it.
+Creator needs to calculate one pairing eðg; gÞ. Encryption
+takes two exponentiations to calculate each of C1;x . So this
+requires 2mET time, where m is the number of attributes.
+User needs to calculate three exponentiation to calculate C2;x
+and C3;x . So time taken for encryption is ð3m þ 1ÞE0 þ
+2mET þ P . To sign the message, Y ; W ; S 0
+i s and Pj s have to
+be calculated as well as HðC Þ. So, time taken to sign is
+ð2l þ 2ÞE1 þ 2tE2 þ H .
+The cloud needs to verify the signature. This requires
+checking for (11). Time taken to verify is ðl þ 2tÞ ^P þ
+lðE1 þ E2 Þ þ H . To read, a user needs only to decrypt the
+
+392
+
+IEEE TRANSACTIONS ON PARALLEL AND DISTRIBUTED SYSTEMS, VOL. 25, NO. 2, FEBRUARY 2014
+
+TABLE 3
+Comparison of Our Scheme with Existing Access Control Schemes
+
+TABLE 4
+Comparison of Computation and Size of Ciphertext While Creating a File
+
+TABLE 5
+Comparison of Computation during Read and Write by User and Cloud
+
+ciphertext. This requires 2m pairings to calculate eðH ðuÞ;
+C3;x Þ and eðskðxÞ;u ; C2;x Þ and OðmhÞ to find the vector c.
+Decryption takes 2mP þ H þ OðmhÞ. Writing is similar to
+creating a record. The size of ciphertext with signature is
+2mjG0 j þ mjGT j þ m2 þ jM SGj þ ðl þ t þ 2ÞjG1 j.
+When revocation is required, C0 needs to be recalculated.
+eðg; gÞ is previously calculated. So, only one scalar multi-
+plication is needed. If the user revoked is Uu , then for each
+x, C1;x has to be recomputed. eðg; gÞ is already computed.
+Thus, only two scalar multiplication needs to be done, for
+each x. So a total of 2m0 þ 1 scalar multiplications are done
+by the cloud, where m0
+is the number of attributes
+belonging to all revoked users. Users need not compute
+any scalar multiplication or pairing operations. Additional
+communication overhead is Oððm0 þ 1ÞjGT jÞ.
+The curves chosen are either MNT curves (proposed by
+Miyaji, Nakabayashi, and Takano) or supersingular curves.
+Considering the requirements, elliptic curve group of size
+159, with an embedding degree 6 (type d curves of pairing-
+based cryptography (PBC) [36]) can be used. Pairing takes
+14 ms on Intel Pentium D, 3.0-GHz CPU [16]. Such
+operations are very suitable for a cloud computing
+environment. A new library for ABE is also available at [37].
+
+PBC library [36] is a C library which is built above
+GNU GMP (GNU Math Precision) library and contains
+functions to implement elliptic curves and pairing opera-
+tions. Each element of G needs 512 bits at an 80-bit
+security level and 1,536 bits when 128-bit of security are
+chosen [39]. Each cryptographic operation was implemen-
+ted using the PBC library ver. 0.4.18 on a 3.0-GHZ
+processor PC. The public key parameters were selected
+to provide 80-bit security level. According to [39],
+implementation uses 160-bit elliptic curve group on the
+supersingular curve y2 ¼ x3 þ x over a 512-bit finite field.
+The computational cost for a pairing operation is 2.9 ms
+and that of exponentiation on G (and G0 ) and GT (and G2 )
+are 1 and 0.2 ms, respectively.
+We will compare our computation costs with existing
+schemes like [12], [13], [15] in Section 8.
+
+8 COMPARISON WITH OTHER ACCESS CONTROL
+SCHEMES IN CLOUD
+
+We compare our scheme with other access control schemes
+(in Table 3) and show that our scheme supports many
+
+RUJ ET AL.: DECENTRALIZED ACCESS CONTROL WITH ANONYMOUS AUTHENTICATION OF DATA STORED IN CLOUDS
+
+393
+
+features that the other schemes did not support. 1-W-M-R
+means that only one user can write while many users can
+read. M-W-M-R means that many users can write and read.
+We see that most schemes do not support many writes
+which is supported by our scheme. Our scheme is robust
+and decentralized, most of the others are centralized. Our
+scheme also supports privacy preserving authentication,
+which is not supported by others. Most of the schemes do
+not support user revocation, which our scheme does. In
+Tables 4 and 5, we compare the computation and commu-
+nication costs incurred by the users and clouds and show
+that our distributed approach has comparable costs to
+centralized approaches. The most expensive operations
+involving pairings and is done by the cloud. If we compare
+the computation load of user during read we see that our
+scheme has comparable costs. Our scheme also compares
+well with the other authenticated scheme of [15].
+
+9 CONCLUSION
+
+We have presented a decentralized access control technique
+with anonymous authentication, which provides user
+revocation and prevents replay attacks. The cloud does
+not know the identity of the user who stores information,
+but only verifies the user’s credentials. Key distribution is
+done in a decentralized way. One limitation is that the
+cloud knows the access policy for each record stored in the
+cloud. In future, we would like to hide the attributes and
+access policy of a user.
+
+ACKNOWLEDGMENTS
+
+Th is work is par t ia l ly suppor ted by NSERC Gran t
+CRDPJ386874-09 and the grant: “Digital signal processing,
+and the synthesis of an information security system,”
+TR32054, Serbian Ministry of Science and Education.
+
+[4]
+
+[3]
+
+REFERENCES
+S. Ruj, M. Stojmenovic, and A. Nayak, “Privacy Preserving Access
+[1]
+Control with Authentication for Securing Data in Clouds,” Proc.
+IEEE/ACM Int’l Symp. Cluster, Cloud and Grid Computing, pp. 556-
+563, 2012.
+[2] C. Wang, Q. Wang, K. Ren, N. Cao, and W. Lou, “Toward
+Secure and Dependable Storage Services in Cloud Computing,”
+IEEE Trans. Services Computing, vol. 5, no. 2, pp. 220-232, Apr.-
+June 2012.
+J. Li, Q. Wang, C. Wang, N. Cao, K. Ren, and W. Lou, “Fuzzy
+Keyword Search Over Encrypted Data in Cloud Computing,”
+Proc. IEEE INFOCOM, pp. 441-445, 2010.
+S. Kamara and K. Lauter, “Cryptographic Cloud Storage,” Proc.
+14th Int’l Conf. Financial Cryptography and Data Security, pp. 136-
+149, 2010.
+[5] H. Li, Y. Dai, L. Tian, and H. Yang, “Identity-Based Authentica-
+tion for Cloud Computing,” Proc. First Int’l Conf. Cloud Computing
+(CloudCom), pp. 157-166, 2009.
+[6] C. Gentry, “A Fully Homomorphic Encryption Scheme,” PhD
+dissertation, Stanford Univ., http://www.crypto.stanford.edu/
+craig, 2009.
+[7] A.-R. Sadeghi, T. Schneider, and M. Winandy, “Token-Based
+Cloud Computing,” Proc. Third Int’l Conf. Trust and Trustworthy
+Computing (TRUST), pp. 417-429, 2010.
+[8] R.K.L. Ko, P.
+Jagadpramana, M. Mowbray, S. Pearson, M.
+Kirchberg, Q. Liang, and B.S. Lee, “Trustcloud: A Framework
+for Accountability and Trust in Cloud Computing,” HP Technical
+Report HPL-2011-38 , http ://www .hp l .hp .com/techreports/
+2011/HPL-2011-38.html, 2013.
+
+[9] R. Lu, X. Lin, X. Liang, and X. Shen, “Secure Provenance: The
+Essential of Bread and Butter of Data Forensics in Cloud
+Computing,” Proc. Fifth ACM Symp. Information, Computer and
+Comm. Security (ASIACCS), pp. 282-292, 2010.
+[10] D.F. Ferraiolo and D.R. Kuhn, “Role-Based Access Controls,” Proc.
+15th Nat’l Computer Security Conf., 1992.
+[11] D.R. Kuhn, E.J. Coyne, and T.R. Weil, “Adding Attributes to Role-
+Based Access Control,” IEEE Computer, vol. 43, no. 6, pp. 79-81,
+June 2010.
+[12] M. Li, S. Yu, K. Ren, and W. Lou, “Securing Personal Health
+Records in Cloud Computing: Patient-Centric and Fine-Grained
+Data Access Control in Multi-Owner Settings,” Proc. Sixth Int’l
+ICST Conf. Security and Privacy in Comm. Networks (SecureComm),
+pp. 89-106, 2010.
+[13] S. Yu, C. Wang, K. Ren, and W. Lou, “Attribute Based Data
+Sharing with Attribute Revocation,” Proc. ACM Symp. Information,
+Computer and Comm. Security (ASIACCS), pp. 261-270, 2010.
+[14] G. Wang, Q. Liu, and J. Wu, “Hierarchical Attribute-Based
+Encryption for Fine-Grained Access Control in Cloud Storage
+Services,” Proc. 17th ACM Conf. Computer and Comm. Security
+(CCS), pp. 735-737, 2010.
+[15] F. Zhao, T. Nishide, and K. Sakurai, “Realizing Fine-Grained and
+Flexible Access Control to Outsourced Data with Attribute-Based
+Cryptosystems,” Proc. Seventh Int’l Conf.
+Information Security
+Practice and Experience (ISPEC), pp. 83-97, 2011.
+[16] S. Ruj, A. Nayak, and I. Stojmenovic, “DACC: Distributed Access
+Control in Clouds,” Proc. IEEE 10th Int’l Conf. Trust, Security and
+Privacy in Computing and Communications (TrustCom), 2011.
+[17] http://docs.oasis-open.org/xacml/3.0/xacml-3.0-core-spec-cs-
+01-en.pdf, 2013.
+[18] http://securesoftwaredev.com/2012/08/20/xacml-in-the-cloud,
+2013.
+[19] S. Jahid, P. Mittal, and N. Borisov, “EASiER: Encryption-Based
+Access Control in Social Networks with Efficient Revocation,”
+Proc. ACM Symp.
+Information, Computer and Comm. Security
+(ASIACCS), 2011.
+[20] R.L. Rivest, A. Shamir, and Y. Tauman, “How to Leak a Secret,”
+Proc. Seventh Int’l Conf. Theory and Application of Cryptology and
+Information Security (ASIACRYPT), pp. 552-565, 2001.
+[21] X. Boyen, “Mesh Signatures,” Proc. 26th Ann. Int’l Conf. Advances
+in Cryptology (EUROCRYPT), pp. 210-227, 2007.
+[22] D. Chaum and E.V. Heyst, “Group Signatures,” Proc. Ann. Int’l
+Conf. Advances in Cryptology (EUROCRYPT), pp. 257-265, 1991.
+[23] H.K. Maji, M. Prabhakaran, and M. Rosulek, “Attribute-Based
+Signatures: Achieving Attribute-Privacy and Collusion-Resis-
+tance,” IACR Cryptology ePrint Archive, 2008.
+[24] H.K. Maji, M. Prabhakaran, and M. Rosulek, “Attribute-Based
+Signatures,” Topics in Cryptology - CT-RSA, vol. 6558, pp. 376-392,
+2011.
+[25] A. Beimel, “Secure Schemes for Secret Sharing and Key Distribu-
+tion,” PhD thesis, Technion, Haifa, 1996.
+[26] A. Sahai and B. Waters, “Fuzzy Identity-Based Encryption,” Proc.
+Ann. Int’l Conf. Advances in Cryptology (EUROCRYPT), pp. 457-473,
+2005.
+[27] V. Goyal, O. Pandey, A. Sahai, and B. Waters, “Attribute-Based
+Encryption for Fine-Grained Access Control of Encrypted Data,”
+Proc. ACM Conf. Computer and Comm. Security, pp. 89-98, 2006.
+J. Bethencourt, A. Sahai, and B. Waters, “Ciphertext-Policy
+Attribute-Based Encryption,” Proc.
+IEEE Symp. Security and
+Privacy, pp. 321-334, 2007.
+[29] X. Liang, Z. Cao, H. Lin, and D. Xing, “Provably Secure and
+Efficient Bounded Ciphertext Policy Attribute Based Encryption,”
+Proc. ACM Symp.
+Information, Computer and Comm. Security
+(ASIACCS), pp 343-352, 2009.
+[30] M. Chase, “Multi-Authority Attribute Based Encryption,” Proc.
+Fourth Conf. Theory of Cryptography (TCC), pp. 515-534, 2007.
+[31] H. Lin, Z. Cao, X. Liang, and J. Shao, “Secure Threshold Multi-
+Authority Attribute Based Encryption without a Central Author-
+ity,” Proc. Progress in Cryptology Conf. (INDOCRYPT), pp. 426-436,
+2008.
+[32] M. Chase and S.S.M. Chow, “Improving Privacy and Security in
+Multi-Authority Attribute-Based Encryption,” Proc. ACM Conf.
+Computer and Comm. Security, pp. 121-130, 2009.
+[33] M. Green, S. Hohenberger, and B. Waters, “Outsourcing the
+Decryption of ABE Ciphertexts,” Proc. USENIX Security Symp.,
+2011.
+
+[28]
+
+394
+
+IEEE TRANSACTIONS ON PARALLEL AND DISTRIBUTED SYSTEMS, VOL. 25, NO. 2, FEBRUARY 2014
+
+Amiya Nayak received the BMath degree in
+computer science and combinatorics and opti-
+mization from the University of Waterloo, ON,
+Canada,
+in 1981, and the PhD degree in
+systems and computer engineering from Carle-
+ton University, Ottawa, Canada, in 1991. He has
+more than 17 years of industrial experience in
+software engineering, avionics and navigation
+systems, simulation and system level perfor-
+mance analysis. He is in the Editorial Board of
+several journals, including IEEE Transactions on Parallel and Distributed
+Systems, International Journal of Parallel, Emergent and Distributed
+Systems,
+International Journal of Computers and Applications, and
+EURASIP Journal of Wireless Communications and Networking.
+Currently, he is a full professor at the School of Electrical Engineering
+the University of Ottawa. His research
+and Computer Science at
+interests include the area of
+fault
+tolerance, distributed systems/
+algorithms, and mobile ad hoc networks with more than 150 publications
+in refereed journals and conference proceedings. He is a senior member
+of the IEEE.
+
+. For more information on this or any other computing topic,
+please visit our Digital Library at www.computer.org/publications/dlib.
+
+[34] K. Yang, X. Jia, and K. Ren, “DAC-MACS: Effective Data Access
+Control
+for Multi-Authority Cloud Storage Systems,” IACR
+Cryptology ePrint Archive, p. 419, 2012.
+[35] A.B. Lewko and B. Waters, “Decentralizing Attribute-Based
+Encryption,” Proc. Ann. Int’l Conf. Advances in Cryptology (EURO-
+CRYPT), pp. 568-588, 2011.
+[36] http://crypto.stanford.edu/pbc/, 2013.
+[37] “Libfenc : The Functional Encryption Library ,”http ://code .
+google.com/p/libfenc/, 2013.
+[38] W. Wang, Z. Li, R. Owens, and B. Bhargava, “Secure and Efficient
+Access to Outsourced Data,” Proc. ACM Cloud Computing Security
+Workshop (CCSW), 2009.
+J. Hur and D. Kun Noh, “Attribute-Based Access Control with
+Efficient Revocation in Data Outsourcing Systems,” IEEE Trans.
+Parallel and Distributed Systems, vol. 22, no. 7, pp. 1214-1221, July
+2011.
+
+[39]
+
+Sushmita Ruj
+rece ived the BE degree in
+computer science from Bengal Engineering
+and Science University, Shibpur, India in 2004,
+and the Masters and PhD degrees in computer
+science from Indian Statistical Institute, India in
+2006 and 2010, respectively. Between 2009 and
+2010, she was a Erasmus Mundus Post Doctoral
+Fellow at Lund University, Sweden and between
+2010-2012, she was a Post Doctoral Fellow at
+University of Ottawa, Canada. She was an
+Assistant professor at
+Indian Institute of Technology,
+IIT,
+Indore
+between 2012-2013 and is currently an Assistant professor at Indian
+Statistical Institute, Kolkata, India. Her research interests are in security
+in mob ile ad hoc networks, veh icular networks, cloud security,
+combinatorics and cryptography. She is on the Editorial Board of Ad
+Hoc and Sensor Wireless Networks. Sushmita has served as Program
+Co-Chair
+for
+ICDCS workshop, NFSP’2013,
+ICC WorkshopSecure
+Networking and Forensic Computing (SNFC) and has served as TPC
+member for many conferences like Indocrypt, IEEE Globecom, IEEE
+ICC, IEEE MASS, IEEE PIMRC, ICDCN and many others. She won best
+paper awards at ISPA 2007 and IEEE PIMRC 2011. She is a member of
+the IEEE.
+
+Milos Stojmenovic received the bachelor of
+computer science degree at
+the School of
+Information Technology and Engineering, Uni-
+versity of Ottawa, ON, Canada, in 2003, the
+master’s degree in computer science at Carleton
+University in Ottawa, Canada, in 2005, and the
+PhD degree in the same field at the University of
+Ottawa, Canada, in 2008. Currently, he is an
+assistant professor at the Singidunum Univer-
+sity, Serbia. He was a visiting researcher at
+Japans National Institute of Advanced Industrial Science and Technol-
+ogy in 2009. He published more than 30 articles in the fields of computer
+vision, image processing, and wireless networks. His work implements
+machine learning techniques such as AdaBoost and SVM classification
+which in turn use higher order autocorrelation features to perform image
+segmentation and classification. He is a member of the IEEE.
+
+

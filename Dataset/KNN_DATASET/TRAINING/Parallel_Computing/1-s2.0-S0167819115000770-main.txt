@@ -1,0 +1,1449 @@
+JID: PARCO
+
+[m3Gsc;June 6, 2015;18:8]
+
+ARTICLE IN PRESS
+
+Parallel Computing 000 (2015) 1–15
+
+Contents lists available at ScienceDirect
+
+Parallel Computing
+
+journal homepage: www.elsevier.com/locate/parco
+
+Speculative segmented sum for sparse matrix-vector
+multiplication on heterogeneous processors✩
+∗
+Weifeng Liu
+, Brian Vinter
+
+Niels Bohr Institute, University of Copenhagen, Blegdamsvej 17, 2100 Copenhagen, Denmark
+
+a r t i c l e
+
+i n f o
+
+a b s t r a c t
+
+Article history:
+Available online xxx
+
+Keywords:
+Sparse matrices
+Sparse matrix-vector multiplication
+Compressed sparse row
+Speculative execution
+Segmented sum
+Heterogeneous processors
+
+1. Introduction
+
+Sparse matrix-vector multiplication (SpMV) is a central building block for scientiﬁc software
+and graph applications. Recently, heterogeneous processors composed of different types of
+cores attracted much attention because of their ﬂexible core conﬁguration and high energy
+eﬃciency. In this paper, we propose a compressed sparse row (CSR) format based SpMV al-
+gorithm utilizing both types of cores in a CPU–GPU heterogeneous processor. We ﬁrst spec-
+ulatively execute segmented sum operations on the GPU part of a heterogeneous processor
+and generate a possibly incorrect result. Then the CPU part of the same chip is triggered to
+re-arrange the predicted partial sums for a correct resulting vector. On three heterogeneous
+processors from Intel, AMD and nVidia, using 20 sparse matrices as a benchmark suite, the ex-
+perimental results show that our method obtains signiﬁcant performance improvement over
+the best existing CSR-based SpMV algorithms.
+
+© 2015 Elsevier B.V. All rights reserved.
+
+Sparse matrix-vector multiplication (SpMV) is perhaps the most widely-used non-trivial sparse basic linear algebra subpro-
+gram (BLAS) in computational science and modeling. The operation multiplies a sparse matrix A of size m × n by a dense vector
+x of size n and gives a dense vector y of size m. Despite its simplicity at the semantic level, an eﬃcient SpMV implementation is
+generally hard, because A’s sparsity structure can be very irregular and unpredictable.
+Compared to CPUs, co-processors (e.g., GPUs and Xeon Phi) promise much higher peak ﬂoating-point performance and mem-
+ory bandwidth. Thus a lot of research has focused on accelerating SpMV on co-processors. One straightforward way on utilizing
+co-processors is to develop all-new sparse matrix formats (e.g., HYB [1], Cocktail [2], JAD [3], ESB [4], BCCOO [5] and BRC [6]) for
+speciﬁc hardware architectures. The experimental results showed that these formats can provide performance improvement for
+various SpMV benchmarks.
+However, the completely new formats bring several new problems. The ﬁrst one is backward-compatibility. When the input
+data are stored in basic formats such as compressed sparse row (CSR), a format conversion is required for using the new format
+based SpMV. In practice, fusing a completely new format into well-established toolkits (e.g., PETSc [7]) for scientiﬁc software
+is not a trivial task [8] because of the format conversion. Moreover, Kumbhar [9] pointed out that once an application (in par-
+ticular a non-linear solver) needs repeated format conversion after a ﬁxed small number of iterations, the new formats may
+
+✩ The original title of this work presented at the 8th International Workshop on Parallel Matrix Algorithms and Applications (PMAA ’14) was “An Eﬃcient and
+General Method for CSR-Format Based SpMV on GPUs”. For the present article, we improved our algorithm for emerging heterogeneous processors.
+∗
+Corresponding author: Tel.: +4560528898.
+E-mail addresses: weifeng.liu@nbi.ku.dk (W. Liu), vinter@nbi.ku.dk (B. Vinter).
+
+http://dx.doi.org/10.1016/j.parco.2015.04.004
+0167-8191/© 2015 Elsevier B.V. All rights reserved.
+
+Please cite this article as: W. Liu, B. Vinter, Speculative segmented sum for sparse matrix-vector multiplication on heteroge-
+neous processors, Parallel Computing (2015), http://dx.doi.org/10.1016/j.parco.2015.04.004
+
+JID: PARCO
+
+2
+
+ARTICLE IN PRESS
+
+W. Liu, B. Vinter / Parallel Computing 000 (2015) 1–15
+
+[m3Gsc;June 6, 2015;18:8]
+
+degrade overall performance. Furthermore, Langr and Tvrdík [10] demonstrated that isolated SpMV performance is insuﬃcient
+to evaluate a new format. Thus more evaluation criteria, such as format conversion cost and memory footprint, must be taken
+into consideration. Secondly, when the SpMV operation is used with other sparse building blocks (e.g., sparse matrix-matrix
+multiplication [11]) that require basic storage formats, using the all-new formats is less feasible.
+To leverage the SpMV performance and the practicality, Liu and Vinter proposed the CSR5 format [12] to extend the basic
+CSR format. The experimental results showed that the CSR5 format delivers excellent SpMV performance, but merely needs very
+short format conversion time (a few SpMV operations) and very small extra memory footprint (around 2% of the CSR data).
+Because the CSR5 format shares data with the CSR format, the CSR-based sparse BLAS routines can eﬃciently work with the
+CSR5 format. However, when a solver only needs a few iterations, the CSR5 may not deliver speedups, compared to using the
+basic CSR data.
+Therefore, improving performance of SpMV using the most widely supported CSR format has also gained plenty of atten-
+tion [1,2,13–18,56]. Most of the related work [1,2,13–15,56] have focused on improving row block method for the CSR-based
+SpMV. However, these newly proposed approaches are not highly eﬃcient. The main reason is that co-processors are designed
+for load balanced high throughput computation, which is not naturally offered by the row pointer information of the CSR format.
+On the other hand, using segmented sum method for the CSR-based SpMV has been proposed by Blelloch et al. [16] and been
+implemented in libraries cuDPP [17,19,20] and Modern GPU [18] for nVidia GPUs. Unlike the row block methods, the segmented
+sum algorithms evenly partition an input matrix A for nearly perfect load balancing, and thus may be suitable for a co-processor
+implementation. But unfortunately, this method cannot recognize empty rows and requires more costly global operations. These
+extra overheads may offset performance gain of load balanced segmented sum and degrade overall SpMV eﬃciency.
+Recently, heterogeneous processors (which are also known as heterogeneous chip multiprocessors) have been de-
+signed [21,22] and implemented [23–27]. Compared to homogeneous processors such as CPUs or GPUs, heterogeneous processors
+can deliver improved overall performance and power eﬃciency [28], while suﬃcient heterogeneous parallelisms exist. The main
+characteristics of heterogeneous processors include uniﬁed shared memory and fast communication among different types of
+cores (e.g., CPU cores and GPU cores). Practically, heterogeneous system architecture (HSA) [29], OpenCL [30] and CUDA [31] have
+supplied toolkits for programming heterogeneous processors.
+Our work described in this paper particularly focuses on accelerating CSR-based SpMV on CPU–GPU heterogeneous proces-
+sors. The main idea of our SpMV algorithm is ﬁrst speculatively executing SpMV on a heterogeneous processor’s GPU cores
+targeting high throughput computation, and then locally re-arranging resulting vectors by the CPU cores of the same chip for
+low-latency memory access. To achieve load balanced ﬁrst step computation and to utilize both CPU and GPU cores, we im-
+proved the conventional segmented sum method by generating auxiliary information (e.g., segment descriptor) at runtime and
+recognizing empty rows on-the-ﬂy. Compared to the row block methods for the CSR-based SpMV, our method delivers load bal-
+anced computation to achieve higher throughput. Compared with the classic segmented sum method for the CSR-based SpMV,
+our approach decreases the overhead of global synchronization and removes pre- and post-processing regarding empty rows.
+This paper makes the following contributions:
+
+• We propose a fast CSR-based SpMV algorithm that eﬃciently utilizes different types of cores in emerging CPU–GPU hetero-
+geneous processors.
+• We develop a speculative segmented sum algorithm by generating auxiliary information on-the-ﬂy and eliminating costly
+pre- and post-processing on empty rows.
+• We evaluate our CSR-based SpMV algorithm on a widely-adopted benchmark suite and achieve stable SpMV performance
+independent of the sparsity structure of input matrix.
+
+On a benchmark suite composed of 20 matrices with diverse sparsity structures, our approach greatly outperforms the row
+block methods for the CSR-based SpMV running on GPU cores of heterogeneous processors. On an Intel heterogeneous processor,
+the experimental results show that our method obtains up to 6.90x and on average 2.57x speedup over an OpenCL implementa-
+tion of the CSR-vector algorithm in CUSP running on its GPU cores. On an AMD heterogeneous processor, our approach delivers
+up to 16.07x (14.43x) and on average 5.61x (4.47x) speedup over the fastest single (double) precision CSR-based SpMV algorithm
+from PARALUTION and an OpenCL version of CUSP running on its GPU cores. On an nVidia heterogeneous processor, our ap-
+proach delivers up to 5.91x (6.20x) and on average 2.69x (2.53x) speedup over the fastest single (double) precision CSR-based
+SpMV algorithm from cuSPARSE and CUSP running on its GPU cores.
+The paper is organized as follows. We ﬁrst introduce background knowledge about the CSR format, the CSR-based SpMV
+algorithms and heterogeneous processors in Section 2. Then we describe our CSR-based SpMV algorithm in Section 3. Moreover,
+we give and analyze our experimental results in Section 4. We review the related approaches in Section 5.
+
+2. Background and motivations
+
+2.1. CSR format and CSR-based SpMV algorithms
+The CSR format of a sparse matrix consists of three separate arrays: (1) row pointer array of size m + 1, where m is the number
+of rows of the matrix, (2) column index array of size nnz, where nnz is the number of nonzero entries of the matrix, and (3) value
+array of size nnz. Hence the overall space complexity of the CSR format is O(m + nnz ). Below we show a sparse matrix A of size
+
+Please cite this article as: W. Liu, B. Vinter, Speculative segmented sum for sparse matrix-vector multiplication on heteroge-
+neous processors, Parallel Computing (2015), http://dx.doi.org/10.1016/j.parco.2015.04.004
+
+JID: PARCO
+
+ARTICLE IN PRESS
+
+[m3Gsc;June 6, 2015;18:8]
+
+W. Liu, B. Vinter / Parallel Computing 000 (2015) 1–15
+
+3
+
+0
+0
+h
+0
+i
+l
+
+c
+0
+0
+0
+0
+0
+
+(cid:9)
+
+,
+
+.
+
+A =
+
+i,
+
+j, k, l
+
+(cid:9)
+
+(cid:9)
+
+.
+
+⎤
+⎥⎥⎥⎥⎦
+
+1, 2, 3, 4, 5, 6
+
+0, 3, 6, 8, 8, 9, 12
+
+0, 2, 5, 0, 1, 2, 2, 4, 4, 2, 3, 4
+
+6 × 6 and its CSR representation.
+⎡
+0
+b
+0
+a
+⎢⎢⎢⎢⎣
+d
+e
+f
+0
+0
+g
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+(cid:8)
+0
+0
+j
+k
+row pointer =
+(cid:8)
+column index =
+(cid:8)
+value =
+a, b, c, d, e, f , g, h,
+(cid:8)
+(cid:9)
+Assume we have an input dense vector
+xT =
+(cid:8)
+(cid:9)
+we can obtain a dense vector y by multiplying the sparse matrix A by the vector x:
+a + 3b + 6c, d + 2e + 3 f , 3g + 5h, 0, 5i, 3 j + 4k + 5l
+yT =
+The straightforward way to multiply A with x on a multicore processor is assigning a row block (i.e., multiple rows) to each
+core. Since the row pointer array records offset information of column index and value of nonzero entries, each core can easily
+position data in A and x. Then generating corresponding entries of y merely needs some simple multiply and add operations.
+For example, we assume that using a six-core processor for the above SpMV operation and each core is responsible for one row.
+We can notice that the cores calculating the ﬁrst, the second and the sixth rows are busier than the other cores. Meanwhile, the
+core doing the fourth row is actually idle while the other cores are working. Therefore, the row block method cannot naturally
+handle load balance on multicore processors. On co-processors composed of a large amount of lightweight single instruction,
+multiple data (SIMD) units, the problem can heavily degrade performance of SpMV operation. Even though many strategies,
+such as vectorization [1,2,13], data streaming [14], memory coalescing [32], static or dynamic binning [14,15], and Dynamic
+Parallelism [15]. LightSpMV [56] proposed to dynamically distribute matrix rows over warps in order for more balanced CSR-
+based SpMV without the requirement of generating auxiliary data structures, and implemented this approach using atomic
+operations and warp shuﬄe functions as the fundamental building blocks.
+The other method of computing the CSR-based SpMV is utilizing a segmented sum algorithm. This method ﬁrst generates a
+segment descriptor of size nnz. The descriptor marks the ﬁrst nonzero entry of each non-empty row as 1 (or equivalently TRUE)
+and the other nonzero entries as 0 (or equivalently FALSE). Using the above 6-by-6 sparse matrix as an example, we have
+segment descriptor = [1, 0, 0, 1, 0, 0, 1, 0, 1, 1, 0, 0].
+Then an element-wise product array of size nnz is allocated and ﬁlled by calculating
+product[i] = x[column index[i]] × value[i], i ∈ [0, nnz ).
+The third step conducts a segmented sum operation on the product array by using segment information stored in the segment
+descriptor. Finally, the sum in each segment is stored to a contiguous location in y.
+We can see that the segmented sum method can achieve nearly perfect load balance in the nonzero entry space. However,
+this method has two obvious drawbacks: (1) since the segment descriptor is binary, this method is unable to recognize empty
+rows, thus a pre-processing (squeezing out possible empty rows) is required for calculating a “clean” row pointer array, and a
+post-processing (adding zeros to proper locations) is needed for a correct resulting vector y, and (2) this method requires more
+expensive global synchronizations and global memory access than the row block method (which needs only one single kernel
+launch). Therefore, in practice, the segmented sum method is not necessarily faster than the row block methods.
+
+2.2. Heterogeneous processors
+
+Compared to homogeneous chip multiprocessors such as CPUs and GPUs, the heterogeneous processors are able to com-
+bine different types of cores into one chip. Thus heterogeneous processors offer more ﬂexibilities in architecture design space.
+Because of mature CPU and GPU architectures and applications, CPU–GPU integrated heterogeneous processor with multiple
+instruction set architectures (ISAs) is the most widely adopted choice. Representatives of this model include AMD accelerated
+processing units (APUs) [23,24], Intel multi-CPU and GPU system-on-a-chip (SoC) devices [25], nVidia Echelon heterogeneous
+GPU architecture [22], and many mobile processors (e.g., nVidia Tegra [26] and Qualcomm Snapdragon [27]).
+Fig. 1 shows two block diagrams of heterogeneous processors used as experimental testbed in this paper. In general, a het-
+erogeneous processor consists of four major parts: (1) a group of CPU cores with hardware-controlled caches, (2) a group of GPU
+cores with shared command processors, software-controlled scratchpad memory and hardware-controlled caches, (3) shared
+memory management unit, and (4) shared global dynamic random-access memory (DRAM). The last level cache of the two types
+of cores can be separate as shown in Fig. 1(a) or shared as shown in Fig. 1(b).
+
+Please cite this article as: W. Liu, B. Vinter, Speculative segmented sum for sparse matrix-vector multiplication on heteroge-
+neous processors, Parallel Computing (2015), http://dx.doi.org/10.1016/j.parco.2015.04.004
+
+JID: PARCO
+
+4
+
+ARTICLE IN PRESS
+
+W. Liu, B. Vinter / Parallel Computing 000 (2015) 1–15
+
+[m3Gsc;June 6, 2015;18:8]
+
+(a) Heterogeneous processor with separate last level cache
+
+(b) Heterogeneous processor with CPU--GPU shared last level
+cache
+
+Fig. 1. Block diagrams of two representative heterogeneous processors.
+
+The CPU cores have higher single-thread performance due to out-of-order execution, branch prediction and large amounts of
+caches. The GPU cores execute massively parallel lightweight threads on SIMD units for higher aggregate throughput. The two
+types of compute units have completely different ISAs and separate cache sub-systems.
+In this paper, our experiments run on three different platforms (shown in Table 2), the platforms from AMD and nVidia are
+based on the design of Fig. 1(a); the Intel platform uses the design of Fig. 1(b). Note that in the current AMD APU architecture, al-
+though the two types of cores have separate last level caches, the GPU cores are able to snoop the last level cache on the CPU side.
+Compared to loosely-coupled CPU–GPU heterogeneous systems, the two types of cores in a heterogeneous processor share
+one single uniﬁed address space instead of using separate address spaces (i.e., system memory space and GPU device memory
+space). One obvious beneﬁt is avoiding data transfer through connection interfaces (e.g., PCIe link), which is one of the most
+well known bottlenecks of co-processor computing [33]. Additionally, GPU cores can access more memory by paging memory
+to and from disk. Further, the consistent pageable shared virtual memory can be fully or partially coherent, meaning that much
+more eﬃcient CPU–GPU interactions are possible due to eliminated heavyweight synchronization (i.e., ﬂushing and GPU cache
+invalidation). Currently, programming on the uniﬁed address space and low-overhead kernel launch are supported by HSA [29],
+OpenCL [30] and CUDA [31].
+
+3. New sparse matrix-vector multiplication algorithm
+
+3.1. Data decomposition
+
+We ﬁrst evenly decompose nonzero entries of the input matrix to multiple small tiles for load balanced data parallelism. Here
+we deﬁne a tile as a 2D array of size W × T. The width T is the size of a thread-bunch, which is the minimum SIMD execution unit
+in a given vector processor. It is also known as wavefront in AMD GPUs or warp in nVidia GPUs. The height W is the workload
+(i.e., the number of nonzero entries to be processed) of a thread. A tile is a basic work unit in matrix-based segmented sum
+method [19,34], which is used as a building block in our SpMV algorithm. Actually, the term “tile” is equivalent to the term
+“matrix” used in original description of the segmented scan algorithms [19,34]. Here we use “tile” to avoid confusion between a
+work unit of matrix shape and a sparse matrix in SpMV.
+Since a thread-bunch can be relatively too small (e.g., as low as 8 in current Intel GPUs) to amortize scheduling cost, we
+combine multiple thread-bunches into one thread-group (i.e., work-group in OpenCL terminology or thread block in CUDA
+terminology) for possibly higher throughput. We deﬁne B to denote the number of thread-bunches in one thread-group.
+Additionally, we let each thread-bunch compute S contiguous tiles. Thus higher on-chip resource reuse and faster global
+synchronization are expected.
+of size nnz can be evenly assigned to (cid:4)nnz/(BSWT)(cid:5) thread-groups. Fig. 2 shows an example of the data decomposition. In this
+Therefore, we can calculate that each thread-group deals with BSWT nonzero entries. Thus the whole nonzero entry space
+example, we set B = 2, S = 2, W = 4, and T = 2. Thus each thread-group is responsible for 32 nonzero entries. Then (cid:4)nnz/32(cid:5)
+thread-groups are dispatched.
+
+Please cite this article as: W. Liu, B. Vinter, Speculative segmented sum for sparse matrix-vector multiplication on heteroge-
+neous processors, Parallel Computing (2015), http://dx.doi.org/10.1016/j.parco.2015.04.004
+
+JID: PARCO
+
+ARTICLE IN PRESS
+
+[m3Gsc;June 6, 2015;18:8]
+
+W. Liu, B. Vinter / Parallel Computing 000 (2015) 1–15
+
+5
+
+Fig. 2. Data decomposition on the nonzero entry space. nnz nonzero entries are assigned to multiple thread-groups. In this case, each thread-group consists of
+2 thread-bunches (i.e., B = 2). The number of threads in each thread-bunch is equal to 2 (i.e., T = 2). The workload per thread is 4 (i.e., W = 4). The number of
+iterative steps in each thread-bunch is 2 (i.e., S = 2).
+
+3.2. Algorithm description
+
+Our CSR-based SpMV is based on fundamental segmented sum algorithm, which guarantees load balanced computation in the
+nonzero entry space. While utilizing segmented sum as a building block in our SpMV algorithm, we have three main performance
+considerations: (1) the segment descriptor needs to be generated in on-chip memory at runtime to reduce overhead of global
+memory access, (2) empty rows must be recognized and processed without calling speciﬁc pre- and post-processing functions,
+and (3) taking advantages of both types of cores in a heterogeneous processor. Hence we improve the basic segmented sum
+method to meet the above performance requirements.
+The algorithm framework includes two main stages: (1) speculative execution stage, and (2) checking prediction stage. The
+ﬁrst stage speculatively executes SpMV operation and generates a possibly incorrect resulting vector y. Here the term “incorrect”
+means that the layout of entries in y can be incorrect, but the entries are guaranteed to be numerically identiﬁed. Then in the
+second stage we check whether or not the speculative execution is successful. If the prediction is wrong, a data re-arrangement
+will be launched for getting a completely correct y.
+We ﬁrst give an example of our algorithm and use it in the following algorithm description. Fig. 3 plots this example. The input
+sparse matrix includes 12 rows (2 of them are empty) and 48 nonzero entries. We set B to 1, S to 2, T to 4 and W to 6. This setting
+means that one thread-group is composed of one thread-bunch of size 4; each thread-bunch runs 2 iteration steps. Before GPU
+kernel launch, three containers, synchronizer, dirty counter and speculator, are pre-allocated in DRAM for global synchronization
+and speculative execution. Algorithm 1 in Appendix A lists pseudo code of the ﬁrst stage.
+The speculative execution stage includes the following steps: (1) positioning a range of row indices for nonzero entries in
+a given tile, (2) calculating segment descriptor based on the range, (3) conducting segmented sum on the tile, (4) saving partial
+sums to the computed index range in vector y. This stage also has some input-triggered operations such as labeling a tile with
+empty rows.
+First, each thread-bunch executes binary search of S + 1 tile boundaries on the CSR row pointer array. Then we obtain corre-
+sponding row indices and store them in a scratchpad array tile offset of size S + 1. The results of the binary search are starting and
+ending row indices of the nonzero entries in each tile. Thus each tile knows the locations to store generated partial sums. Lines
+3–7 of Algorithm 1 give a code expression of this step. In our example shown in Fig. 3, the 2 tiles of size 24 have 3 boundaries {0,
+24, 48}. The results of binary search of {0, 24, 48} on the CSR row pointer array are {0, 4, 12}. Note that the binary search needs
+to return the rightmost match, if multiple slots have the same value.
+Then each thread-bunch executes an iteration of S steps. Lines 8–59 of Algorithm 1 give code expression of this step. Each
+iteration deals with one tile. By calculating offset between the left boundary of a tile and the covered row indices, a local segment
+descriptor is generated (lines 14–21 in Algorithm 1). For example, the left boundary of the second tile is 24 and its row index
+range is 4–12. We need to compute offset between 24 and the row pointer {19, 27, 29, 29, 34, 37, 37, 44, 48}. Then we obtain a
+group of offsets {−5, 3, 5, 5, 10, 13, 13, 20, 24}. After removing duplicate values and overﬂowed values on the left and the right
+sides, the effective part {3, 5, 10, 13, 20} in fact implies local segment descriptor for the current tile. We can easily convert it to a
+binary expression {0, 0, 0, 1, 0, 1, 0, . . . ,0, 0, 1, 0, 0, 0} through a scatter operation in on-chip scratchpad memory. Moreover, since
+each tile is an independent work unit, the ﬁrst bit of its segment descriptor should be TRUE. Thus the ﬁnal expression becomes
+{1, 0, 0, 1, 0, 1, 0, . . . ,0, 0, 1, 0, 0, 0}. In Fig. 3, the ﬁlled and empty circles are heads (i.e., 1s or TRUEs) and body (i.e., 0s or FALSEs)
+of segments, respectively.
+While generating the segment descriptor, each thread detects whether or not its right neighbor wants to write to the same
+slot. If yes (like the duplicate offset information {. . . ,5, 5, . . .} and {. . . ,13, 13, . . .} in the above example), we can make sure that
+this tile contains at least one empty row, since an empty row is expressed as two contiguous indices of the same value in the
+CSR row pointer array. Then we mark this tile as “dirty” (line 19 in Algorithm 1). Further, the dirty counter array stored in DRAM
+example, dirty counter is 1 and speculator array has a pair of offsets {(cid:6)4, 12(cid:7)} ((shown with angular brackets in Fig. 3).
+is incremented by atomic operation, and this tile’s offset is recorded in the speculator array (lines 53–58 in Algorithm 1). In our
+Then we calculate and save element-wise products in scratchpad memory, based on its nonzero entries’ column indices,
+values and corresponding values in the vector x. Lines 22–26 of Algorithm 1 show code expression of this step. When ﬁnished,
+we transmit the sum of the last segment to an intermediate space for the next iteration (lines 27–31 in Algorithm 1). In our
+example, the ﬁrst tile’s last value 5e is transmitted to the next tile. Then we execute the matrix-based segmented sum (lines
+
+Please cite this article as: W. Liu, B. Vinter, Speculative segmented sum for sparse matrix-vector multiplication on heteroge-
+neous processors, Parallel Computing (2015), http://dx.doi.org/10.1016/j.parco.2015.04.004
+
+JID: PARCO
+
+6
+
+ARTICLE IN PRESS
+
+W. Liu, B. Vinter / Parallel Computing 000 (2015) 1–15
+
+[m3Gsc;June 6, 2015;18:8]
+
+Fig. 3. An example of our CSR-based SpMV algorithm. The input sparse matrix contains 48 nonzero entries in 12 rows (10 non-empty rows and 2 empty
+rows). One thread-bunch composed of 4 threads is launched in this 2-iteration process. The arrays synchronizer and speculator store tuples (shown with angular
+brackets).
+
+32–33) on the tile. Because the segmented sum algorithm used here is very similar to the method described in [16], we refer
+the reader to [16] and several pervious GPU segmented sum algorithms [19,34] for details. But note that compared to [16], our
+method makes one difference: we store partial sums in a compact pattern (i.e., values are arranged in order from the ﬁrst location
+in the thread work space), but not save them to locations of corresponding segment heads. For this reason, we need to record
+the starting position and the number of partial sums. Then we can use an ordinary exclusive scan operation (lines 34–35) for
+obtaining contiguous indices of the partial sums in y. In Fig. 3, we can see that the partial sums (expressed as ﬁlled hexagons)
+are aggregated in the compact fashion. Note that empty hexagons are intermediate partial sums, which are already added to the
+correct position of segment heads.
+Finally, we store the partial sums to known locations in the resulting vector. Lines 36–52 of Algorithm 1 show code expression.
+As an exception, the sum result of the ﬁrst segment in a thread-bunch is stored to the synchronizer array (lines 40–43), since the
+ﬁrst row of each thread-bunch may cross multiple thread-bunch. This is a well known issue while conducting basic primitives,
+such as reduction and preﬁx-sum scan, using more than one thread-group that cannot communicate with each other. In fact,
+atomic add operation can be utilized to avoid the global synchronization. But we choose not to use relatively slow global atomic
+code expression. Since the problem size (i.e., (cid:4)nnz/(SWT)(cid:5)) can be too small to saturate a GPU core, a CPU core is in fact faster
+operations and let a CPU core to later on ﬁnish the global synchronization. Lines 62–68 of Algorithm 1 show the corresponding
+for accessing short arrays linearly stored in DRAM. Taking the ﬁrst tile in Fig. 3 as an example, its ﬁrst partial sum is 3a, which is
+stored with its global index 0 to the synchronizer. After that, the value 3a is added to position 0 of y.
+When the above steps are complete, the resulting vector is numerically identiﬁed, except that some values generated by dirty
+tiles are not in their correct locations. In Fig. 3, we can see that after synchronization, vector y is already numerically identiﬁed
+to its ﬁnal form, but entries 5g, 3h, 7i and 4j generated by the second tile are located in wrong slots.
+The checking prediction stage ﬁrst checks value of the dirty counter array. If it is zero, the previous prediction is correct and
+the result of the ﬁrst stage is the ﬁnal result; if it is not zero, the predicted entries generated by dirty tiles are scattered to their
+correct positions in the resulting vector. In this procedure, the CSR row pointer array is required to be read for getting correct row
+distribution information. Again, we use a CPU core for the irregular linear memory access, which is more suitable for cache sub-
+systems in CPUs. In our example, entries 5g, 3h, 7i and 4j are moved to their correct positions. Then the SpMV operation is done.
+
+Please cite this article as: W. Liu, B. Vinter, Speculative segmented sum for sparse matrix-vector multiplication on heteroge-
+neous processors, Parallel Computing (2015), http://dx.doi.org/10.1016/j.parco.2015.04.004
+
+JID: PARCO
+
+ARTICLE IN PRESS
+
+[m3Gsc;June 6, 2015;18:8]
+
+W. Liu, B. Vinter / Parallel Computing 000 (2015) 1–15
+
+7
+
+Table 1
+The selected parameters.
+
+Processor
+
+Intel
+
+AMD
+
+nVidia
+
+Precision
+
+32-bit single
+
+32-bit single
+
+64-bit double
+
+32-bit single
+
+64-bit double
+
+T
+W
+B
+S
+
+8
+16
+4
+6
+
+64
+16
+2
+2
+
+64
+8
+2
+5
+
+32
+8
+5
+7
+
+32
+4
+5
+7
+
+Table 2
+The test environments used in our experiments
+
+Processor
+
+Intel Core i3-5010U
+
+AMD A10-7850K APU
+
+nVidia Tegra K1
+
+Core type
+Codename
+Cores @ clock (GHz)
+SP ﬂops/cycle
+SP peak (GFlop/s)
+DP ﬂops/cycle
+DP peak (GFlop/s)
+L1 data cache
+L2 cache
+L3 cache
+Scratchpad
+Shared last level cache
+DRAM
+DRAM capacity
+DRAM bandwidth
+Operating system
+GPU driver version
+Compiler
+Toolkit version
+
+GPU
+HD 5500
+3 @ 0.9
+3 × 128
+345.6
+3 × 32
+86.4
+3 × 4 kB
+3 × 24 kB
+384 kB
+3 × 64 kB
+
+x86 CPU
+Broadwell
+2 @ 2.1
+2 × 32
+134.4
+2 × 16
+67.2
+4 × 32 kB
+4 × 256 kB
+N/A
+N/A
+3 MB
+Dual-channel DDR3-1600
+8 GB
+25.6 GB/s
+Microsoft Windows 64-bit
+15.36
+icc 15.0.2
+OpenCL 2.0
+
+GPU
+GCN
+8 @ 0.72
+8 × 128
+737.3
+8 × 8
+46.1
+8 × 16 kB
+Unreleased
+N/A
+8 × 64 kB
+
+x86 CPU
+Steamroller
+4 @ 3.7
+4 × 8
+118.4
+4 × 4
+59.2
+4 × 16 kB
+2 × 2 MB
+N/A
+N/A
+N/A
+Dual-channel DDR3-1600
+8 GB
+25.6 GB/s
+Ubuntu Linux 14.04 64-bit
+14.501
+gcc 4.8.2
+OpenCL 2.0
+
+GPU
+Kepler
+1 @ 0.85
+1 × 384
+327.2
+1 × 16
+13.6
+1 × 16 kB
+128 kB
+N/A
+1 × 48 kB
+
+ARM CPU
+Cortex A15
+4 @ 2.3
+4 × 8
+73.6
+2 × 2
+18.4
+4 × 32 kB
+2 MB
+N/A
+N/A
+N/A
+Single-channel DDR3L-1866
+2 GB
+14.9 GB/s
+Ubuntu Linux 14.04 32-bit
+r19.2
+gcc 4.8.2, nvcc 6.0.1
+CUDA 6.0
+
+3.3. Complexity analysis
+
+space complexity of synchronizer is (cid:4)nnz/(SWT)(cid:5), equivalent to the number of thread-bunches. The size of dirty counter is constant
+Our CSR-based SpMV algorithm pre-allocates three auxiliary arrays, synchronizer, dirty counter and speculator, in DRAM. The
+1. The speculator array needs a size of (cid:4)nnz/(WT)(cid:5), equivalent to the number of tiles. Since W and T are typically set to relatively
+For each thread-bunch, we executes S + 1 binary searches in the row pointer array of size m + 1. Thus O((cid:4)nnz/(SW T )(cid:5) × (S +
+large values, the auxiliary arrays merely slightly increase overall space requirement.
+1) × log2
+(m + 1)) = O(nnz log2
+(m)/W T ) is work complexity of this part. On the whole, generating segment descriptor needs
+O(m) time. Collecting element-wise products needs O(nnz) time. For each tile, segmented sum needs O(W T + log2
+(T )) time.
+Thus all segmented sum operations need O((cid:4)nnz/(W T )(cid:5)(W T + log2
+(T ))) = O(nnz + nnz log2
+(T )/W T ) time. Saving entries to y
+needs O(m) time. Synchronization takes O((cid:4)nnz/(SW T )(cid:5)) = O(nnz/SW T ) time. Possible re-arrangement needs O(m) time in the
+worst case. Thus overall work complexity of our CSR-based SpMV algorithm is O(m + nnz + nnz(log2
+(m) + log2
+(T ))/W T ).
+
+3.4. Implementation details
+
+Based on the above analysis, we can see that when the input matrix is ﬁxed, the cost of our SpMV algorithm only depends on
+two parameters: T and W. In our algorithm implementation, T is set to SIMD length of the used processor. Choosing W needs to
+consider the capacity of on-chip scratchpad memory. The other two parameters B and S are empirically chosen. Table 1 shows
+the selected parameters. Note that double precision is not currently supported in Intel OpenCL implementation for its GPUs.
+We implement the ﬁrst stage of our algorithm in OpenCL for the Intel and AMD platforms (and CUDA for the nVidia platform)
+for GPU execution and the second stage in standard C language running on the CPU part. Since our algorithm needs CPU and GPU
+share some arrays, we allocate all arrays in Shared Virtual Memory (SVM) supported by OpenCL for the best performance. On the
+nVidia platform, we use Uniﬁed Memory in CUDA SDK.
+
+4. Experimental results
+
+4.1. Experimental environments
+
+We use three heterogeneous processors, Intel Core i3-5010U, AMD A10-7850K APU and nVidia Tegra K1, for evaluating SpMV
+algorithms. Table 2 shows speciﬁcations of the three processors. All of them are composed of multiple CPU cores and GPU cores.
+The two types of cores in the Intel heterogeneous processor share a 3 MB last level cache. In contrast, GPU cores in the AMD
+heterogeneous processor can snoop the L2 cache of size 4 MB on the CPU side. Unlike those, the cache systems of the CPU
+
+Please cite this article as: W. Liu, B. Vinter, Speculative segmented sum for sparse matrix-vector multiplication on heteroge-
+neous processors, Parallel Computing (2015), http://dx.doi.org/10.1016/j.parco.2015.04.004
+
+JID: PARCO
+
+8
+
+ARTICLE IN PRESS
+
+W. Liu, B. Vinter / Parallel Computing 000 (2015) 1–15
+
+[m3Gsc;June 6, 2015;18:8]
+
+Table 3
+Overview of evaluated sparse matrices.
+
+Name
+
+Dense
+
+Protein
+
+FEM/Spheres
+
+FEM/Cantilever
+
+Wind Tunnel
+
+Plot
+Dimensions
+nnz
+nnz/row (min, avg, max)
+
+2 K × 2 K
+4.0 M
+2 K, 2 K, 2 K
+
+36 K × 36 K
+4.3 M
+18, 119, 204
+
+Name
+
+FEM/Harbor
+
+QCD
+
+83 K × 83 K
+6.0 M
+1, 72, 81
+
+FEM/Ship
+
+62 K × 62 K
+4.0 M
+1, 64, 78
+
+Economics
+
+218 K × 218 K
+11.6 M
+2, 53, 180
+
+Epidemiology
+
+Plot
+Dimensions
+nnz
+nnz/row (min, avg, max)
+
+47 K × 47 K
+2.4 M
+4, 50, 145
+
+49 K × 49 K
+1.9 M
+39, 39, 39
+
+141 K × 141 K
+7.8 M
+24, 55, 102
+
+207 K × 207 K
+1.3 M
+1, 6, 44
+
+Name
+
+FEM/Accelerator
+
+Circuit
+
+Webbase
+
+LP
+
+526 K × 526 K
+2.1 M
+2, 3, 4
+
+ASIC_680k
+
+Plot
+Dimensions
+nnz
+nnz/row (min, avg, max)
+
+121 K × 121 K
+2.6 M
+0, 21, 81
+
+171 K × 171 K
+959 K
+1, 5, 353
+
+Name
+
+boyd2
+
+dc2
+
+1 M × 1 M
+3.1 M
+1, 3, 4.7 K
+
+ins2
+
+4 K × 1.1 M
+11.3 M
+1, 2.6 K, 56.2 K
+
+683 K × 683 K
+3.9 M
+1, 6, 395 K
+
+rajat21
+
+transient
+
+Plot
+Dimensions
+nnz
+nnz/row (min, avg, max)
+
+466 K × 466 K
+1.5 M
+2, 3, 93 K
+
+117 K × 117 K
+766 K
+1, 7, 114 K
+
+309 K × 309 K
+2.8 M
+5, 9, 309 K
+
+412 K × 412 K
+1.9 M
+1, 5, 119 K
+
+179 K × 179 K
+962 K
+1, 5, 60 K
+
+part and the GPU part in the nVidia Tegra processor are completely separate. Note that currently the Intel GPU can run OpenCL
+program only on Microsoft Windows operating system. Also note that we use kB, MB and GB to denote 210 , 220 and 230 bytes,
+respectively; and use GFlop to denote 109 ﬂops.
+
+4.2. Benchmark suite
+
+To evaluate our method, we choose 20 unstructured matrices from the University of Florida Sparse Matrix Collection [35].
+Table 3 lists main information of the evaluated sparse matrices. The ﬁrst 14 matrices of the benchmark suite have been widely
+used in previous work [1,2,5,6,12,13]. The last 6 matrices are chosen as representatives of irregular matrices extracted from graph
+applications, such as circuit simulation and optimization problems.
+The ﬁrst 10 matrices are relatively regular, due to short distance between the average value and the maximum value of
+nnz/row. The other matrices are relatively irregular. In this context, ‘regular’ is used for a sparse matrix including rows of roughly
+the same size. In contrast, an ‘irregular matrix’ can have some very long rows and many very short rows. For example, matrices
+generated from power-law graphs can have a few rows with O(n) nonzero entries and many rows with O(1) nonzero entries.
+
+4.3. Experimental setup
+
+To analyze eﬃciency of the proposed SpMV algorithm, we also benchmark parallel CSR-based SpMV using some other libraries
+or methods on CPUs and GPUs.
+On CPUs, we execute three CSR-based SpMV approaches: (1) OpenMP-accelerated basic row block method, (2) pOSKI li-
+brary [36] using OSKI [37] as a building block, and (3) Intel MKL v11.2 Update 2 in Intel Parallel Studio XE 2015 Update 2. The
+three approaches are running on all CPU cores of the used heterogeneous processors. For the Intel CPU, we report results from
+MKL, since it always delivers the best performance and the pOSKI is not supported by the used Microsoft Windows operating
+system. For the AMD CPU, we report the best results of the three libraries, since none of the three libraries outperforms all the
+
+Please cite this article as: W. Liu, B. Vinter, Speculative segmented sum for sparse matrix-vector multiplication on heteroge-
+neous processors, Parallel Computing (2015), http://dx.doi.org/10.1016/j.parco.2015.04.004
+
+JID: PARCO
+
+ARTICLE IN PRESS
+
+[m3Gsc;June 6, 2015;18:8]
+
+W. Liu, B. Vinter / Parallel Computing 000 (2015) 1–15
+
+9
+
+(a) Dense
+
+(b) Protein
+
+(c) FEM/Spheres
+
+(d) FEM/Cantilever
+
+(e) Wind Tunnel
+
+(f ) FEM/Harbor
+
+(g) QCD
+
+(h) FEM/Ship
+
+(i) Economics
+
+(j) Epidemiology
+
+(k) FEM/Accelerator
+
+(l) Circuit
+
+(m) Webbase
+
+(n) LP
+
+(o) ASIC 680k
+
+(p) boyd2
+
+(q) dc2
+
+(r) ins2
+
+(s) ra jat21
+
+(t) transient
+
+Fig. 4. Throughput (GFlop/s) of the single precision CSR-based SpMV algorithms running on the three platforms. “CPU (Best, multi-threaded)” shows the best
+results of OpenMP parallelization, pOSKI and Intel MKL on the AMD device. “CSR-scalar” and “CSR-vector” are variants of the row block algorithm on GPUs.
+“bhSPARSE” shows our CSR-based SpMV approach described in this paper.
+
+Harmonic mean
+
+others. For the ARM CPU included in the nVidia Tegra K1 platform, we only report results from OpenMP, since the current pOSKI
+and Intel MKL implementations do not support the ARM architecture. Moreover, single-threaded naïve implementation on CPU
+is included in our benchmark as well.
+On GPUs, we benchmark variants of the CSR-scalar and the CSR-vector algorithms proposed in [1]. The OpenCL version of the
+CSR-scalar method is extracted from PARALLUTION v1.0.0 [38] and evaluated on the AMD platform. The OpenCL implementation
+of the CSR-vector method is extracted from semantically equivalent CUDA code in the CUSP library v0.4.0 and executed on both
+the Intel and the AMD platforms. On the nVidia platform, we run the CSR-based SpMV from vendor-supplied cuSPARSE v6.0 and
+CUSP v0.4.0 libraries.
+For all tests, we run SpMV 200 times and record averages. The implicit data transfer (i.e., matrices and vectors data copy from
+their sources to OpenCL Shared Virtual Memory or CUDA Uniﬁed Memory) is not included in our evaluation, since SpMV opera-
+tion is normally one building block of more complex applications. All participating methods conduct general SpMV, meaning that
+symmetry is not considered although some input matrices are symmetric. The throughput (ﬂops per second) is calculated by
+2 × nnz
+runtime
+The bandwidth (bytes per second) is calculated by
+(m + 1 + nnz ) × size of (idx_type) + (nnz + nnz + m) ∗ size of(val_type)
+runtime
+
+.
+
+.
+
+4.4. Performance analysis
+
+Figs. 4 and 5 show throughput of single precision and double precision SpMV of the tested CSR-based approaches, respectively.
+
+Please cite this article as: W. Liu, B. Vinter, Speculative segmented sum for sparse matrix-vector multiplication on heteroge-
+neous processors, Parallel Computing (2015), http://dx.doi.org/10.1016/j.parco.2015.04.004
+
+JID: PARCO
+
+10
+
+ARTICLE IN PRESS
+
+W. Liu, B. Vinter / Parallel Computing 000 (2015) 1–15
+
+[m3Gsc;June 6, 2015;18:8]
+
+(a) Dense
+
+(b) Protein
+
+(c) FEM/Spheres
+
+(d) FEM/Cantilever
+
+(e) Wind Tunnel
+
+(f ) FEM/Harbor
+
+(g) QCD
+
+(h) FEM/Ship
+
+(i) Economics
+
+(j) Epidemiology
+
+(k) FEM/Accelerator
+
+(l) Circuit
+
+(m) Webbase
+
+(n) LP
+
+(o) ASIC 680k
+
+(p) boyd2
+
+(q) dc2
+
+(r) ins2
+
+(s) ra jat21
+
+(t) transient
+
+Fig. 5. Throughput (GFlop/s) of the double precision CSR-based SpMV algorithms running on the AMD and the nVidia platforms.
+
+Harmonic mean
+
+In Fig. 4, we can see that on the Intel heterogeneous processor, our approach obtains up to 6.90x and on average 2.57x speedup
+over the CSR-vector method running on the used GPU. Although the speedup mainly comes from irregular matrices, our method
+generally does not obviously lose performance on regular matrices. Further, compared to CPU cores running MKL, both GPU SpMV
+algorithms are slower. For our algorithm, the main reason is that the integrated GPU implements scratchpad memory in its L3
+cache, which has one order of magnitude higher latency compared to fast scratchpad in nVidia or AMD GPUs. Our algorithm
+in fact heavily uses scratchpad memory for storing and reusing segment descriptor, element-wise products and other shared
+data by threads. Thus even though the GPU part of the Intel heterogeneous processor has higher single precision theoretical
+peak performance than its CPU part, the delivered SpMV throughput is lower than expected. For the CSR-vector method, the low
+performance has another reason: small thread-bunch of size 8 dramatically increases loop overhead [39], which is one of the
+well known bottlenecks [40] of GPU programming.
+In Figs. 4 and 5, we can see that on the AMD heterogeneous processor, our method delivers up to 71.90x (94.05x) and on
+average 22.17x (22.88x) speedup over the single (double) precision CSR-scalar method running on the used GPU. Compared to
+the GPU CSR-vector method, our algorithm achieves up to 16.07x (14.43x) and on average 5.61x (4.47x) speedup. The CSR-scalar
+and the CSR-vector methods give very low throughput while running the last 6 irregular matrices, because of the problem of
+load imbalance. Further, we ﬁnd that the Intel heterogeneous processor’s GPU is actually faster than the AMD GPU while running
+the last 6 matrices. The reason is that the shorter thread-bunch (8 in Intel GPU vs. 64 in AMD GPU) brings a positive inﬂuence
+for saving SIMD idle cost by executing a much shorter vector width for dramatically imbalanced row distribution. On the other
+hand, for several very regular matrices with short rows, e.g., Epidemiology, the CSR-scalar method offers the best performance
+because of almost perfect load balance and execution of short rows without loop cost. For most regular matrices, our method
+delivers comparable performance over the best CPU algorithm.
+In Figs. 4 and 5, we can see that on the nVidia platform, our method delivers up to 5.91x (6.20x) and on average 2.69x
+(2.53x) speedup over the single (double) precision SpMV in the CUSP library running on the used GPU. Compared to cuSPARSE,
+
+Please cite this article as: W. Liu, B. Vinter, Speculative segmented sum for sparse matrix-vector multiplication on heteroge-
+neous processors, Parallel Computing (2015), http://dx.doi.org/10.1016/j.parco.2015.04.004
+
+JID: PARCO
+
+ARTICLE IN PRESS
+
+[m3Gsc;June 6, 2015;18:8]
+
+W. Liu, B. Vinter / Parallel Computing 000 (2015) 1–15
+
+11
+
+(a) Single precision SpMV on Intel Core i3-5010U
+
+(b) Single precision and double precision SpMV on AMD A10-7850K
+
+(c) Single precision and double precision SpMV on nVidia Tegra K1
+
+Fig. 6. Bandwidth utilization (GB/s) of our CSR-based SpMV algorithm running on the three platforms. Theoretical bandwidth from the hardware speciﬁcations
+are marked up using black lines.
+
+our method has higher speedups. Since the both libraries use CSR-vector algorithm, those speedups are within expectations.
+Consider the Tegra K1 platform only contains one single GPU core, the problem of load imbalance on this device is not as heavy
+as on the above AMD platform. As a result, the speedups are not as high as those from the AMD processor. Here our method
+delivers on average 1.41x (1.42x) speedup over OpenMP-accelerated SpMV on the quad-core ARM CPU, while using single
+(double) precision benchmark.
+Fig. 6 shows bandwidth utilization of our algorithm proposed in this paper. We can see that the regular matrices can use
+bandwidth more eﬃciently compared to the irregular ones. Considering the throughput speedups listed above, our method can
+obtain higher bandwidth utilization than the other CSR-based SpMV algorithms running on GPUs.
+
+4.5. Parameter selection
+
+We further conduct experiments to exploit how selected parameters inﬂuence overall performance.
+Fig. 7 shows dependency of the overall performance (harmonic means of the 20 benchmarks) on the parameters, while we ﬁx
+all the parameters except for parameter W (i.e., workload per thread). We can see that in general the overall performance goes
+up as parameter W increases. This trend matches the algorithm complexity analysis described in Section 3.3. However, when W
+is larger than a certain value, the overall performance degrades. The reason is that device occupancy may decrease while more
+on-chip scratchpad memory is allocated for WT work space of each thread-bunch.
+Fig. 8 shows the trend of the overall performance while we change parameter S (i.e., the number of iterations of each thread-
+bunch) and ﬁx all the other parameters. We can see that if we assign more work to each thread-bunch, a better performance can
+be expected. The performance improvement mainly comes from higher on-chip resource reuse.
+
+5. Comparison to related methods
+
+In recent years, some new formats have been designed for SpMV operation on various processor architectures. Because of
+less off-chip memory access and better on-chip memory localization, block-based formats or libraries, such as OSKI [37,41,42],
+
+Please cite this article as: W. Liu, B. Vinter, Speculative segmented sum for sparse matrix-vector multiplication on heteroge-
+neous processors, Parallel Computing (2015), http://dx.doi.org/10.1016/j.parco.2015.04.004
+
+JID: PARCO
+
+12
+
+ARTICLE IN PRESS
+
+W. Liu, B. Vinter / Parallel Computing 000 (2015) 1–15
+
+[m3Gsc;June 6, 2015;18:8]
+
+(a) Intel, SP
+
+(b) AMD, SP
+
+(c) nVidia, SP
+
+(d) AMD, DP
+
+(e) nVidia, DP
+
+Fig. 7. Single precision (SP) and double precision (DP) SpMV performance of our algorithm on the three platforms while parameter W changes and all the others
+ﬁxed to the best observed values (see Table 1).
+
+(a) Intel, SP
+
+(b) AMD, SP
+
+(c) nVidia, SP
+
+(d) AMD, DP
+
+(e) nVidia, DP
+
+Fig. 8. Single precision (SP) and double precision (DP) SpMV performance of our algorithm on the three platforms while parameter S changes and all the others
+ﬁxed to the best observed values (see Table 1).
+
+pOSKI [36], CSB [43,44], BELLPACK [45], BCCOO/BCCOO+ [5], BRC [6] and RSB [46], attracted the most attention. However, block-
+based formats heavily rely on sparsity structure, meaning that the input matrix is required to have a block structure to meet
+potential block layout. Therefore, block-based formats are mainly suitable for some matrices generated from scientiﬁc compu-
+tation problems, but may not ﬁt irregular matrices generated from graph applications. Our method proposed in this paper is
+insensitive to the sparsity structure of input matrix, thus a generally better performance is achieved.
+A lot of research has focused on improving row block method CSR-based SpMV. Williams et al. [13] proposed multiple opti-
+mization techniques for SpMV on multi-core CPUs and Cell B.E. processor. Nishtala et al. [47] designed a high-level data partition-
+ing method for SpMV to achieve better cache locality on multicore CPUs. Pichel et al. [48] evaluated how reordering techniques
+inﬂuence performance of SpMV on GPUs. Baskaran and Bordawekar [49] improved off-chip and on-chip memory access patterns
+of SpMV on GPUs. Reguly and Giles [50] improved thread cooperation for better GPU cache utilization. Ashari et al. [15] utilized
+static reordering and the Dynamic Parallelism scheme offered by nVidia GPUs for fast SpMV operation. Greathouse et al. [14]
+grouped contiguous rows for better runtime load balancing on GPUs. LightSpMV [56] uses atomic operations and warp shuﬄe
+functions for more balanced CSR-based SpMV without the requirement of generating auxiliary data. However, again, the row
+block methods cannot achieve good performance for input matrix with dramatically imbalanced row distribution. In contrast,
+our method is independent of the sparsity structure of input matrix.
+Using segmented sum as a building block is potentially a better generic method for the CSR-based SpMV. An early segmented
+sum method GPU SpMV was introduced by Sengupta et al. [19] and Garland [20] and implemented in the cuDPP library [17]. But
+the cost of segmented sum and global memory access degrade overall SpMV performance. Zhang [51] improved backward seg-
+mented scan for a better cache eﬃciency and implemented the CSR-based SpMV on multicore CPUs. Recently, nVidia’s Modern
+GPU library [18] implemented an improved reduction method, which has been used as a back-end of cuDPP. However, its perfor-
+mance still suffered by pre- and post-processing empty rows in global memory space. Our method, in contrast, uses scratchpad
+memory more eﬃciently and utilizes the two types of cores in a heterogeneous processor for better workload distribution.
+Compared with our recent work CSR5 [12], a format designed for cross-platform SpMV on CPUs, GPUs and Xeon Phi, the SpMV
+approach presented in this paper does not need to process any format conversion or generate any auxiliary data for the input CSR
+matrix. Consider the format conversion from the CSR to the CSR5 merely needs the cost of a few SpMV operations, the CSR5-based
+SpMV and the CSR-based SpMV can ﬁnd their own application scenarios, such as solvers with different number of iterations.
+
+6. Conclusion and future work
+
+We proposed an eﬃcient method for SpMV on heterogeneous processors using the CSR storage format. On three mainstream
+platforms from Intel, AMD and nVidia, our method greatly outperforms row block method CSR-based SpMV algorithms running
+on GPUs. The performance gain mainly comes from our newly developed speculative segmented sum strategy that eﬃciently
+utilizes different types of cores in a heterogeneous processor.
+In this work, we assign different task to the CPU part and the GPU part in one heterogeneous processor. However, the heaviest
+workload (stage 1 in our method) currently only runs on GPU cores, while the CPU cores may be idle. Obviously, it is possible to
+schedule tasks in the ﬁrst stage on both CPU cores and GPU cores simultaneously for potentially higher throughput. However, a
+
+Please cite this article as: W. Liu, B. Vinter, Speculative segmented sum for sparse matrix-vector multiplication on heteroge-
+neous processors, Parallel Computing (2015), http://dx.doi.org/10.1016/j.parco.2015.04.004
+
+JID: PARCO
+
+ARTICLE IN PRESS
+
+[m3Gsc;June 6, 2015;18:8]
+
+W. Liu, B. Vinter / Parallel Computing 000 (2015) 1–15
+
+13
+
+heterogeneity-aware scheduling strategy is beyond the scope of the SpMV algorithm focused in this paper. We refer the reader
+to [52–55] for recent progress on utilizing both CPU cores and GPU cores in a heterogeneous environment.
+
+Acknowledgments
+
+The authors would like to thank James Avery for his valuable feedback. The authors also thank the anonymous reviewers for
+their insightful suggestions and comments on this paper.
+
+Appendix A. Pseudo code
+
+Algorithm 1 The SPMD pseudo code of a thread-bunch in speculative execution stage of the CSR-based SpMV
+1: function speculative_execution_gpu()
+t b ← get-thread-globalid( )/T ;
+2:
+//positioning row indices of tiles in the thread-bunch
+3:
+for i = 0 to S do
+4:
+boundary[i] ← t b × S × W × T + i × W × T
+5:
+tile_offset[i]← binary_search(*row_pointer, boundary[i])
+6:
+end for
+7:
+//iterative steps in a thread-bunch
+8:
+for i = 0 to S − 1 do
+9:
+st art ← tile_offset[i]
+10:
+st op ← tile_offset[i + 1]
+11:
+memset(*seg_descriptor, FALSE)
+12:
+dirt y ← FALSE
+13:
+//calculating segment descriptor
+14:
+for j = st art to st op − 1 do
+15:
+if row_pointer[ j] (cid:9)= row_pointer[ j + 1] then
+16:
+descriptor[row_pointer[ j] - boundary[i]] ← TRUE
+17:
+else
+18:
+dirt y ← TRUE
+19:
+end if
+20:
+end for
+21:
+//collecting element-wise products
+22:
+for j = 0 to W × T − 1 do
+23:
+x_value ← x[column_index[boundary[i]+ j]]
+24:
+product[ j] ← x_value × value[boundary[i]+ j]
+25:
+end for
+26:
+//transmitting a value from the previous tile
+27:
+if descriptor[0] = FALSE then
+28:
+product[0] ← product[0] + t ransmit t er
+29:
+descriptor[0] ← TRUE
+30:
+end if
+31:
+//segmented sum
+32:
+segmented_reduction(*product, *descriptor, *ts, *tc)
+33:
+//calculating index offset in y
+34:
+*y_index ← exclusive_scan(*tc)
+35:
+//saving partial sums to y
+36:
+for j = 0 to T − 1 do
+37:
+for k = 0 to tc[ j] − 1 do
+38:
+index ← st art + y_index[ j] + k
+39:
+//ﬁrst segment of the thread-bunch
+40:
+if index = tile_offset[0] then
+41:
+synchronizer[t b].idx ← index
+42:
+synchronizer[t b].val ← product[ j × W +ts[ j]+k]
+43:
+else
+44:
+//storing to y directly
+45:
+y[index] ← product[ j × W +ts[ j]+k]
+46:
+end if
+47:
+if index = st op then
+48:
+t ransmit t er ← product[ j × W +ts[ j]+k]
+49:
+end if
+50:
+end for
+51:
+end for
+52:
+//labeling dirty tile
+53:
+if dirt y = TRUE then
+54:
+pos ← atomic_increment(*dirty_counter)
+speculator[ pos] ← (cid:6)st art , st op(cid:7)
+55:
+56:
+t ransmit t er ← 0
+57:
+end if
+58:
+end for
+59:
+60: end function
+61:
+62: function synchronization_cpu()
+for i = 0 to (cid:4)nnz/(S × W × T )(cid:5) − 1 do
+63:
+index ← synchronizer[i].idx
+64:
+value ← synchronizer[i].val
+65:
+y[index] ← y[index] + value
+66:
+end for
+67:
+68: end function
+
+Please cite this article as: W. Liu, B. Vinter, Speculative segmented sum for sparse matrix-vector multiplication on heteroge-
+neous processors, Parallel Computing (2015), http://dx.doi.org/10.1016/j.parco.2015.04.004
+
+JID: PARCO
+
+14
+
+References
+
+ARTICLE IN PRESS
+
+W. Liu, B. Vinter / Parallel Computing 000 (2015) 1–15
+
+[m3Gsc;June 6, 2015;18:8]
+
+[1] N. Bell, M. Garland, Implementing sparse matrix-vector multiplication on throughput-oriented processors, in: Proceedings of the Conference on High
+Performance Computing Networking, Storage and Analysis, SC ’09, 2009, pp. 18:1–18:11.
+[2] B.-Y. Su, K. Keutzer, clSpMV: A cross-platform open CL SpMV framework on GPUs, in: Proceedings of the 26th ACM International Conference on Supercom-
+puting, ICS ’12, 2012, pp. 353–364.
+[3] R. Li, Y. Saad, GPU-accelerated preconditioned iterative linear solvers, J Supercomput 63 (2) (2013) 443–466.
+[4] X. Liu, M. Smelyanskiy, E. Chow, P. Dubey, Eﬃcient sparse matrix-vector multiplication on x86-based many-core processors, in: Proceedings of the 27th
+International ACM Conference on International Conference on Supercomputing, ICS ’13, 2013, pp. 273–282.
+[5] S. Yan, C. Li, Y. Zhang, H. Zhou, yaSpMV: yet another SpMV framework on GPUs, in: Proceedings of the 19th ACM SIGPLAN Symposium on Principles and
+Practice of Parallel Programming, PPoPP ’14, 2014, pp. 107–118.
+[6] A. Ashari, N. Sedaghati, J. Eisenlohr, P. Sadayappan, An eﬃcient two-dimensional blocking strategy for sparse matrix-vector multiplication on GPUs, in:
+Proceedings of the 28th ACM International Conference on Supercomputing, ICS ’14, 2014, pp. 273–282.
+[7] S. Balay, S. Abhyankar, M.F. Adams, J. Brown, P. Brune, K. Buschelman, V. Eijkhout, W.D. Gropp, D. Kaushik, M.G. Knepley, L.C. McInnes, K. Rupp, B.F. Smith,
+H. Zhang, A.N. Laboratory, PETSc Users Manual, Tech. Rep. ANL-95/11 - Revision 3.5, 2014.
+[8] V. Minden, B. Smith, M. Knepley, D.A. Yuen, L. Wang, X. Chi, L. Johnsson, W. Ge, Preliminary implementation of PETSc using GPUs, in: Y. Shi (Ed.), GPU
+Solutions to Multi-scale Problems in Science and Engineering, Lecture Notes in Earth System Sciences, Springer Berlin Heidelberg, 2013, pp. 131–140.
+[9] P. Kumbhar, Performance of PETSc GPU Implementation with Sparse Matrix Storage Schemes, Master’s thesis, The University of Edinburgh, 2011.
+[10] D. Langr, P. Tvrdík, Evaluation Criteria for Sparse Matrix Storage Formats, IEEE Transactions on Parallel and Distributed Systems in press.
+[11] W. Liu, B. Vinter, An eﬃcient GPU general sparse matrix-matrix multiplication for irregular data, in: Proceedings of the 2014 IEEE 28th International Parallel
+and Distributed Processing Symposium, IPDPS ’14, 2014, pp. 370–381.
+[12] W. Liu, B. Vinter, CSR5: An eﬃcient storage format for cross-platform sparse matrix-vector multiplication, in: Proceedings of the 29th ACM International
+Conference on Supercomputing, ICS ’15, 2015.
+[13] S. Williams, L. Oliker, R. Vuduc, J. Shalf, K. Yelick, J. Demmel, Optimization of sparse matrix-vector multiplication on emerging multicore platforms, Parallel
+Comput 35 (3) (2009) 178–194.
+[14] J.L. Greathouse, M. Daga, Eﬃcient sparse matrix-vector multiplication on GPUs using the CSR storage format, in: Proceedings of the International Conference
+for High Performance Computing, Networking, Storage and Analysis, SC ’14, 2014, pp. 769–780.
+[15] A. Ashari, N. Sedaghati, J. Eisenlohr, S. Parthasarathy, P. Sadayappan, Fast sparse matrix-vector multiplication on GPUs for graph applications, in: Proceedings
+of the International Conference for High Performance Computing, Networking, Storage and Analysis, SC ’14, 2014, pp. 781–792.
+[16] G.E. Blelloch, M.A. Heroux, M. Zagha, Segmented Operations for Sparse Matrix Computation on Vector Multiprocessors, Tech. Rep. CMU-CS-93-173, Carnegie
+Mellon University, 1993.
+[17] M. Harris, J.D. Owens, S. Sengupta, CUDPP Documentation, second ed., nVidia, 2014.
+[18] S. Baxter, Modern GPU, nVidia, 2013.
+[19] S. Sengupta, M. Harris, Y. Zhang, J.D. Owens, Scan primitives for GPU computing, in: Proceedings of the 22Nd ACM SIGGRAPH/EUROGRAPHICS Symposium
+on Graphics Hardware, GH ’07, 2007, pp. 97–106.
+[20] M. Garland, Sparse matrix computations on many core GPU’s, in: Proceedings of the 45th Annual Design Automation Conference, DAC ’08, 2008, pp. 2–6.
+[21] R. Kumar, D. Tullsen, N. Jouppi, P. Ranganathan, Heterogeneous chip multiprocessors, Computer 38 (11) (2005) 32–38.
+[22] S. Keckler, W. Dally, B. Khailany, M. Garland, D. Glasco, GPUs Future Parallel Comput, Micro, IEEE 31 (5) (2011) 7–17.
+[23] A. Branover, D. Foley, M. Steinman, AMD Fusion APU: Llano, IEEE Micro 32 (2) (2012) 28–37.
+[24] AMD, White Paper: Compute Cores (Jan 2014).
+[25] S. Damaraju, V. George, S. Jahagirdar, T. Khondker, R. Milstrey, S. Sarkar, S. Siers, I. Stolero, A. Subbiah, A 22nm IA multi-CPU and GPU system-on-chip, in:
+Solid-State Circuits Conference Digest of Technical Papers (ISSCC), 2012 IEEE International, 2012, pp. 56–57.
+[26] nVidia, NVIDIA Tegra K1 A New Era in Mobile Computing, 1st ed., 2014.
+[27] Qualcomm, Qualcomm Snapdragon 800 Product Brief (Aug 2013).
+[28] E. Chung, P. Milder, J. Hoe, K. Mai, Single-chip heterogeneous computing: does the future include custom logic, FPGAs, and GPGPUs? in: Microarchitecture
+(MICRO), 2010 43rd Annual IEEE/ACM International Symposium on, 2010, pp. 225–236.
+[29] HSA Foundation, HSA Programmer’s Reference Manual: HSAIL Virtual ISA and Programming Model, Compiler Writer’s Guide, and Object Format (BRIG), 0th
+ed. (May 2013).
+[30] A. Munshi, The Open CL Speciﬁcation, 2nd ed., Khronos OpenCL Working Group, 2014.
+[31] D. Negrut, R. Serban, A. Li, A. Seidl, Uniﬁed Memory in CUDA 6: A Brief Overview and Related Data Access/Transfer Issues, Tech. Rep. TR-2014-09, University
+of Wisconsin–Madison, 2014.
+[32] Y.S. Deng, B.D. Wang, S. Mu, Taming irregular EDA applications on GPUs, in: Proceedings of the 2009 International Conference on Computer-Aided Design,
+ICCAD ’09, 2009, pp. 539–546.
+[33] C. Gregg, K. Hazelwood, Where is the data? Why you cannot debate CPU vs. GPU performance without the answer, in: Performance Analysis of Systems and
+Software (ISPASS), 2011 IEEE International Symposium on, 2011, pp. 134–144.
+[34] Y. Dotsenko, N.K. Govindaraju, P.-P. Sloan, C. Boyd, J. Manferdelli, Fast scan algorithms on graphics processors, in: Proceedings of the 22Nd Annual Interna-
+tional Conference on Supercomputing, ICS ’08, 2008, pp. 205–213.
+[35] T.A. Davis, Y. Hu, The University of Florida sparse matrix collection, ACM Trans. Math. Softw. 38 (1) (2011) 1:1–1:25.
+[36] J.-H. Byun, R. Lin, J.W. Demmel, K.A. Yelick, pOSKI: Parallel Optimized Sparse Kernel Interface Library User’s Guide, 1st ed., University of California, Berkeley,
+2012.
+[37] R. Vuduc, J.W. Demmel, K.A. Yelick, OSKI: A library of automatically tuned sparse matrix kernels, J Phys: Conference Series 16 (1) (2005) 521–530.
+[38] D. Lukarski, N. Trost, PARALUTION–User Manual, Tech. Rep. 1.0.0, PARALUTION Labs UG (haftungsbeschränkt) Co. KG, 2015.
+[39] M.M. Baskaran, U. Bondhugula, S. Krishnamoorthy, J. Ramanujam, A. Rountev, P. Sadayappan, A compiler framework for optimization of Aﬃne Loop Nests
+for GPGPUs, in: Proceedings of the 22nd Annual International Conference on Supercomputing, ICS ’08, 2008, pp. 225–234.
+[40] J. Fang, A. Varbanescu, H. Sips, A comprehensive performance comparison of CUDA and OpenCL, in: Parallel Processing (ICPP), 2011 International Conference
+on, 2011, pp. 216–225.
+[41] R. Vuduc, H.-J. Moon, Fast sparse matrix-vector multiplication by exploiting variable block structure, in: High Performance Computing and Communications,
+Vol. 3726 of Lecture Notes in Computer Science, Springer Berlin Heidelberg, 2005, pp. 807–816.
+[42] R.W. Vuduc, Automatic Performance Tuning of Sparse Matrix Kernels, Ph.d. thesis, University of California, Berkeley, 2003.
+[43] A. Buluç, J.T. Fineman, M. Frigo, J.R. Gilbert, C.E. Leiserson, Parallel sparse matrix-vector and matrix-transpose-vector multiplication using compressed sparse
+blocks, in: Proceedings of the Twenty-First Annual Symposium on Parallelism in Algorithms and Architectures, SPAA ’09, 2009, pp. 233–244.
+[44] A. Buluç, S. Williams, L. Oliker, J. Demmel, Reduced-bandwidth multithreaded algorithms for sparse matrix-vector multiplication, in: Parallel Distributed
+Processing Symposium (IPDPS), 2011 IEEE International, 2011, pp. 721–733.
+[45] J.W. Choi, A. Singh, R.W. Vuduc, Model-driven autotuning of sparse matrix-vector multiply on GPUs, in: Proceedings of the 15th ACM SIGPLAN Symposium
+on Principles and Practice of Parallel Programming, PPoPP ’10, 2010, pp. 115–126.
+[46] M. Martone, Eﬃcient multithreaded untransposed, transposed or symmetric sparse matrix-vector multiplication with the recursive sparse blocks format,
+Parallel Comput 40 (7) (2014) 251–270.
+[47] R. Nishtala, R. Vuduc, J. Demmel, K. Yelick, When cache blocking of sparse matrix vector multiply works and why, applicable algebra in engineering, Commun
+Comput 18 (3) (2007) 297–311.
+
+Please cite this article as: W. Liu, B. Vinter, Speculative segmented sum for sparse matrix-vector multiplication on heteroge-
+neous processors, Parallel Computing (2015), http://dx.doi.org/10.1016/j.parco.2015.04.004
+
+JID: PARCO
+
+ARTICLE IN PRESS
+
+[m3Gsc;June 6, 2015;18:8]
+
+W. Liu, B. Vinter / Parallel Computing 000 (2015) 1–15
+
+15
+
+[48] J.C. Pichel, F.F. Rivera, M. Fernández, A. Rodríguez, Optimization of sparse matrix-vector multiplication using reordering techniques on GPUs, Microprocess
+Microsyst 36 (2) (2012) 65–77.
+[49] M.M. Baskaran, R. Bordawekar, Optimizing Sparse Matrix-Vector Multiplication on GPUs, Tech. Rep. RC24704, IBM, 2008.
+[50] I. Reguly, M. Giles, Eﬃcient sparse matrix-vector multiplication on cache-based GPUs, in: Innovative Parallel Computing (InPar), 2012, pp. 1–12.
+[51] N. Zhang, A novel parallel scan for multicore processors and its application in sparse matrix-vector multiplication, Parallel Distributed Syst, IEEE Trans. 23
+(3) (2012) 397–404.
+[52] J. Lee, M. Samadi, Y. Park, S. Mahlke, Transparent CPU-GPU collaboration for data-parallel kernels on heterogeneous systems, in: Proceedings of the 22nd
+International Conference on Parallel Architectures and Compilation Techniques, PACT ’13, 2013, pp. 245–256.
+[53] R. Kaleem, R. Barik, T. Shpeisman, B.T. Lewis, C. Hu, K. Pingali, Adaptive heterogeneous scheduling for integrated GPUs, in: Proceedings of the 23rd Interna-
+tional Conference on Parallel Architectures and Compilation, PACT ’14, 2014, pp. 151–162.
+[54] J. Shen, J. Fang, A.L. Varbanescu, H. Sips, An application-centric evaluation of openCL on Multi-Core CPUs, Parallel Computing 39 (12) (2013) 834–850.
+[55] J. Shen, A.L. Varbanescu, P. Zou, Y. Lu, H. Sips, Improving performance by matching imbalanced workloads with heterogeneous platforms, in: Proceedings of
+the 28th ACM International Conference on Supercomputing, ICS ’14, 2014, pp. 241–250.
+[56] Y. Liu, B. Schmidt, LightSpMV: faster CSR-based sparse matrix-vector multiplication on CUDA-enabled GPUs, in: Proceedings of the 26th International
+Conference on Application-speciﬁc Systems, Architectures and Processors (ASAP), IEEE’15, 2015.
+
+Please cite this article as: W. Liu, B. Vinter, Speculative segmented sum for sparse matrix-vector multiplication on heteroge-
+neous processors, Parallel Computing (2015), http://dx.doi.org/10.1016/j.parco.2015.04.004
+
+

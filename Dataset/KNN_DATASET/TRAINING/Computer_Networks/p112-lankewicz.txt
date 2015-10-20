@@ -1,0 +1,366 @@
+
+A solution to the problem of low connection bandwidth is application of multicasting. Nowadays, multicasting has become a leading-
+edge  network  solution.  It  enables  multi-point  transmission  and  collection  of  data  in  packet  mode  to/from  unlimited  number  of 
+recipients/senders  in  real  time.  It  uses  IP protocol  for multicasting  packets  transmission  (containing all  types of multimedia data) by 
+means  of  available  network  types,  i.e.  LAN,  WAN,  complex  networks,  the  Internet.  Multicasting  technology,  also  termed  IP 
+Multicast  (Internet Protocol Multicast),  enables  practical  realization  of  large-scale  services  such  as:  interactive  news  television  (e.g. 
+Business TV),  live  transmissions of financial news or meetings of board of directors, transmission of  financial data  to any, unlimited 
+number of users of news bulletins (e.g. stock exchange rates from all over the world). 
+
+ 
+ 
+Mechanism of IP Multicast technology assumes existence of  ‘multicasting groups’ (being a fundamental c oncept in multicasting), i.e. 
+a  group  of  computers which  simultaneously  use  an  application,  defined  (identified)  by  a  common  (multicasting)  class D  IP  address 
+[3]. Each computer can be registered as a component of selected multicasting groups.  
+ 
+
+ 
+
+ 
+
+Figure 1. Information transfer in unicast and multicast networks 
+a)  unicast method 
+b)  multicast method 
+Source: own study 
+ 
+Multicasting  is a  technology which enables organization of multi-location videoconferencing via  Internet  (MBONE) as well as  local 
+and  corporate  Ethernet  networks.  Videoconferencing  belongs  to  a  subset  of  multicasting  applications  [4].  Through  its  unique  data 
+transmission  method  (sending  only  one  copy  of  information  independently  of  a  number  of  recipients),  multicasting  enables  saving 
+available transmission band and network bandwidth and also causes reduction in load on servers (saving computing power) and more 
+efficient  use  of  available  network  resources  (Fig.  1).  This  universal  technology  is  used,  apart  from  the  two  abovementioned 
+applications  using  total  multimedia  transmission,  for  data  transfer  to  multiple-recipients.  Multicasting  has  been  widely  applied  in 
+business  (e.g.  software  updates  in  many  business  branches,  transmission  of  current  data  to  many  computers,  transmission  of 
+multimedia  files  in  the  form  of MP3, MPEG  video  clips  etc.). Group  transmission  is  also  used  as  support  for  network  technologies 
+used  for  Internet  needs  e.g.  storage,  updating  and  transmission  of  content  at  WWW  webpages  (web-cashing),  Internet  directories, 
+transfer  and  automated  software  updates,  discussion  boards,  multi-person  interactive  chat,  virtual  worlds  or  cities,  virtual  reality, 
+multiplayer games and others. 
+ 
+4.2  Systems of collaborative work 
+Collaborative work  is a  term which denotes cooperation of a number, geographically scattered or staying within one room, of people 
+who  make  use  of  facilities  offered  by  their  work  environment  supported  by  technology.  The  support  consists  in  availability  of 
+transfer  and  share  of  documents, mechanisms  for  planning  and  task  assignment,  control over  progress  in  task  execution,  tracking  of 
+time and costs of the performed works.  
+The purpose of implementation of rules and solutions for collaborative work might be [5]: 
+• 
+the need for task management and control over time and costs of realization of the tasks, 
+• 
+systematization and registration of document flow, 
+• 
+improvement in information flow between members of organizations, 
+• 
+need  for  integration  of  flow  of  all  the  forms  of  documents:  faxes,  letters,  e-mails,  paper  documents  which  come  from 
+WWW pages or other sources. 
+Mechanisms  of  collaborative  work  enable  implementation  of  an  idea  of  remote  work,  central management  and  control  over  project 
+teams, regular protection of their results, systematized registration and making use of team members ’  knowledge. Collaborative work 
+forces initiatives from team members, increased sense of duty and efficient time management. It can also be argued that collaborative 
+work is an element of business knowledge management strategies [6].  
+Data  being  in  information  circulation  in  businesses  are  mainly  scattered  around  a  variety  of  physical  locations  (servers  and 
+workstations)  and  written  in  many  formats.  This  situation  is  caused  by  the  fact  that  software  from  many  manufacturers  has  been 
+installed in different organizational units. Such a procedure has its effect in informational chaos which consists in lack of opportunity 
+of  unconstrained  data  exchange  between  each  department  and  between  various  levels  in  a  corporate  ladder.  Incompatibility  of  file 
+formats  impedes  their  processing  by  several  applications.  There  are  often  copies  of  the  same  information  in  computer  networks, 
+which additionally impedes proper and quick decision-making.  
+ 
+ 
+5  Model of implementation of IT infrastructure for support of multicasting 
+Nowadays all bigger businesses have  their own, developed corporate networks. These networks are more or  less adapted  to efficient 
+data exchange. They have  gradually developed  from  smaller networks  to  their present  state. Their  technological advancement  (from 
+
+ 
+ 
+the standpoint of modern equipment being a part of it) is varied and a far cry from perfect. Therefore there is a need for adaptation of 
+the existing teleinformation infrastructure to efficient and flexible data exchange. 
+In  order  not  to  cause  work  disorganization  in  businesses  during  implementation  of  new  information  solutions,  a  model  presenting 
+gradual  transformation of a network  into  the  state which enables use of collaborative work  (Fig. 2) was developed. Presented model 
+is universal and is employed both in businesses with one location or having departments geographically separated from each other.  
+ 
+ 
+
+ 
+Figure 2. General model of IT system in businesses during implementation of group systems of data exchange 
+Source: own study 
+
+ 
+
+ 
+Data exchange during  implementation requires creation of specific mechanisms  for data  transformation (Fig. 3). The most  important 
+component  of  the  structure  presented  in  Fig.  3  is  expert  system,  responsible  for  data  selection  in  terms  of  quality,  format  and 
+adequacy.  Depending  on  a  decision  by  expert  system,  data  are  sent  to  transformation  mechanisms  or  they  are  rejected  as  useless. 
+Detailed tasks of the module are to be described in further part of this work.  
+Implementation  of  the model which  presents  exchange  of  information  in  local  network  connected  to  the  Internet  is  possible  only  in 
+the case of adaptation of  the network  to  interactive  transmission  in group  technology. Process of network adaptation depends mainly 
+on  its  initial  state.  It  can be  carried  out  at  three  levels:  network  infrastructure,  software  for  network management  and  servers within 
+Intranet  networks.  Selection  of  a  level  depends  on which  part  of  infrastructure  requires  modernization.  Extreme  case  appears  when 
+modernization takes place at all the levels. Fig. 4 presents next stages of infrastructure modernization in the form of an algorithm.  
+ 
+First  step  is  recognition  of  the  existing  network  infrastructure  in  an  organization.  This  enables  selection  of  proper  level  of  network 
+modernization.  This  process  is  performed  together  with  network  compatibility  test  in  terms  of  usefulness  for  IP  Multicast 
+transmission.  Lack  of  compatibility  forces  exchange  of  data  exchange  integrators  (routers,  switches,  gatekeepers).  Another  step  is 
+integrator  cooperation  test,  which,  if  successfully  completed,  enables  initiation  of  procedures  of  application  server  creation. 
+Application servers store and make available applications used within a network, simplifying the process of management. Placing all 
+applications in one location enables administrators to update them  
+ 
+
+50556065707580859095100      Transmission quality (%)Signal delay (ms)std VGAext VGAHDMI/DVIThis is a slightly revised version of the paper accepted by the 9 th IEEE International 
+Conference on Malicious and Unwanted Software (MALCON 2014).  
+
+ 
+ 
+ 
+
+6.6   Data Size 
+ 
+
+Effective  exfiltration  of  data  places  practical  limits  on  the  transmission 
+time.  The  transmitting  program,  running  on  the  compromised  computer, 
+should  hide  its  activities  and  has  limited  safe  time  intervals  where  the 
+collected  data  can  be  broadcasted.  Additionally,  a  receiving  mobile  phone 
+does not stay within the effective range of the transmitter for indefinite time. 
+In  Table  3 we  show  the  transmission  time  of  various  types  of  files, with 
+typical  sizes,  when  using  raw  data  and  when  using  structured  packets  (as 
+described  in  the  'Implementation'  section).  A  70ms  delay  was  found  to  be 
+optimal. The  time  required  for  transmitting  tiny-size data  (below 100 bytes) 
+such  as  IP  &  MAC,  or  password,  is  below  ten  seconds,  which  seems 
+acceptable.  Small-size  data  (below  10  KB)  such  as  system-information  or 
+one-day  keylogging  would  require  several  minutes,  which  also  seems 
+acceptable. However, documents  in  the order of 0.5 MB would  take  several 
+hours  to  transmit and  this would  seem  to be unacceptable. Note  that  the  toll 
+inflicted  by  using  structured  packets  compared  to  raw  data  seems  to  be 
+tolerable, and justifies using this method when accurate reception is required. 
+ 
+ 
+ 
+
+Table 3: Transmission time with varying data size (70ms delay) 
+
+File (data size) 
+
+IP & MAC (10 bytes) 
+Password file (100 bytes) 
+1 hour keylogging (1 KB) 
+System information (2 KB) 
+1 day keylogging (8 KB) 
+Document (0.5MB) 
+
+Raw data  Structured 
+packets 
+1 sec 
+10 sec 
+106 sec 
+211 sec 
+14.1 min 
+15 hour 
+
+<1 sec 
+8 sec 
+77 sec 
+153 sec 
+10.25 min 
+10.9 hour 
+
+ 
+ 
+ 
+7.  Countermeasures 
+ 
+    Defensive countermeasures for general Tempest threats can be categorized 
+into  technical vs. procedural. Countermeasures of  the technical kind  include 
+(a)  physical  insulation,  (b)  software-based  reduction  of  information-bearing 
+emission,  and  (c)  early  encryption  of  signals.  Procedural  countermeasures 
+include  official  practices  and  standards,  along  with  legal  or  organizational 
+sanctions. The relevant American and NATO standards, concerning Tempest, 
+were held highly classified  throughout  the Cold War. Some of the standards 
+
+17 
+ 
+
+This is a slightly revised version of the paper accepted by the 9 th IEEE International 
+Conference on Malicious and Unwanted Software (MALCON 2014).  
+
+ 
+ 
+eventually leaked or were released but are severely redacted [18] while more 
+informative  documents, 
+in  particular 
+those  concerning  defensive 
+countermeasures, are still classified. The prevailing standards aim at limiting 
+the  level of detectable  information-bearing RF  signals over a given distance 
+on  open  air,  or  its  equivalent  when  insulating  materials  are  used.  In  effect, 
+certified  equipment  is  classified  by  'zones' which  refer  to  the  perimeter  that 
+needs to be controlled to prevent signal reception  [19]. As a countermeasure 
+against  attacks  like  the  one  in  this  research  the  ‘zones’  approach  should  be 
+used to define the physical areas inside the organization, in which carrying a 
+mobile phone or other radio receivers is prohibited. Another countermeasure 
+is ensuring  that only properly shielded cables are used. Shielding affects  the 
+effective range as shown by our experiments.   
+ 
+8.  Related Work 
+ 
+
+Anderson  [19]  provides  a  highly  informative  review  of  emission  or 
+emanation  security  (Emsec):  preventing  attacks  which  use  compromising 
+emanations  (CE)  consisting  of  either  conducted  or  radiated  electromagnetic 
+signals.  In  1985,  van  Eck  [11]  demonstrated  how  Tempest  exploits  can  be 
+produced with rather ordinary equipment and skills. Using a modified TV set, 
+he managed  to  reconstruct  an  image  from  electromagnetic  signals  produced 
+by Video Display Unit (VDU) at a considerable distance. During  the second 
+half of the 1990s, several researches and publications related to Tempest were 
+released  [12]  [13],  spurring  increased  public  interest.  This  trend  was 
+amplified  by  the  Web  which  has  offered  a  glimpse  into  classified  official 
+standards  related  to  Tempest  [18],  or  provided  detailed  instructions  and 
+tutorials  related  to  Tempest  exploits  [14].  Kuhn  and  Anderson  [12]  [13] 
+demonstrated  that many  of  the  compromising  emanations  from  a PC  can be 
+manipulated by suitable  software,  in either a defensive or offensive manner. 
+Thiele  [14]  [20]  offers  an  open  source  program  dubbed  'Tempest  for Eliza', 
+that uses  the computer monitor to send out AM radio signals. The generated 
+music  can  then  be heard  on one’s  radio. Kania  [15] provides  a  collection of 
+programs for generating FM radio signals  in software, and  then transmitting 
+them  using  a VGA  graphics  card.  In  our  implementation, we  used  different 
+technique to generate FM signals in order to improve the signals quality.    
+ 
+9.  Conclusion 
+ 
+
+Exfiltration of data from air-gapped networks is not a trivial task. However, 
+in  this  paper  we  introduce  AirHopper,  a  bifurcated  attack  pattern  by  which 
+this  challenging  task  can  be  accomplished. The  core  of  the method  consists 
+of  two  essential  elements:  (a)  electromagnetic  signals  emitted  from  a 
+computer's monitor cable, with data intentionally modulated on those signals, 
+and  (b)  an  FM  receiver  on  a  mobile  phone  that  can  collect  the  transmitted 
+
+18 
+ 
+
+This is a slightly revised version of the paper accepted by the 9 th IEEE International 
+Conference on Malicious and Unwanted Software (MALCON 2014).  
+
+ 
+ 
+signals,  and  extract  the  modulated  data.  The  chain  of  attack  is  rather 
+complicated,  but  is  not  beyond  the  level  of  skill  and  effort  employed  in 
+modern  Advanced  Persistent  Threats  (APT).  Evaluation  of  the  proposed 
+method includes experimental measurements of various measures such as the 
+effective  transmitting distance,  cable  type,  the presence of  receiver antenna, 
+etc. 
+AirHopper  adds  to  an  understanding  of  electromagnetic  emission  threats, 
+coupled with APT  techniques. This  research area  is not  sufficiently  covered 
+in  recent  academic  literature.  We  believe  that  a  careful  professional  and 
+academic discussion of this threat, ultimately serves the interest of the cyber-
+defense community. 
+ 
+References 
+ 
+[1]   Nokia,  "Nokia  Corporation  Interim  Report  for  Q2  2013  and  January-
+June 2013," 2013. 
+
+[2]   Gartner, "Gartner Says Smartphone Sales Grew 46.5 Percent in Second 
+Quarter of 2013 and Exceeded Feature Phone Sales for First Time," 14 
+Available: 
+August 
+[Online]. 
+2013. 
+http://www.gartner.com/newsroom/id/2573415. 
+[Accessed 
+15 
+September 2013]. 
+
+[3]  
+
+phoneArena.com, 
+[Online].  Available: 
+finder,"  2013. 
+"phone 
+http://www.phonearena.com/phones. [Accessed 8 October 2013]. 
+
+[4]   M. Stroh, "Windows Phone Blog," Microsoft, 14 May 2013. [Online]. 
+Available: 
+http://blogs.windows.com/windows_phone/b/windowsphone/archive/2
+013/05/14/nokia-s-first-metal-windows-phone-arrives-meet-the-sexy-
+lumia-925.aspx. [Accessed 8 October 2013]. 
+
+[5]   National  broadcaster  association,  "Equipping  Mobile  Phones  with 
+Broadcast Radio Capability  for Emergency  Preparedness,"  September 
+2013. 
+[Online]. 
+Available: 
+http://www.nab.org/documents/advocacy/FMEnabledPhones/RadioEn
+abledPhonesIssueSheet.pdf. [Accessed 8 October 2013]. 
+
+[6]   Q. Z. P. R. B. T. Clark A., "An impact-aware defense against Stuxnet," 
+in American Control, 2013.  
+
+[7]  
+
+J. Larimer, "An inside look at Stuxnet," IBM X-Force, 2010. 
+
+[8]   W. J. L. III, Defending a New Domain, 2010.  
+
+[9]   C. A. E.  I. K. A. Hamandi K.,  "Android SMS Malware: Vulnerability 
+and Mitigation," in Advanced Information Networking and Applications 
+Workshops, 2013.  
+
+[10]   R.-P. Weinmann, "Baseband Attacks: Remote Exploitation of Memory 
+Corruptions in Cellular," in Usenix, 2012.  
+
+19 
+ 
+
+This is a slightly revised version of the paper accepted by the 9 th IEEE International 
+Conference on Malicious and Unwanted Software (MALCON 2014).  
+
+ 
+ 
+[11]   W. van Eck, "Electromagnetic Radiation from Video Display Units: An 
+Eavesdropping Risk?," Computers and Security 4, pp. 269-286, 1985.  
+
+[12]   M.  G.  Kuhn  and  R.  J.  Anderson,  "Soft  Tempest:  Hidden  data 
+transmission using electromagnetic emanations," in Information hiding, 
+Springer-Verlag, 1998, pp. 124-142. 
+
+[13]   M.  G.  Kuhn,  "Compromising  emanations:  Eavesdropping  risks  of 
+computer  displays,"  University  of  Cambridge,  Computer  Laboratory, 
+2003. 
+
+[14]   E.  Thiele,  "Tempest 
+[Online].  Available: 
+for  Eliza,"  2001. 
+http://www.erikyyy.de/tempest/. [Accessed 4 10 2013]. 
+
+[15]   B. Kania, "VGASIG: FM radio transmitter using VGA graphics card," 
+19 
+4 
+2009. 
+[Online]. 
+Available: 
+http://bk.gnarf.org/creativity/vgasig/vgasig.pdf. [Accessed 4 10 2013]. 
+
+[16]   Google,  "Android  API:  AudioRecord,"  02  11  2013.  [Online]. 
+Available: 
+http://developer.android.com/reference/android/media/AudioRecord.ht
+m. [Accessed 03 11 2013]. 
+
+[17]   "smali. An assembler/disassembler for Android's dex format," [Online]. 
+Available: https://code.google.com/p/smali/. 
+
+[18]   J.  McNamara,  "The  Complete,  Unofficial  TEMPEST  Information 
+Page," 
+Available: 
+[Online]. 
+1999. 
+http://www.jammed.com/~jwa/tempest.html. [Accessed 4 10 2013]. 
+
+[19]   R.  J.  Anderson,  "Emission  security,"  in  Security  Engineering,  2nd 
+Edition, Wiley Publishing, Inc., 2008, pp. 523-546. 
+
+[20]   E. Thiele,  "Tempest  for Eliza  (updated Readme  file)," 2004.  [Online]. 
+Available: 
+http://www.olifantasia.com/projects/gnuradio/mdvh/videocard_rf_out
+put/readme.fm.txt. [Accessed 4 10 2013]. 
+
+[21]   USAF,  "AFSSI  7700:  Communications  and  information  emission 
+security," Secretary of the Air Force, 2007. 
+
+ 
+ 
+
+20 

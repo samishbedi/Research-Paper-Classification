@@ -1,0 +1,667 @@
+                            Volume 4, Issue 6, June 2014                                  ISSN: 2277 128X 
+International Journal of Advanced Research in 
+  Computer Science and Software Engineering 
+                                                      Research Paper 
+ 
+                                Available online at: www.ijarcsse.com 
+Evolving New CAPTCHA using cognitive ability of Human 
+through Computer Architecture 
+Dr. Vijay Dhaka 2 
+Mrs. Geeta Gandhi 1 
+Professor (Dept. Of Computer Science) 
+Research Scholar 
+Jaipur National University ,India 
+Jaipur National Universit, India
+                                           
+Abstract:  As  the  computerization  and  technical  development  advances,  the  information  security  has  becom e  a  very 
+critical  aspect  of  modern  computing  system.  The  users,  business  and  organization  worldwide  have  to  live  with  a 
+constant  threat  from  hackers  and  attackers,  who  use  a  variety  of  techniques  and  tools  in  order  to  break  down  the 
+computer system, steal information and cause havoc. 
+So,  when  we  have  to  make  the  network  secured  from  machines  designed  for  malicious  attack,  we  must  have  to  be 
+capable  of  distinguishing  between  a  human  being  and  a  machine  .This  task  is  performed  by  CAPTCHA  i.e. 
+Completely Automated Public Turing test to tell Computers and Humans Apart which is a class of Human Interaction 
+Proof  (HIP)  that have been able  to effectively prevent web Bots  from getting access  to  the web services.  It  is a  type of 
+Challenge  Response  test  used  in  computing  as  an  attempt  to  ensure  that  the  response  is  generated  by  a  person  .The 
+process  involves  one  computer  asking  a  user  to  complete  a  single  test  which  the  computer  is  able  to  generate  and 
+grade.  It  has  become  a  significant  and  standard  security mechanism  to  provide Authentication which  can  be  utilized 
+as a tool for defending against malicious and bot programs.  
+The  objective  of  the  present  paper  is  to  focus  on  the  need  of  generating  new  CAPTCHA methods  by  evaluating  and 
+analyzing  the  limitation  of  present  available  CAPTCHA  .Also,  this  paper  utilizes  the  cognitive  ability  of  human  for 
+generating  CAPTCHA  to  achieve  the  goal  of  differentiating  human  and  machine  apart.  For  this  we  propose  a 
+framework to generate CAPTCHA using the combination of different logic gates of Computer Architecture which will 
+open new doors in the direction of web security.  
+ 
+Keywords: Web Security, CAPTCHA, Evaluation and limitation, cognitive power of human, Computer Architecture.  
+ 
+
+I.    Introduction :- 
+ Nowadays,  several  web  services  use  CAPTCHA  as  a  defensive  mechanism  against  automated  web  bots[1].So,  The 
+necessity  of  having  CAPTCHA  on  a  web  form  is  now  not  a  topic  of  debate  or  it  is  a  must  to  keep  the  website  up  and 
+live.[2]. The web  services  and  applications  that use CAPTCHA method s  for  as HIP  include  chat  rooms,  search    engines 
+,password systems, online polls, email services for account registration ,prevention of sending and receiving spam, blogs, 
+messaging services, free content downloading services and detecting phishing attacks [1]. 
+The  present  paper  focuses  on  the  application  areas  of  CAP -TCHA  evaluating  the  present  available  CAPTCHAs 
+emphasizing  the  need  of  new  CAPTCHA  generation.  Also,  it  will  provide  a  framework  of  Computer  Architecture  to 
+produce CAPTCHA test randomly on the screen. 
+ 
+
+II.    Literature Review: 
+CAPTCHA  was  first  introduced  in  1997  when  Anderi  Broders  devised  the  CAPTCHA  method.  In  the  same  year, 
+AltaVista  website  used  this  method  to  distinguish  between  computer  programs  and  human  user  [3].The  three  major 
+properties of a good CAPTCHA are that  
+ 
+
+(i)  It should be easy for a human user to pass.  
+(ii)  It should be easy for a tester machine to generate and grade.  
+(iii)  It should be hard for a software robot to pass[4] 
+So  far  we  can  categorize  the  available  CAPTCHAs  as  text -  based  CAPTCHA,  Image-based  CAPTCHA,  Audio–based 
+CAPTCHA  and  Video-  based  CAPTCHA.  This  categorization  only  implies  what  is  being  presented  to  the  user  and  not 
+what is being used [5].  
+ 
+
+2.1)  Text-Based CAPTCHAs:- 
+They  typically  relies  on  sophisticated  distortion  of  text  images  rendering  them  unrecognizable  to  the  state  of  the  art  of 
+pattern  recognition  programs  but  recognizable  to  human  eyes  [6].  The  E -Z  Gimpy  CAPTCHA,  Pessimal  Print 
+
+© 2014, IJARCSSE All Rights Reserved                                                                                                              Page | 45 
+
+Gandhi et al., International Journal of Advanced Research in Computer Science and Software Engineering 4(6), 
+June - 2014, pp. 45-52 
+CAPTCHA [7], the Re-CAPTCHA, Baffle Text CAPTCHA (a version of Gimpy Test)[4]are some o f the major examples 
+of  present  available  CAPTCHA[5].Various  service  providers  on  the  internet  like  Pay  Pal  ,Hotmail  and  You  Tube  use 
+their own versions of text based CAPTCHA on  their websites and update them with newer versions frequently [1].  
+ 
+
+2.2)  Image-Based CAPTCHA: 
+ They  typically  require  the  users  to  perform  an  image  recognition  task  [6].  These  CAPTCHAs  are  introduced  as  a 
+substitute  of  text-based CAPTCHA[8].In  this  CAPTCHA  images  are  distorted  to  such  an  extent  that  it  has minor  effect 
+on  the  recognizability  by  human  ,  but  at  the  same  time  possess  great  deal  of  difficulty  for  algorithmic  recognition[8]. 
+Eventually  this  idea was  to present    a more  difficult  challenge  for  spam bots  as  image  based CAPTCHA    contain  colors 
+and also have  large variety of meaningful  images  rather  than  text and words  [3].These CAPTCHAs  include  the ESP -Pix 
+CAPTCHA( as the first image CAPTCHA developed by Carnegie Mellon University) [9],. Asirra (Animal Species Image 
+recognition  for  restricting  access),  Multimodal  CAPTCHA,  Dynamic  Image-based  CAPTCHA  (DIBC),  Identipic 
+CAPTCHA etc.  [9]. 
+ 
+
+2.3) Audio-based CAPTCHA:  
+These kinds of CAPTCHAs typically require users to solve speech recognition task [6].They are designed firstly because 
+of disability of vision and the problems related to eyes  and so on. So, it came into existence due to the visual disability of 
+human being to recognize the distorted text CAPTCHA [3].  
+ 
+
+2.4) Video-based CAPTCHA:  
+In video-based CAPTCHA,  three words  (tags) are provided to  the users which describe a video.  If a users  ta g belongs  to 
+set of automatically generated ground truth tags than a challenge is passed [1]. 
+ 
+
+III.     Result and Discussion: 
+On  the  basis  of  present  study  of  different  types  of  available  CAPTCHAs,  we  conclude  that  the  present  available 
+CAPTCHAs are associated with some limitations which can be summarized below:  
+ 
+
+(i)  Registration to a specific website got dropped about 70% with the introduction to CAPTCHA.  
+(ii)  As  text-based  CAPTCHA  typically  relies  on  sophisticated  distortion  of  text  images  it  is  sometimes  so 
+complicated  as  it  takes  time  to  understand  and  type  the  words  of  CAPTCHA  image  which  makes  the  user 
+annoyed. 
+(iii) Some CAPTCHAs protection systems can be by passed without using OCR symbols by reusing the session Id of 
+a known CAPTCHA image [10]. 
+(iv)  CAPTCHAs residing on shared servers can also present a problem as a security issue of another virtual host may 
+leave the CAPTCHA issuer‟s site vulnerable [10]. 
+(v)  Some  CAPTCHAs  are  easily  solvable  by  the  machine  using  segmentation  as  convolution  neural  networks  were 
+trained using machine learning to recognize characters in each of these experiments [11].  
+(vi)  Some  projects  are  designed  to  defeat  CAPTCHA  by  machine  learning  techniques  which  make  the  present 
+CAPTCHA  in  secured.  For  e.g.  Mori  et  al.  published  the  paper  in  IEEE  CVPR‟03  detailing  a  method  for 
+defeating EZ Gimpy by 92% [10].  
+ 
+So,  on  the  basis  of  the  above  evaluation,  we  can  say  that  a  good  CAPTCHA  is  one  which  intends  to  provide  the 
+problem easy enough for all human to solve and prevent standard automated software for filling out a form. 
+Thus,  we  can  say  that  the  present  available  CAPTCHA  requires  maintaining  a  balance  between  usability  and  security 
+[12]. 
+This  motivates  the  requirement  to  perform  research  in  this  area  which  is  also  helpful  to  provide  new  challenges  in  the 
+direction of Artificial Intelligence. 
+In  this paper we  are  going  to develop  some  of  the  designs  utilizing  cognitive  ability of human  and  then display  them on 
+the screen with the help of Computer Architecture which will open new doors to Web Security.  
+ 
+
+IV.    Proposed Work: 
+1.1  Using Cognition to develop CAPTCHA codes:  
+In  our  proposed work  first  of  all  we  are  going  to  develop  some  Surrogative  images  which  will  contain  an  alphanumeric 
+code hidden  into  it. Now  the  user  is supposed  to  recognize  the alphabet or number which  is  hidden within  the code. The    
+main  feature  of  these  designs  is  that  they  are  the  images  generated  utilizing  either  a  number  or  alphabet.  This  concept 
+makes  the  alphanumeric  code  difficult  to  be  detached  through  machine  learning  techniques,   however  on  the  other  hand 
+this  code  can  be  easily  resembled  by  the  user  as  it  requires  cognition  ability  to  identify  and  grade.  In  this  way  we  have 
+utilized  the cognition ability of  human being  to generate an  innovative CAPTCHA which  can  further open new doors   to 
+the direction of Web security. So, the objective of these designs is to be utilized as a CAPTCHA code so that only human 
+being  can  capture  the  code  hidden  into  it  utilizing  his  cognitive  ability.Cognition  means  the  capability  to  achieve 
+knowledge which makes a  human being different  from a machine. using  this cognition based  innovative CAPTCHA our 
+objective is to achieve an optimum CAPTCHA solution containing feature of both usability and robustness.  
+Some of these designs which are chosen as CAPTCHA code  can be shown in the table(1) below :  
+
+© 2014, IJARCSSE All Rights Reserved                                                                                                              Page | 46 
+
+Gandhi et al., International Journal of Advanced Research in Computer Science and Software Engineering 4(6), 
+June - 2014, pp. 45-52 
+
+  
+
+1 
+
+2 
+
+3 
+
+4 
+
+5 
+
+6 
+
+7 
+
+8 
+
+9 
+
+0 
+
+A 
+
+B 
+
+C 
+
+D 
+
+E 
+
+F 
+
+G 
+
+G 
+
+I 
+
+J 
+
+K 
+
+IMAGE 1 
+
+IMAGE 2 
+
+IMAGE 3 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+© 2014, IJARCSSE All Rights Reserved                                                                                                              Page | 47 
+
+Gandhi et al., International Journal of Advanced Research in Computer Science and Software Engineering 4(6), 
+June - 2014, pp. 45-52 
+
+L 
+
+M 
+
+N 
+
+O 
+
+P 
+
+Q 
+
+R 
+
+S 
+
+T 
+
+U 
+
+V 
+
+W 
+
+X 
+
+Y 
+
+Z 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+Table (1) Designs of Images to be used as CAPTCHA code
+ 
+As the Cognition concerns with a group of mental processes which  includes attention, memory and understanding which 
+not  the  feature  of  a  machine  is  so  this  concept  can  be  better  utilized  to  differentiate  a  human  and  a  machine.  Now  the 
+Question  is  to display  these  designed  codes  randomly on  the  screen  in  the  form of CAPT CHA. For  this  we  are  going  to 
+design a database which will contain the new numerology  for random display.  The working of the proposed work can be 
+summarized  in  the  flow  chart  below  in  Fig  (1)  which  will  choose  6  images  randomly  at  a  time  to  be  shown  as  Hum an 
+Interaction Proof(HIP) for the user.   
+
+© 2014, IJARCSSE All Rights Reserved                                                                                                              Page | 48 
+
+Gandhi et al., International Journal of Advanced Research in Computer Science and Software Engineering 4(6), 
+June - 2014, pp. 45-52 
+
+Fig (1): Diagram showing working of proposed work.  
+
+ 
+
+ 
+
+1.2  Technical Implementation : 
+After  developing  the  Surrogative  images  mentioned  above,  now  our  goal  is  to  produce  these  designs  randomly  on  the 
+screen. For  this we  will  use  some  of  the  Integrated  circuits, Combinational Circuits  and Sequential  circuits of Computer 
+Architecture to achieve the mentioned goal.  
+Proceeding  in  this  direction  we  first  explain  the  working  of  each  of  the  component  of  Computer  Architecture  whi ch  we 
+are going to use in our circuitry and then explain the design and working of the proposed circuit.  
+ 
+
+1.2.1 
+: Elements of the proposed Circuit : 
+(i)  The N:1 Multiplexer :  
+A multiplexer is a digital circuit where  the output depends on the current  input provided  .This is a type of combinational 
+circuit  where  to  select  one  of  2n  inputs  we  only  need  n  lines  to  “select  “the  input.  The  basic  block  diagram  of  N:  1 
+Multiplexer is shown in Fig. (2) 
+
+Fig (2) N: 1 Multiplexer 
+ 
+
+ 
+
+(ii)  D Flip Flop :- 
+The  D  flip  flop  is  one  of  the  synchronous  type  of  storage  element  utilized  for  sequential  logic.  It  employs  signals  that 
+affect the storage element employed in clocked Sequential ci rcuit. 
+The D flip-flop is designed utilizing the SR flip flop by inserting an Inverter between S and R assigning the  symbol D to 
+the single Input. The D input is sampled during the occurrence of a clock transition from 0 to 1.  
+If D=1, the output of the flip flop goes to state 1  
+If D = 0, the output of the Flip flop goes to the 0 state.  
+The graphic symbol and characteristic table of the D flip flop are shown in Fig (3): 
+
+(a) Graphic symbol 
+
+Fig (3) D-Flip flop 
+ 
+
+ 
+
+D 
+0 
+
+1 
+
+Q(t + 1) 
+0        clear to 0 
+
+1        set to 1 
+
+© 2014, IJARCSSE All Rights Reserved                                                                                                              Page | 49 
+
+Gandhi et al., International Journal of Advanced Research in Computer Science and Software Engineering 4(6), 
+June - 2014, pp. 45-52 
+
+(b) Characteristic table 
+From  this characteristic  table we  note  that  the next state Q  (t+1)  is determined  from  the D  input. The  relationship can be 
+expressed by a characteristic equation   
+
+Q (t+1) = D 
+This  means  that  the  Q  output  of  the  flip  flop  receive  its  value  from  the  D  input  every  time  that  the  clock  signal  goes 
+through a transition from 0 to 1. 
+ 
+
+1.2.2 
+: Working of the designed circuitry: 
+After the description of the elementary components to be   utilized, in this section we will explain the architectural design  
+of the goal to be achieved. 
+For this we will first create 16 images of each of the alphanumeric code to be displayed. For instance   
+16 images of Numeric 0 
+16 images of numeric 1  
+: 
+: 
+: 
+: 
+16 images of numeric 9;  
+16 images containing letter „a‟ 
+16 images containing letter ‟b‟; 
+: 
+: 
+: 
+: 
+: 
+16 images containing letter‟z‟ 
+Now, as a whole we have 36alphanumeric codes (0 to 9, a to z) each having 16 images .So, the total number of images 
+will be 36*16= 576.Further, we use 36 number of 16 is to 1 Multiplexer as shown in fig (4)  
+(4) Block diagram of 16:1 Multiplexer  
+
+ 
+Each  holding  the  image      of  a  specific  alphabet  or  number.  For  example  for  Numeric  „1‟we  use  16  images  hiding  1  as 
+input to the 16 is to 1 Multiplexer as shown below in fig(5).  
+
+ 
+Fig (5): Block diagram of 16: 1 multiplexer containing designs for numeric1.  
+Similarly, we can show the Multiplexers designed to input alphabets „a‟, „b‟, etc as shown below in fig (6) 
+
+ 
+.
+Fig (6): Block diagram of 16:1 multiplexer containing designs for alphabet „a‟.  
+
+© 2014, IJARCSSE All Rights Reserved                                                                                                              Page | 50 
+
+Gandhi et al., International Journal of Advanced Research in Computer Science and Software Engineering 4(6), 
+June - 2014, pp. 45-52 
+
+Proceeding in the same manner we have 36 such Multiplexers totally aligned as shown in fig (7)  
+
+ 
+
+Fig (7): Architecture for random display of CAPTCHA 
+ 
+Now our goal is to choose 6 digits at a time from these Multiplexers.  
+For this, we make a set of four 16 is to 1 Multiplexer to be associated with one 4 is to 1 Multiplexer then taking next two 
+16 is to 1 Multiplexers joined with one 2 is to 1 Multiplexer as in fig(7) . 
+By again binding both of the outputs with one 2 is to 1 Multiplexer as shown in our circuitry.  
+This complete combination will provide a single image randomly selected to be displayed on the screen.  
+Now, as we have to generate 6 images to be displayed at a time, we require 6 sets of the above mentioned combination.  
+Again,  to  store  these  codes  for  a  single  clock  pulse  we  will  use  6  D  Flip  flops  available  with  a  common  synchronized 
+clock. This common clock input triggers all the Flip  flops on the rising edge of each pulse and the data available at the 6 
+inputs  are  transferred  into  the  6  bit  register.  These  6  outputs  then  can  be  sampled  at  any  time  to  display  the  generated 
+CAPTCHA.The  advantage  of  using D  flip  flop  register here  is  that  the  clear  input  goes  to  a  special  terminal  in  each  flip 
+flop and when  this  input goes  to 0 all  flip  flops are  reset asynchronously which makes  the  selected pattern  to show  for  a 
+small span of time . This time variant technique strengthens our CAPTCHA by reducing the chances of machine hit.    
+The implementation of our work will follow the steps below:  
+
+© 2014, IJARCSSE All Rights Reserved                                                                                                              Page | 51 
+
+Gandhi et al., International Journal of Advanced Research in Computer Science and Software Engineering 4(6), 
+June - 2014, pp. 45-52 
+
+(i) 
+(ii) 
+(iii) 
+(iv) 
+(v) 
+(vi) 
+(vii) 
+
+Create design / patterns using alphanumeric codes. 
+Generate the database  
+Randomly choose the pattern with the combination of multiplexers. 
+Display the pattern through combination of D flips flop.  
+Obtain the user input 
+Compare and evaluated the CAPTCHA entered by the user.  
+Permit or deny the access to the user according to the result.  
+ 
+
+(2) 
+
+(6) 
+
+(7) 
+
+(8) 
+
+(3) 
+
+(4) 
+
+(5) 
+
+V.   Conclusion: 
+The proposed work suggests a new  technique  to display CAPTCHA on  the  screen which can open new doors  to  the web 
+security  which  has  become  a  critical  aspect  now  days.  Also  it  will  provide  new  challenges  to  the  field  of  Artificial 
+Intelligence. 
+ 
+References : 
+(1) 
+M TriqBanday  , N.A. Shah  ,” A Study of CAPTCHAs for  securing web services”, in processing of Its D&A, vol 
+1, No.2 , Dec 2009. 
+MuktaRao,  Nipur  Singh  ,”Random  Handwritten  CAPTCHA:  web  security  with  Difference  and  proceeding  of 
+I.J.Information  Technology  and  computer  science”,2012,9,53-58  Published  online  Aug  2012  in  MECS  DOI  : 
+10,5815|ifitcs.2012.09.07 
+A.Krishnashanthi  ,  Dr.K.  Kuppusamy“Evolving  New  CAPTCHA  using  LCG  Algorithm  and  Unpredictable 
+Algorithm”  IJERA ISSN: 2248-9622 www.ijera.com Vol. 2, Issue 3, May-Jun 2012, pp.2258-2262 
+Baljit Singh Saini , AnjuBala ,”A review of Bot protection using CAPTCHA for web security ” , IOSR Journal of 
+computer Engineering (IOSP-JCE) , e-ISSn:2278-0661,p-ISSN:2278-8727 vol 8, Issue 6,,pp36-42 
+IVO  Kund  ,”Non-Standard  CAPTCHAs  for  web  :  A Motion  based  character  Recognition  HIP”,  a  Dissertation 
+University  of Monchester.  Jeff  Yan  ,  Ahmad  Salah  EI  Ahmed  “Usability  of  CAPTCHAs  or  Usability  issues  in 
+CAPTCHA design” school of computing Science, Newcastle University ,UK.  
+AolityaReg,  Ashishjaim  ,Tusharpahwa  and  Abhimanyujain“Picture  CAPTCHAswith  sequencing  :  Their  types 
+and Analysis”IJDS ,vol 1, issue 3,Sempmber 2010.  
+R.vena  , M.RajashkaraBabu,ch.Pradeep Reddy  ,  and  T.Sunil Kumar Reddy  “Exploiting  human  – Machine Gap 
+in  image  Recognition  for  Designing  CAPTCHAs  using  Multicare”  IJRRSTC,vol2  ,  No.2,June  2012,  ISSN  : 
+2046-6412 
+Rizwan  Ur  Rahm  “SURVEY  ON  CAPTCHA  SYSTEMS’  Journal  of  Global  Research  in  Computer  Science 
+Volume 3, No. 6, June 2012. 
+“Specific Implementation of Re-CAPTCHA” from Wikipedia. 
+Kumar  Chellapilla,  Kevin  Larson,  Patrice  Simard,  Mary  Czerwinski  “Computers  beat  Humans  at  Single 
+Character Recognition in Reading based Human Interaction Proofs (HIPs)” MicrosoftResearch,Redmond, WA 
+98053. 
+GRAIG  SAUER,  JONATHAN  HOLMAN,  JONATHAN  LAZAR,  HARRY  HOCHHEISER,  AND  JINJUAN 
+FENG  “Accessible  Privacy  and  Security:  A  Universa lly  Usable  Human-Interaction  Proof  Tool”  Towson 
+University 
+USA
+
+(9) 
+(10) 
+
+(11) 
+
+. 
+
+© 2014, IJARCSSE All Rights Reserved                                                                                                              Page | 52 
+
+

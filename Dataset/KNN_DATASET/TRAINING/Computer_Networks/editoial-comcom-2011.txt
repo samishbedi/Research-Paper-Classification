@@ -1,0 +1,395 @@
+Computer Networks 55 (2011) 1455–1458
+
+Contents lists available at ScienceDirect
+
+Computer Networks
+
+j o u r n a l h o m e p a g e : w w w . e l s e v i e r . c o m / l o c a t e / c o m n e t
+
+Editorial
+Recent Advances in Network Convergence
+
+Recent years have witnessed an increasing trend to-
+wards the convergence of networks, services, and applica-
+tions.
+In contrast to a telecommunications landscape
+where different services are delivered through separate ac-
+cess technologies, each tailored to a speciﬁc application,
+network convergence aims at providing a uniﬁed network
+platform for the efﬁcient coexistence of previously distinct
+media accessible through common interfaces on single de-
+vices. The convergence trend is further stressed by users’
+increasing demand for ubiquitous access to any service
+anytime, anywhere and on any device. This, however, im-
+plies that one device should be able to connect with a mul-
+titude of specialized services, access technologies, and
+possibly different network operators as illustrated in Fig. 1.
+As network convergence involves many different par-
+ties, its technical and economical success depends on the
+ability to agree on a common set of standard interfaces.
+Moreover, the convergence of different access technologies
+along with users’ increasing mobility and demand for con-
+nectivity at all times at high data rates raise the need for
+new monitoring, control and management approaches
+essential for providing converged services with quality-
+of-experience (QoE) assurance. At the same time, network
+convergence is expected to serve as an enabler for new
+business models for network operators and service provid-
+ers, a means to reduce operations and management costs,
+and a platform for faster deployment of new multimedia
+applications. Convergence attracted even more interest
+with the advent of Cloud Computing in the recent few
+years where a converged view of infrastructure is emerg-
+ing in which all resources whether computing, storage or
+networking are viewed as being part of shareable resource
+pools that can be controlled and managed using the same
+systems. The converged infrastructure is envisioned to
+encompass remote datacenters, dense small-cell wireless
+access integrated with optical backhaul where the tradi-
+tional point-to-point backhauling may be partly replaced
+by multi-point technologies, and deployment of a Future
+Internet architecture. The realization of this vision how-
+ever faces many technical challenges that need to be ad-
+dressed in order to ensure failsafe network operations, to
+efﬁciently support user mobility, and to guarantee QoE.
+This special issue has as its main purposes the presen-
+tation of recent developments in the area of network
+
+1389-1286/$ - see front matter Ó 2011 Published by Elsevier B.V.
+doi:10.1016/j.comnet.2011.04.002
+
+convergence, and providing a view of the ﬁeld’s state-of-
+the-art today. It is composed of eleven papers selected
+from 50 submissions. The contributions span IP multime-
+dia subsystems
+(IMS), media independent handover
+(MIH), ﬁxed-mobile convergence, convergence of different
+wireless standards, vertical handover, quality-of-service
+(QoS) and QoE, and convergence in the network core.
+QoE is the ultimate measure of user satisfaction. In the
+paper ‘‘QoE assurance in converged networks.’’, R. Stan-
+kiewicz and A. Jajszczyk discuss several quality measures,
+speciﬁcally QoS, Grade-of-Service (GoS), and Quality-of-
+Resilience (QoR), and their impact on QoE assurance in
+converged networking environments. The authors focus
+on convergence between ﬁxed and wireless as well as con-
+vergence between heterogeneous wireless technologies,
+and elaborate on the requirements for any service, any-
+where, anytime and on any device.
+The IP multimedia subsystem (IMS), standardized by
+3GPP, plays a key role in network convergence and pro-
+vides a platform for converged voice, video, and data-
+applications over ﬁxed and mobile networks based on IP.
+In the paper ‘‘TRIM: An architecture for transparent IMS-
+based mobility,’’ I. Vidal, A. de la Oliva, J. Garcia-Reinoso
+and I. Soto consider IP mobility in IMS networks and show
+how a new architecture called TRIM extends mobile termi-
+nals such that seamless IMS-based mobility can be pro-
+vided transparently to end-user applications. TRIM
+support for mobility is evaluated on the basis of an IMS
+test-bed with 3G and WLAN access networks.
+The transition towards new mobile communication
+standards is characterized by the co-existence of different
+wireless standards such as GSM and UMTS in addition to
+3GPP LTE and IEEE 802.16 during the roll-out of 4G net-
+works. This problem is addressed in the paper ‘‘Reinforce-
+ment learning for joint radio resource management in LTE-
+UMTS scenarios.’’ by N. Vucevic, J. Pérez-Romero, O. Sal-
+lent, and R. Agustı´ . In particular, the authors consider the
+convergence of 3G and 4G networks using the example
+of co-existing UMTS and LTE technologies and present a
+dynamic joint radio resource management algorithm span-
+ning both technologies. Based on a reinforcement learning
+technique, the algorithm determines the most appropriate
+Radio Access Technology for user sessions in a multi-
+service scenario under dynamic conditions. The low
+
+1456
+
+Editorial / Computer Networks 55 (2011) 1455–1458
+
+Fig. 1. Typical wireless and ﬁxed networks involved in network convergence.
+
+complexity of the proposed algorithm makes it a likely
+candidate for implementation in real-time systems.
+Co-existence and convergence of different mobile access
+technologies implies the need for seamless handover be-
+tween these technologies commonly referred to as vertical
+handover. IEEE 802.21 provides a standard framework for
+vertical handover and deﬁnes the mechanisms of media
+independent handover. In the paper ‘‘Context-aware media
+independent information server for optimized seamless
+handover procedures.’’ P. Neves, J. Soares, S. Sargento, H.
+Pires, and F. Fontes consider vertical handover between
+IEEE 802.11 (WiFi), IEEE 802.16 (WiMax), 3GPP UMTS,
+HSPA, and LTE. Their proposal extends IEEE 802.21 media
+independent handover by introducing a context manage-
+ment server used to dynamically acquire and maintain
+information from the network and the mobile terminals
+such as the number of and requirements of currently run-
+ning services, established radio bearers, user preferences,
+and others. The context information is then exploited to
+optimize the handover process, e.g., the handover duration.
+On a similar topic, the paper ‘‘Autonomic personalized
+handover decisions for mobile services in heterogeneous
+wireless networks.’’ by J.-M. Kang, J. Strassner, S.-S. Seo,
+J.W.-K. Hong focuses on personalized and automated verti-
+cal handover decisions in heterogeneous mobile networks.
+In this proposal, the handover is not solely based on the
+signal strength but considers two additional metrics: the
+access-point-acceptance
+and
+access-point-satisfaction.
+The former is a vector of individual channel quality mea-
+sures such as delay and power consumption, and the latter
+combines these individual measures based on the user’s
+needs. Accordingly, the access point which maximizes
+
+these metrics and thereby user satisfaction is selected.
+The proposal is evaluated through simulations and com-
+pared to other decision metrics.
+While previous contributions consider the co-existence
+of different mobile communication standards, the paper
+‘‘Vertical handovers among different wireless technologies
+in a UMTS radio access-based integrated architecture’’ by N.
+Vulic, S.M. Heemstra de Groot, I.G. Niemegeers extends the
+problem to the co-existence of mobile access technologies
+and broadcast systems. In particular, the authors focus on
+the integration of UMTS, IEEE 802.11, IEEE 802.16, and
+DVB-H at the radio access level. The authors describe the
+necessary handover mechanisms and conduct performance
+evaluations for different vertical handover scenarios.
+Heterogeneous wired/wireless networks rely on com-
+plex wired mesh backbones with gateway nodes connect-
+ing to the Internet. These gateway nodes act as converging
+points for heterogeneous network trafﬁc heading to and
+from the Internet and can turn into bottlenecks once their
+resources are exhausted. In this context, the paper ‘‘Re-
+source competition in a converged heterogeneous net-
+working ecosystem.’’ by A. Jamalipour, F. Javadi, and K.S.
+Munasinghe asks the important question of how a system
+can maintain stability over a period of time in a resource
+diminishing environment, provided the resources are fairly
+allocated at the time of admission. To answer this ques-
+tion, the authors conduct an ecologically inspired analysis
+where the converged heterogeneous network is modeled
+as an ecosystem of diverse networks with limited resource
+constraints and competing communication sessions. Based
+on the result of their analysis and the key observation
+of competitive exclusion between sessions, the authors
+
+Editorial / Computer Networks 55 (2011) 1455–1458
+
+1457
+
+propose a novel admission control policy to allow fair co-
+existence among sessions.
+In the paper ‘‘Evaluation of two integrated signaling
+schemes for the Ultra Flat Architecture using SIP, IEEE
+802.21, and HIP/PMIP protocols.’’ Z. Faigl, L. Bokor, P.M.
+Neves, K. Daoud, and P. Herbelin discuss a new network
+architecture, called UFA (Ultra Flat Architecture), which
+distributes some of the core network (e.g., 3GPP) functions
+to the edge (close to the base stations) in order to better
+scale to the ever growing trafﬁc demand. Speciﬁcally the
+paper extends UFA with support for non-SIP based applica-
+tions for more ﬂexibility in converged networks as well as
+legacy Internet applications including IMS compliant
+applications.
+The heterogeneous landscape of wireless access tech-
+nologies does not only imply the necessity of co-existence
+but also provides the possibility to integrate different ac-
+cess technologies using the same infrastructure. This not
+only relates to the radio access but also to the core net-
+work, which may be shared by different operators. In
+‘‘On the role of infrastructure sharing for mobile network
+operators in emerging markets.’’ D.-E. Meddour, T. Ras-
+heed, and Y. Gourhant discuss the different options of
+infrastructure sharing their implications and potential
+savings of operational expenditures (OPEX) as well as cap-
+ital expenditures (CAPEX) under technical, practical and
+regulatory constraints.
+The clustering and ﬁxed allocation of the available spec-
+trum over the years has resulted in an inefﬁcient use of the
+scarce spectral resources. To alleviate this problem, dy-
+namic spectrum management techniques such as cognitive
+radio have received a lot of attention recently. B. Ishibashi,
+N. Bouabdallah, and R. Boutaba in their paper ‘‘QoS Capac-
+ity of Virtual Wireless Networks’’, introduce the concept of
+Virtual Wireless Networks (VWNs) created and operated
+without obtaining any dedicated spectrum resources of
+their own. VWNs exploit residual bandwidth left underuti-
+lized by licensed users. However, it is unclear whether
+VWNs can provide QoS guarantees since the residual re-
+sources can be reclaimed anytime by the primary users.
+The authors extend a classical wireless system with
+cognitive radio capabilities and use Markov chain-based
+analysis and simulations to demonstrate that VWNs are
+indeed capable of providing QoS and allowing for new ser-
+vices provided by virtual wireless operators.
+In the last paper presented in this special issue ‘‘SWISH:
+Secure WiFi Sharing.’’, D. Leroy, G. Detal, J. Cathalo, M.
+Manulis, F. Koeune, and O. Bonaventure present an efﬁ-
+cient and fully deployed solution, SWISH, enabling secure
+WiFi sharing with visiting mobile users. The key motiva-
+tion behind the development of SWISH is to enable mobile
+users to connect to the Internet via a nearby foreign net-
+work without jeopardizing the security of the visited net-
+work. There exist
+indeed many WiFi networks with
+unused resources, which visiting mobile users can use to
+connect to the Internet if the owners of these networks
+were not reluctant due to security concerns. Using crypto-
+graphic authentication of the involved parties (mobile
+user, her/his home network and the visited WiFi network),
+the authors demonstrate how WiFi networks can be fully
+secured with minimal impact on their performance which
+
+is demonstrated by deploying and testing their solution in
+a production campus network.
+In presenting these diverse research efforts on converg-
+ing communication systems and services, we hope to
+provide some possible directions to future network con-
+vergence research and to excite future research explora-
+tions in this promising ﬁeld. It is also our hope that the
+selected papers have shown to you, the readers, the
+breadth and depth of the challenges we face and the exis-
+tence of many open research issues.
+We express our gratitude to the Editor-in-Chief, Dr.
+Harry Rudin, for giving us the opportunity to put together
+this special issue, and for his continuous support through-
+out this project from establishing a successful call for pa-
+pers to the time-consuming editorial work he put on
+each accepted paper. We also express our thanks to the
+many authors who responded to the call for papers. We
+are particularly grateful to the authors of the four invited
+papers for kindly agreeing to write papers: A. Jajszczyk,
+A. Jamalipour, D.-E. Meddour, J. W.-K. Hong and their co-
+authors. All the papers went through a rigorous review
+process and we are grateful to the many obliging reviewers
+whose timely efforts were essential for the selection of the
+papers. As much as we enjoyed working on this special is-
+sue, we hope you will enjoy reading it.
+
+Peter Rost received his Ph.D. degree in elec-
+trical engineering from Technische Universität
+Dresden, Dresden, Germany, in 2009 and his
+M.Sc. degree in information technology from
+University of Stuttgart, Stuttgart, Germany, in
+2005.
+From 1999 to 2002, he was with Fraunhofer
+Institute for Beam and Material Technolo-
+gies, Dresden, Germany where he developed
+augmented and virtual reality based con-
+trolling systems. From 2002 to 2005 he was
+with IBM Deutschland Entwicklung GmbH,
+Böblingen, Germany, where he contributed to the IBM Tivoli system. In
+June 2005 he joined the Vodafone Chair of Prof. Gerhard Fettweis at
+Technische Universität Dresden and focused on different aspects of
+relaying in the context of mobile communications systems. He was also
+a leading member of the organizing team of IEEE ICC 2009, prepared
+multiple successful EU FP6 and FP7 proposals, and was actively con-
+tributing to the European research project WINNER since 2005 as task
+leader. Since April 2010 Peter is member of the Mobile and Wireless
+Networks group at NEC Laboratories Europe, where he is working in BU
+projects as well as the EU FP7 project FLAVIA.
+Currently, he is conference coordinator of the ﬁrst IEEE online conference
+(2010 IEEE Online Conference on Green Communications). He published
+30 + contributions to books, journals, conferences, and public project
+reports, and he is author of multiple patents and patent applications.
+
+Raouf Boutaba received the M.Sc. and Ph.D.
+degrees in computer science from the Uni-
+versity Pierre & Marie Curie, Paris, in 1990
+and 1994, respectively. He is currently a pro-
+fessor of computer science at the University of
+Waterloo (Canada) and a distinguished visit-
+ing professor in the division of IT convergence
+engineering at POSTECH (Korea). His research
+interests include network, resource and ser-
+vice management in wired, and wireless net-
+works. He is the founding editor in chief of the
+IEEE Transactions on Network and Service
+Management (2007–2010) and on the editorial boards of other journals.
+He has received several best paper awards and other recognitions such as
+the Premier’s Research Excellence Award, the IEEE Hal Sobol Award in
+
+1458
+
+Editorial / Computer Networks 55 (2011) 1455–1458
+
+2007, the Fred W. Ellersick Paper Prize in 2008, the Joe LociCero award
+and the Dan Stokesbury in 2009.
+
+Klaus Doppler received his Ph.D. degree in
+Electrical Engineering from Aalto University
+School of Science and Technology, Helsinki,
+Finland,
+in 2010 and his M.Sc. degree in
+Electrical Engineering from Graz University of
+Technology, Austria, in 2003.
+He joined Nokia Research Center in 2002.
+Currently he is leading the Wireless Systems
+team of the Radio Systems Laboratory in
+Berkeley, California. He has been leading and
+contributing to research activities on the
+design and integration of novel radio concepts
+into cellular systems, including device-to-device communication, (coop-
+erative) relaying and multiband operation. He was among the top ten
+inventors in Nokia in the years 2008–2009 and received a Nokia top
+inventor award in the years 2007–2008.He has been the proof-of-concept
+subtask leader within the relaying task of the European research project
+WINNER II and he has been leading the device-to-device communication
+and network coding task within WINNER+. He has authored and co-
+authored 25 + conference and journal articles, two book chapters and
+more than 40 pending patent applications.
+
+Ashwin Gumaste is currently the James R.
+Isaac Chair and faculty member
+in the
+Department of Computer Science and Engi-
+neering at the Indian Institute of Technology
+(IIT) Bombay. He is currently also a consultant
+to Nokia Siemens Networks, Munich where he
+works on optical access
+standardization
+efforts. He was a Visiting Scientist with the
+Massachusetts Institute of Technology (MIT),
+Cambridge, USA in the Research Laboratory
+for Electronics from 2008 to 2010. He was
+previously with Fujitsu Laboratories (USA) Inc
+in the Photonics Networking Laboratory (2001–05). He has also worked in
+Fujitsu Network Communications R&D (in Richardson TX) and prior to
+
+that with Cisco Systems in the Optical Networking Group (ONG). His
+work on light-trails has been widely referred, deployed and recognized by
+both industry and academia. His recent work on Omnipresent Ethernet
+has been adopted by tier-1 service providers. Ashwin has 20 granted US
+patents and over 30 pending patent applications. Ashwin has published
+about 120 papers in referred conferences and journals. He has also
+authored three books in broadband networks called DWDM Network
+Designs and Engineering Solutions (a networking bestseller), First-Mile
+Access Networks and Enabling Technologies and Broadband Services:
+User Needs, Business Models and Technologies for John Wiley. Owing to
+his many research achievements and contributions, Ashwin was awarded
+the Government of India’s DAE-SRC Outstanding Research Investigator
+Award in 2010 as well as the Indian National Academy of Engineering’s
+(INAE) Young Engineer Award (2010). He has served Program Chair, Co-
+chair, Publicity chair and workshop chair for IEEE conferences and as
+Program Committee member for IEEE ICC, Globecom, OFC, ICCCN, Grid-
+nets etc. Ashwin is also a guest editor for IEEE Communications Magazine,
+IEEE Network and the founding Editor of the IEEE ComSoc ONTC’s
+newsletter Prism. He is the Chair of theIEEE Communication Society’s
+Technical Committee on High Speed Networks (TCHSN) 2011–2013. He
+has been with IIT Bombay since 2005 where he convenes Networking
+Laboratory (GNL): www.cse.iitb.ac.in/gnl. The Gigabit Networking Labo-
+ratory has secured over 8 million USD in funding since its inception and
+has been involved in 4 major technology transfers to the industry. Ashwin
+can be reached through www.ashwin.name.
+
+P. Rost
+R. Boutaba
+K. Doppler
+A. Gumaste
+
+

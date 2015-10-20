@@ -1,0 +1,58 @@
+In Praise of Digital Design
+and Computer Architecture
+
+A R M® E d i t i o n
+
+Harris and Harris have done a remarkable and commendable job in
+creating a true textbook which clearly shows their love and passion for
+teaching and educating. The students who read this book will be thankful
+to Harris and Harris for many years after graduation. The writing style,
+the clearness, the detailed diagrams, the flow of information, the gradual
+increase in the complexity of the subjects, the great examples throughout
+the chapters, the exercises at the end of the chapters, the concise yet clear
+explanations, the useful real-world examples, the coverage of all aspects
+of each topic—all of these things are done very well. If you are a student
+using this book for your course get ready to have fun, be impressed, and
+learn a great deal as well!
+Mehdi Hatamian, Sr. Vice President, Broadcom
+
+Harris and Harris have done an excellent job creating this ARM version
+of their popular book, Digital Design and Computer Architecture. Retar-
+geting to ARM is a challenging task, but the authors have done it success-
+fully while maintaining their clear and thorough presentation style, as
+well as their outstanding documentation quality. I believe this new edition
+will be very much welcomed by both students and professionals.
+Donald Hung, San Jose State University
+
+Of all the textbooks I’ve reviewed and assigned in my 10 years as a pro-
+fessor, Digital Design and Computer Architecture is one of only two that
+is unquestionably worth buying. (The other is Computer Organization
+and Design.) The writing is clear and concise; the diagrams are easy to
+understand; and the CPU the authors use as a running example is com-
+plex enough to be realistic, yet simple enough to be thoroughly under-
+stood by my students.
+Zachary Kurmas, Grand Valley State University
+
+Digital Design and Computer Architecture brings a fresh perspective to
+an old discipline. Many textbooks tend to resemble overgrown shrubs,
+but Harris and Harris have managed to prune away the deadwood while
+preserving the fundamentals and presenting them in a contemporary con-
+text. In doing so, they offer a text that will benefit students interested in
+designing solutions for tomorrow’s challenges.
+Jim Frenzel, University of Idaho
+
+Harris and Harris have a pleasant and informative writing style. Their
+treatment of the material is at a good level for introducing students to com-
+puter engineering with plenty of helpful diagrams. Combinational circuits,
+microarchitecture, and memory systems are handled particularly well.
+James Pinter-Lucke, Claremont McKenna College
+
+Harris and Harris have written a book that is very clear and easy to
+understand. The exercises are well-designed and the real-world examples
+are a nice touch. The lengthy and confusing explanations often found in
+similar textbooks are not seen here. It’s obvious that the authors have
+devoted a great deal of time and effort to create an accessible text.
+I strongly recommend Digital Design and Computer Architecture.
+Peiyi Zhao, Chapman University
+
+

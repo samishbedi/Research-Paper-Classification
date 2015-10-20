@@ -1,0 +1,3124 @@
+Journal of Machine Learning Research 9 (2008) 67-104
+
+Submitted 3/07; Revised 9/07; Published 1/08
+
+Discriminative Learning of Max-Sum Classiﬁers
+
+Vojt ˇech Franc(cid:3)
+Fraunhofer-FIRST.IDA
+Kekul ´estrasse 7
+12489 Berlin, Germany
+
+X FRANCV@CM P. F E LK .CVU T.CZ
+
+Bogdan Savchynskyy
+BOGDAN@ IMAG E .K I EV.UA
+The International Research and Training Centre of Information Technologies and Systems
+Prospect Akademika Glushkova, 40
+Kiev, Ukraine, 03680
+
+Editor: Marina Meil ˘a
+
+Abstract
+The max-sum classiﬁer predicts n-tuple of labels from n-tuple of observable variables by maximiz-
+ing a sum of quality functions deﬁned over neighbouring pairs of labels and observable variables.
+Predicting labels as MAP assignments of a Random Markov Field is a particular example of the
+max-sum classiﬁer . Learning parameters of the max-sum classiﬁer
+is a challenging problem be-
+cause even computing the response of such classiﬁer
+is NP-complete in general. Estimating param-
+eters using the Maximum Likelihood approach is feasible only for a subclass of max-sum classiﬁers
+with an acyclic structure of neighbouring pairs. Recently, the discriminative methods represented
+by the perceptron and the Support Vector Machines, originally designed for binary linear classiﬁers,
+have been extended for learning some subclasses of the max-sum classiﬁer . Besides the max-sum
+classiﬁers with the acyclic neighbouring structure, it has been shown that the discriminative learn-
+ing is possible even with arbitrary neighbouring structure provided the quality functions ful ﬁll some
+additional constraints. In this article, we extend the discriminative approach to other three classes
+of max-sum classiﬁers with an arbitrary neighbourhood structure. We derive learning algorithms
+for two subclasses of max-sum classiﬁers whose response can be computed in polynomial time: (i)
+the max-sum classiﬁers with supermodular quality functions and (ii) the max-sum classiﬁers whose
+response can be computed exactly by a linear programming relaxation. Moreover, we show that the
+learning problem can be approximately solved even for a general max-sum classiﬁer .
+Keywords: max-xum classiﬁer , hidden Markov networks, support vector machines
+
+1. Introduction
+Let (T ; E ) be an undirected graph, where T is a ﬁnite set of objects and E (cid:18) (cid:0)T
+2 (cid:1) is a set of object
+pairs deﬁning a neighborhood structure. A pair ft ; t 0g of objects belonging to E will be called
+neighbors or neighboring objects. Let each object t 2 T be characterized by an observation x t and
+a label yt which take values from a ﬁnite set X and Y , respectively. We denote an ordered jT j-tuple
+of observations by x = (xt 2 X j t 2 T ) and an ordered jT j-tuple of labels by y = (yt 2 Y j t 2 T ).
+Each object t 2 T is assigned a function qt : Y (cid:2) X ! R which determines a quality of a label
+yt given an observation xt . Each object pair ft ; t 0g 2 E is assigned a function gt t 0 : Y (cid:2) Y ! R
+
+(cid:3). Secondary address for the ﬁrst
+author is Center for Machine Perception, Czech Technical University, Faculty of
+Electrical Engineering, Technicka 2, 166 27 Prague 6, Czech Republic.
+
+c(cid:13)2008 Vojt ˇech Franc and Bogdan Savchynskyy.
+
+FRANC AND SAVCHYN SKYY
+
+which determines the quality of labels yt and yt 0 . We adopt the convention gt t 0 (y; y0 ) = gt 0 t (y0 ; y).
+Let q 2 RjT jjX jjY j and g 2 RjE jjY j2 be ordered tuples which contain elements qt (y; x), t 2 T , x 2 X ,
+y 2 Y and gt t 0 (y; y0 ), ft ; t 0g 2 E , y; y0 2 Y , respectively. We consider a class of structured classiﬁer s
+f : X T ! Y T parametrized by (q; g) that predict labeling y from observations x by selecting the
+labeling with the maximal quality, that is,
+
+f (x; q; g) = argmax
+y2Y T
+
+(1)
+
+qt (yt ; xt ) + (cid:229)
+ft ;t 0 g2E
+
+y2Y T (cid:20) (cid:229)
+gt t 0 (yt ; yt 0 )(cid:21) :
+F (x; y; q; g) = argmax
+t 2T
+We will call the classiﬁcation rule of the form (1) a max-sum classiﬁer . The problem of computing
+the output of the max-sum classiﬁer , that is, the evaluation of the right-hand side of (1) is called
+the max-sum labeling problem or shortly the max-sum problem (it is also known as the weighted
+constraint satisfaction problem). The max-sum problem is known to be NP-complete in general.
+We will use the six-tuple (T ; E ; Y ; q; g; x) to denote a max-sum problem instance which must be
+solved to classify x.
+This article deals with a problem of learning the parameters (q; g) of a max-sum classiﬁer
+from a
+ﬁnite training set L = (cid:8)(x j ; y j ) 2 X T (cid:2) Y T j j 2 f1; : : : ; mg(cid:9). Henceforth we will use the shortcut
+J = f1; : : : ; mg.
+is the maximum aposteriori (MAP) estimation in
+A typical example of a max-sum classiﬁer
+Markov models. In this case, the observations x and the labels y are assumed to be realizations of
+random variables X = (Xt j t 2 T ) and Y = (Yt j t 2 T ). It is assumed that only the pairs of variables
+(Xt ; Yt ), t 2 T and (Yt ; Yt 0 ), ft ; t 0g 2 E are directly statistically dependent. Then the joint probability
+of X and Y is given by the Gibbs distribution
+
+P(x; y; q; g) =
+
+1
+Z
+
+exp F (x; y; q; g) ;
+
+(2)
+
+where Z is the partition function which normalizes the distribution. The optimal Bayesian classiﬁer
+f (x) 6= y assigns labels according to y (cid:3) =
+which minimizes the probability of misclassiﬁcation
+argmaxy2Y T P(y j x). It is easy to see that the classiﬁer
+(1) coincides with the optimal one which
+minimizes the misclassiﬁcations.
+(1) are image de-noising (Besag, 1986), image labeling (Chou and
+Applications of the classiﬁer
+Brown, 1990) stereo matching (Boykov et al., 2001), natural language processing (Collins, 2002),
+3D image segmentation (Anguelov et al., 2005), etc.
+
+1.1 Existing Approaches to Learning Max-Sum Classiﬁers
+
+is based on an estimation of parameters
+A generative approach to learning a max-sum classiﬁer
+(q; g) of the Gibbs distribution (2). Having the distribution estimated, a classiﬁer minimizing an
+expected risk (Bayesian risk) for a given loss function can be inferred using the Bayesian decision
+making framework. Maximum-Likelihood (ML) estimation methods are well known for Markov
+models with an acyclic graph (T ; E ) (see, for example, Schlesinger and Hlav ´a ˇc, 2002).
+In the
+general case, however, the ML estimation is not tractable because no polynomial time algorithm is
+known for computing a partition function exactly. Approximate methods to compute the partition
+function are based on a Gibbs sampler (Hinton and Sejnowski, 1986; Jerrum and Sinclair, 1993).
+Another disadvantage of the generative approach is the fact that little is known about an expected
+inferred from an imprecisely estimated statistical model.
+risk of the classiﬁers
+
+68
+
+D I SCR IM INAT IV E L EARN ING O F MAX -SUM C LA S S I FIER S
+
+A discriminative approach is an alternative method which does not require explicit modeling of
+the underlying probability distribution. It is based on a direct optimization of classiﬁer parameters
+(q; g) in order to minimize an error estimate of a classiﬁer performance computed on a ﬁnite train-
+ing set. It is easy to see that the score function F (x; y; q; g) of the max-sum classiﬁer
+(1) is linear
+in its parameters (q; g) which allows to exploit methods for learning linear classiﬁers.
+In the case
+of a consistent training set, that is, if there exists a classiﬁer with zero empirical error, the problem
+of learning a linear classiﬁer can be expressed as a problem of satisfying a set of linear inequali-
+ties. This problem is efﬁciently solvable by the perceptron algorithm. Variants of the perceptron
+algorithm for learning parameters of the max-sum classiﬁer
+(1) with a chain and tree neighborhood
+structure were published in Schlesinger and Hlav ´a ˇc (2002) and Collins (2002). These algorithms
+exploit the fact that a perceptron can be used whenever the response of the learned classiﬁer can be
+computed efﬁciently . This applies for the acyclic neighbourhood structure since the response of the
+max-sum classiﬁer can be computed by the dynamic programming (DP).
+The Support Vector Machines (SVM) (Vapnik, 1998) are another representative of a discrimi-
+native approach for learning linear classiﬁers which has proved to be successful in numerous ap-
+plications. Unlike the perceptron algorithm, the SVMs allows learning also from an inconsistent
+training set. Learning is formulated as minimization of a regularized risk functional which can be
+further transformed to a convex quadratic programming (QP) task suitable for optimization. The
+original SVMs are designed for learning the classiﬁers which estimate a single label. In the recent
+years, the SVMs have been extended for learning linear classiﬁers which can estimate a set of inter-
+dependent labels. In particular, the Hidden Markov Support Vector Machines (Altun and Hofmann,
+2003; Altun et al., 2003) and the Max-Margin Markov Networks (Taskar et al., 2004b) were pro-
+posed for learning max-sum classiﬁers with an acyclic neighboring structure. In this case, learning
+requires solving a QP task with a huge number of linear constraints proportional to the cardinality
+of the output space of the classiﬁer . In analogy to the perceptron, this task is tractable if there ex-
+ists an efﬁcient algorithm that solves the loss-augmented classiﬁcation (LAC) task which involves
+optimizing (1) with the loss function added to the objective function F (x; y; q; g) (c.f. Section 3.2
+for details). For additively decomposable loss functions, the LAC task becomes an instance of the
+max-sum problem easily solvable by the DP provided the neighbourhood structure is acyclic.
+Learning of the Associative Markov Networks (AMN) with an arbitrary neighbourhood struc-
+ture E was proposed by Taskar et al. (2004a). The AMN is the max-sum classiﬁer with the quality
+functions g restricted in a way similar to the Potts model. The LAC task was approximated by a
+linear programming (LP) relaxation specially derived for the AMN model. Incorporating an LP re-
+laxation into the SVM QP task, Taskar et al. (2004a) constructed a new compact QP task which has
+only a polynomial number of constraints. Even though the resulting QP task is polynomially solv-
+able, general purpose QP solvers do not provide a practical solution since they scale poorly with
+the problem and training set size. Recently, Taskar et al. (2006) proposed a reformulation of the
+structured learning problem as a convex-concave saddle-point problem which is efﬁciently solvable
+by the dual extragradient algorithm. This new framework is applicable for structured classiﬁers
+for
+which a certain projection step can be solved. Taskar et al. (2006) showed that the projection step
+is tractable for the max-sum classiﬁers with supermodular functions g and binary labels jY j = 2.
+Tsochantaridis et al. (2005) proposed a general framework for learning linear classiﬁers with an
+interdependent labels. Their approach is based on solving the underlying SVM QP task by a cutting
+plane algorithm which requires as a subroutine an algorithm solving the LAC task for the particular
+since the
+classiﬁer . The approach cannot be directly applied for the general max-sum classiﬁers
+
+69
+
+FRANC AND SAVCHYN SKYY
+
+LAC task is not tractable. An alternative approach to the cutting plane algorithm was proposed by
+Ratliff and Bagnell (2006) who used subgradient methods for optimizing the SVM QP task. This
+approach also relies on an efﬁcient
+solution to the LAC task.
+An approximated cutting plane algorithm was proposed in Finley and Joachims (2005) to learn
+a speciﬁc structured model for correlation clustering. The inference as well as the corresponding
+LAC task of this clustering model are NP-complete. The authors suggested to replace an exact
+solution of the LAC task required in the cutting plane algorithm by its polynomially solvable LP
+relaxation.
+
+1.2 Contributions
+
+In this article, we build on the previously published approaches which use the perceptron and the
+SVMs for learning the max-sum classiﬁers. We propose learning algorithms for three classes of
+max-sum classiﬁers
+for which, up to our knowledge, the discriminative approaches have not been
+applied yet. Namely, the contributions of the article are as follows:
+
+(cid:15) We formulate and solve the problem of learning the supermodular max-sum classiﬁer with
+an arbitrary neighbourhood structure E and without any restriction on the number of labels
+jY j (Taskar et al., 2006, consider only two labels). We propose a variant of the perceptron
+algorithm for learning from a consistent training set. For an inconsistent training set, we
+extend the cutting plane algorithm of Tsochantaridis et al. (2005) such that it maintains the
+quality functions g supermodular during the course of the algorithm thus making the LAC
+task efﬁciently solvable.
+
+(cid:15) We formulate and solve the problem of learning the max-sum classiﬁer with a strictly trivial
+equivalent which is a subclass of max-sum classiﬁer s with a trivial equivalent. We will show
+in Section 2 that the latter class can be equivalently characterized by the fact that the LP
+relaxation (Schlesinger, 1976; Koster et al., 1998; Chekuri et al., 2001; Wainwright et al.,
+2002) is tight for it. It is known, that the class of problems with a trivial equivalent contains
+acyclic problems (Schlesinger, 1976) and supermodular problems (Schlesinger and Flach,
+2000). We will extend this result to show that problems with a strictly trivial equivalent which
+we can learn contain the acyclic and the supermodular max-sum problems with a unique
+solution.
+
+Learning of the max-sum classiﬁers with a strictly trivial equivalent leads to an optimization
+problem with a polynomial number of linear constraints. We propose variants of the per-
+ceptron and of the cutting plane algorithm for learning from a consistent and an inconsistent
+training set, respectively. In this case, the LAC task does not require any specialized max-sum
+solver since it can be solved exhaustively. Moreover, the QP task to which we transform the
+learning problem is of the same form as the QP task required for ordinary multi-class SVMs
+(Crammer and Singer, 2001) which allows using existing optimization packages.
+
+(cid:15) We formulate the problem of learning the general max-sum classiﬁer , that is, without any
+restriction on the neighborhood structure E and the quality functions g. We show that the
+learning problem can be solved approximately by a variant of the cutting plane algorithm
+proposed by Finley and Joachims (2005) which uses the LP relaxation to solve the LAC task
+approximately. In contrast to Taskar et al. (2004a), we do not incorporate the LP relaxation
+
+70
+
+D I SCR IM INAT IV E L EARN ING O F MAX -SUM C LA S S I FIER S
+
+to the SVM QP task but we keep it separately which allows to exploit existing solvers for LP
+relaxation of the max-sum problem.
+
+For a simplicity, we will concentrate on the max-sum classiﬁer
+(1). All the proposed methods,
+however, are applicable whenever the set of labels Y is ﬁnite and the quality functions are linear in
+parameters, that is, they are of the form qt (xt ; yt ) = hw; Yt (xt ; yt )i and gt t 0 (yt ; yt ) = hw; Yt t 0 (yt ; yt 0 )i
+where w 2 Rd is a parameter vector and Yt : X (cid:2) Y ! Rd , Yt t 0 : Y (cid:2) Y ! Rd are arbitrary ﬁx ed
+mappings. Furthermore, all the proposed algorithms can be introduced in the form containing
+only dot products between Yt (x; y) and Yt t 0 (y; y0 ) which allows to use the kernel functions (Vap-
+nik, 1998).
+
+1.3 Structure of the Article
+
+The article is organized as follows. In Section 2, we describe three classes of the max-sum classiﬁers
+for which we will later derive learning algorithms. Perceptron algorithm and the SVM framework
+for learning linear classiﬁers with an interdependent labels is reviewed in Section 3. In Section 4,
+we formulate problems of learning the max-sum classiﬁers
+from a consistent training set and we
+propose variants of the perceptron algorithm for their solution. In Section 5, we formulate problems
+of learning the max-sum classiﬁers
+from inconsistent training set using the SVM framework. In
+Section 6, we propose an extended cutting plane algorithm to solve the learning problem deﬁned in
+Section 5. Section 7 describes experiments. Finally, in Section 8 we give conclusions.
+
+2. Classes of Max-Sum Problems
+In the rest of the article, we consider the max-sum problems P = (T ; E ; Y ; q; g; x) in which (T ; E )
+is an arbitrary undirected connected graph and q are arbitrary quality functions. The three classes
+of the max-sum problems described below differ in the structure of the ﬁnite set of labels Y and the
+quality functions g.
+
+2.1 General Max-Sum Problem and LP Relaxation
+
+The ﬁrst class which we consider is the general max-sum problem with no restrictions imposed on
+Y and g. Solving (1) when P is a general max-sum problem is known to be NP-complete. An ap-
+proximate solution can be found by the linear programming (LP) relaxation proposed independently
+by Schlesinger (1976), Koster et al. (1998), Chekuri et al. (2001), and Wainwright et al. (2002). We
+introduce only the basic concepts of the LP relaxation necessary for this article. For more details
+on the topic we refer to the mentioned publications or to a comprehensive survey in Werner (2007)
+from which we adopted notation and terminology.
+Let (T (cid:2) Y ; EY ) denote an undirected graph with edges EY = ff(t ; y); (t 0 ; y0 )g j ft ; t 0g 2 E ; y; y0 2
+Y g. This graph corresponds to the trellis diagram used to visualize Markov chains. Each node
+(t ; y) 2 T (cid:2) Y and each edge f(t ; y); (t 0 ; y0 )g 2 EY is assigned the numbers bt (y) and bt t 0 (y; y0 ), re-
+spectively. Let bbb 2 RjT jjY j+jE jjY j2 be an ordered tuple which contains elements bt (y), (t ; y) 2 T (cid:2) Y
+and bt t 0 (y; y0 ), f(t ; y); (t 0 ; y0 )g 2 EY . Let LP denote a set of relaxed labelings which contains vectors
+bbb satisfying
+(cid:229)
+y02Y
+
+bt t 0 (y; y0 ) = bt (y) ; ft ; t 0g 2 E ; y 2 Y ;
+
+(cid:229)
+y2Y
+
+bt (y) = 1 ; t 2 T ;
+
+bbb (cid:21) 0 :
+
+71
+
+FRANC AND SAVCHYN SKYY
+
+(3)
+
+The LP relaxation of (1) reads
+bbb2LP (cid:20) (cid:229)
+(cid:229)
+bt (y)qt (y; xt ) + (cid:229)
+(cid:229)
+bt t 0 (y; y0 )gt t 0 (y; y0 )(cid:21) :
+bbb(cid:3) = argmax
+y2Y
+t 2T
+(t ;t 0 )2E
+(y;y0 )2Y 2
+It can be seen that solving (3) with an additional constraint bbb 2 f0; 1gT is an integer programming
+problem equivalent to (1). Further, we will introduce concepts of equivalent problems, equivalent
+transformations and trivial problems which are tightly connected to the LP relaxation.
+A representation of the max-sum problem P = (T ; E ; Y ; q; g; x) is not minimal since there exists
+an inﬁnite number of equivalent max-sum problems P 0 = (T ; E ; Y ; q0 ; g0 ; x) with different quality
+functions (q0 , g0 ) but the same quality for all labelings: the max-sum problems P and P 0 are called
+equivalent if F (x; y; q; g) = F (x; y; q0 ; g0 ) for all y 2 Y T (Schlesinger, 1976; Wainwright et al.,
+2002).
+Next, we introduce a transformation of a max-sum problem to its arbitrary equivalent. These
+equivalent transformations are originally due to Schlesinger (1976) and recently are also known
+as reparametrization in Wainwright et al. (2002) and Kolmogorov (2006). Let j t t 0 : Y ! R and
+jt 0 t : Y ! R be a pair of functions introduced for each pair of neighbouring objects ft ; t 0g 2 E , that
+is, we have 2jE j functions in total. The value jt t 0 (y) is called potential at label y of an object t in the
+direction t 0 . Note that the potentials correspond to messages in belief propagation (see, for example,
+Pearl, 1988; Yedidia et al., 2005). We will use jjj 2 R2jE jjY j to denote an ordered tuple which contains
+elements jt t 0 (y), ft ; t 0g 2 E , y 2 Y and jt 0 t (y0 ), ft ; t 0g 2 E , y0 2 Y . Let N (t ) = ft 0 2 T j ft ; t 0g 2 E g
+denote the set of objects neighbouring with the object t 2 T . Finally, let Pjjj
+= (T ; E ; Y ; qjjj
+; gjjj
+; x)
+denote the max-sum problem constructed from the max-sum problem P = (T ; E ; Y ; q; g; x) by the
+following transformation
+jjj
+t t 0 (y; y0 ) = gt t 0 (y; y0 ) + jt t 0 (y) + jt 0 t (y0 ) ;
+g
+t (y; xt ) = qt (y; xt ) (cid:0) (cid:229)
+jjj
+jt t 0 (y) ;
+q
+t 02N (t )
+By substituting (4) to F (x; y; q; g) = F (x; y; q0 ; g0 ) it is easy to show that the problems P and Pjjj are
+equivalent for arbitrary potentials jjj. Moreover, it has been shown (Schlesinger, 1976; Kolmogorov,
+2006) that the converse is also true, that is, if any two max-sum problems are equivalent then they
+are related by (4) for some potentials jjj.
+Now, we can deﬁne
+the class of trivial max-sum problems. Node (t ; y) is called maximal if
+qt (y; xt ) = maxy2Y qt (y; xt ) and edge f(t ; y); (t 0 ; y0 )g is called maximal if gt t 0 (y; y0 ) = maxy;y02Y gt t 0 (y; y0 ).
+The max-sum problem P is called trivial if there exists a labeling y which can be formed only from
+the maximal nodes and edges. Checking whether a given P is trivial leads to an instance of a con-
+straint satisfaction problem CSP (also called consistent labeling problem) (Rosenfeld et al., 1976;
+Haralick and Shapiro, 1979). The CSP is NP-complete in general and it is equivalent to solving a
+max-sum problem when the quality functions (q; g) take only two values f(cid:0)¥; 0g. Let U (x; q; g) be
+a height (also called energy) of the max-sum problem P deﬁned as a sum of qualities of the maximal
+nodes and the maximal edges, that is,
+U (x; q; g) = (cid:229)
+qt (y; xt ) + (cid:229)
+t 2T
+ft ;t 0 g2E
+Comparing (1) and (5) shows that U (x; q; g) is an upper bound on the quality of the optimal labeling,
+that is, U (x; q; g) (cid:21) maxy2Y T F (x; y; q; g). It is easy to see that the upper bound is tight if and only
+if the max-sum problem is trivial. The following result is central to the LP relaxation:
+
+ft ; t 0g 2 E ; y; y0 2 Y ;
+t 2 T ; y 2 Y :
+
+(4a)
+(4b)
+
+max
+y2Y
+
+max
+y;y02Y
+
+gt t 0 (y; y0 ) :
+
+(5)
+
+72
+
+D I SCR IM INAT IV E L EARN ING O F MAX -SUM C LA S S I FIER S
+
+Theorem 1 Schlesinger (1976); Werner (2005) Let C be a class of equivalent max-sum problems.
+Let C contain at least one trivial problem. Then any problem in C is trivial if and only if it has
+minimal height.
+This suggests to solve the max-sum problem P by searching for an equivalent Pjjj with the minimal
+height, which leads to
+
+U (x; qjjj
+
+; gjjj
+
+jjj(cid:3) = argmin
+jjj
+
+) :
+
+(6)
+
+The problem (6) can be expressed as an LP task which is known to be a dual to the LP relaxation (3).
+Having jjj(cid:3) one can try to verify whether Pjjj(cid:3) is trivial, that is, whether there exists a labeling com-
+posed of the maximal nodes and edges of Pjjj(cid:3) . If such labeling is found then it is the optimal solution
+of the max-sum problem P. Otherwise, one can use heuristics to ﬁnd an approximate solution by
+searching for such labeling which contains as much maximal nodes and edges as possible.
+Though (6) is solvable in polynomial time, a general purpose LP solvers are applicable only for
+small instances. A specialized solvers for LP relaxation were published in Koval and Schlesinger
+(1976). Recently, Wainwright et al. (2002) and Kolmogorov (2006) proposed a tree-reweighted
+algorithm based on minimizing a more general upper bound composed of trees spanning the graph
+(T ; E ) of which (5) is a special case.
+We propose a learning algorithm for a general max-sum classiﬁer which requires an arbitrary
+LP relaxation solver as a subroutine. We only require that the LP solver returns an approximate
+solution ˆy and an upper bound on maxy2Y T F (x; y; q; g).
+
+2.2 Supermodular Max-Sum Problems
+Deﬁnition 1 A function gt t 0 : Y (cid:2) Y ! R is supermodular if
+
+1. The set of labels Y is totally ordered; w.l.o.g. we consider Y = f1; 2; : : : ; jY jg endowed with
+the natural order.
+
+t 0 ) 2 Y 4 of labels such that yt > y0
+t and yt 0 > y0
+t ; yt 0 ; y0
+2. For each four-tuple (yt ; y0
+t 0 the following
+inequality holds:
+
+t ; y0
+gt t 0 (yt ; yt 0 ) + gt t 0 (y0
+t 0 ) (cid:21) gt t 0 (yt ; y0
+t 0 ) + gt t 0 (y0
+t ; yt 0 ):
+
+(7)
+
+A max-sum problem in which the label set Y is totally ordered and all the functions g are supermod-
+ular is called a supermodular max-sum problem. In addition, we will also consider the max-sum
+problem in which the inequalities (7) are fulﬁlled strictly. In this case the corresponding max-sum
+problem will be called strictly supermodular.
+A naive approach to check whether a given max-sum problem is supermodular amounts to
+verifying all jE j (cid:1) jY j4 inequalities in (7). We will use a more effective way which requires to check
+only jE j (cid:1) (jY j (cid:0) 1)2 inequalities thanks to the following well-known theorem:
+
+Theorem 2 The function gt t 0 : Y (cid:2) Y ! R is supermodular if for each each pair of labels (y; y 0 ) 2 Y 2
+such that y + 1 2 Y ; y0 + 1 2 Y the following inequality holds
+
+gt t 0 (y; y0 ) + gt t 0 (y + 1; y0 + 1) (cid:21) gt t 0 (y; y0 + 1) + gt t 0 (y + 1; y0 ):
+
+(8)
+
+73
+
+FRANC AND SAVCHYN SKYY
+
+Proof The proof follows trivially from the equality
+
+t ; y0
+gt t 0 (yt ; yt 0 ) + gt t 0 (y0
+t 0 ) (cid:0) gt t 0 (yt ; y0
+t 0 ) (cid:0) gt t 0 (y0
+t ; yt 0 )
+= (cid:229)
+(cid:20)gt t 0 (z; z0 ) + gt t 0 (z + 1; z0 + 1) (cid:0) gt t 0 (z; z0 + 1) (cid:0) gt t 0 (z + 1; z0 )(cid:21) ;
+yt >z(cid:21)y0
+t
+yt 0 >z0(cid:21)y0
+t 0
+
+and the fact that all the summands are non-negative by the condition (8).
+
+A similar proposition holds for strictly supermodular problems: a max-sum problem is strictly
+supermodular if for each pair of neighboring objects ft ; t 0g 2 E and for each pair of labels (y; y0 ) 2 Y 2
+such that y + 1 2 Y ; y0 + 1 2 Y the following inequality holds:
+
+gt t 0 (y; y0 ) + gt t 0 (y + 1; y0 + 1) > gt t 0 (y; y0 + 1) + gt t 0 (y + 1; y0 ):
+
+(9)
+
+In this paper, we exploit the fact that the optimal solution of the supermodular problems can be
+found in a polynomial time (Schlesinger and Flach, 2000). Kolmogorov and Zabih (2002) proposed
+an efﬁcient algorithm for the binary case jY j = 2 which is based on transforming the supermodular
+max-sum problem to the max- ﬂo w problem from the graph theory. A not widely known extension
+for a general case jY j > 2 was proposed in Kovtun (2004) and Schlesinger (2005). We will propose
+learning algorithms which require an arbitrary solver for the supermodular max-sum problem as a
+subroutine.
+
+2.3 Max-Sum Problems with Strictly Trivial Equivalent
+
+In this section we consider max-sum problems with a strictly trivial equivalent which is a subclass
+of problems with a trivial equivalent described in Section (2.1). The main reason for deﬁning this
+subclass is that these problems are more suitable for learning than problems with a trivial equiv-
+alent. It was shown (Schlesinger, 1976; Schlesinger and Flach, 2000) that problems with a trivial
+equivalent contain two well-known polynomially solvable subclasses of max-sum problems: (i) the
+problems with an acyclic neighborhood structure E and (ii) the supermodular problems. We will
+give a similar result which applies for the problems with a strictly trivial equivalent. In particu-
+lar, we will show that the class of problems with a strictly trivial equivalent contains all acyclic
+and supermodular problems which have a unique solution. This shows that learning algorithms for
+the max-sum classiﬁers with a strictly trivial equivalent introduced below are applicable for a wide
+range of polynomially solvable problems.
+Max-sum problems with a trivial equivalent are those for which LP relaxation (6) is tight,
+; gjjj(cid:3)
+that is, U (x; qjjj(cid:3)
+) = maxy2Y T F (x; y; q; g), and thus maxy2Y T F (x; y; q; g) can be computed in
+a polynomial time. The tight LP relaxation, however, does not imply that the optimal solution
+y(cid:3) = argmaxy2Y T F (x; y; q; g) can be found in a polynomial time. As we mentioned, to ﬁnd y (cid:3) from
+(qjjj(cid:3)
+; gjjj(cid:3)
+) requires searching for a labeling formed only by the maximal nodes and edges which need
+not be unique. Finding such labeling leads to the CSP which is NP-complete. We exploit the fact
+that the labeling can be found trivially if all the maximal nodes and edges are unique. As a result,
+the optimal solution y(cid:3) can be found in a polynomial time by solving the LP relaxation and ﬁnding
+the maximal nodes and edges.
+
+74
+
+D I SCR IM INAT IV E L EARN ING O F MAX -SUM C LA S S I FIER S
+
+Deﬁnition 2 Max-sum problem P is strictly trivial if:
+1. There exists a unique maximal node (t ; y) for each object t 2 T .
+2. For each maximal edge f(t ; y); (t 0 ; y0 )g 2 EY the nodes (t ; y) and (t 0 ; y0 ) are maximal.
+
+It is clear that a strictly trivial problem has a unique solution which is composed of all maximal
+nodes and edges. Checking whether a given problem is strictly trivial requires only O (jT jjY j +
+jE jjY j2 ) operations, that is, ﬁnding the maximal nodes and edges and checking if they are unique
+and if they form a labeling.
+Recall that the max-sum problem P has a strictly trivial equivalent if there exists a strictly trivial
+problem which is equivalent to P. Finally, we give a theorem which asserts that the class of prob-
+lems with a strictly trivial equivalent includes at least the acyclic problems and the supermodular
+problems which have a unique solution.
+
+Theorem 3 Let P = (T ; E ; Y ; q; g; x) be a max-sum problem and let P have a unique solution. If
+(T ; E ) is an acyclic graph or quality functions g are supermodular then P is equivalent to some
+strictly trivial problem.
+
+Proof is given in Appendix A.
+
+3. Discriminative Approach to Learning Structured Linear Classiﬁers
+
+In this section, we review the discriminative approach to learning linear classiﬁers which we will
+later apply to the max-sum classiﬁers.
+Let x 2 XXX and y 2 YYY be observations and labels generated according to some ﬁx ed unknown
+f : XXX ! YYY which estimates labels
+distribution P(x; y). We are interested in designing a classiﬁer
+from observations. Let L : YYY (cid:2) YYY ! R be a loss function penalizing a prediction f (x) by a penalty
+L(y; f (x)) provided the true output is y. The goal is to ﬁnd a classiﬁer which minimizes the expected
+(Bayesian) risk
+
+L(y; f (x)) dP(x; y) :
+
+R[ f ] = ZXXX (cid:2)YYY
+The risk R[ f ] cannot be directly minimized because the distribution P(x; y) is unknown. Instead, we
+are given a ﬁnite training set L = f(x j ; y j ) 2 XXX (cid:2) YYY j j 2 J g i.i.d. sampled from P(x; y).
+The discriminative approach to learning classiﬁers does not require estimation of a probability
+distribution. It is based on direct optimization of parameters of a classiﬁer
+in order to minimize a
+substitutional risk functional which approximates the desired risk R[ f ] and can be computed from a
+ﬁnite training set. Let us consider a class of linear classiﬁers
+
+f (x; w) = argmax
+y2YYY
+is determined by a parameter vector w 2 Rd and some ﬁx ed mapping Y : XXX (cid:2)YYY ! Rd .
+The classiﬁer
+A simple proxy for R[ f ((cid:15); w)] is the empirical risk
+(cid:229)
+j2J
+
+L(y j ; f (x j ; w)) :
+
+Remp [ f ((cid:15); w)] =
+
+hw; Y(x; y)i :
+
+(10)
+
+1
+m
+
+75
+
+FRANC AND SAVCHYN SKYY
+
+Let us assume a class of loss functions which satisfy L(y; y 0 ) = 0 if y = y0 and L(y; y0 ) > 0 if y 6= y0 .
+Further, we will distinguish two learning scenarios: (i) learning from a consistent training set and (ii)
+learning from an inconsistent training set. The training set L is consistent if there exists a parameter
+vector w(cid:3) such that the empirical risk of the linear classiﬁer
+is zero, that is, Remp [ f ((cid:15); w(cid:3) )] = 0. In
+the opposite case, the training set is inconsistent.
+from a
+In Section 3.1, we review the perceptron algorithm suitable for learning linear classiﬁers
+consistent training set. The Support Vector Machine (SVM) approach to learning from an inconsis-
+tent training set is described in Section 3.2.
+
+3.1 Learning from a Consistent Training Set Using the Perceptron Algorithm
+In the case of a consistent training set L , the learning problem is to ﬁnd parameters w (cid:3) of the linear
+(10) such that the empirical risk Remp [ f ((cid:15); w(cid:3) )] = 0. This amounts to ﬁnding parameters
+classiﬁer
+w(cid:3) which satisfy the set of non-linear equations
+
+y j = argmax
+y2YYY
+
+hw; Y(x; y)i ;
+
+j 2 J :
+
+(11)
+
+In the rest of the article, we will assume that the training set does not contain examples with the same
+observations x j = x j 0 but different labelings y j 6= y j 0 , that is, we will search for a classiﬁer which
+returns a unique labeling for each example from the training set. It is convenient to transform (11)
+to an equivalent problem of solving a set of linear strict inequalities
+
+hw; Y(x j ; y j )i > hw; Y(x j ; y)i ;
+j 2 J ; y 2 YYY n fy j g ;
+which, using ˆY(x j ; y j ; y) = Y(x j ; y j ) (cid:0) Y(x j ; y), can be written in a compact form
+hw; ˆY(x j ; y j ; y)i > 0 ;
+
+j 2 J ; y 2 YYY n fy j g :
+
+An efﬁcient method to solve the problem (12) is the perceptron algorithm:
+
+(12)
+
+Algorithm 1 Perceptron algorithm
+1: Set w := 0.
+
+2: Find a violated inequality in (12), that is, ﬁnd indices j (cid:3) 2 J , y(cid:3) 2 YYY n fy j(cid:3)
+hw; ˆY(x j(cid:3)
+; y j(cid:3)
+
+; y(cid:3) )i (cid:20) 0 :
+
+g such that
+
+3: If there is no violated inequality then w solves (12) and the algorithm halts. Otherwise update
+the current solution
+w := w + ˆY(x j(cid:3)
+; y j(cid:3)
+
+; y(cid:3) ) ;
+
+and go to Step 2.
+
+Provided the training set L is consistent, that is, the inequalities (12) are satisﬁable,
+the percep-
+tron terminates after a ﬁnite number of iterations (Novikoff, 1962). The number of iterations of the
+perceptron algorithm does not depend on the number of inequalities of (12). This property is crucial
+for the problems with a very large number of inequalities, which are of interest in our article.
+
+76
+
+D I SCR IM INAT IV E L EARN ING O F MAX -SUM C LA S S I FIER S
+
+In Step 2, the perceptron algorithm needs to ﬁnd a violated inequality in (12). This subtask can
+responses ˆy j = f (x j ; w), j 2 J by evaluating (10). If for some
+be solved by computing the classiﬁer
+j 2 J the response ˆy j 6= y j , that is, the classiﬁer commits an error on the j-th example, then the
+indices ( j; ˆy j ) identify the violated inequality. As a result, the perceptron algorithm is applicable
+for learning of an arbitrary linear classiﬁer
+for which the classiﬁcation task (10) can be evaluated
+efﬁciently .
+In case of a general max-sum classiﬁer , the classiﬁcation task is NP-complete so that using the
+perceptron algorithm is not feasible. In Section 4 we will show, however, how to use the perceptron
+for learning the strictly supermodular max-sum classiﬁers and the max-sum classiﬁers with a strictly
+trivial equivalent.
+
+3.2 Learning from Inconsistent Training Set Using SVM Approach
+
+In practical applications, the training set is often inconsistent. SVMs (Vapnik, 1998) constitute a
+popular approach to learning linear classiﬁers applicable to both consistent and inconsistent training
+sets. The SVM learning is based on minimizing regularized risk which is a sum of the empirical risk
+Remp [ f ((cid:15); w)] and a regularization term. Minimization of the regularization term corresponds to the
+notion of large margin introduced to prevent over-ﬁtting. Since the empirical risk is not convex for
+most loss functions used in classiﬁcation it is replaced by a convex piece-wise linear upper bound
+which is more suitable for optimization. Originally, SVMs were designed for a binary case jYYY j = 2
+and 0=1-loss function L0=1 (y; y0 ) = [[y 6= y0 ]] where [[(cid:15)]] equals 1 if the term inside the brackets
+is satisﬁed and it is 0 otherwise. The multi-class variant of SVMs (jYYY j > 2) were introduced in
+Vapnik (1998) and Crammer and Singer (2001) but it still assumes the 0=1-loss only function.
+Taskar et al. (2004b) extended SVMs for learning the max-sum classiﬁers
+(1) with an acyclic
+neighbourhood structure and they proposed using the additive loss function (14) suitable for these
+problems. Recently, the approach was generalized by Tsochantaridis et al. (2005) who consider an
+arbitrary structured linear classiﬁer
+(10) and a general loss function. Learning of structured SVMs
+leads to the following convex QP task
+classiﬁers
+w;xxx " 1
+(w(cid:3) ; xxx(cid:3) ) = argmin
+2
+
+x j # ;
+
+kwk2 +
+
+(cid:229)
+j2J
+
+C
+m
+
+(13a)
+
+subject to
+
+hw; Y(x j ; y j ) (cid:0) Y(x j ; y)i (cid:21) L(y j ; y) (cid:0) x j ;
+j 2 J ; y 2 YYY :
+(13b)
+(cid:229) j2J x j
+The objective function of (13) comprises the regularization term 1
+2 kwk2 and the sum 1
+m
+weighted by the regularization constant C > 0. It can be shown (Tsochantaridis et al., 2005) that
+(cid:229) j2J x j is an upper bound on the empirical risk Remp [ f ((cid:15); w)] of the linear classiﬁer
+the sum 1
+(10).
+m
+Thus the learning objective is to minimize an upper bound on the empirical risk and to penalize
+parameters with high kwk2 . The loss function can be an arbitrary function L : YYY (cid:2) YYY ! R which
+satisﬁes L(y; y0 ) = 0 if y = y0 and ¥ > L(y; y0 ) > 0 if y 6= y0 . In cases which are of interest in our
+article, the set YYY = Y T and a reasonable choice is the additive loss function, also known as the
+Hamming distance, which is deﬁned as
+LD (y; y0 ) = (cid:229)
+t 2T
+
+[[yt 6= y0
+t ]] ;
+
+(14)
+
+77
+
+FRANC AND SAVCHYN SKYY
+
+that is, it counts the number of misclassiﬁed objects. The trade-off between the regularization term
+and the upper bound is controlled by the constant C. A suitable setting is usually found by tuning C
+on an independent data set or using the cross-validation.
+The number of constraints (13b) equals to mjYYY j. In the structured learning jYYY j is huge, for
+it grows exponentially because jYYY j = jY jjT j . As
+example, in the case of the max-sum classiﬁers
+a result, the QP task (13) is not tractable for general purpose QP solvers. Tsochantaridis et al.
+(2005) proposed a specialized cutting plane algorithm to approximate (13) by a reduced QP task
+which has the same objective function (13a) but uses only a small subset of the constraints (13b).
+The efﬁcienc y of the approximation relies on the sparseness of the solution (13) which means that
+majority of the linear inequality constraints (13b) are inactive and they can be excluded without
+affecting the solution. To select the constraints, the cutting plane algorithm requires solving the
+LAC task
+y2YYY (cid:20)L(y j ; y) + (cid:10)w; Y(x j ; y)(cid:11)(cid:21) :
+y(cid:3) = argmax
+Similarly to the perceptron algorithm, the cutting plane algorithm is applicable for learning of an
+arbitrary linear classiﬁer
+for which the LAC task (15) can be solved efﬁciently .
+In case of a general max-sum classiﬁer and an additive loss function the LAC task becomes an
+instance of a general max-sum problem. Even though a general max-sum problem can be solved
+only approximately, we will show that it sufﬁces
+to solve the learning problem (13) with a good
+precision. Moreover, we will be able to determine how the found solution differs from the optimal
+one. In case of a supermodular max-sum classiﬁer we will augment the learning problem (13) in
+such a way that the obtained quality functions will be supermodular and thus the task (15) becomes
+solvable precisely in a polynomial time. Finally, in case of a max-sum problem with a strictly trivial
+equivalent, we will give a new formulation of the learning problem which does not require solving
+the task (15) at all since the number of constraints will be sufﬁciently small to use an exhaustive
+search.
+
+(15)
+
+4. Learning a Max-Sum Classi ﬁer from a Consistent Training Set
+
+In this section, we assume that the training set is consistent with respect to a given max-sum classi-
+ﬁer . This means that there exists at least one max-sum classiﬁer
+in a given class which classiﬁes all
+training examples correctly. We will introduce variants of the perceptron algorithm which, provided
+the assumption holds, ﬁnd a classiﬁer
+in a ﬁnite number of iterations. In practice, however, there is
+no general way to verify whether the assumption holds unless the perceptron halts. Consequently, if
+the perceptron algorithm does not halt after a reasonable number of iterations we cannot draw any
+conclusion about the solution. In Section 5, we will avoid this drawback using the SVM approach
+able to deal with inconsistent training sets.
+To use the perceptron algorithm, we will reformulate the learning problem as an equivalent
+task of satisfying a set of linear strict inequalities. A keystone of the perceptron algorithm is an
+efﬁcient procedure to ﬁnd a violated inequality in the underlying set which amounts to classifying
+the examples from the training set. Therefore, using the perceptron algorithm is not feasible for the
+general max-sum problem whose evaluation is NP-complete. Nevertheless, we will formulate the
+learning problem even for this case because it will serve as a basis for constructing the algorithm for
+an inconsistent training set. Next, we will derive learning algorithms for strictly supermodular max-
+sum classiﬁers and max-sum classiﬁers with a strictly trivial equivalent. For these two classes, max-
+
+78
+
+D I SCR IM INAT IV E L EARN ING O F MAX -SUM C LA S S I FIER S
+
+sum classi ﬁers can be evaluated efﬁciently by polynomial-time algorithms which makes possible to
+use the perceptron. Moreover, in the case of a max-sum classiﬁer with a strictly trivial equivalent,
+learning will require ﬁnding a violated inequality from only a polynomially-sized set which can be
+accomplished exhaustively without any max-sum solver.
+
+4.1 General Max-Sum Classi ﬁer
+
+Problem 1 (Learning a general max-sum classiﬁer
+from a consistent training set). For a given
+training set L = f(x j ; y j ) 2 X T (cid:2) Y T j j 2 J g ﬁnd quality functions q and g such that
+
+y j = argmax
+y2Y T
+
+F (x j ; y; q; g);
+
+j 2 J :
+
+(16)
+
+It can be seen, that the general max-sum classiﬁer
+(1) can be represented as the linear clas-
+In particular, the quality functions q and g are merged to a single parameter vector
+siﬁer
+(10).
+w = (q; g) 2 Rd of dimension d = jT jjY jjX j + jE jjY j2 . Further, we have XXX = X T and YYY = Y T .
+The mapping Y : X T (cid:2) Y T ! Rd can be constructed of indicator functions in such a way that
+F (x; y; q; g) = hw; Y(x; y)i.
+Following the approach of learning linear classiﬁers described in Section 3.1, we can reformu-
+late Problem 1 to an equivalent problem of solving a huge set of linear inequalities
+
+F (x j ; y j ; q; g) > F (x j ; y; q; g) ;
+
+j 2 J ; y 2 Y T nfy j g :
+
+(17)
+
+To ﬁnd a solution of (17) by the perceptron, we would need an efﬁcient algorithm to compute
+a response of a general max-sum classiﬁer . Because solving a max-sum problem is NP-complete
+in general, using the perceptron algorithm is not tractable. In Section 5.1, we will use the formu-
+lation (17) as a basis for constructing an algorithm for learning from an inconsistent training set.
+In this case, it will be possible to use the LP relaxation to approximate the response of a max-sum
+classiﬁer .
+
+4.2 Strictly Supermodular Max-Sum Classiﬁer
+
+Problem 2 (Learning strictly supermodular max-sum classiﬁer from a consistent training set). For
+a given training set L = f(x j ; y j ) 2 X T (cid:2) Y T j j 2 J g ﬁnd quality functions q and g such that
+equations (16) are satisﬁed and the quality functions g are strictly supermodular, that is, g satisfy
+the condition (9).
+
+Similarly to the general case, we reformulate Problem 2 as an equivalent problem of solving a
+set of strict linear inequalities
+
+j 2 J ; y 2 Y T nfy j g ;
+F (x j ; y j ; q; g) > F (x j ; y; q; g) ;
+: )
+gt t 0 (cid:0)y; y0(cid:1) + gt t 0 (cid:0)y + 1; y0 + 1(cid:1) > gt t 0 (cid:0)y; y0 + 1(cid:1) + gt t 0 (cid:0)y + 1; y0(cid:1) ;
+ft ; t 0g 2 E ; (y; y0 ) 2 (cid:8)1; : : : ; jY j (cid:0) 1(cid:9)2
+The system (18) comprises two sets of linear inequalities (18a) and (18b). The inequali-
+ties (18a) enforce an error-less response of a max-sum classiﬁer on the training set. The inequal-
+ities (18b), if satisﬁed, guarantee that the quality functions g are strictly supermodular (c.f. Sec-
+tion 2.2).
+
+(18b)
+
+(18a)
+
+79
+
+FRANC AND SAVCHYN SKYY
+
+To apply the perceptron algorithm we need an efﬁcient method to ﬁnd a violated inequality
+in (18). In the case of the inequalities (18b), it can be accomplished by an exhaustive search since
+there are only jE j(jY j (cid:0) 1)2 inequalities. To ﬁnd a violated inequality in (18a), where the number
+m(jY jjT j (cid:0) 1) grows exponentially, we need to compute the response of a max-sum classiﬁer on
+the training examples. This can be done efﬁciently provided the inequalities (18b) are already
+satisﬁed as it guarantees that the qualities g are supermodular. Thus we use the perceptron algorithm
+to repeatedly solve the inequalities (18b) and, as soon as (18b) are satisﬁed, we ﬁnd a violated
+inequality in (18a) by solving a supermodular max-sum problem. The proposed variant of the
+perceptron to solve (18) is as follows:
+
+Algorithm 2 Learning strictly supermodular max-sum classiﬁer by perceptron
+
+1: Set q := 0 and g := 0.
+
+2: Find a violated inequality in (18b), that is, ﬁnd a quadruple ft ; t 0g 2 E ; y; y0 2 Y such that
+
+gt t 0 (y; y0 ) + gt t 0 (y + 1; y0 + 1) (cid:0) gt t 0 (y; y0 + 1) (cid:0) gt t 0 (y + 1; y0 ) (cid:20) 0 :
+
+3: If no such quadruple (t ; t 0 ; y; y0 ) exists then (g are already supermodular) go to Step 4. Otherwise
+use the found (t ; t 0 ; y; y0 ) to update current g by
+
+gt t 0 (y; y0 )
+gt t 0 (y; y0 + 1)
+
+gt t 0 (y; y0 ) + 1 ; gt t 0 (y + 1; y0 + 1)
+:=
+gt t 0 (y + 1; y0 )
+:= gt t 0 (y; y0 + 1) (cid:0) 1 ;
+
+:= gt t 0 (y + 1; y0 + 1) + 1 ;
+gt t 0 (y + 1; y0 ) (cid:0) 1 ;
+:=
+
+and go to Step 2.
+
+4: Find a violated inequality in (18a), that is, ﬁnd an index j 2 J and a labeling y such that
+
+y j 6= y := argmax
+y02Y T
+
+F (x j ; y0 ; q; g) :
+
+5: If no such ( j, y) exist than (q; g) solve the task (18) and the algorithm halts. Otherwise use the
+found ( j, y) to update current q and g by
+
+gt t 0 (y j
+t ; y j
+t 0 )
+t ; x j
+qt (y j
+t )
+
+:= gt t 0 (y j
+t ; y j
+t 0 ) + 1; gt t 0 (yt ; yt 0 )
+qt (yt ; x j
+t ; x j
+:= qt (y j
+t ) + 1;
+t )
+
+:= gt t 0 (yt ; yt 0 ) (cid:0) 1 ; ft ; t 0g 2 E ;
+:= qt (yt ; x j
+t 2 T :
+t ) (cid:0) 1 ;
+
+and go to Step 2.
+
+Since Algorithm 2 is nothing but the perceptron algorithm applied to the particular set of lin-
+ear constraints (18), the Novikoff ’s theorem (Novikoff, 1962) readily applies. Thus Algorithm 2
+terminates in a ﬁnite number of iterations provided (18) is satisﬁable,
+that is, if there exists a super-
+f ((cid:15); q; g) with zero empirical error risk on the training set L .
+modular max-sum classiﬁer
+
+80
+
+D I SCR IM INAT IV E L EARN ING O F MAX -SUM C LA S S I FIER S
+
+4.3 Max-Sum Classiﬁer with a Strictly Trivial Equivalent
+
+Problem 3 (Learning max-sum classi ﬁer with a strictly trivial equivalent from a consistent training
+set). For a given training set L = f(x j ; y j ) 2 X T (cid:2) Y T j j 2 J g ﬁnd quality functions q and g such
+that equations (16) are satisﬁed and the max-sum problems P j = (T ; E ; Y ; q; g; x j ), j 2 J have a
+strictly trivial equivalent.
+
+In Problem 3, we again search for a max-sum classiﬁer which classiﬁes all training examples
+correctly but, in addition, all max-sum problems P j , j 2 J should have a strictly trivial equivalent.
+This means that if we compute a response of a max-sum classiﬁer which solves Problem 3 for each
+training example using LP relaxation we get a unique labeling equal to that in the training set.
+Because the equivalent transformations (4) cover the whole class of equivalent problems, the
+problem P = (T ; E ; Y ; q; g; x) has a strictly trivial equivalent if and only if there exist potentials
+jjj such that Pjjj is strictly trivial. Recall that the strictly trivial problem has unique maximal nodes
+and edges (cf. Deﬁnition 2). Consequently, if the problem P has a strictly trivial equivalent and
+its optimal solution is y(cid:3) then there must exist potentials jjj such that the following set of linear
+inequalities holds
+
+jjj
+jjj
+t 2 T ; y 2 Y n fy(cid:3)
+t (y(cid:3)
+(19a)
+t ; xt ) > q
+q
+t (y; xt ) ;
+t g ;
+jjj
+jjj
+ft ; t 0g 2 E ; (y; y0 ) 2 Y 2 n f(y(cid:3)
+t ; y(cid:3)
+t t 0 (y; y0 ) ;
+t ; y(cid:3)
+t t 0 (y(cid:3)
+(19b)
+t 0 ) > g
+g
+t 0 )g :
+Note, that (19) is a set of jT jjY j + jE jjY j2 strict inequalities which are linear in (q, g) and jjj
+as can be seen after substituting (4) to (19). By replicating (19) for max-sum problems P j =
+(T ; E ; Y ; q; g; x j ), j 2 J whose unique solutions are required to be y j , j 2 J we obtain an equivalent
+formulation of Problem 3 which requires satisfaction of a set of strict linear inequalities
+
+jjj j
+jjj j
+t (y j
+t ; x j
+j 2 J ; t 2 T ; y 2 Y n fy j
+t (y; x j
+q
+t ) > q
+t g ;
+t ) ;
+jjj j
+jjj j
+t ; y j
+t t 0 (y j
+t ; y j
+j 2 J ; ft ; t 0g 2 E ; (y; y0 ) 2 Y 2 n f(y j
+t t 0 (y; y0 ) ;
+(20b)
+g
+t 0 ) > g
+t 0 )g :
+The system (20) is to be solved with respect to the quality functions (q, g) and the potentials jjj j ,
+j 2 J introduced for each P j , j 2 J . Note that the number of inequalities in the problem (20) is
+substantially smaller compared to the learning of a general max-sum classiﬁer . In particular, (20)
+contains only mjT j(jY j (cid:0) 1) + mjE j(jY j2 (cid:0) 1) inequalities compared to m(jY jjT j (cid:0) 1) for a general
+max-sum classiﬁer . Therefore a violated inequality in (20) can be easily selected by an exhaustive
+search. The proposed variant of the perceptron to solve (20) is as follows:
+
+(20a)
+
+Algorithm 3 Learning the max-sum classiﬁer with a strictly equivalent by perceptron
+1: Set g := 0; q := 0 ; jjj j := 0 ; j 2 J .
+2: Find a violated inequality in (20a), that is, ﬁnd a triplet j 2 J , t 2 T , y 2 Y n fy j
+t g such that
+t ) (cid:0) (cid:229)
+t ) (cid:0) (cid:229)
+j j
+j j
+qt (y j
+t ; x j
+t t 0 (y j
+t ) (cid:20) qt (y; x j
+t t 0 (y) :
+t 02N (t )
+t 02N (t )
+3: If no such triplet ( j; t ; y) exists then go to Step 4. Otherwise update q and jjj j by
+j j
+j j
+j j
+:= j j
+t t 0 (y j
+t t 0 (y j
+t 0 2 N (t ) ;
+:=
+t ) (cid:0) 1 ;
+t t 0 (y) + 1 ;
+t t 0 (y)
+t )
+:= qt (y; x j
+t ) + 1 ; qt (y; x j
+t ; x j
+:= qt (y j
+t ; x j
+qt (y j
+t ) (cid:0) 1 :
+t )
+t )
+
+81
+
+FRANC AND SAVCHYN SKYY
+
+4: Find a violated inequality in (20b), that is, ﬁnd a quintuple j 2 J , ft ; t 0g 2 E , (y; y0 ) 2 Y 2 n
+t ; y j
+f(y j
+t 0 )g such that
+
+t t 0 (y) + j j
+t 0 ) (cid:20) gt t 0 (y; y0 ) + j j
+t ) + j j
+t 0 ) + j j
+t 0 t (y j
+t t 0 (y j
+t ; y j
+gt t 0 (y j
+t 0 t (y0 ) :
+
+5: If no such quintuple ( j; t ; t 0 ; y; y0 ) exists and no update was made in Step 3 then the current
+(q; g; jjj j ; j 2 J ) solves the task (20) and the algorithm halts. Otherwise update g and jjj j by
+
+j j
+t t 0 (y j
+t )
+j j
+t t 0 (y)
+t ; y j
+gt t 0 (y j
+t 0 )
+
+j j
+j j
+t 0 t (y j
+t t 0 (y j
+:=
+t ) + 1 ;
+t 0 )
+j j
+j j
+t 0 t (y0 )
+t t 0 (y) (cid:0) 1 ;
+:=
+t ; y j
+:= gt t 0 (y j
+t 0 ) + 1 ; gt t 0 (y; y0 )
+
+:= j j
+t 0 t (y j
+t 0 ) + 1 ;
+j j
+t 0 t (y0 ) (cid:0) 1 ;
+:=
+:= gt t 0 (y; y0 ) (cid:0) 1 :
+
+and go to Step 2.
+
+By the Novikoff ’s theorem, Algorithm 3 terminates in a ﬁnite number of iterations provided
+f ((cid:15); q; g) with zero empirical risk on
+(20) is satisﬁable,
+that is, if there exists a max-sum classiﬁer
+L and all max-sum problems P j = (T ; E ; Y ; q; g; x j ), j 2 J have a strictly trivial equivalent.
+
+5. Learning a Max-Sum Classi ﬁer from an Inconsistent Training Set
+
+In this section, we formulate problems of learning max-sum classiﬁers from an inconsistent training
+set using the SVM framework described in Section 3.2. We will formulate the learning problems
+for a general max-sum classiﬁer , a supermodular max-sum classiﬁer , and a max-sum classiﬁer with
+a strictly trivial equivalent. In all cases, learning will amount to solving an instance of a convex QP
+task. In Section 6, we will propose an extended version of the cutting plane algorithm (Tsochan-
+taridis et al., 2005) which can solve these QP tasks efﬁciently .
+In Section 4, we showed that learning of max-sum classiﬁers
+can be expressed as satisfying
+a set of strict linear inequalities. In the case of an inconsistent training set, however, these linear
+inequalities become unsatisﬁable. Therefore we augment linear inequalities with non-negative slack
+variables, which relaxes the problem and makes it always satisﬁable.
+In analogy to the SVM,
+we will minimize the Euclidean norm of an optimized parameters and the sum of slack variables.
+The problems are formulated in such a way that the sum of slack variables is a piece-wise linear
+upper bound on the empirical risk for a certain loss function. We will consider two different loss
+functions. In case of a general max-sum classiﬁer and a supermodular max-sum classiﬁer , we will
+use the additive loss function LD (y; y0 ) = (cid:229)t 2T Lt (yt ; y0
+t ) where Lt : Y (cid:2) Y ! R is any function which
+satisﬁes Lt (y; y0 ) = 0 for y = y0 and Lt (y; y0 ) > 0 otherwise. The Hamming distance LD (y; y0 ) =
+(cid:229)t 2T [[y 6= y0 ]] is the particular case of the additive loss which seems to be a reasonable choice
+in many (not necessarily all) applications. In case of a max-sum classiﬁer with a strictly trivial
+equivalent, we will consider the 0=1-loss function L0=1 (y; y0 ) = [[y 6= y0 ]]. The 0=1-loss function
+penalizes equally all incorrect predictions regardless of how many labels are misclassiﬁed. The
+additive loss is preferable to the 0=1-loss function in most structured classiﬁcation problems. On the
+other hand, there are applications for which the 0=1-loss function is a natural choice, for example,
+problems with small number of objects like the one presented in Section 7.2.
+
+82
+
+D I SCR IM INAT IV E L EARN ING O F MAX -SUM C LA S S I FIER S
+
+5.1 General Max-Sum Classi ﬁer
+Problem 4 (Learning a general max-sum classiﬁer from an inconsistent training set). For a given
+training set L = (cid:8)(x j ; y j ) 2 X T (cid:2) Y T (cid:12)(cid:12)
+j 2 J (cid:9) and a regularization constant C ﬁnd quality func-
+tions q and g solving the following QP task
+g;q;xxx " 1
+x j # ;
+(cid:229)
+C
+(g(cid:3) ; q(cid:3) ; xxx(cid:3) ) = argmin
+2 (cid:0)kgk2 + kqk2(cid:1) +
+(21a)
+m
+j2J
+F (x j ; y j ; q; g) (cid:0) F (x j ; y; q; g) (cid:21) LD (y j ; y) (cid:0) x j ;
+
+j 2 J ; y 2 Y T :
+
+subject to
+
+(21b)
+
+C
+m
+
+(22)
+
+(cid:229)
+j2J
+
+kwk2 +
+
+(w(cid:3) ; xxx(cid:3) ) = argmin
+w;xxx
+
+The QP task (21) ﬁts
+to the formulation (13) of structured SVM learning with the max-sum clas-
+(1) plugged in. The number of optimized parameters (q; g) 2 Rd equals to d = jX jjY jjT j +
+siﬁer
+jY j2 jE j. The main difﬁculty in solving (21) stems from the huge number n = mjY j jT j of the linear
+inequalities (21b) which deﬁne the feasible set.
+For a later use, it is convenient to rewrite the QP task (21) using a compact notation
+x j # ;
+w;xxx " 1
+QP (w; xxx) = argmin
+2
+hw; zi i (cid:21) bi (cid:0) x j ;
+j 2 J ; i 2 I j ;
+s.t.
+where I1 [ (cid:1) (cid:1) (cid:1) [ Im = I = f1; : : : ; ng, Iu \ Iv = f /0g, u 6= v, denote disjoint sets of indices such that
+each i 2 I has assigned an unique pair ( j; y), j 2 J , y 2 Y T ; the vector w = (q; g) 2 Rd comprises
+both the optimized quality functions and (z i 2 Rd ; bi 2 R), i 2 I , are constructed correspondingly
+to inscribe the inequalities (21b).
+In Section 6, we will introduce a variant of the cutting plane algorithm to solve the QP task (21)
+(or (22), respectively). The cutting plane algorithm requires a subroutine which solves the LAC
+task (15). Using the compact notation, the LAC task reads u j = argmaxi2I j (bi (cid:0) hw; zi i). Since this
+is NP-complete in general, we will use an LP relaxation which solves the task approximately. We
+will show that it is possible to assess the quality of the found solution (w; xxx) in terms of the objective
+of the learning task, that is, it is possible to bound the difference QP (w; xxx) (cid:0) QP (w(cid:3) ; xxx(cid:3) ). Further,
+we will prove that when the LAC task is solved exactly then the cutting plane algorithm ﬁnds an
+arbitrary precise solution QP (w; xxx) (cid:0) QP (w(cid:3) ; xxx(cid:3) ) (cid:20) e, e > 0, after a ﬁnite number of iterations. This
+guarantee does not apply for learning of the general max-sum classiﬁer when an LP relaxation
+providing only an approximate solution is used. Though there is no theoretical guarantee, we will
+experimentally show that using an LP relaxation is sufﬁcient
+to ﬁnd a practically useful solution.
+
+5.2 Supermodular Max-Sum Classiﬁer
+Problem 5 (Learning a supermodular max-sum classiﬁer from an inconsistent training set). For a
+given training set L = (cid:8)(x j ; y j ) 2 X T (cid:2) Y T (cid:12)(cid:12)
+j 2 J (cid:9) and a regularization constant C ﬁnd quality
+functions q and g solving the following QP task
+g;q;xxx " 1
+x j # ;
+(cid:229)
+C
+(g(cid:3) ; q(cid:3) ; xxx(cid:3) ) = argmin
+2 (cid:0)kgk2 + kqk2(cid:1) +
+(23a)
+m
+j2J
+83
+
+FRANC AND SAVCHYN SKYY
+
+subject to
+
+(23c)
+
+(24)
+
+s.t.
+
+(23b)
+
+F (x j ; y j ; q; g) (cid:0) F (x j ; y; q; g) (cid:21) LD (y j ; y) (cid:0) x j ;
+j 2 J ; y 2 Y T ;
+: )
+gt t 0 (cid:0)y; y0(cid:1) + gt t 0 (cid:0)y + 1; y0 + 1(cid:1) (cid:21) gt t 0 (cid:0)y; y0 + 1(cid:1) + gt t 0 (cid:0)y + 1; y0(cid:1) ;
+ft ; t 0g 2 E ; (y; y0 ) 2 (cid:8)1; : : : ; jY j (cid:0) 1(cid:9)2
+Compared to the task (21) of learning a general max-sum classiﬁer , the task (23) deﬁned for the
+supermodular max-sum classiﬁer
+contains additional linear constraints (23c). The added con-
+straints (23c), when satisﬁed, guarantee that the found quality function g is supermodular. The
+total number of constraints increases to n = mjY j jT j + jE j(jY j (cid:0) 1)2 . A compact form of the QP
+task (23) reads
+x j # ;
+w;xxx " 1
+(w(cid:3) ; xxx(cid:3) ) = argmin
+2
+i 2 I0 ;
+hw; zi i (cid:21) bi ;
+hw; zi i (cid:21) bi (cid:0) x j ;
+j 2 J ; i 2 I j ;
+where bi = 0, i 2 I0 , and zi , i 2 I0 , account for the added supermodular constraints (23c).
+In Section 6, we introduce a variant of the cutting plane algorithm which maintains the con-
+straints (23c) satisﬁed. Thus the quality functions are always supermodular and the LAC task can
+be solved precisely by efﬁcient polynomial-time algorithms. As a result, we can guarantee that
+the cutting plane algorithm ﬁnds a solution with an arbitrary ﬁnite precision in a ﬁnite number of
+iterations.
+
+kwk2 +
+
+C
+m
+
+(cid:229)
+j2J
+
+5.3 Max-sum Classiﬁer with Strictly Trivial Equivalent
+Problem 6 (Learning a max-sum classiﬁer with a strictly trivial equivalent from an inconsistent
+training set). For a given training set L = (cid:8)(x j ; y j ) 2 X T (cid:2) Y T (cid:12)(cid:12)
+j 2 J (cid:9) and regularization con-
+stant C ﬁnd quality functions q and g that solve the following QP task
+g;q;xxx;jjj j ; j2J " 1
+x j # ;
+(cid:229)
+2 (cid:0)kgk2 + kqk2 + (cid:229)
+C
+(g(cid:3) ; q(cid:3) ; xxx(cid:3) ; jjj j (cid:3)
+kjjj j k2(cid:1) +
+; j 2 J ) = argmin
+(25a)
+m
+j2J
+j2J
+
+subject to
+
+jjj j
+jjj j
+t ) (cid:21) 1 (cid:0) x j ;
+t (y; x j
+t ; x j
+t (y j
+t ) (cid:0) q
+q
+jjj j
+jjj j
+t t 0 (y; y0 ) (cid:21) 1 (cid:0) x j ;
+t t 0 (y j
+t ; y j
+g
+t 0 ) (cid:0) g
+x j (cid:21) 0 ;
+
+j 2 J ; t 2 T ; y 2 Y n fy j
+t g ;
+t ; y j
+j 2 J ; ft ; t 0g 2 E ; (y; y0 ) 2 Y 2 n f(y j
+t 0 )g ;
+j 2 J :
+
+(25b)
+
+The problem (25) is derived from the problem (20) which was formulated for a consistent training
+set. In the consistent case, it is required that each max-sum problem P j has a strictly trivial equiva-
+lent whose unique solution equals to the desired labeling y j given in the training set. In the case of
+an inconsistent training set, we allow some max-sum problems to violate this requirement. To this
+end, each subset of linear inequalities in (25b) which corresponds to the given max-sum problem
+P j is relaxed by a single non-negative slack variable x j . If a slack variable x j (cid:21) 1 then either the
+solution of the max-sum problem P j differs from y j or P j has no trivial equivalent. The number of
+
+84
+
+D I SCR IM INAT IV E L EARN ING O F MAX -SUM C LA S S I FIER S
+
+j2J x j which is included into the objective function
+such max-sum problems is upper bounded by (cid:229)m
+of (25a). Thus it corresponds to minimization of an upper bound on the empirical risk with the 0=1-
+loss functions. The objective function also contains the Euclidean norm of the quality functions
+(q, g) and the potentials jjj j . Including the potentials jjj j into the objective function is somewhat
+arbitrary since it penalizes the transformation of max-sum problems to their trivial equivalents. An
+advantage of including the potentials is the fact that the dual representation of the task (25) has a
+simpler form which corresponds to the QP task of an ordinary multi-class SVM. Another variant is
+to remove the potentials from the objective function which corresponds to including a set of linear
+constraints to the dual task of (25) making the problem more difﬁcult.
+Compared to the previous learning problems, the number of variables d = jX jjY jjT j + jY j 2 jE j +
+2mjE jjY j in (25) is increased by 2mjE jjY j, however, the number of linear constraints n = mjE j(jY j 2 (cid:0)
+1) + mjT j(jY j (cid:0) 1) + m is drastically smaller. In particular, n grows only polynomially compared
+to the exponential growth in the previous cases.
+The QP task (25) can be rewritten into the compact form (22), that is, the same QP task as
+required when learning the general max-sum classiﬁer . Unlike the general case, the optimized
+parameters w now comprise w = (q; g; jjj1 ; : : : ; jjjm ) 2 Rd and the vectors zi , i 2 I , are constructed
+correspondingly. However, as mentioned above, the main difference is much smaller n = jI j. As
+a result, the LAC task required by the cutting plane algorithm can be easily accomplished by an
+exhaustive search.
+
+6. Algorithm for Quadratic Programming Tasks
+
+In this section, we propose an algorithm to solve the QP tasks (21), (23) and (25) required for learn-
+ing the max-sum classiﬁers
+from inconsistent training sets. We extend the cutting plane algorithm
+by Tsochantaridis et al. (2005) and its approximate version by Finley and Joachims (2005) in two di-
+rections. First, we will consider a more general QP task (23) which contains linear inequalities both
+with and without slack variables. Moreover, the inequalities without slack variables are required
+to be satisﬁed during the whole course of the algorithm. This extension is necessary for learning
+a supermodular max-sum classiﬁer . Second, we propose to use a different stopping conditions to
+halt the algorithm. The original algorithm by Tsochantaridis et al. (2005) halts the optimization
+as soon as the linear constraints of a QP task are violated by a prescribed constant e > 0 at most.
+We will use a stopping condition which is based on the duality gap. This allows us to control the
+precision of the found solution directly in terms of the optimized objective function. Moreover, the
+stopping condition can be easily evaluated even when the LAC task is solved only approximately
+by an LP relaxation which is useful for learning general max-sum classiﬁers. Finally, we will prove
+that the proposed algorithm converges in a ﬁnite number of iterations even in the case of a general
+max-sum classiﬁer where the LAC task is NP-complete. We point out that the proof is similar to
+that of Tsochantaridis et al. (2005) but is technically simpler and it applies for the extended cutting
+plane algorithm proposed here. A general QP task which covers all the QP tasks (21), (23) and (25)
+reads
+w;xxx " 1
+x j # ;
+QP (w; xxx) = argmin
+2
+i 2 I0 ;
+j 2 J ; i 2 I j ;
+
+hw; zi i (cid:21) bi ;
+hw; zi i (cid:21) bi (cid:0) x j ;
+
+(w(cid:3) ; xxx(cid:3) ) = argmin
+w;xxx
+
+s.t.
+
+kwk2 +
+
+C
+m
+
+(cid:229)
+j2J
+
+(26)
+
+85
+
+FRANC AND SAVCHYN SKYY
+
+where I = I0 [ I1 [ (cid:1) (cid:1) (cid:1) [ Im = f1; : : : ; ng, Ii \ I j = f /0g, i 6= j are index sets. Note that we obtain the
+QP task (21) and (25) by setting I0 = f /0g. The Wolf dual of (26) reads
+(cid:20)hb; aaai (cid:0)
+haaa; Haaai(cid:21) ;
+j 2 J ;
+
+QD (aaa) = argmax
+aaa
+
+aaa(cid:3) = argmax
+aaa
+
+(27)
+
+1
+2
+
+;
+
+s.t. (cid:229)
+i2I j
+
+C
+ai =
+m
+ai (cid:21) 0 ;
+
+i 2 I ;
+
+(bi (cid:0) hw(cid:3) ; zi i) ; j 2 J :
+
+where H is a positive semi-deﬁnite matrix [n (cid:2) n] which contains the dot products Hi; j = hzi ; z j i.
+The primal variables (w(cid:3) ; xxx(cid:3) ) can be computed from the dual variables aaa(cid:3) by
+w(cid:3) = (cid:229)
+a(cid:3)
+x(cid:3)
+i zi ;
+j = max
+i2I j
+i2I
+Note that the vectors zi , i 2 I appear in (27) only as dot products and thus the kernel functions can
+be potentially used.
+It is not tractable to solve the QP task directly neither in the primal form nor in the dual form
+due to the exponential number of constraints or variables, respectively. The cutting plane algorithm
+alleviates the problem by exploiting the sparseness of maximal margin classiﬁers. Sparseness means
+that only a small portion of constraints of the primal task are active in the optimal solution, or
+equivalently, a small portion of dual variables are non-zero.
+We denote I = I0 [ I 1 [ (cid:1) (cid:1) (cid:1) [ I m disjoint subsets of selected indices from I = I0 [ I1 [ (cid:1) (cid:1) (cid:1) [ Im ,
+that is, I j (cid:18) I j , j 2 J , while I0 is always the same. The reduced task is obtained from (27) by
+considering only the selected variables fa i j i 2 I g while the remaining variables fai j i 2 I n I g are
+ﬁx ed to zero, that is, the reduced dual QP task reads
+" (cid:229)
+i2I
+s.t. (cid:229)
+C
+ai =
+m
+i2I j
+ai (cid:21) 0 ;
+i 2 I ;
+ai = 0 ;
+i 2 I n I :
+To solve the reduced task (28), it is enough to maintain explicitly just the selected variables and
+thus its size scales only with jI j. The cutting plane algorithm tries to select the subsets I =
+I0 [ I 1 [ (cid:1) (cid:1) (cid:1) [ I m such that (i) jI j is sufﬁciently small to make the reduced task (28) solvable by
+standard optimization packages and (ii) the obtained solution well approximates the original task.
+The proposed extension of the cutting plane algorithm is as follows:
+
+aia jHi j # ;
+
+aaa = argmax
+aaa
+
+aibi (cid:0)
+
+j 2 J ;
+
+(28b)
+
+(28a)
+
+1
+2
+
+(cid:229)
+i2I
+
+(cid:229)
+j2I
+
+;
+
+Algorithm 4 A cutting plane algorithm for QP task (26)
+1: Select arbitrarily (cid:0)I j := fu j g, u j 2 I j (cid:1), j 2 J . Set the desired precision e > 0.
+2: For selected indices I = I0 [ I 1 [ (cid:1) (cid:1) (cid:1) [ I m solve the reduced task (28) to obtain aaa and compute
+ai zi .
+the primal variable w := (cid:229)i2I
+
+86
+
+D I SCR IM INAT IV E L EARN ING O F MAX -SUM C LA S S I FIER S
+
+3: For all j 2 J do:
+
+3a: Solve the LAC task
+
+(bi (cid:0) hw; zi i) ;
+
+u j := argmax
+i2I j
+and set x
+j := bu j (cid:0) hw; zu j i. If (29) is solved only approximately (when using LP relax-
+ation) then set x
+j to the smallest available upper bound on bu j (cid:0) hw; zu j i.
+3b: Set I j := I j [ fu j g provided the following condition holds
+(bu j (cid:0) hw; zu j i) (cid:0) (cid:229)
+C
+ai (bi (cid:0) hw; zi i) >
+m
+i2I j
+
+(29)
+
+e
+m
+
+:
+
+(30)
+
+(31)
+
+4: If the current solution (w; xxx; aaa) satisﬁes
+the stopping condition
+QP (w; xxx) (cid:0) QD (aaa) (cid:20) e ;
+or if the condition (30) was violated for all j 2 J then halt. Otherwise go to Step 2.
+Note that Algorithm (4) explicitly maintains only the selected variables fa i j i 2 I g and the
+corresponding pairs f(bi ; zi ) j i 2 I g. In Step 3a, the algorithm requires a subroutine to solve the
+LAC task (29). We consider two different variants of the algorithm. First, the task (29) can be solved
+precisely which applies to learning of supermodular max-sum classiﬁers and max-sum classiﬁers
+with a strictly trivial equivalent. Second, the task (29) can be solved only approximately, which
+applies to the general case when the max-sum problem is solved by an LP relaxation. The key
+property of an LP relaxation which we exploit here is that it provides an upper bound on the optimal
+solution of a max-sum problem, that is, an upper bound on the quantity b u j (cid:0) hw; zu j i.
+In Step 3b, the condition (30) is evaluated to decide whether adding the constraint hw; z u j i (cid:21)
+bu j (cid:0) x j to the reduced QP task (28) brings a sufﬁcient
+improvement or not. In Lemma 1 introduced
+below, we show that adding at least one constraint guarantees a minimal improvement regardless
+of whether the LAC problem is solved precisely or approximately. The algorithm halts when no
+constraint is added in Step 3b. This situation occurs only if the algorithm has converged to a solution
+which satisﬁes
+the stopping condition (31) provided the LAC task is solved exactly (cf. Theorem 4
+and its proof).
+Let us discuss the stopping condition (31). Note that the primal (w; xxx) and the dual variables
+aaa are feasible during entire progress of the algorithm. This holds even in the case when an LP
+relaxation is used to solve (29) since the x
+j , j 2 J are set to upper bounds on their optimal values.
+Having feasible primal and dual variables, we can use the weak duality theorem to write
+QP (w; xxx) (cid:0) QP (w(cid:3) ; xxx(cid:3) ) (cid:20) QP (w; xxx) (cid:0) QD (aaa) ;
+which implies that any solution satisfying the stopping condition (31) differs from the optimal so-
+lution by at most e. Note that the precision parameter e used in the original stopping condition of
+Tsochantaridis et al. (2005) can also be related to the duality gap. Namely, it can be shown that e
+approximate solution satisﬁes QP (w; xxx) (cid:0) QD (aaa) (cid:20) Ce.
+Finally, we show that the algorithm converges in a ﬁnite number of iterations. The proof is based
+on Lemma 1 which asserts that a minimal improvement Dmin > 0 of the dual objective function is
+guaranteed provided at least one new variable was added in Step 3(b) to the reduced task, that is,
+the condition (30) was satisﬁed for at least one j 2 J .
+
+87
+
+FRANC AND SAVCHYN SKYY
+
+Lemma 1 Provided at least one new variable was added in Step 3(b) of Algorithm 4 the improve-
+ment in the dual objective function QD (aaa) obtained after solving the reduced task is not less that
+e2
+Dmin = min (cid:26) e
+8C2R2 (cid:27) ; where R = max
+2m
+j2J
+Proof of Lemma 1 is given in Appendix B.
+Using Lemma 1, it is easy to show that Algorithm 4 halts after a ﬁnite number of iterations.
+Note that the proof applies even for the case when the LAC task (29) is solved only approximately.
+
+max
+i2I j
+
+kzik :
+
+;
+
+Theorem 4 Let us assume that the primal QP task (26) is bounded and feasible. Algorithm 4 halts
+for arbitrary e > 0 after at most T iterations, where
+8C2R2
+T = (cid:16)QD (aaa(cid:3) ) (cid:0) QD (aaa1 )(cid:17) max (cid:26) 2m
+e2 (cid:27) ;
+R = max
+max
+e ;
+j2J
+i2I j
+and aaa1 is the solution of the reduced task obtained after the ﬁr st iteration of Algorithm 4.
+
+kzik ;
+
+Proof Algorithm 4 halts if either the stopping condition (31) holds or no new variable was added
+in Step 3(b). Provided the algorithm does not halt in Step 4, the dual objective functions QD (aaa) is
+improved by at least Dmin > 0 which is given in Lemma 1. Since the difference QD (aaa(cid:3) ) (cid:0) QD (aaa1 )
+is bounded from above the algorithm cannot pass through the Step 4 inﬁnite number times and we
+can write
+
+T (cid:20)
+
+QD (aaa(cid:3) ) (cid:0) QD (aaa1 )
+Dmin
+
+= (cid:16)QD (aaa(cid:3) ) (cid:0) QD (aaa1 )(cid:17) max (cid:26) 2m
+e ;
+
+8C2R2
+e2 (cid:27) < ¥ :
+
+The bound on a maximal number of iterations (or the bound on Dmin , respectively) given in
+Theorem 4 is obtained based on the worst case analysis. As a result, the bound is an over-pessimistic
+estimate of the number of iterations usually required in practice. Because the bound is not useful for
+computing practical estimates of the number of iterations, we do not derive its particular variants
+for the QP tasks (21), (23) and (25).
+Finally, we give a theorem which asserts that the stopping condition (31) is always satisﬁed after
+Algorithm 4 halts provided the LAC task (29) is solved exactly, that is, the found solution achieves
+the desired precision QP (w; xxx) (cid:0) QP (w(cid:3) ; xxx(cid:3) ) (cid:20) e.
+
+Theorem 5 Let us assume that the LAC task (29) is solved exactly and the assumptions of Theo-
+rem 4 hold. In this case the condition (31) holds after Algorithm 4 halts.
+
+Proof We show that the assumption that no new variable was added in Step 3(b) and the condi-
+tion (31) is violated leads to a contradiction. If no variable was added then the condition (30) is
+violated for all j 2 J . Summing up the violated conditions (30) yields
+(cid:229)
+ai (bi (cid:0) hw; zi i) (cid:21) (cid:20) (cid:229)
+m (cid:0)bu j (cid:0) hw; zu j i(cid:1) (cid:0) (cid:229)
+j2J (cid:20) C
+j2J
+i2I j
+88
+
+e
+m
+
+(32)
+
+:
+
+D I SCR IM INAT IV E L EARN ING O F MAX -SUM C LA S S I FIER S
+
+The vector aaa is the optimal solution of the reduced task which includes all the variables fa i j i 2 I0g.
+Therefore by the complementary slackness (Karush-Kuhn-Tucker conditions) we have
+(cid:229)
+ai (bi (cid:0) hw; zi i) = 0 :
+i2I0
+ai zi , x
+By adding (33) to (32) and using w = (cid:229)i2I
+j = bu j (cid:0) hw; zu j i we get
+(cid:229)
+ai (bi (cid:0) hw; zi i) (cid:21) (cid:0) (cid:229)
+m (cid:0)bu j (cid:0) hw; zu j i(cid:1) (cid:0) (cid:229)
+j2J (cid:20) C
+i2I j
+i2I 0
+j2J (cid:0)bu j (cid:0) hw; zu j i(cid:1) (cid:0) (cid:229)
+(cid:229)
+C
+m
+i2I
+j (cid:0) (cid:229)
+(cid:229)
+C
+x
+m
+j2J
+i2I
+
+ai (bi (cid:0) hw; zi i) (cid:20) e
+
+(33)
+
+ai (bi (cid:0) hw; zi i) (cid:20) e
+
+aibi + hw; wi (cid:20) e :
+
+The last inequality can be equivalently written as QP (w; xxx) (cid:0) QD (aaa) (cid:20) e which is in contradiction
+to the assumption that (31) is violated.
+
+To summarize, in case when the LAC task (29) is solved exactly Algorithm 4 ﬁnds a solution
+with an arbitrary ﬁnite precision e > 0 in a ﬁnite number of iterations. In case when the task (29) is
+solved only approximately by an LP relaxation Algorithm 4 always halts after a ﬁnite number of iter-
+ations but there is no guarantee that the desired precision was attained. The attained precision, how-
+ever, can be determined by evaluating the duality gap QP (w; xxx) (cid:0) QD (aaa) (cid:21) QP (w; xxx) (cid:0) QP (w(cid:3) ; xxx(cid:3) ).
+In next sections, we will apply Algorithm 4 to the three particular instances of the QP tasks (21), (23)
+and (25).
+
+6.1 General Max-Sum Classi ﬁer
+
+In this section, we discuss optimization of the QP task (21) (or its compact form (22), respectively)
+using Algorithm 4.
+In Step 1 of Algorithm 4, we have to select the initial subsets (I j = fu j g; u j 2 I j ); j 2 J . A
+simple way is to use u j = ( j; y j ), which is equivalent to selecting the primal constraints hw; z i i (cid:21)
+bi (cid:0) x j with zi = 0 and bi = 0. Note that the task (21) does not contain the primal constraints without
+slack variables which implies that the subset I0 = f /0g.
+The LAC task (29) required in Step 2a of Algorithm 4 amounts to solving an instance of a
+general max-sum problem
+y2Y T (cid:20)LD (y; y j ) (cid:0) F (x j ; y j ; q; g) + F (x j ; y; q; g)(cid:21)
+ˆy j = argmax
+6= yt ]](cid:17) + (cid:229)
+y2Y T (cid:20) (cid:229)
+gt t 0 (yt ; yt 0 )(cid:21) :
+t 2T (cid:16)qt (yt ; x j
+t ) + [[y j
+= argmax
+t
+ft ;t 0 g2E
+The obtained labeling ˆy j is then used to construct the vector z( j; ˆy j ) = Y(x j ; y j ) (cid:0) Y(x j ; ˆy j ). Because
+the task (34) is NP-complete in general, we use an LP relaxation discussed in Section 2.1. This
+
+(34)
+
+89
+
+FRANC AND SAVCHYN SKYY
+
+means that the found ˆy j is not optimal but it is usually good enough to satisfy the condition (30)
+which then leads to a guaranteed improvement of the optimized dual objective (cf. Lemma 1). LP
+relaxation algorithms also provides an upper bound UB j on the optimal solution of (34) which is
+essential to compute feasible x
+j , j 2 J in Step 3(a) of Algorithm 4. In particular, x
+j is computed as
+x
+j = UB j (cid:0) F (x j ; y j ; q; g).
+
+6.2 Supermodular Max-Sum Classiﬁer
+
+In this section, we discuss optimization of the QP task (23) (or its compact form (24), respectively)
+using Algorithm 4.
+
+The initialization in Step 1 of Algorithm 4 can be carried out in the same way as described in
+Section 6.1. Since the QP task (24) involves the primal constraints hw; z i i (cid:21) bi , i 2 I0 , without slack
+variables the corresponding zi , i 2 I0 , must be included in the reduced QP task during the entire
+progress of Algorithm 4. The size jI0 j = jE j(jY j (cid:0) 1)2 grows only quadratically which allows to
+use standard optimization packages.
+
+The LAC task (29) is of the same form as that for a general max-sum problem, that is, it requires
+solving (34). Unlike the general case, the task (34) can be solved exactly by a polynomial-time
+algorithms provided the quality functions g obey the supermodularity condition. The requirement of
+supermodularity is expressed by the primal conditions hw; z i i (cid:21) 0, i 2 I0 which are always included
+in the reduced task (28) and thus they should be always satisﬁed. There is one numerical issue,
+however, concerning a ﬁnite precision of QP solvers used to optimize the reduced task. It is possible
+that the primal constraints on supermodularity are slightly violated even if the reduced task is solved
+with a high precision. This might potentially (even though we have not observed the problem in
+practice) cause problems when solving the LAC task which relies on the supermodularity of g.
+An easy solution to avoid the problem is to add the primal constraints hw; z i i (cid:21) 0, i 2 I0 with w =
+ai zi to the dual reduced task (28). In particular, we can solve the reduced task (28) subject to the
+(cid:229)i2I
+aiHi j (cid:21) 0 ;
+constraints (28b) augmented by additional constraints (cid:229)i2I
+j 2 I0 . Note that adding of
+the additional constraints changes just the feasible set but it does not change the solution. Solving the
+reduced task with the added constraints by using any QP solver which produces a feasible solution
+with a ﬁnite precision (e.g., interior point methods) guarantees that the supermodularity constraints
+are satisﬁed.
+
+6.3 Max-Sum Classiﬁer with Strictly Trivial Equivalent
+
+Unlike the previous two cases, the QP task (25) (or its compact form (22) respectively) contains
+only n = mjE j(jY j2 (cid:0) 1) + mjT j(jY j (cid:0) 1) + m linear constraints. The form of the QP task (25)
+is the same as required for learning of an ordinary multi-class SVM (Crammer and Singer, 2001)
+which makes it possible to use existing optimization packages. The problem can be also solved by
+the proposed Algorithm 4. In this case, an initialization of the subset (I j = fu j g; u j 2 I j ); j 2 J
+performed in Step 1, can simply select the indices which correspond to the constraints x j (cid:21) 0, j 2 J .
+The LAC task (29) required in Step 3a can be solved exhaustively which means that we do not need
+any max-sum solver during the learning stage.
+
+90
+
+D I SCR IM INAT IV E L EARN ING O F MAX -SUM C LA S S I FIER S
+
+7. Experiments
+
+Even though this article focuses primarily on theory, we present some examples to demonstrate
+functionality of the proposed learning algorithms. The examples are not meant to be a comprehen-
+sive evaluation.
+
+7.1 Image Segmentation
+
+for segmentation of color images. We compare a
+We consider the problem of learning a classiﬁer
+general max-sum classiﬁer , a supermodular max-sum classiﬁer
+and a standard multi-class SVMs
+classiﬁer
+(Crammer and Singer, 2001) as a baseline approach. In particular, we used the formula-
+tions given in Problem 4 and Problem 5 for learning the general and supermodular classiﬁers
+from
+the inconsistent training sets. To solve the LAC task required by Algorithm 4, we used an LP re-
+laxation solver based on the Augmented Directed Acyclic Graph (ADAG) algorithm (Schlesinger
+1976; see also the tutorial by Werner 2007).
+We used the following three sets of color images (see Figure 1):
+
+Microsoft Research (MSR) database: The original database 1 contains 240 images of 9 objects
+along with their manual segmentation. We selected a subset of 32 images each of which
+contains a combination of the following four objects: cow, grass, water and void. All images
+are of size 213 (cid:2) 320 pixels. We created 3 random splits of the images into 10 training, 9
+validation and 13 testing images. Reported results are averages taken over these three splits.
+
+Shape-Sorter: We collected snapshots of a toy shape-sorter puzzle placed on a carpet. The snap-
+shots are taken under varying view-angle and lighting conditions. The images contain 6
+objects of different colors which we manually segmented. We split the images into a training
+set containing 14 images of size 100 (cid:2) 100 pixels, validation and testing sets each containing
+4 images of size 200 (cid:2) 200 pixels.
+Landscape: The data set is created from a single landscape image of size 280 (cid:2) 600 which was
+manually segmented into sky, border line and ground areas. We divided the landscape image
+into 20 non-overlapping sub-windows of size 70 (cid:2) 120 pixels. Finally, we split the 20 images
+into 5 training, 4 validation and 11 testing images.
+
+In this experiment we deﬁne the max-sum classiﬁer as follows. The set of objects T = f(i; j) j
+i 2 f1; : : : ; H g; j 2 f1; : : : ;W gg corresponds to the pixels of the input image of size H (cid:2) W . We
+consider a 4-neighborhood structure of image pixels, that is, E contains undirected edges between
+all pixels (i; j) 2 T and (i0 ; j 0 ) 2 T which satisfy ji (cid:0) i0 j + j j (cid:0) j 0 j = 1. Each pixel t 2 T is char-
+acterized by its observable state xt and a label yt . The observable state xt 2 X = R3 is a vector
+containing RGB color values of t -th pixel. The label yt 2 Y = f1; : : : ; N g assigns t -th pixel to one
+of N segments. We assume that the quality functions q : X (cid:2) Y ! R and g : Y (cid:2) Y ! R do not
+depend on pixel t 2 T (so called homogeneous model). The quality function q(x; y) = hw y ; xi is
+linear in parameter wy 2 R3 , y 2 Y , as well as the function g(y; y0 ) represented by a vector g 2 RN 2 .
+Hence the learned parameter vector w = (w1 ; : : : ; wN ; g) 2 Rd is of dimension d = 3N + N 2 . For
+the baseline approach we used a linear multi-class SVM which is equivalent to a max-sum classiﬁer
+with a constant quality function g(y; y0 ), that is, the interrelation between labels is neglected.
+
+1. Database B1 can be found at https://research.microsoft.com/vision/cambridge/recognition/default.htm.
+
+91
+
+FRANC AND SAVCHYN SKYY
+
+MSR-database
+Shape-Sorter
+Landscape
+
+Multi-class SVM General max-sum Supermodular max-sum
+14:03%
+14:16%
+21:74%
+1:31%
+0:91%
+0:92%
+0:65%
+0:69%
+6:22%
+
+Table 1: Performance of max-sum classiﬁers compared to an ordinary SVM classiﬁer on three seg-
+mentation data sets. The table contains average percentages of misclassiﬁed pixels per
+image.
+
+We stopped the cutting plane Algorithm 4 when either the precision (QP (w; xxx) (cid:0) QD (aaa))=QP (w; xxx) (cid:20)
+10(cid:0)2 was attained or no improving constraint was found after solving the LAC task. For the super-
+modular max-sum classiﬁer
+the required precision was always attained since the LAC can be solved
+exactly. For the general max-sum classiﬁer
+the algorithm failed to converge only in a few cases when
+the regularization constant C was set too high. The average time required for learning on an ordinary
+desktop PC was around 11 hours for the MSR-database, 3 hours for the Shape-Sorter data set and 6
+minutes for the Landscape data set. The bottleneck is solving the LAC task by the ADAG max-sum
+solver which takes approximately 95% of the training time. Though we have not fully exploited this
+possibility, the training time for the supermodular max-sum classiﬁer can be considerably reduced
+by using min-cut/max-ﬂo w algorithms to solve the LAC task. The min-cut/max-ﬂo w algorithms
+optimized for a grid neighbourhood structure can achieve near real-time performance (Boykov and
+Kolmogorov, 2004). For this reason the supermodular max-sum classiﬁer
+is favourable when the
+training time or the classiﬁcation time is of importance.
+The only free parameter of the learning algorithm is the regularization constant C which we
+tuned on the validation images. The classiﬁer with the best performance on the validation set was
+then assessed on independent testing images. Due to a different size of images it is convenient to
+(cid:229)t 2T [[yt 6= y0
+present errors in terms of the normalized additive loss function L(y; y 0 ) = 100
+t ]] cor-
+jT j
+responding to percentage of misclassiﬁed pixels in the image. Obtained results are summarized
+signiﬁcantly outperformed the multi-class SVM
+in Table 1. It is seen that the max-sum classiﬁers
+on all data sets. Performances of the general and the supermodular max-sum classiﬁers
+are al-
+most identical. This shows a good potential of the learning algorithm to extend applicability of
+the polynomially solvable class of supermodular max-sum problems. Note that selecting a proper
+supermodular function by hand is difﬁcult due to an unintuitive form of the supermodularity condi-
+tions (7). Figure 1 shows examples of testing images and their labeling estimated by the max-sum
+classiﬁer .
+
+7.2 Learning the Rules of Sudoku
+
+In this section, we demonstrate the algorithm for learning the max-sum classiﬁer with a strictly
+trivial equivalent. We will consider a problem of learning the game rules of a logic-based number
+placement puzzle Sudoku2 . Figures 2(a) and 2(b) show an example of the Sudoku puzzle and its
+solution, respectively. The aim of the puzzle is to ﬁll
+in a 9 (cid:2) 9 grid such that each column, each
+row and each of 9 non-overlapping 3 (cid:2) 3 boxes contains the numbers from 1 to 9. A player starts
+
+2. For more details and references see http://en.wikipedia.org/wiki/Sudoku .
+
+92
+
+D I SCR IM INAT IV E L EARN ING O F MAX -SUM C LA S S I FIER S
+
+MSR-database
+
+Shape-Sorter data set
+
+Landscape data set
+
+Figure 1: A sample from three data sets used in experiments. The ﬁgures
+show testing images
+and their labelings estimated by the max-sum classiﬁer . For the Landscape data set the
+training and the validation sub-images are marked.
+
+93
+
+FRANC AND SAVCHYN SKYY
+
+2
+
+3
+
+8
+
+2
+
+9
+
+6
+
+8
+
+6
+
+8
+
+4
+
+1
+
+2
+
+3
+
+2
+
+9
+
+5
+
+1
+
+5
+
+8
+
+7
+
+2
+
+9
+
+5
+
+6
+
+1
+
+2
+
+1
+
+5
+
+6
+
+1
+
+9
+
+7
+
+8
+
+9
+
+3
+
+(a)
+
+7
+
+4
+
+2
+
+9
+
+1
+
+5
+
+6
+
+3
+
+8
+
+6
+
+1
+
+5
+
+3
+
+8
+
+7
+
+2
+
+4
+
+9
+
+3
+
+9
+
+8
+
+4
+
+2
+
+6
+
+1
+
+5
+
+7
+
+4
+
+5
+
+9
+
+7
+
+6
+
+1
+
+8
+
+2
+
+3
+
+8
+
+3
+
+7
+
+2
+
+9
+
+4
+
+5
+
+6
+
+1
+
+2
+
+6
+
+1
+
+5
+
+3
+
+8
+
+9
+
+7
+
+4
+
+(b)
+
+1
+
+2
+
+3
+
+6
+
+4
+
+9
+
+7
+
+8
+
+5
+
+9
+
+7
+
+6
+
+8
+
+5
+
+3
+
+4
+
+1
+
+2
+
+5
+
+8
+
+4
+
+1
+
+7
+
+2
+
+3
+
+9
+
+6
+
+(c)
+
+Figure 2: Example of Sudoku puzzle: (a) input puzzle; (b) solution; (c) handwritten Sudoku grid
+created from the USPS database.
+
+from an incompletely ﬁlled grid which is constructed such a way that the proper puzzle has a unique
+solution.
+(artiﬁcial player) able to solve arbitrary Sudoku puzzle.
+Our goal is to learn a max-sum classiﬁer
+A part of the rules is a priori known to the system while the rest is learned from examples of
+incomplete puzzle and its correct solution. In a standard scenario, the learned classiﬁer
+is validated
+on a testing set. In this particular case, however, it is possible to show that the found max-sum
+classiﬁer
+solves correctly all the Sudoku puzzles (the number of Sudoku solutions is approximately
+6:6 (cid:2) 1027 , that is, the number of puzzles is much larger).
+Note, that the Sudoku puzzle can be naturally expressed as solving the constraint satisfaction
+problem CSP which is a subclass of a max-sum labeling problem when the quality functions at-
+tain only two values f0; (cid:0)¥g. From this viewpoint, a max-sum classiﬁer
+is a richer model than
+necessarily needed for Sudoku puzzle.
+the learning problem using the notation of this paper. Solving the puzzle is
+Let us deﬁne
+equivalent to solving the max-sum problem (T ; E ; Y ; q; g; x). The set of objects T = f(i; j) j i 2
+f1; : : : ; 9g ; j 2 f1; : : : ; 9gg corresponds to the cells of a 9 (cid:2) 9 grid. The neighbourhood structure
+
+E = ff(i; j); (i0 ; j 0 )g j i = i0 _ j = j 0 _ (di=3e = di0=3e ^ d j=3e = d j 0=3e)g ;
+
+contains pairs of cells whose relation plays a role in the game rules, that is, the cells in rows,
+columns, and the 3 (cid:2) 3 boxes. The set of observations X = f(cid:3); 1; : : : ; 9g represents the input ﬁlling
+of cells where the special symbol (cid:3) means an empty cell. The set of labels Y = f1; : : : ; 9g cor-
+in. The quality functions q and g are assumed to be
+responds to numbers which a player can ﬁll
+homogeneous, that is, qt (x; y) = q(x; y) and gt t 0 (y; y0 ) = g(y; y0 ). Moreover, the structure of quality
+function q(y; x) is assumed to be q(y; x) = q(y) for y = x and q(y; x) = q(cid:3) for x = (cid:3) or x 6= y. The
+particular values of quality functions (q; g) 2 R9(cid:2)9+10 , which specify the rules of the game, are
+unknown to the system.
+Using the setting introduced above, it is easy to see that the solution of a max-sum problem
+(T ; E ; Y ; q; g; x) is a correct solution of the Sudoku puzzles if for any triplet (y; y 0 ; y00 ) 2 Y 3 such
+
+94
+
+D I SCR IM INAT IV E L EARN ING O F MAX -SUM C LA S S I FIER S
+
+q(cid:3)
+-1870
+
+y
+q(y)
+
+1
+867
+
+2
+295
+
+y=y0
+1
+2
+3
+4
+5
+6
+7
+8
+9
+
+1
+-552
+84
+78
+73
+23
+74
+-26
+36
+79
+
+2
+19
+-500
+30
+-28
+67
+66
+9
+77
+20
+
+3
+47
+67
+-437
+63
+57
+58
+28
+60
+57
+
+q(y; x)
+4
+234
+
+3
+696
+
+g(y; y0 )
+5
+4
+66
+65
+71
+57
+48
+48
+55
+-266
+47
+-397
+49
+49
+48
+49
+49
+49
+46
+48
+
+5
+224
+
+6
+339
+
+7
+228
+
+8
+455
+
+9
+378
+
+6
+73
+56
+47
+53
+46
+-448
+47
+46
+48
+
+7
+61
+79
+68
+76
+68
+69
+-342
+67
+65
+
+8
+66
+60
+50
+56
+49
+49
+48
+-441
+51
+
+9
+73
+65
+54
+60
+52
+54
+54
+52
+-441
+
+Table 2: The quality functions q and g learned from examples. The learned functions q and g satisfy
+the conditions (35) which guarantee the optimal solution.
+
+that y0 6= y00 the quality functions satisfy the following conditions
+
+q(cid:3) < q(y)
+
+and
+
+g(y; y) < g(y0 ; y00 ) :
+
+(35)
+
+The ﬁrst condition just forces the max-sum classiﬁer
+to use the numbers from ﬁlled in cells as labels.
+The second condition, in compliance with to the Sudoku rules, ensures that neighbouring cells will
+not be assigned the same label. The conditions (35) allows us to verify whether the found classiﬁer
+is an optimal one.
+Because a proper Sudoku puzzle have a unique solution it is natural to require that the max-sum
+classiﬁer
+also guarantees this condition. The conditions (35) show that the ground truth quality
+function g(y; y0 ) is not supermodular. For this reasoning, Algorithm 3 for learning of the max-sum
+classiﬁer with a strictly trivial solution seems to be a reasonable choice.
+We created 18 distinct training sets each containing a single example of an incomplete puzzle
+and its correct solution. In all cases, the proposed Algorithm 3 converged to a solution after the
+number of iterations ranging 12 (cid:2) 103 to 95 (cid:2) 103 approximately, which took less than one minute
+on an ordinary desktop PC. The conditions (35) were satisﬁed for all the solutions found by an
+algorithm, that is, an optimal max-sum classiﬁer was found just from a single example (using more
+general q and g would probably require more examples). Table 2 shows an example of the found
+quality functions q and g. In this case, it is even possible to precisely compute the output of the
+max-sum classiﬁer by branch-and-bound algorithm since the depth searching tree is limited due the
+requirement on a unique solution of the Sudoku and modest complexity tractable for human players.
+Note, however, that no max-sum solver was required during the course of the learning algorithm.
+
+95
+
+FRANC AND SAVCHYN SKYY
+
+Linear
+Gaussian kernel
+
+Multi-class SVM Max-Sum classiﬁer
+7:20%
+8:81%
+5:80%
+0:04%
+
+Table 3: Recognition of Sudoku grids created from the USPS database.
+
+7.3 Handwritten Character Recognition with Structured Outputs
+
+In this section, we compare the max-sum classiﬁer with a strictly trivial equivalent learned by the
+Perceptron Algorithm 3 against an ordinary multi-class SVM classiﬁer . To this end, we modiﬁed
+the Sudoku problem from Section 7.2 in two ways. Firstly, the input observations are handwritten
+digits taken from the USPS database. In particular, the input observation x 2 X = R 256 is a vector
+containing pixels of a grey-scale image 16 (cid:2) 16 which depicts a digit from 1 to 9. Secondly, the
+is a fully solved Sudoku grid, that is, Y = f1; : : : ; 9g, as the multi-class SVM
+input of the classiﬁer
+cannot solve an incomplete puzzle unlike the max-sum classiﬁer . The neighbourhood structure
+(T ; E ) is the same as in the experiment from Section 7.2. Figure 2(c) shows and example of
+input observations and Figure2(b) shows a corresponding labeling to be estimated by the max-sum
+classiﬁer .
+Similarly to the experiment in Section 7.2, we considered a quality function g(y; y 0 ) of a general
+form g 2 RjY j2 . However, we used two different forms of the quality functions q(x; y). First, a
+linear function q(x; y) = hwy ; xi which lead to learning a parameter vector w = (w1 ; : : : ; wjY j ; g) 2
+Rd of dimension d = 256jY j + jY j2 = 2385. Second, we applied the Gaussian kernel function
+deﬁned as k(x; x0 ) = exp((cid:0)skx (cid:0) x0k2 ) for some s > 0. In this case, the quality function is q(x; y) =
+hvy ; k(x)i where k(x) = (k(x; x j
+t ) j t 2 T ; j = 1; : : : ; m) denotes a vector of kernel functions centered
+in all training observations. The corresponding parameter vector w = (v 1 ; : : : ; vjY j ; g) 2 Rd was of
+dimension d = mjT jjY j + jY j2 = 7371.
+We created a set of 30 examples of Sudoku grids x = (xt 2 X j t 2 T ) and their solutions
+y = (yt 2 Y j t 2 T ). Note that a single grid x contains 9 (cid:2) 9 = 81 digits from the USPS database.
+We generated 3 random splits of the 30 examples into 10 training, 10 validation and 10 testing
+examples. The Perceptron Algorithm 3 required a few seconds to converge to a solution with zero
+training error when the linear kernel was used and around 3 minutes for the Gaussian kernel. The
+optimal kernel width s was tuned on the validation data. In addition, we also tuned the regularization
+constant C for the multi-class SVM. The model with the best performance on the validation set was
+then assessed on the testing data. Table 3 shows the average classiﬁcation performance computed
+over the 3 random splits.
+It is seen that the max-sum classiﬁer signiﬁcantly outperforms the multi-class SVM regardless of
+the used kernel functions. The classiﬁcation error 5:80% achieved for the multi-class SVM with the
+Gaussian kernel is slightly higher than 4:00% reported in Sch ¨olkopf et al. (1995). The reason is that
+we trained on a smaller number of examples (namely, 810 compared to 7291). On the other hand,
+the smaller training set is sufﬁcient
+to achieve nearly error-less performance when the structure in
+the output space is considered. In particular, the error of the max-sum classiﬁer with the Gaussian
+kernel is 0:04%. Note that without considering the structure a human recognition rate is 2:5% and
+the best published machine performance is 2:6% (Sch ¨olkopf et al., 1995).
+
+96
+
+D I SCR IM INAT IV E L EARN ING O F MAX -SUM C LA S S I FIER S
+
+8. Conclusions
+
+In this article we have examined discriminative learning of max-sum classiﬁers. Learning of a max-
+sum classi ﬁer
+leads to satisfying a set of linear inequalities or solving a QP task with linear inequal-
+ity constraints. A characteristic feature of these tasks is a huge number of linear constraints which
+is proportional to the number of possible responses (labelings) of a max-sum classiﬁer . Efﬁcient
+optimization methods for solving these tasks are the perceptron and the cutting plane algorithm,
+respectively. These methods manage to solve large problems provided the response of a max-sum
+classiﬁer can be evaluated efﬁciently . Direct application of these methods is not tractable because
+computing a response of a general max-sum classiﬁer
+is NP-complete.
+
+We have proposed variants of the perceptron and the cutting plane algorithm for learning su-
+permodular max-sum classiﬁers whose response can be computed efﬁciently in polynomial time.
+We have augmented the optimization tasks by additional linear constraints which guarantee that a
+max-sum classiﬁer
+is supermodular. The perceptron and the cutting plane algorithm are modiﬁed
+such that added constraints on supermodularity are maintained satisﬁed during the course of opti-
+mization. This modiﬁcation allows to compute the response of a max-sum classiﬁer efﬁciently thus
+making the learning problem tractable.
+
+We have deﬁned a class of max-sum classiﬁers with a strictly trivial equivalent which are solv-
+able exactly in polynomial time by an LP relaxation. We have showed that this class covers at least
+acyclic and supermodular max-sum classiﬁers with a unique solution. Another favorable property
+of this class is that the learning problems contain only polynomially-sized sets of linear constraints.
+As a result, the perceptron and the cutting plane algorithms do not require to call any max-sum
+solver during the course of optimization.
+
+We have proposed a variant of the cutting plane algorithm which can approximately solve the
+learning problem formulated for the general max-sum classiﬁer . The response of the max-sum
+classiﬁer
+is approximated by an LP relaxation for which specialized optimization algorithms exist.
+Using an approximate response prohibits a guarantee that the cutting plane algorithm ﬁnds a solution
+with an arbitrary precision. This is not an obstacle, however, for using the algorithm in practice as
+we demonstrated experimentally.
+
+Acknowledgments
+
+Authors are deeply grateful to Prof. Michail I. Schlesinger for inspiring this work by many important
+ideas which he delivered in personal communication and during his lectures on structural pattern
+recognition. Our special thanks go to Tom ´a ˇs Werner for reading this article and giving us many
+valuable comments.
+
+The authors would like to acknowledged the support from the EU INTAS project PRINCESS
+04-77-7347. The main part of this work has been done while the ﬁrst author was with the Center for
+Machine Perception. The ﬁrst author was also supported by Marie Curie Intra-European Fellowship
+grant SCOLES (MEIF-CT-2006-042107) during his current fellowship in Fraunhofer-FIRST.IDA
+institute.
+
+97
+
+FRANC AND SAVCHYN SKYY
+
+Appendix A.
+
+In this appendix we prove Theorem 3 introduced in Section 2.3. Prior to proving the theorem, we
+will introduce the concept of local consistency (Schlesinger, 1976) and the theorem asserting that
+the problems with a trivial equivalent contain the acyclic and supermodular problems (Schlesinger,
+1976; Schlesinger and Flach, 2000).
+
+Deﬁnition 3 The maximal node (t ; y) is called locally consistent if for each neighboring object
+t 0 2 N (t ) there exists a maximal edge f(t ; y); (t 0 ; y0 )g. The maximal edge f(t ; y); (t 0 ; y0 )g is called
+locally consistent if the nodes (t ; y) and (t 0 ; y0 ) are maximal.
+
+The maximal nodes and maximal edges which do not satisfy Deﬁnition 3 will be called locally
+inconsistent.
+
+Theorem 6 Schlesinger (1976); Schlesinger and Flach (2000) Let P = (T ; E ; Y ; q; g; x) be a max-
+If (T ; E ) is an acyclic graph or quality functions g are supermodular then P is
+sum problem.
+equivalent to a trivial problem.
+Recall, that P with the optimal solution y(cid:3) 2 Y T has a trivial equivalent Pjjj if there exist potentials
+jjj such that the following set of linear inequalities holds
+jjj
+jjj
+t 2 T ; y 2 Y n fy(cid:3)
+t (y(cid:3)
+t ; xt ) (cid:21) q
+q
+t (y; xt ) ;
+t g ;
+jjj
+jjj
+t t 0 (yt ; yt 0 ) ; ft ; t 0g 2 E ; (y; y0 ) 2 Y 2 n f(y(cid:3)
+t t 0 (y(cid:3)
+t ; y(cid:3)
+t ; y(cid:3)
+g
+t 0 ) (cid:21) g
+t 0 )g :
+The system (36) differs from the deﬁnition of problems with a strictly trivial equivalent (19) just by
+using the non-strict inequalities. Finally, we will prove two auxiliary lemmas:
+Lemma 2 Let P be an acyclic problem which has a unique solution y(cid:3) and let Pjjj be a trivial
+equivalent of P. Then only two cases can occur: (i) Pjjj is strictly trivial or (ii) there is at least one
+maximal locally inconsistent node or edge.
+
+(36)
+
+Proof We will show that violating both the assertions (i) and (ii) contradicts the assumption that y (cid:3)
+is unique. Assuming Pjjj is not strictly trivial implies that there exists a maximal node (t ; y0
+t ) such
+that y0
+t . Let us construct a labeling y0 such that y0
+t belongs to y0 . The remaining labels are
+6= y(cid:3)
+t
+determined by repeating the following procedure (jT j (cid:0) 1) times:
+t 0 has been already determined and let t 00 2 N (t 0 ) be
+(cid:15) Let t 0 2 T be an object whose label y0
+an object whose label y0
+t 00 has not been determined yet. Then set up the label y0
+t 00 such that
+f(t 0 ; y0
+t 0 ); (t 00 ; y0
+t 00 )g is a maximal edge.
+The constructed labeling y0 is the optimal solution of P because it is composed of maximal nodes
+and edges. Note that this simple construction of the optimal labeling is possible because the graph
+(T ; E ) is acyclic. Thus we have y0 6= y(cid:3) because y0
+t which implies that y(cid:3) is not unique.
+6= y(cid:3)
+t
+
+Lemma 3 Let P be a supermodular problem with an unique solution y(cid:3) and let Pjjj be a trivial
+equivalent of P. Then only two cases can occur: (i) Pjjj is strictly trivial or (ii) there is at least one
+maximal locally inconsistent node or edge.
+
+98
+
+D I SCR IM INAT IV E L EARN ING O F MAX -SUM C LA S S I FIER S
+
+Proof We will show that violating both the assertions (i) and (ii) contradicts the assumption that
+jjj
+jjj
+y(cid:3) is unique. Let Y 0
+t (y0 ; xt )g denote a set of all maximal nodes
+t (y; xt ) = maxy02Y q
+t = f(t ; y) j q
+corresponding to the object t 2 T . Let us construct the labeling yh = (yh
+t j t 2 T ) composed of
+t ) 2 Y 0
+the highest maximal nodes; (t ; yh
+t and yh
+t ) is the highest maximal node if (t ; yh
+t > y for all
+(t ; y) 2 Y 0
+t n ft ; y0
+t g. Recall, that the labels are fully ordered for the supermodular problems.
+t 0 )g 2 EY are also
+Now, we show that the labeling yh is optimal since all its edges f(t ; yh
+t ); (t 0 ; yh
+t ); (t 0 ; yh
+maximal. Let us assume that there exists an edge f(t ; yh
+t 0 )g which is not maximal. Then, by
+t ); (t 0 ; yt 0 )g and f(t ; yt ); (t 0 ; yh
+assumption of local consistency, there exist edges f(t ; yh
+t 0 )g which are
+maximal. Note that yt < yh
+t and yt 0 < yh
+t 0 because (t ; yh
+t ) and (t 0 ; yh
+t 0 ) are the highest nodes. From the
+condition of supermodularity (7) and (4a) we have
+
+t ; yt 0 ) (cid:0) gt t 0 (yt ; yh
+0 (cid:20) gt t 0 (yh
+t ; yh
+t 0 ) + gt t 0 (yt ; yt 0 ) (cid:0) gt t 0 (yh
+t 0 )
+jjj
+jjj
+jjj
+jjj
+t t 0 (yh
+t ; yh
+t t 0 (yh
+t t 0 (yt ; yh
+= g
+t 0 ) + g
+t t 0 (yt ; yt 0 ) (cid:0) g
+t ; yt 0 ) (cid:0) g
+t 0 ) :
+
+This condition, however, cannot be satisﬁed if the edge f(t ; yh
+t ); (t 0 ; yh
+t 0 )g is not maximal which is a
+contradiction. Similarly, we can show that the labeling y l composed of the lowest maximal nodes
+(deﬁned analogically) is also optimal.
+Finally, the assumption that Pjjj is not strictly trivial implies that for some object t 2 T there
+t . W.l.o.g. we can select (t ; y0
+exists a maximal node (t ; y0
+t ) such that y0
+6= y(cid:3)
+t ) which is either the
+t
+highest maximal or the lowest maximal node. Thus y0
+t (cid:3) belongs either to the labeling yh or yl which
+are optimal and differ from y(cid:3) . This contradicts the assumption that y(cid:3) is unique.
+
+Proof of Theorem 3: Let P be an acyclic or supermodular max-sum problem with the unique solu-
+tion y(cid:3) 2 Y T . Let jjj be the potentials such that the max-sum problem Pjjj is a trivial equivalent of
+P. The existence of such Pjjj is guaranteed by Theorem 6. Then, by Lemma 2 and Lemma 3, Pjjj is
+either strictly trivial or there exists a maximal node (t ; y0
+t ) or a maximal edge f(t ; y0
+t ); (t 0 ; y0
+t 0 )g which
+are locally inconsistent, that is, (t ; y0
+t ) and f(t ; y0
+t ); (t 0 ; y0
+t 0 )g do not belong to y(cid:3) . We will introduce a
+procedure which changes the potentials jjj in such a way that the inconsistent maximal node (t ; y0
+t )
+or inconsistent maximal edge f(t ; y0
+t ); (t 0 ; y0
+t 0 )g, respectively, become non-maximal while other max-
+imal (non-maximal) nodes or edges remain maximal (non-maximal). Repeating this procedure for
+all inconsistent maximal nodes and edges makes the inequalities (36) satisﬁed strictly, that is, the
+problem Pjjj becomes strictly trivial which is to be proven. The procedures for elimination of incon-
+sistent nodes and edges read:
+t ): Let t 0 2 N (t ) be such a neighbor of t that
+Elimination of the inconsistent maximal node (t ; y0
+t ); (t 0 ; yt 0 )g j yt 0 2 Y g does not contain any maximal edge. Let e be
+the set of edges Et t 0 (y0
+t ) = ff(t ; y0
+a number computed as
+1
+jjj
+jjj
+t ; y0 )(cid:21) :
+2 (cid:20) max
+t t 0 (y0
+t t 0 (y; y0 ) (cid:0) max
+g
+g
+y02Y
+(y;y0 )2Y 2
+t ) does not contain maximal edges this implies e > 0. Adding e to the potential
+Since Et t 0 (y0
+jjj
+t ) by e and in-
+t ) + e decreases the quality q
+jt t 00 (y0
+t ) := jt t 0 (y0
+jt t 0 (y0
+t ; xt ) (cid:0) (cid:229)t 002N (t )
+t (y0
+t ; xt ) = qt (y0
+jjj
+t ) by e. This
+t t 0 (y; y0 ) = gt t 0 (y; y0 ) + jt t 0 (y) + jt 0 t (y0 ), f(t ; y); (t 0 ; y0 )g 2 Et t 0 (y0
+creases the qualities g
+t ) non-maximal while the edges Et t 0 (y0
+change makes the node (t ; y0
+t ) remain non-maximal as before.
+The qualities of other nodes and edges remain unchanged.
+
+e =
+
+99
+
+FRANC AND SAVCHYN SKYY
+
+Elimination of the inconsistent maximal edge f(t ; y0
+t ); (t 0 ; y0
+let (t 0 ; y0
+t 0 )g: W.l.o.g.
+t 0 ) be a non-
+maximal node. Notice, that all edges from Et 0 t (y0
+t 0 )g j yt 2 Y g are locally incon-
+t 0 ) = f(t ; yt ); (t 0 ; y0
+sistent and they cannot be a part of the optimal solution. Let e be a number computed as
+1
+jjj
+jjj
+2 (cid:20) max
+t 0 ; xt 0 )(cid:21):
+t 0 (y0
+t 0 (y; xt 0 ) (cid:0) q
+q
+y2Y
+t 0 ) is non-maximal e > 0. Subtracting e from the potential jt 0 t (y0
+t 0 ) := jt 0 t (y0
+t 0 ) (cid:0) e
+Because (t 0 ; y0
+jjj
+t t 0 (y; y0 ) = gt t 0 (y; y0 ) + jt t 0 (y) + jt 0 t (y0 ), f(t ; y); (t 0 ; y0 )g 2 Et 0 t (y0
+t 0 ) by e and
+decreases the qualities g
+jjj
+jt t 00 (y0
+t 0 ) by e. This change makes all edges
+t 0 ; xt 0 ) (cid:0) (cid:229)t 002N (t 0 )
+t 0 (y0
+t 0 ; xt 0 ) = qt 0 (y0
+increases the quality q
+from Et 0 t (y0
+t 0 ) non-maximal while the node (t 0 ; y0
+t 0 ) remains non-maximal as before. The qualities of
+other nodes and edges remain unchanged.
+
+e =
+
+Appendix B.
+
+In this appendix we prove Lemma 1 given in Section 6.
+Proof of Lemma 1: We show that if a new variable was added then we can construct a vector bbb such
+that optimizing the dual objective QD (aaa) over a line segment between the current solution aaa and the
+vector bbb yields a guaranteed improvement. Since the reduced QP task solved in Step 2 optimizes in
+the space of all selected variables which contains the line segment between aaa and bbb, the obtained
+improvement cannot be smaller.
+Let us assume an optimization of the dual objective QD (aaa) of the QP task (27) w.r.t. a line
+segment between the current solution aaa and an arbitrary feasible vector bbb. The problem is equivalent
+to searching for the maximum of an univariate quadratic function
+QL (t) = QD(cid:16)(1 (cid:0) t)aaa + tbbb(cid:17)
+= (1 (cid:0) t)hb; aaai + thb; bbbi (cid:0)
+
+(1 (cid:0) t)2 haaa; Haaai (cid:0) t(1 (cid:0) t)hbbb; Haaai (cid:0)
+
+t2 hbbb; Hbbbi ;
+
+(37)
+
+(38)
+
+(39)
+
+1
+2
+over the closed interval 0 (cid:20) t (cid:20) 1. The maximum is attained at the vector
+aaanew = (1 (cid:0) t)aaa + tbbb
+
+1
+2
+
+where
+
+t = argmax
+0(cid:20)t(cid:20)1
+
+QL (t) :
+
+The derivative of QL (t) reads
+¶QL (t)
+¶t = hb; bbb (cid:0) aaai + (1 (cid:0) t)haaa; Haaai (cid:0) (1 (cid:0) 2t)hbbb; Haaai (cid:0) thbbb; Hbbbi :
+An objective function is improved, that is, QD (aaanew ) (cid:0) QD (aaa) > 0, iff the vector bbb satisﬁes
+¶QL (t)
+(cid:12)(cid:12)(cid:12)(cid:12)t=0
+¶t
+
+= hbbb (cid:0) aaa; b (cid:0) Haaai > 0 :
+
+100
+
+D I SCR IM INAT IV E L EARN ING O F MAX -SUM C LA S S I FIER S
+
+Provided (39) holds, the maximum of QL (t) w.r.t. 0 (cid:20) t (cid:20) 1 is attained within the open interval
+0 < t < 1 or on its boundary t = 1. The maximum of QL (t) w.r.t. unbounded t can be found by
+¶QL¶t = 0 for t. If the resulting t exceeds 1 then the optimum of the line segment optimization
+solving
+is attained at t = 1. Thus we can write the solution of (38) in a closed form
+hbbb (cid:0) aaa; b (cid:0) Haaai
+haaa (cid:0) bbb; H(aaa (cid:0) bbb)i ) :
+t = min (1;
+Analytical formulas for improvement can be derived substituting (37) and (40) to D = QD (aaanew ) (cid:0)
+QD (aaa). For t < 1 we get
+
+(40)
+
+D =
+
+hbbb (cid:0) aaa; b (cid:0) Haaai2
+2haaa (cid:0) bbb; H(aaa (cid:0) bbb)i
+
+;
+
+and for t = 1 we get
+
+D = hbbb (cid:0) aaa; b (cid:0) Haaai (cid:0)
+
+haaa (cid:0) bbb; H(aaa (cid:0) bbb)i (cid:21)
+
+1
+2
+
+hbbb (cid:0) aaa; b (cid:0) Haaai :
+
+1
+2
+
+(41)
+
+(42)
+
+The last inequality in (42) follows from hbbb (cid:0) aaa; b (cid:0) Haaai (cid:21) haaa (cid:0) bbb; H(aaa (cid:0) bbb)i which holds for t = 1
+as seen from (40).
+Let us consider that a new variable with index u j was added in Step 3(b), that is, the condi-
+tion (30) was satisﬁed. Using hw; zu j i = [Haaa]u j we can rewrite the condition (30) as
+e
+m
+
+ai [b (cid:0) Haaa]i >
+
+[b (cid:0) Haaa]u j (cid:0) (cid:229)
+i2I j
+
+C
+m
+
+(43)
+
+:
+
+C
+m if
+0 if
+ai
+if
+
+1 ; : : : ; b
+n )T as follows
+
+i = u j ;
+i 2 I j n fu j g ;
+i 2 I n I j :
+
+Let us construct the feasible vector bbb = (b
+i = 8<
+:
+As was shown above, optimization over the line segment yields an improvement provided (39)
+holds. Substituting bbb constructed by (44) into the formula (39) we get
+dQL
+d t (cid:12)(cid:12)(cid:12)t=0
+where the last inequality follows from (43). This implies that optimizing w.r.t. line segment between
+aaa and the vector bbb yields positive improvement. Now, we derive a lower bound on this improvement.
+Combining (45) with (42) we immediately get
+
+[b (cid:0) Haaa]u j (cid:0) (cid:229)
+i2I j
+
+= hbbb (cid:0) aaa; b (cid:0) Haaai =
+
+ai [b (cid:0) Haaa]i >
+
+e
+m
+
+;
+
+(44)
+
+(45)
+
+b
+
+C
+m
+
+D (cid:21)
+
+e
+2m
+
+for
+
+t = 1 :
+
+101
+
+(46)
+
+FRANC AND SAVCHYN SKYY
+
+Before deriving the bound for t < 1, we must ﬁnd an upper bound on the denominator of (41). Let
+us deﬁne A j = (cid:8)aaa j (cid:229)i2I j
+m ; ai (cid:21) 0 ; 8i 2 I j (cid:9). Then we can write
+ai = C
+haaa (cid:0) bbb; H(aaa (cid:0) bbb)i (cid:20) max
+b
+ai zi (cid:0) (cid:229)
+(cid:229)
+i zi(cid:13)(cid:13)(cid:13)
+j2J (cid:13)(cid:13)(cid:13)
+i2I j
+i2I j
+!2
+(cid:20)  2 max
+ai zi(cid:13)(cid:13)(cid:13)
+maxaaa2A j (cid:13)(cid:13)(cid:13)
+j2J
+4C2
+kzik2 :
+m2 max
+max
+=
+j2J
+i2I j
+
+(cid:229)
+i2I j
+
+(47)
+
+2
+
+Combining (45) and (47) with (41) yields
+e2
+8C2R2
+
+D (cid:21)
+
+for
+
+t = 1
+
+and R = max
+j2J
+
+max
+i2I j
+
+kzik :
+
+(48)
+
+Taking the minimum of improvements (46) and (48) gives the bound on the minimal improvement.
+
+References
+
+Y. Altun and T. Hofmann. Large margin methods for label sequence learning. In European Confer-
+ence on Speech Communication and Technology (EuroSpeech), 2003.
+
+Y. Altun, I. Tsochantaridis, and T. Hofmann. Hidden markov support vector machines. In Interna-
+tional Conference on Machine Learning. ACM Press, New York, 2003.
+
+D. Anguelov, B. Taskar, V. Chatabashev, D. Koller, D. Gupta, G. Heitz, and A. Ng. Discriminative
+for segmentation of 3D scan data. In International Conference
+learning of markov random ﬁelds
+on Computer Vision and Pattern Recognition, pages 167–176.
+IEEE Computer Society, Washing-
+ton, DC, 2005.
+
+J. Besag. On the statistical analysis of dirty pictures. Journal of the Royal Statistical Society, 48:
+259 –302, 1986.
+
+Y. Boykov and V. Kolmogorov. An experimental comparison of min-cut/max- ﬂo w algorithms for
+energy minimization in vision. IEEE Transactions on Pattern Analysis and Machine Intelligence,
+26(9):1124–1137, Sept. 2004.
+
+Y. Boykov, O. Veksler, and R. Zabih. Fast approximate energy minimization via graph cuts. IEEE
+Transactions on Pattern Analysis and Machine Intelligence, 23(11):1222–1239, Nov. 2001.
+
+C. Chekuri, S. Khanna, J. Naor, and L. Zosin. Approximation algorithms for the metric labeling
+problem via a new linear programming formulation. In Symposium on Discrete Algorithms, pages
+109 –118, 2001.
+
+P.B. Chou and C.M. Brown. The theory and practice of bayesian image labeling. International
+Journal on Computer Vision, 4(3):185–210, June 1990.
+
+102
+
+D I SCR IM INAT IV E L EARN ING O F MAX -SUM C LA S S I FIER S
+
+M. Collins. Discriminative training methods for hidden markov models: Theory and experiments
+with perceptron algorithms. In Conference on Empirical Methods in Natural Language Process-
+ing, pages 1–8, 2002.
+
+K. Crammer and Y. Singer. On the algorithmic implementation of multiclass kernel-based vector
+machines. Journal of Machine Learning Research, 2:265 –292, Dec. 2001.
+
+T. Finley and T. Joachims. Supervised clustering with support vector machines. In International
+Conference on Machine Learning, pages 217–224. ACM Press, New York, 2005.
+
+R. M. Haralick and L. G. Shapiro. The consistent labeling problem. IEEE Transactions on Pattern
+Analysis and Machine Intelligence, 1(2):173–184, 1979.
+
+G. E. Hinton and T. J. Sejnowski. Learning and relearning in boltzmann machines.
+In Parallel
+Distributed Processing: Explorations in the Microstructure of Cognition, volume 1, pages 282–
+317. MIT Press, Cambridge, 1986.
+
+M. Jerrum and A. Sinclair. Polynomial-time approximation algorithms for the Ising model. SIAM
+Journal of Computing, 22:1087–1116, 1993.
+
+V. Kolmogorov. Convergent tree-reweighted message passing. IEEE Transactions on Pattern Anal-
+ysis and Machine Intelligence, 28(10):1568–1583, 2006.
+
+V. Kolmogorov and R. Zabih. What energy functions can be minimized via graph cuts? In European
+Conference on Computer Vision, pages 65 –81. Springer-Verlag, 2002.
+
+A. Koster, C. P. M. Hoesel, and A. W. J. Kolen. The partial constraint satisfaction problem: Facets
+and lifting theorems. Operations Research Letters, 23(3–5):89 –97,
+1998.
+
+V.A. Koval and M.I. Schlesinger. Dvumernoe programmirovanie v zadachakh analiza izobrazheniy
+(two-dimensional programming in image analysis problems). USSR Academy of Science, Auto-
+matics and Telemechanics, 8:149–168, 1976. In Russian.
+
+I. Kovtun. Segmentaciya Zobrazhen na Usnovi Dostatnikh Umov Optimalnosti v NP-povnikh
+Klasakh Zadach Strukturnoi Rozmitki (Image Segmentation Based on Sufﬁcient Conditions Of
+Optimality in NP-complete Classes of Structural Labeling Problems). PhD thesis, IRTC ITS Nat.
+Academy of Science Ukraine, Kiev, 2004. In Ukrainian.
+
+A. Novikoff. On convergence proofs of perceptrons. In Symposium on Mathematical Theory of
+Automata, volume 12, pages 615–622. Polytechnic Institute of Brooklyn, 1962.
+
+J. Pearl. Probabilistic Reasoning in Intelligent Systems: Networks of Plausible Inference. Morgan
+Kaufmann, San Francisco, CA, USA, 1988.
+
+N.D. Ratliff and J.A. Bagnell. Subgradient methods for maximum margin structured learning. In
+ICML Workshop on Learning in Structured Output Spaces, 2006.
+
+A. Rosenfeld, R. A. Hummel, and S. W. Zucker. Scene labeling by relaxation operations. IEEE
+Transactions on Systems, Man, and Cybernetics, 6(6):420–433, June 1976.
+
+103
+
+FRANC AND SAVCHYN SKYY
+
+D. Schlesinger. Structurelle Ans ¨atze f ¨ur die Stereoreconstruction. PhD thesis, Technische Univer-
+sit ¨at Dresden, Fakult ¨at Informatik, Institut f ¨ur K ¨unstliche Intelligenz, July 2005. In German.
+
+M.I. Schlesinger. Sintaksicheskiy analiz dvumernykh zritelnikh signalov v usloviyakh pomekh
+(Syntactic analysis of two-dimensional visual signals in noisy conditions). Kibernetika, 4:113–
+130, 1976. In Russian.
+
+M.I. Schlesinger and B. Flach. Some solvable sublcasses of structural recognition problems. In
+Czech Pattern Recognition Workshop. Czech Pattern Recognition Society, 2000.
+
+M.I. Schlesinger and V. Hlav ´a ˇc. Ten Lectures on Statistical and Structural Pattern Recognition.
+Kluwer Academic Publishers, 2002.
+
+B. Sch ¨olkopf, C. Burges, and V. Vapnik. Extracting support data for a given task. In U.M. Fayyad
+and R. Uthurusamy, editors, International Conference on Knowledge Discovery & Data Mining.
+AAAI Press, Menlo Park, 1995.
+
+B. Taskar, V. Chatalbashev, and D. Koller. Learning associative markov networks. In International
+Conference on Machine Learning. ACM Press, New York, 2004a.
+
+B. Taskar, C. Guestrin, and D. Koller. Maximum-margin markov networks. In Advances in Neural
+Information Processing Systems. MIT Press, Cambridge, MA, 2004b.
+
+B. Taskar, S. Lacoste-Jullien, and M.I. Jordan. Structured prediction, dual extragradient and breg-
+man projections. Journal of Machine Learning Research, 7:1627–1653, Jul. 2006.
+
+I. Tsochantaridis, T. Joachims, T. Hofmann, and Y. Altun. Large margin methods for structured
+and interdependent output variables. Journal of Machine Learning Research, 6:1453–1484, Sep.
+2005.
+
+V. Vapnik. Statistical Learning Theory. John Wiley & Sons, Inc., 1998.
+
+M. Wainwright, T. Jaakkola, and A. Willsky. MAP estimation via agreement on hypertrees: message
+passing and linear programming approaches.
+In Conference on Communication, Control and
+Computing, 2002.
+
+T. Werner. A linear programming approach to max-sum problem: A review. IEEE Transactions on
+Pattern Analysis and Machine Intelligence, 29(7):1165 –1179, July 2007.
+
+T. Werner. A linear programming approach to max-sum problem: A review. Research Report
+CTU –CMP–2005–25,
+Center for Machine Perception, K13133 FEE Czech Technical University,
+Prague, Czech Republic, December 2005.
+
+J. S. Yedidia, W. T. Freeman, and Y. Weiss. Constructing free-energy approximations and general-
+ized belief propagation algorithms. IEEE Transactions on Information Theory, 51(7):2282 –2312,
+2005.
+
+104
+
+

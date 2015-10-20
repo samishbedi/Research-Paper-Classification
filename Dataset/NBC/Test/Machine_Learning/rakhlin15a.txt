@@ -1,0 +1,2513 @@
+Journal of Machine Learning Research 16 (2015) 155-186
+
+Submitted 7/13; Revised 7/14; Published 2/15
+
+Online Learning via Sequential Complexities
+
+Alexander Rakhlin
+Department of Statistics
+University of Pennsylvania
+Philadelphia, PA 19104
+
+Karthik Sridharan
+Department of Computer Science
+Cornel l University
+Ithaca, NY 14853
+
+Ambuj Tewari
+Department of Statistics
+University of Michigan
+Ann Arbor, MI 48109
+
+Editor: Mehryar Mohri
+
+rakhlin@wharton.upenn.edu
+
+skarthik@wharton.upenn.edu
+
+tewaria@umich.edu
+
+Abstract
+We consider the problem of sequential prediction and provide tools to study the minimax
+value of the associated game. Classical statistical learning theory provides several useful
+complexity measures to study learning with i.i.d. data. Our proposed sequential complex-
+ities can be seen as extensions of these measures to the sequential setting. The developed
+theory is shown to yield precise learning guarantees for the problem of sequential predic-
+tion. In particular, we show necessary and suﬃcient conditions for online learnability in
+the setting of supervised learning. Several examples show the utility of our framework: we
+can establish learnability without having to exhibit an explicit online learning algorithm.
+Keywords: online learning, sequential complexities, regret minimization
+
+1. Introduction
+
+This paper is concerned with sequential prediction problems where no probabilistic assump-
+tions are made regarding the data generating mechanism. Our viewpoint is expressed well
+by the following quotation from Cover and Shenhar (1977):
+
+“We are interested in sequential prediction procedures that exploit any ap-
+parent order in the sequence. We do not assume the existence of any underlying
+distributions, but assume that the sequence is an outcome of a game against a
+malevolent intelligent nature.”
+
+We will, in fact, take the game theoretic viewpoint seriously. All our investigations will
+proceed by analyzing the minimax value of a repeated game between a player or learner
+develop the theory in a somewhat abstract setting. Towards this end, ﬁx the sets F and
+and a “malevolent intelligent nature”, or the adversary.
+Even though we have the setting of prediction problems in mind, it will be useful to
+©2015 Alexander Rakhlin, Karthik Sridharan, Ambuj Tewari.
+
+Rakhlin, Sridharan and Tewari
+Z , as well as a loss function (cid:96) ∶ F × Z → R, and consider the following T -round repeated
+round t ∈ {1, . . . , T }, the learner chooses ft ∈ F , the adversary picks zt ∈ Z , and the learner
+suﬀers loss (cid:96)(ft , zt ). At the end of T rounds we deﬁne regret
+two-player game, which we term the online learning or sequential prediction model. On
+R(f1∶T , z1∶T ) á TQ
+(cid:96)(ft , zt ) − inf
+(cid:96)(f , zt )
+f ∈F TQ
+t=1
+t=1
+best ﬁxed decision. For the given pair (F , Z ), the problem is said to be online learnable
+as the diﬀerence between the cumulative loss of the player and the cumulative loss of the
+if there exists an algorithm for the learner such that regret grows sublinearly in the time
+horizon T , no matter what strategy the adversary employs.
+The origin of the online learning (or sequential prediction) model can be traced back to
+the work of Robbins (1950) on compound statistical decision problems. Some of the earliest
+sequential prediction algorithms were proposed by Blackwell (1956a,b) and Hannan (1957).
+Blackwell’s method was based on his celebrated approachability theorem whereas Hannan’s
+was based on minimizing a randomly perturbed sum of previous losses. Hannan’s ideas
+were to later resurface in the inﬂuential Follow-the-Perturbed-Leader family (Kalai and
+Vempala, 2005) of online learning algorithms. The seminal ideas in the work of Robbins,
+Blackwell and Hannan led to further developments in many diﬀerent ﬁelds. Cover (1967),
+Davisson (1973), Ziv and Lempel (1977), Rissanen (1984), Feder et al. (1992), and others laid
+the foundation of universal coding, compression and prediction in the Information Theory
+literature. Within Computer Science, Littlestone and Warmuth (1994), Cesa-Bianchi et al.
+(1997), Vovk (1998), and others studied the online learning model and the prediction with
+expert advice framework. The connections between regret minimization and convergence
+to equilibria was studied in Economics by Foster and Vohra (1997), Hart and Mas-Colell
+(2000) and others.
+We have no doubt left out many interesting works above. But even our partial list will
+convince the reader that research in online learning and sequential prediction has beneﬁted
+from contributions by researchers from a variety of ﬁelds including Computer Science, Eco-
+nomics, Information Theory, and Statistics. For an excellent synthesis and presentation of
+results from these diﬀerent ﬁelds we refer the reader to the book by Cesa-Bianchi and Lugosi
+(2006). Many of the ideas in the ﬁeld are constructive, resulting in beautiful algorithms,
+or algorithmic techniques, associated with names such as Follow-the-Regularized-Leader,
+Follow-the-Perturbed-Leader, Weighted Ma jority, Hedge, and Online Gradient Descent.
+However, analyzing speciﬁc algorithms has obvious disadvantages. The algorithm may not
+be “optimal” for the task at hand. Even if it is optimal, one cannot prove that fact unless
+one develops tools for analyzing the inherent complexity of the online learning problem.
+Our goal is precisely to provide such tools. We will begin by deﬁning the minimax value
+of the game underlying the abstract online learning model. Then we will develop tools for
+controlling the minimax value resulting in a theory that parallels statistical learning theory.
+In particular, we develop analogues of combinatorial dimensions, covering numbers, and
+Rademacher complexities. We will also provide results relating these complexities.
+Note that our approach is non-constructive : controlling the sequential complexities
+mentioned above will only guarantee the existence of a good online learning algorithm but
+
+156
+
+Online Learning via Sequential Complexities
+
+will not explicitly create one. However, it turns out that that the minimax point of view
+can indeed lead to constructive algorithms as shown by Rakhlin et al. (2012).
+
+2. Minimax Value and Online Learnability
+F is a subset of a separable metric space. Let Q be the set of probability measures on F
+To proceed further in our analysis of the minimax value of the repeated game between the
+and assume that Q is weakly compact. In order to allow randomized prediction, we allow
+learner and the adversary, we need to make a few technical assumptions. We assume that
+the learner to choose a distribution qt ∈ Q on every round. The minimax value of the game
+ inf
+VT (F , Z ) á inf
+ TQ
+(cid:96)(ft , zt ) − inf
+(cid:96)(f , zt ) .
+is then deﬁned as
+f ∈F TQ
+q1 ∈Q sup
+z1 ∈Z E
+qT ∈Q sup
+zT ∈Z E
+f1 ∼q1
+fT ∼qT
+t=1
+t=1
+(1)
+f ∼q stands for the expectation operator integrating out the ran-
+Henceforth, the notation E
+choose each zt based on the history of moves f1∶t−1 and z1∶t−1 .
+dom variable f with distribution q . We consider here the adaptive adversary who gets to
+The ﬁrst key step in the study of the value of the game is to appeal to the minimax
+theorem and exchange the pairs of inﬁma and suprema in (1). This dual formulation is
+assumption of weak compactness of Q and lower semi-continuity of the loss function.1 Under
+easier to analyze because the choice of the player comes after the choice of the mixed
+strategy of the adversary. We remark that the minimax theorem holds under a very general
+these conditions, we can appeal to Theorem 1 stated below, which is adapted for our needs
+Theorem 1 Let F and Z be the sets of moves for the two players, satisfying the necessary
+from the work of Abernethy et al. (2009).
+conditions for the minimax theorem to hold. Denote by Q and P the sets of probability
+measures (mixed strategies) on F and Z , respectively. Then
+ sup
+VT (F , Z ) = sup
+(cid:96)(f , zt ) ,
+[(cid:96)(ft , zt )] − inf
+ TQ
+f ∈F TQ
+z1 ∼p1
+zT ∼pT
+zt ∼pt
+ft ∈F E
+t=1
+t=1
+E
+E
+inf
+where suprema over pt range over al l distributions in P .
+p1
+pT
+VT (F , Z ), taking (2) as the starting point.
+The question of learnability in the online learning model is now reduced to the study of
+Deﬁnition 2 A class F is said to be online learnable with respect to the given Z and (cid:96) if
+T →∞ VT (F , Z )
+≤ 0 .
+lim sup
+T
+Note that our notion of learnability is related to, but distinct from, Hannan consistency
+(Hannan, 1957; Cesa-Bianchi and Lugosi, 2006). The latter notion requires the iterated
+game to go on for an inﬁnite number of rounds and is formulated in terms of almost sure
+
+(2)
+
+1. We refer to Appendix A for a precise statement of the minimax theorem, as well as suﬃcient conditions.
+
+157
+
+Rakhlin, Sridharan and Tewari
+
+convergence. In contrast, we consider a distinct game for each T and look at expected regret.
+Nevertheless, it is possible to obtain Hannan consistency using the techniques developed in
+is allowed to make decisions in a larger set G , while the best-in-hindsight term in the regret
+this paper by considering a slightly diﬀerent game (Rakhlin et al., 2011).
+deﬁnition is computed with respect to F ⊆ G . Such a setting—interesting especially with
+We also remark that the statements in this paper extend to the case when the learner
+choose Y ⊂ R, Z = X × Y , F ⊆ Y X = G and (cid:96)(f , (x, y)) =  f (x) − y  . This setting will be
+regard to computational concerns—is termed improper learning. For example, prediction
+studied later in the paper. Note that in the proper learning scenario, VT (F , Z ) ≥ 0 (e.g.,
+with side information (or, the supervised learning problem) is one such case, where we
+This paper is aimed at understanding the value of the game VT (F , Z ) for various func-
+since all zt ’s can be chosen to be the same), and thus the “lim sup” in Deﬁnition 2 can be
+tion classes F . Since our focus is on the complexity of F , we shall often write VT (F ) keeping
+simply replaced with the limit being equal to zero.
+the dependence on Z (and (cid:96)) implicit. As we show, the sequential complexity notions—
+Numbers—also give us a handle on the value VT (F ). In the next section, we brieﬂy deﬁne
+that were shown by Rakhlin et al. (2014) to characterize uniform martingale Laws of Large
+these sequential complexity notions and mention some of the key relations between them.
+A more detailed account of the relationships between sequential complexity measures along
+with complete proofs can be found in (Rakhlin et al., 2014).
+
+3. Sequential Complexities
+
+Unlike the well-studied statistical learning scenario with i.i.d. data, the online learning
+problem possesses a certain sequential dependence. Such dependence cannot be captured
+by classical notions of complexity that are based on a batch of data given as a tuple of T
+examples. A basic unit that does capture temporal dependence is a binary tree. Surprisingly,
+A Z -valued tree z of depth T is a complete rooted binary tree with nodes labeled by
+for the sequential prediction problems considered in this paper, one need not look further
+elements of Z . Such a tree z is identiﬁed with the sequence (z1 , . . . , zT ) of labeling functions
+than binary trees to capture the relevant complexity.
+zi ∶ {±1}i−1 → Z which provide the labels for each node. Therefore, z1 ∈ Z is the label for
+the root of the tree, while zi for i > 1 is the label of the node obtained by following the
+path of length i − 1 from the root, with +1 indicating ‘right’ and −1 indicating ‘left’. A path
+of length T is given by the sequence  = (1 , . . . , T ) ∈ {±1}T . For brevity, we shall often
+write zt (), where  = (1 , . . . , T ), but it is understood that zt depends only on the preﬁx
+(1 , . . . , t−1 ).
+Now, let 1 , . . . , T be independent Rademacher random variables. Given a Z -valued tree
+z of depth T , we deﬁne the sequential Rademacher complexity of a function class G ⊆ RZ
+on a Z -valued tree z as
+RT (G , z) á E sup
+tg(zt ()) ,
+TQ
+g∈G 1
+t=1
+and we denote by RT (G ) = supz RT (G , z) its supremum over all Z -valued trees of depth T .
+T
+The importance of the introduced notion stems from the following result (Rakhlin et al.,
+
+158
+
+Online Learning via Sequential Complexities
+2014, Theorem 2): for any distribution over a sequence (Z1 , . . . , ZT ), we have
+E g(Zt ) Z t−1 (cid:6) − g(Zt ) ≤ 2 RT (G ) ,
+E sup
+TQ
+g∈G 1
+t=1
+where Z t−1 = (Z1 , . . . , Zt−1 ). In other words, the martingale version of the uniform devi-
+(3)
+T
+sequences in Z T . It then follows that a uniform martingale Law of Large Numbers holds
+ations of means from expectations is controlled by the worst-case sequential Rademacher
+for G if and only if RT (G ) → 0. For i.i.d. random variables, a similar statement can be
+complexity. A matching lower bound also holds for the supremum over distributions on
+made in terms of the classical Rademacher complexity, and so one might hope that many
+other complexity notions from empirical process theory have martingale (or we may say,
+sequential) analogues. Luckily, this is indeed the case (Rakhlin et al., 2014). As we show
+in this paper, these generalizations of the classical notions also give a handle on (as well
+as necessary and suﬃcient conditions for) online learnability, thus painting a picture that
+completely parallels statistical learning theory. But before we present our main results, let
+us recall some key deﬁnitions and results in (Rakhlin et al., 2014).
+In providing further upper bounds on sequential Rademacher complexity, the following
+respect to (cid:96)p norm) of G ⊆ RZ on a tree z of depth T if
+deﬁnitions of an “eﬀective size” of a function class generalize the classical notions of a
+covering number. A set V of R-valued trees of depth T is a (sequential) α-cover (with
+ vt () − g(zt ()) p1~p ≤ α.
+ 1
+∀g ∈ G , ∀ ∈ {±1}T , ∃v ∈ V s.t.
+TQ
+t=1
+The (sequential) covering number of a function class G on a given tree z is deﬁned as
+T
+Np (α, G , z) á min { V   ∶ V is an α-cover w.r.t. (cid:96)p norm of G on z} .
+It is straightforward to check that Np (α, G , z) ≤ Nq (α, G , z) whenever 1 ≤ p ≤ q ≤ ∞.
+Further deﬁne Np (α, G , T ) = supz Np (α, G , z), the maximal (cid:96)p covering number of G over
+depth T trees. For a class G of binary-valued functions, we also deﬁne a so-called 0-cover
+(or, cover at scale 0), denoted by N (0, G , z), as equal to any Np (0, G , z). The deﬁnition of
+a 0-cover can be seen as the correct analogue of the size of a projection of G onto a tuple of
+When G ⊆ [−1, 1]Z is a ﬁnite class of bounded functions, one can show (Rakhlin et al.,
+points in the i.i.d. case. The size of this pro jection in the i.i.d. case was the starting point
+of the work of Vapnik and Chervonenkis.
+RT (G , z) ≤ 
+2 log  G  
+2014, Lemma 1) that
+T
+a bound that should (correctly) remind the reader of the Exponential Weights regret bound.
+any G ⊆ [−1, 1]Z , for any α > 0,
+With the deﬁnition of an α-cover with respect to (cid:96)1 norm, one can easily extend (4) beyond
+RT (G , z) ≤ α + 
+the ﬁnite case. Immediately from the deﬁnition of (cid:96)1 covering number, it follows that for
+2 log N1 (α, G , z)
+T
+159
+
+(5)
+
+,
+
+(4)
+
+Rakhlin, Sridharan and Tewari
+
+entropy integral bound. For p ≥ 1, the integrated complexity of a function class G ⊆ [−1, 1]Z
+(Rakhlin et al., 2014, Eq. 9). A tighter control is obtained by integrating the covering
+on a Z -valued tree of depth T is deﬁned as
+numbers at diﬀerent scales. To this end, consider the following analogue of the Dudley
+
+4α + 12√
+T (G , z) á inf
+log Np (δ, G , z) dδ
+T S 1
+α≥0
+Dp
+T (G , z), with D2
+T (G , z) denoted simply by DT (G , z). We have previously
+T (G ) = supz Dp
+(6)
+α
+shown (Rakhlin et al., 2014, Theorem 3) that, for any function class G ⊆ [−1, 1]Z and any
+Z -valued tree z of depth T ,
+and Dp
+RT (G , z) ≤ DT (G , z).
+We next turn to the description of sequential combinatorial parameters. A Z -valued
+(7)
+tree z of depth d is shattered by a function class G ⊆ {±1}Z if for all  ∈ {±1}d , there exists
+g ∈ G such that g(zt ()) = t for all t ∈ [d]. The Littlestone dimension Ldim(G , Z ) is the
+largest positive integer d such that G shatters a Z -valued tree of depth d (Littlestone, 1988;
+follows. A Z -valued tree z of depth d is α-shattered by a function class G ⊆ RZ if there
+Ben-David et al., 2009). The scale-sensitive version of Littlestone dimension is deﬁned as
+∀ ∈ {±1}d , ∃g ∈ G s.t. ∀t ∈ [d], t (g(zt ()) − st ()) ≥ α~2.
+exists an R-valued tree s of depth d such that
+fatα (G , Z ) at scale α is the largest d such that G α-shatters a Z -valued tree of depth d.
+The tree s will be called a witness to shattering. The (sequential) fat-shattering dimension
+The notions introduced above can be viewed as sequential generalizations of the VC
+dimension and the fat-shattering dimension where tuples of points get replaced by complete
+binary trees. In fact, one recovers the classical notions if the tree z in the above deﬁnitions is
+restricted to have the same values within a level (hence, no temporal dependence). Crucially,
+First, let G ⊆ {0, . . . , k}Z be a class of functions with fat2 (G ) = d. Then, it can be shown
+the sequential combinatorial analogues provide control for the growth of sequential covering
+(Rakhlin et al., 2014, Theorem 4) that for any T ≥ 1,
+numbers, justifying the deﬁnitions.
+T
+N∞ (1~2, G , T ) ≤ dQ
+i k i ≤ (ekT )d .
+i=0
+For the second result (Rakhlin et al., 2014, Corollary 1), suppose G is a class of [−1, 1]-valued
+functions on Z . Then, for any α > 0, and any T ≥ 1,
+α fatα (G )
+N∞ (α, G , T ) ≤  2eT
+(8)
+.
+parameter (Rakhlin et al., 2014, Theorem 5). For a class G ⊆ {0, . . . , k}Z with fat1 (G ) = d,
+Finally, we recall a bound on the size of the 0-cover in terms of the fat1 combinatorial
+T
+N (0, G , T ) ≤ dQ
+i k i ≤ (ekT )d .
+we have
+i=0
+160
+
+(9)
+
+Online Learning via Sequential Complexities
+In particular, for k = 1 (that is, binary classiﬁcation) we have fat1 (G ) = Ldim(G ). The
+inequality (9) is therefore a sequential analogue of the celebrated Vapnik-Chervonenkis-
+Sauer-Shelah lemma.
+
+4. Structural Properties
+properties that RT (G ) satisﬁes. These properties allow one to establish online learnability
+For the examples developed in this paper, it will be crucial to exploit a number of useful
+for complex function classes even if no explicit learning algorithms are available.
+Lemma 3 Let F , G ⊆ RZ and let conv(G ) denote the convex hul l of G . Let z be any Z -
+We ﬁrst state some properties that are easily proved but are nevertheless very useful.
+1. If F ⊆ G , then RT (F , z) ≤ RT (G , z).
+valued tree of depth T . Then the fol lowing properties hold.
+2. RT (conv(G ), z) = RT (G , z)
+3. RT (cG , z) =  c RT (G , z) for al l c ∈ R.
+4. For any h ∶ Z → R, RT (G + h, z) = RT (G , z) where G + h = {g + h ∶ g ∈ G }.
+These properties match those of the classical Rademacher complexity (Bartlett and Mendel-
+son, 2003) and can be proved in essentially the same way (we therefore skip the straight-
+forward proofs).
+The next property is a key tool for many of the applications: it allows us to bound the
+sequential Rademacher complexity for the Cartesian product of function classes composed
+Lemma 4 Let G = G1 × . . . × Gk where each Gj ⊆ [−1, 1]Z . Further, let φ ∶ Rk × Z → R be
+with a Lipschitz mapping in terms of complexities of the individual classes.
+such that φ(⋅, z) is L-Lipschitz with respect to  ⋅ ∞ for al l z ∈ Z , and let
+φ ○ G = {z  φ((g1 (z), . . . , gk (z)), z) ∶ gj ∈ Gj } .
+√
+RT (φ ○ G ) ≤ 8 L 1 + 4
+2 log3~2 (eT 2 ) ∑k
+j=1 RT (Gj )
+Then we have
+as long as RT (Gj ) ≥ 1~T for each j .
+Let us explicitly state the more familiar contraction property, an immediate corollary
+Corollary 5 Fix a class G ⊆ [−1, 1]Z with RT (G ) ≥ 1~T and a function φ ∶ R × Z → R.
+of the above result.
+Assume φ(⋅, z) is L-Lipschitz for al l z ∈ Z . Then
+√
+2 log3~2 (eT 2 ) ⋅ RT (G ),
+RT (φ ○ G ) ≤ 8 L 1 + 4
+where φ ○ G = {z  φ(g(z), z) ∶ g ∈ G }.
+We state another useful corollary of Lemma 4.
+
+161
+
+Rakhlin, Sridharan and Tewari
+Corollary 6 For a ﬁxed binary function b ∶ {±1}k → {±1} and classes G1 , . . . , Gk of {±1}-
+RT (b(G1 , . . . , Gk )) ≤ O log3~2 (T ) ∑k
+j=1 RT (Gj ).
+valued functions,
+Note that, in the classical case, the Lipschitz contraction property holds without any
+extra poly-logarithmic factors in T (Ledoux and Talagrand, 1991). It is an open question
+whether the poly-logarithmic factors can be removed in the results above.
+It is worth
+pointing out ahead of time that Theorem 8 below—in the setting of supervised learning with
+convex Lipschitz loss—does allow us to avoid the extraneous factor that would otherwise
+appear from a combination of Theorem 7 and Corollary 5.
+
+5. Main Results
+
+We now relate the value of the game to the worst case expected value of the supremum
+of an empirical process. However, unlike empirical processes that involve i.i.d. sums, our
+process involves a sum of martingale diﬀerences. In view of (3), the expected supremum
+can be further upper-bounded by the sequential Rademacher complexity.
+E[g(Zt ) Z1 , . . . , Zt−1 ] − g(Zt ) ≤ 2 RT ((cid:96)(F )),
+g∈(cid:96)(F )  1
+T VT (F ) ≤ sup
+TQ
+Theorem 7 The minimax value is bounded as
+t=1
+1
+E sup
+where (cid:96)(F ) = {(cid:96)(f , ⋅) ∶ f ∈ F } and the supremum is taken over al l distributions P over
+P
+T
+(Z1 , . . . , ZT ).
+We can now employ the tools developed earlier in the paper to upper bound the value of
+the game. Interestingly, any non-trivial upper bound guarantees existence of a prediction
+strategy that has sublinear regret irrespective of the sequence of the moves of the adversary.
+This complexity-based approach of establishing learnability should be contrasted with the
+purely algorithm-based approaches found in the literature.
+5.1 Supervised Learning
+In this improper learning scenario, the learner at time t picks a function ft ∶ X → R and the
+adversary provides the input target pair zt = (xt , yt ) ∈ X × Y where Y ⊂ R. In particular,
+In this subsection we study the supervised learning problem mentioned earlier in the paper.
+the binary classiﬁcation problem corresponds to the case Y = {±1}. Let F ⊆ Y X and let us
+ﬁx the absolute value loss function (cid:96)( ˆy , y) =   ˆy − y  . While we focus on the absolute loss, it
+is easy to see that all the results hold (with modiﬁed rates) for any loss (cid:96)( ˆy , y) such that
+for all ˆy and y , φ((cid:96)( ˆy , y)) ≤   ˆy − y   ≤ Φ((cid:96)( ˆy , y)) where Φ and φ are monotonically increasing
+functions. For instance, the squared loss ( ˆy − y)2 is a classic example.
+We now observe that the value of the improper supervised learning game can be equiv-
+(cid:96)(f (xt ), yt ) ,
+(cid:96)( ˆyt , yt ) − inf
+ TQ
+T (F ) = sup
+V S
+ sup
+alently written as
+f ∈F TQ
+t=1
+t=1
+q1 ∈ ˜Q sup
+inf
+y1
+x1
+xT
+
+qT ∈ ˜Q sup
+inf
+yT
+
+ˆy1 ∼q1
+E
+
+ˆyT ∼qT
+E
+
+162
+
+(10)
+
+(11)
+
+Online Learning via Sequential Complexities
+where ˜Q denotes the set of probability distributions over Y and ˆyt has distribution qt . This
+equivalence is easy to verify: we may view the choice ft ∶ X → Y as pre-specifying predictions
+ft (x) for all the possible x ∈ X , while alternatively we can simply make the choice ˆyt ∈ Y
+having observed the particular move xt ∈ X . The advantage of rewriting the game in the
+shown for the set of distributions on the original space of functions of the type X → Y .
+form (10) is that the minimax theorem only needs to be applied to the pair ˆyt and yt , given
+the ﬁxed choice xt . The minimax theorem then holds even if weak compactness cannot be
+An examination of the proof of Theorem 7 reveals that the value (10) is upper bounded
+in exactly the same way, and the side information simply appears as an additional tree x
+in sequential Rademacher complexity, giving us:
+t (cid:96)(f (xt ()), yt ()) .
+E sup
+T (F ) ≤ 2 sup
+T V S
+TQ
+f ∈F 1
+t=1
+1
+T
+x,y
+However, for the supervised learning setting, we can strengthen Theorem 7. The following
+theorem allows us to remove any convex Lipschitz loss (including the absolute loss) before
+Theorem 8 Let Y = [−1, 1] and suppose, for any y ∈ Y , (cid:96)(⋅, y) is convex and L-Lipschitz.
+passing to the sequential Rademacher complexity.
+T (F ) ≤ 2 L RT (F ).
+T V S
+Then the minimax value of a supervised learning problem is upper bounded as
+1
+We remark that the contraction property for sequential Rademacher complexity, stated in
+Section 4, yields an extraneous logarithmic factor when applied to (11); here, we achieve
+the desired bound by removing the Lipschitz function directly during the symmetrization
+step.
+Proposition 9 Consider the supervised learning problem with a function class F ⊆ [−1, 1]X
+Armed with the theorem, we now prove the following result.
+and absolute loss (cid:96)( ˆy , y) =   ˆy − y  . Then, for any T ≥ 1, we have
+
+ ≤ RT (F ) ≤ 1
+α
+min {fatα , T }
+√
+T (F ) ≤ 2RT (F ) ≤ 2DT (F )
+T V S
+
+1
+4α + 12√
+ ,
+sup
+≤ 2 inf
+β  dβ
+fatβ log  2eT
+T
+4
+2
+T S 1
+α
+where fatα = fatα (F ).
+α
+α
+The proposition above implies that ﬁniteness of the fat-shattering dimension at all scales
+is necessary and suﬃcient for online learnability of the supervised learning problem. Fur-
+ther, all the complexity notions introduced so far are within a poly-logarithmic factor from
+each other whenever the problem is learnable. These results are summarized in the next
+Theorem 10 For any function class F ⊆ [−1, 1]X , the fol lowing statements are equivalent
+theorem:
+163
+
+(12)
+
+Rakhlin, Sridharan and Tewari
+1. Function class F is online learnable in the supervised setting with absolute loss.
+2. Sequential Rademacher complexity satisﬁes limT →∞ RT (F ) = 0.
+3. For any α > 0, the scale-sensitive dimension fatα (F ) is ﬁnite.
+T (F ), the sequential Rademacher complexity RT (F ), and the integrated complexity DT (F )
+V S
+are within a multiplicative factor of O(log3~2 T ) of each other.
+Moreover, if the function class is online learnable, then the value of the supervised game
+Remark 11 Additional ly, the three statements of Theorem 10 are equivalent to F satisfy-
+ing a martingale version of the uniform Law of Large Numbers. This property is termed
+Sequential Uniform Convergence by Rakhlin et al. (2014), and we refer to their paper for
+For binary classiﬁcation, we write V Binary
+for V S
+more details.
+T . This case has been investigated
+T
+thoroughly by Ben-David et al. (2009) and indeed served as a key motivation for this paper.
+setting is simply the 0-1 loss (cid:96)( ˆy , y) = 1 { ˆy ≠ y}, where 1 {U } is 1 if U is true and 0 otherwise.
+As a consequence of Proposition 9 and (9), we have a tight control on the value of the game
+for the binary classiﬁcation problem. Note that the absolute loss in the binary classiﬁcation
+Corollary 12 For the binary classiﬁcation problem with function class F and the 0-1 loss,
+
+
+T Ldim(F ) log T
+(F ) ≤ K2
+T min {Ldim(F ), T } ≤ V Binary
+we have
+for some universal constants K1 , K2 > 0.
+K1
+T
+Both the upper and the lower bound in the above result were originally derived in Ben-
+David et al. (2009). Notably, we achieved the same bounds non-constructively through
+purely combinatorial and covering number arguments.
+It is natural to ask whether being able to learn in the online model is diﬀerent from
+learning in the i.i.d. model (in the distribution-free supervised setting). The standard
+example that exhibits a gap between the two frameworks (e.g., Littlestone, 1988; Ben-David
+F = {fθ (x) = 1 {x ≤ θ} ∶ θ ∈ [0, 1]}
+et al., 2009) is binary classiﬁcation using the class of step functions
+on [0, 1]. This class has VC dimension 1, but is not learnable in the online setting. Indeed,
+related class of “ramp” functions with slope L > 0
+it is possible to verify that the Littlestone dimension is inﬁnite. Interestingly, the closely-
+FL = fθ (x) = 1 {x ≤ θ} + (1 − L(x − θ))1 {θ < x ≤ θ + 1~L} ∶ θ ∈ [0, 1]
+is learnable (say for supervised learning using absolute loss) in the online setting (and hence
+also in the i.i.d. case). Furthermore, the larger class of all bounded L-Lipschitz functions
+on a bounded interval is also online learnable (see Eq. 14 and proof of Proposition 18).
+Once again, we are able to make these statements from purely complexity-based considera-
+tions, without exhibiting an algorithm. Further examples where we can demonstrate online
+learnability are explored in Section 6.
+
+164
+
+Online Learning via Sequential Complexities
+
+5.2 Online Convex Optimization
+
+Over the past decade, Online Convex Optimization (OCO) has emerged as a uniﬁed on-
+line learning framework (Zinkevich, 2003; Shalev-Shwartz, 2011). Various methods, such
+as Exponential Weights, can be viewed as instances of online mirror descent, solving the
+associated OCO problem. Much research eﬀort has been devoted to understanding this
+abstract and simpliﬁed setting. It is tempting to say that any problem of online learning,
+as deﬁned in the Introduction, can be viewed as OCO (in fact, online linear optimization)
+unnecessary dependence on the number of functions in the class F . Nevertheless, OCO
+over the set of probability distributions; however, one should also recognize that by lineariz-
+ing the problem, any interesting structure is lost and one instead suﬀers from the possibly
+is a central part of the recent literature, and we will study this scenario using techniques
+the learner F is a bounded closed convex subset of a Banach space (B ,  ⋅ ) with f  ≤ D
+developed in this paper.
+for all f ∈ F (the reader can think of Rd equipped with an (cid:96)p norm for simplicity). Let  ⋅ 
+The standard setting of online convex optimization is as follows. The set of moves of
+be the dual norm. The adversary’s set Z consists of convex G-Lipschitz (with respect to
+ ⋅  ) functions over F :
+Z = Zcvx = {g ∶ F → R ∶ g convex and G-Lipschitz w.r.t.  ⋅ } .
+Let the loss function be (cid:96)(f , g) = g(f ), the evaluation of the adversarially chosen function
+Z = Zlin = {f  f , z  ∶ z ≤ G}
+at f . For the particular case of online linear optimization, we instead take
+with Z now a subset of the dual space. It is well-known (e.g., Abernethy et al., 2008) that
+Zcvx ) is as hard as the corresponding linear optimization problem with Zlin if one considers
+the online convex optimization problem (without further assumptions on the functions in
+Lemma 13 Suppose F , Zcvx , Zlin be deﬁned as above. Then we have
+deterministic algorithms. The same trivially extends to randomized methods:
+VT (F , Zcvx ) = VT (F , Zlin ) .
+OCO. The reader may wonder why we do not directly try to bound the value VT (F , Zcvx )
+by RT (F , Zcvx ). In fact, this proof strategy cannot give a non-trivial bound if F is a subset
+We will now show how to use the above result to derive minimax regret guarantees for
+of a high-dimensional (or inﬁnite-dimensional) space (Shalev-Shwartz et al., 2009, Sec. 4.1).
+A function Ψ ∶ F → R is (σ, q)-uniformly convex (for q ∈ [2, ∞)) on F with respect to a
+Instead, we use the lemma above to bound the value of the game where adversary plays
+norm  ⋅  if, for all θ ∈ [0, 1] and f1 , f2 ∈ F ,
+convex functions with that of the game where adversary plays linear functions.
+Ψ(θf1 + (1 − θ)f2 ) ≤ θΨ(f1 ) + (1 − θ)Ψ(f2 ) − σ θ (1 − θ)
+f1 − f2 q .
+A (σ, 2)-uniformly convex function will be called σ -strongly convex.
+q
+165
+
+Rakhlin, Sridharan and Tewari
+
+exploited in its proof is that Ψ is (σ, q)-uniformly convex with respect to  ⋅  if and only if
+We will give examples shortly but we ﬁrst state a proposition that is useful to bound
+Ψ is (1~σ, p)-uniformly smooth with respect to  ⋅  where 1~p + 1~q = 1.
+the sequential Rademacher complexity of linear function classes. The crucial duality fact
+Proposition 14 (Rakhlin et al., 2014) Let F be a subset of some Banach space B with
+norm  ⋅  and let Z be a subset of the dual space B equipped with norm  ⋅  . Suppose that
+Ψ ∶ F → R is (σ, q)-uniformly convex with respect to  ⋅  and 0 ≤ Ψ(f ) ≤ Ψmax for al l f ∈ F .
+σ T p−1 1~p
+RT (F ) ≤ Cp Z   Ψp−1
+Then we have
+max
+,
+where Z  = supz∈Z z , p is such that 1~p + 1~q = 1, and Cp = (p~(p − 1)) p−1
+p .
+
+Using the above Proposition in conjunction with Lemma 13 and Theorem 7, we can
+immediately conclude thatVT (F , Zcvx ) ≤ 2 T RT (F ) ≤ 2G
+2 Ψmax T
+for any non-negative function Ψ ∶ F → R that is σ -strongly convex w.r.t.  ⋅ . Note that,
+σ
+typically, Ψmax will depend on D. For example, in the particular case when  ⋅  =  ⋅  =  ⋅ 2 ,
+√
+we can take Ψ(u) = 1
+2 u2
+for the online gradient descent algorithm. In general, for  ⋅  =  ⋅ p and  ⋅  =  ⋅ q , we
+
+can use Ψ(u) = 1
+T ~(p − 1) since Ψ is (p − 1)-strongly convex
+2 u2
+2 and the above bound becomes 2GD
+T and recovers the guarantee
+w.r.t.  ⋅ p . These O(√
+T ) regret rates are not new but we re-derive them to illustrate the
+p to get a bound of 2GD
+usefulness of the tools we developed.
+
+6. Further Examples
+
+Now we present some further applications of the tools we have developed in this paper for
+some speciﬁc learning problems. To begin, we show how to bound the sequential Rade-
+macher complexity of functions computed by neural networks. Then, we derive margin
+based regret bounds in a fairly general setting. The classical analogues of these margin
+bounds have played a big role in the modern theory of supervised learning where they help
+explain the success of linear classiﬁers in high dimensional spaces (e.g., Schapire et al., 1997;
+Koltchinskii and Panchenko, 2002). We then study the complexity of classes formed by de-
+cision trees, analyze the setting of transductive learning, and consider an online version of
+the Isotron problem. Finally, we make a connection to the seminal work of Cesa-Bianchi
+and Lugosi (1999) by re-deriving their bound on the minimax regret in a static experts
+game in terms of the classical Rademacher averages.
+
+6.1 Neural Networks
+
+We provide below a bound on the sequential Rademacher complexity for classic multi-layer
+neural networks thus showing they are learnable in the online setting. The model of neural
+
+166
+
+Online Learning via Sequential Complexities
+
+Consider a k-layer 1-norm neural network, deﬁned by a base function class F1 and,
+networks we consider below and the bounds we provide are analogous to the ones considered
+recursively, for each 2 ≤ i ≤ k ,
+in the i.i.d. setting by Bartlett and Mendelson (2003).
+ ,
+Fi = x  Q
+j σ (fj (x))  ∀j fj ∈ Fi−1 , w i 1 ≤ Bi
+w i
+j
+Proposition 15 Suppose σ ∶ R → [−1, 1] is L-Lipschitz with σ(0) = 0. Then it holds that
+where σ is a Lipschitz transfer function, such as the sigmoid function.
+√
+RT (Fk ) ≤  kM
+16Bi Lk−1 1 + 4
+RT (F1 ).
+2 log3~2 (eT 2 )k
+i=2
+ w1 ≤ B1
+In particular, for the case ofF1 = x  ∑j w1
+and X ⊂ Rd we have the bound
+j xj
+√
+2 log3~2 (eT 2 )k
+RT (Fk ) ≤  kM
+16Bi Lk−1 1 + 4
+i=1
+where X∞ is such that ∀x ∈ X , x∞ ≤ X∞ .
+Our result is a non-constructive guarantee, and, to the best of our knowledge, no algorithms
+for learning neural networks within the online learning model exist. It is not clear if the
+above bounds could be obtained via computationally eﬃcient methods.
+
+2 log d
+T
+
+
+
+X∞
+
+6.2 Margin Based Regret
+
+In the classical statistical setting, margin bounds provide guarantees on the expected zero-
+one loss of a classiﬁer based on the empirical margin zero-one error. These results form the
+basis of the theory of large margin classiﬁers (see Schapire et al., 1997; Koltchinskii and
+Panchenko, 2002). Recently, in the online setting, bounds of a similar ﬂavor have been shown
+for general function classes F based on their sequential Rademacher complexity. We use
+through the concept of margin via the Littlestone dimension (Ben-David et al., 2009). We
+show that our machinery can easily lead to margin bounds for binary classiﬁcation problems
+Proposition 16 For any function class F ⊂ [−1, 1]X , there exists a randomized prediction
+ideas from (Koltchinskii and Panchenko, 2002) to do this.
+strategy given by τ such that for any sequence z1 , . . . , zT where each zt = (xt , yt ) ∈ X × {±1},
+E ˆyt ∼τt (z1∶t−1 ) [1 { ˆytyt < 0}]
+TQ
+t=1
+√
+√
+1 {f (xt )yt < 2γ } + 16
+ inf
+≤ inf
+T 1 + log log  1
+2 log3~2 (eT 2 ) T RT (F ) + 2
+γ 1 + 4
+γ  .
+f ∈F TQ
+γ >0
+t=1
+
+167
+
+Rakhlin, Sridharan and Tewari
+
+by some function f ∈ F . The upper bound guarantees that there exists a strategy (that does
+To interpret the above bound, suppose that the sequence of yt ’s is predicted with a margin 2γ
+complexity of F divided by the margin, up to poly-logarithmic factors. Crucially, the bound
+does not directly depend on the dimensionality of the input space X .
+not need to know the value of γ ) with cumulative loss given by the sequential Rademacher
+6.3 Decision Trees
+of decision trees of depth no more than d. The function class F for this problem is deﬁned
+as follows. Each f ∈ F is deﬁned by choosing a rooted binary tree of depth no more than
+We consider here the binary classiﬁcation problem where the learner competes with a set
+d and associating to each node a binary valued decision function from a set H ⊆ {±1}X . A
+binary value for a given x can be obtained by traversing the tree from the root according
+to the value of the decision function at each node and then reading oﬀ the label of the
+leaf. Importantly, x “reaches” only one leaf of the tree. Alternatively, for any leaf l, the
+1 hl,i (x) = 1
+membership of x is given by the conjunctionM
+i
+To complete the deﬁnition of f , we choose weights wl > 0, ∑l wl = 1, along with the value
+σl ∈ {±1} of the function on each leaf l. The resulting function f can be written as
+where hl,i is either the decision function at node i along the path to the leaf l, or its negation.
+1 hl,i (x) = 1
+f (x) = Q
+wlσl M
+i
+l
+where the sum runs over all the leaves of the tree.
+The following proposition is the online analogue of a result about decision tree learning
+Proposition 17 Denote by F the class of decision trees of depth at most d with decision
+that Bartlett and Mendelson (2003) proved in the i.i.d. setting.
+functions in H. There exists a randomized strategy τ for the learner such that for any
+sequence of instances z1 , . . . , zT , with zt = (xt , yt ) ∈ X × {±1},
+E ˆyt ∼τt (z1∶t−1 ) [1 { ˆyt ≠ yt}] ≤ inf
+1 {f (xt ) ≠ yt}
+TQ
+f ∈F TQ
+t=1
+t=1
+min C (l), d log3 (T ) T R(H) + √
++ O Q
+T log(N ) ,
+where C (l) denotes the number of instances that reach the leaf l and are correctly classiﬁed
+l
+t=1 1 {ytf (xt ) ≤ 0}, with N > 2 being the number of
+in the decision tree f that minimizes ∑T
+leaves in this tree.
+
+It is not clear whether computationally feasible online methods exist for learning decision
+trees, and this represents an interesting avenue of further research.
+
+168
+
+Online Learning via Sequential Complexities
+
+Let F be a class of functions from X to R. Let
+6.4 Transductive Learning
+̂N∞ (α, F ) = min  G  ∶ G ⊆ RX s.t. ∀f ∈ F ∃g ∈ G satisfying f − g∞ ≤ α
+be the (cid:96)∞ covering number at scale α, where the cover is pointwise on all of X . It is easy
+(13)
+∀T , N∞ (α, F , T ) ≤ ̂N∞ (α, F ) .
+to verify that
+Indeed, let G be a minimal cover of F at scale α. We claim that for any X -valued tree of
+(14)
+depth T , the set V = {vg = g ○ x ∶ g ∈ G} of R-valued trees is an (cid:96)∞ cover of F on x. Fix any
+ ∈ {±1}T and f ∈ F , and let g ∈ G be such that f − g∞ ≤ α. Clearly  vg
+t () − f (xt ())  ≤ α
+for any 1 ≤ t ≤ T , concluding the proof.
+of transductive learning, where the set X = {x1 , . . . , xn} is a ﬁnite set. To ensure online
+learnability, it is suﬃcient to consider an assumption on the dependence of ̂N∞ (α, F ) on α.
+This simple observation can be applied in several situations. First, consider the problem
+An obvious example of such a class is a VC-type class with ̂N∞ (α, F ) ≤ (c~α)d for some c
+which can depend on n. Assume that F ⊂ [−1, 1]X . Substituting this bound on the covering
+number into (6) and choosing α = 0, we observe that the value of the supervised game is
+upper bounded by 2DT (F ) ≤ 48 √dT log c by Proposition 9. It is easy to see that if n is
+ﬁxed and the problem is learnable in the batch (i.e., i.i.d.) setting, then the problem is
+n ≤ T and F consists of binary-valued functions. If F is a class with VC dimension d, the
+learnable in the online transductive model.
+Sauer-Shelah lemma ensures that the (cid:96)∞ cover is smaller than (en~d)d ≤ (eT ~d)d . Using
+In the transductive setting considered by Kakade and Kalai (2006), it is assumed that
+
+the previous argument with c = eT , we obtain a bound of 4
+dT log(eT ) for the value of
+the game, matching the bound of Kakade and Kalai (2006) up to a constant factor.
+
+6.5 Isotron
+
+Kalai and Sastry (2009) introduced a method called Isotron for learning Single Index Models
+(SIM). These models generalize linear and logistic regression, generalized linear models, and
+revealed at once as a set {(xt , yt )}T
+t=1 ∈ Rd ×R where yt = u(w, xt ) for some unknown w ∈ Rd
+classiﬁcation by linear threshold functions. For brevity, we only describe the Idealized SIM
+of bounded norm and an unknown non-decreasing u ∶ R → R with a bounded Lipschitz
+problem considered by the authors. In its “batch” version, we assume that the data are
+t=1 (fi (xt ) − yt )2 ,
+T ∑T
+where fi (x) = ui (wi , x) is the iterative approximation found by the algorithm on the ith
+constant. Given this data, the goal is to iteratively ﬁnd the function u and the direction
+w, making as few mistakes as possible. The error is measured as 1
+round. The elegant computationally eﬃcient method presented by Kalai and Sastry (2009)
+is motivated by Perceptron, and a natural open question posed by the authors is whether
+there is an online variant of Isotron. Before even attempting a quest for such an algorithm,
+we can ask a more basic question:
+is the (Idealized) SIM problem even learnable in the
+online framework? After all, most online methods deal with convex functions, but u is only
+assumed to be Lipschitz and non-decreasing. We answer the question easily with the tools
+we have developed.
+
+169
+
+Rakhlin, Sridharan and Tewari
+
+H = f (x, y) = (y − u(w, x))2   u ∶ [−1, 1] → [−1, 1] 1-Lipschitz , w2 ≤ 1
+We are interested in online learnability of
+in the supervised setting, over X = B2 (the unit Euclidean ball in Rd ) and Y = [−1, 1]. In
+(15)
+It is evident that H is a composition with three levels: the squared loss, the Lipschitz non-
+particular, we prove the result for Lipschitz, but not necessarily non-decreasing functions.
+decreasing function, and the linear function. The proof of the following proposition shows
+Proposition 18 The class H deﬁned in (15) is online learnable in the (improper) super-
+that the covering number of the class does not increase much under these compositions.
+O(√
+T log3~2 (T )).
+vised learning setting. Moreover, the minimax regret is
+Once again, it is not clear whether a computationally eﬃcient method attaining the
+above guarantee exists.
+
+6.6 Prediction of Individual Sequences with Static Experts
+
+We also consider the problem of prediction of individual sequences, which has been studied
+both in information theory and in learning theory.
+In particular, in the case of binary
+prediction, Cesa-Bianchi and Lugosi (1999) proved upper bounds on the minimax value in
+terms of the (classical) Rademacher complexity and the (classical) Dudley integral. One of
+we deﬁne static experts as vectors ¯f = (f1 , . . . , fT ) ∈ [0, 1]T , and let F denote a class of
+the assumptions made by Cesa-Bianchi and Lugosi (1999) is that experts are static. That is,
+such experts. Let Y = {0, 1}, putting us in the scenario of binary classiﬁcation with no side
+their prediction only depends on the current round, not on the past information. Formally,
+information. Then regret on a particular sequence y1 , . . . , yT can be written as
+(cid:96)t ( ¯f , yt ),
+(cid:96)t ( ¯ft , yt ) − inf
+¯f ∈F Q
+TQ
+t=1
+t=1
+where ¯ft is the expert chosen by the learning algorithm at time t. Observe that the proof
+of Theorem 7 does not require the loss to be time independent. In the case of absolute loss,
+t  ft − yt ()  .
+sup
+t (cid:96)t ( ¯f , yt ()) = sup
+sup
+the Rademacher complexity appearing on the right hand side in Theorem 7 becomes
+¯f ∈F TQ
+¯f ∈F TQ
+t=1
+t=1
+E
+E
+sup
+where the supremum is over all Y -valued trees of depth T . Noting that for f ∈ [0, 1], y ∈
+y
+y
+{0, 1},  f − y   can be written as (1 − 2y)f + y , the above equals
+ .
+sup
+tyt () = sup
+
+ï + TQ
+ïïsup
+t (1 − 2yt ())ft
+t (1 − 2yt ())ft
+¯f ∈F TQ
+¯f ∈F TQ
+t=1
+t=1
+t=1
+E
+E
+sup
+y
+y
+170
+
+Online Learning via Sequential Complexities
+It can be easily veriﬁed that the joint distribution of {t (1 − 2yt ())}T
+t=1 is still i.i.d. Rade-
+sup
+ ,
+macher and hence the value of the game is upper bounded by
+¯f ∈F TQ
+t=1
+recovering the upper bound of Theorem 3 in (Cesa-Bianchi and Lugosi, 1999). We note that
+for this particular scenario, the factor of 2 (that appears because of symmetrization) is not
+needed. This factor is the price we pay for deducing the result from the general statement
+of Theorem 7.
+
+2E
+
+tft
+
+7. Discussion
+
+The tools provided in this paper allow us to establish existence of regret minimization
+algorithms by working directly with the minimax value. The non-constructive nature of
+our results is due to the application of the minimax theorem: the dual strategy does not
+give a handle on the primal strategy. Furthermore, by passing to upper bounds on the
+dual formulation (2) of the value of the game, we remove the dependence on the dual
+round t can be obtained by appealing to the minimax theorem for rounds t + 1 to T , yet
+strategy altogether. After the original paper (Rakhlin et al., 2010) appeared, the algorithmic
+approach has been developed by Rakhlin et al. (2012) who showed that the prediction for
+keeping the minimax expression for round t as is. The notion of a relaxation (in the spirit of
+approximate dynamic programming) then allowed the authors to develop a general recipe
+for deriving computationally feasible prediction methods. The techniques of the present
+paper form the basis for the algorithmic developments of Rakhlin et al. (2012). We refer
+the reader to (Rakhlin and Sridharan, 2014; Rakhlin et al., 2012) for details.
+
+Acknowledgments
+
+We would like to thank J. Michael Steele and Dean Foster for helpful discussions. We
+gratefully acknowledge the support of NSF under grants CAREER DMS-0954737 and CCF-
+1116928.
+
+Appendix A. A Minimax Theorem
+
+The minimax theorem is one of this paper’s main workhorses. For completeness, we state
+a general version of this theorem — the von Neumann-Fan minimax theorem — due to
+Theorem 19 (Borwein, 2014) Let A and B be Banach spaces. Let A ⊂ A be nonempty,
+Borwein (2014) (see also Borwein and Zhuang, 1986).
+weakly compact, and convex, and let B ⊂ B be nonempty and convex. Let g ∶ A × B → R be
+concave with respect to b ∈ B and convex and lower-semicontinuous with respect to a ∈ A,
+g(a, b).
+g(a, b) = inf
+and weakly continuous in a when restricted to A. Then
+a∈A
+a∈A
+b∈B
+b∈B
+sup
+inf
+sup
+
+(16)
+
+171
+
+Rakhlin, Sridharan and Tewari
+
+pt ∈P E [(cid:96)(ft , zt ) + ξ (zt )] = sup
+qt ∈Q E [(cid:96)(ft , zt ) + ξ (zt )] ,
+In the proof of Theorem 1, the minimax theorem is invoked to assure that
+qt ∈Q sup
+pt ∈P inf
+(17)
+inf
+where ξ (zt ) is a rather complicated function that includes the repeated inﬁma and suprema
+from steps t + 1 to T of regret expression that includes the variable zt (but not ft ). The
+expectation in (17) is with respect to ft ∼ qt and zt ∼ pt . To apply (16), we take g to be
+the bilinear form in qt and pt , with A = Q and B = P . Equipped with the total variation
+distance, Q and P can be seen as subsets of a Banach space of measures on F and Z ,
+In terms of conditions, it is enough to check weak compactness of Q and
+respectively.
+assume continuity of the loss function (lower semi-continuity can be used as well).
+Bogachev 2007, Theorem 8.6.2., and van der Vaart and Wellner 1996). If F itself is compact,
+Weak compactness of the set of probability measures on a complete separable metric
+then the set ∆(F ) of probability measures on F is tight, and hence (under the continuity
+space is equivalent to uniform tightness by the fundamental result of Prohorov (see, e.g.,
+of the loss) the minimax theorem holds. If F is not compact, tightness can be established
+a family ∆(F ) of Borel probability measures on a separable reﬂexive Banach space E is
+uniformly tight (under the weak topology) precisely when there exists a function V ∶ E →
+under the following general condition. According to Example 8.6.5 (ii) in Bogachev (2007),
+[0, ∞) continuous in the norm topology such that
+q∈∆(F ) Ef ∼q V (f ) < ∞.
+limf →∞ V (f ) = ∞ and
+sup
+As an example, if F is a subset of a ball in E , it is enough to take V (f ) = f .
+not need to invoke the minimax theorem on the space of functions F , but rather (see the
+Finally, we remark that in the supervised learning case by considering the improper
+learning scenario we allow xt to be observed before the choice ˆyt is made. Therefore, we do
+proof of Theorem 8) for two real-valued decisions in a bounded interval. This makes the
+application of the minimax theorem straightforward.
+Proof [of Theorem 1] For brevity, denote ψ(z1∶T ) = inf f ∈F ∑T
+t=1 (cid:96)(f , zt ). The ﬁrst step in
+Appendix B. Proofs
+the proof is to appeal to the minimax theorem for every couple of inf and sup:
+VT (F ) = inf
+(cid:96)(ft , zt ) − ψ(z1∶T )
+ TQ
+Ef1 ∼q1
+EfT ∼qT
+t=1
+z1 ∼p1
+zT ∼pT
+sup
+= sup
+ TQ
+(cid:96)(ft , zt ) − ψ(z1∶T )
+p1
+q1
+Ef1 ∼q1
+EfT ∼qT
+t=1
+z1 ∼p1
+zT ∼pT
+. . . sup
+inf
+inf
+(cid:96)(ft , zt ) − ψ(z1∶T ) ,
+EzT ∼pT  TQ
+= sup
+pT
+p1
+q1
+qT
+Ez1 ∼p1 . . . sup
+t=1
+inf
+inf
+where qt and pt range over Q and P , the sets of distributions on F and Z , respectively.
+p1
+pT
+fT
+f1
+From now on, it will be understood that zt has distribution pt . By moving the expectation
+
+. . . inf
+qT
+
+sup
+pT
+
+172
+
+Online Learning via Sequential Complexities
+
+(18)
+
+E
+z1
+
+pT −1
+. . . sup
+
+with respect to zT and then the inﬁmum with respect to fT inside the expression, we arrive
+at
+T −1Q
+ψ(z1∶T )
+(cid:96)(fT , zT ) − E
+(cid:96)(ft , zt ) + inf
+t=1
+E
+E
+E
+zT −1
+pT −1
+fT −1
+sup
+inf
+. . . sup
+sup
+inf
+T −1Q
+(cid:96)(fT , zT ) − ψ(z1∶T ) .
+(cid:96)(ft , zt ) + inf
+= sup
+zT
+zT
+pT
+p1
+z1
+fT
+f1
+t=1
+E
+E
+E
+E
+zT −1
+pT −1
+fT −1
+sup
+inf
+. . . sup
+inf
+Let us now repeat the procedure for step T − 1. The above expression is equal to
+zT
+zT
+pT
+z1
+p1
+fT
+f1
+T −1Q
+(cid:96)(fT , zT ) − ψ(z1∶T )
+inf
+(cid:96)(ft , zt ) + sup
+t=1
+E
+E
+E
+E
+pT −1
+zT −1
+fT −1
+inf
+. . . sup
+inf
+sup
+pT
+p1
+z1
+zT
+zT
+f1
+fT
+which, in turn, is equal to
+T −2Q
+(cid:96)(fT −1 , zT −1 )
+(cid:96)(ft , zt ) +  inf
+t=1
+E
+zT −1
+fT −1
+sup
+inf
+(cid:96)(fT , zT ) − ψ(z1∶T )
+inf
++ E
+p1
+f1
+E
+E
+zT −1
+sup
+T −2Q
+= sup
+(cid:96)(ft , zt ) +  inf
+(cid:96)(fT −1 , zT −1 )
+pT
+zT
+zT
+fT
+t=1
+E
+E
+E
+E
+pT −1
+zT −1
+zT −1
+fT −1
+inf
+. . . sup
+sup
++ inf
+(cid:96)(fT , zT ) − ψ(z1∶T ) .
+p1
+z1
+pT
+zT
+f1
+E
+Continuing in this fashion for T − 2 and all the way down to t = 1 proves the theorem.
+zT
+fT
+Proof [of Lemma 4] Without loss of generality assume that the Lipschitz constant L = 1,
+as the general case follows by scaling φ. Fix a Z -valued tree z of depth T . We ﬁrst claim
+log N2 (β , φ ○ G , z) ≤ kQ
+log N∞ (β , Gj , z) .
+that
+j=1
+Suppose V1 , . . . , Vk are minimal β -covers with respect to (cid:96)∞ for G1 , . . . , Gk on the tree z.
+V φ = {vφ ∶ v ∈ V1 × . . . × Vk },
+Consider the set
+t () = φ(vt (), zt ()). Then, for any g = (g1 , . . . , gk ) ∈ G
+and any  ∈ {±1}T , with representatives (v1 , . . . , vk ) ∈ V1 × . . . × Vk , we have,
+where vφ is the tree such that vφ
+¿``(cid:192) 1
+t ()
+t ()2 ≤ max
+t∈[T ] φ(g(zt ()), zt ()) − vφ
+φ(g(zt ()), zt ()) − vφ
+TQ
+t=1
+t∈[T ]  gj (zt ())) − vj
+t∈[T ]  φ(g(zt ()), zt ()) − φ(vt (), zt ())  ≤ max
+= max
+t ()  ≤ β .
+T
+j ∈[k] max
+173
+
+Rakhlin, Sridharan and Tewari
+Thus we see that V φ is an β -cover with respect to (cid:96)∞ for φ ○ G on z. Hence
+log N2 (β , φ ○ G , z) ≤ log( V φ  ) = kQ
+log( Vj  ) = kQ
+log N∞ (β , Gj , z).
+j=1
+j=1
+(19)
+For any g ∈ G and z ∈ Z , the value φ(g(z), z) is contained in the interval [−1 + φ(0, z), +1 +
+φ(0, z)] by the Lipschitz property. Consider the R-valued tree φ(0, ⋅) ○ z. We now center
+{φ(g(⋅), ⋅) ○ z − φ(0, ⋅) ○ z ∶ g ∈ G }.
+by this tree and consider the set of trees
+invoke (7) since the function values are now in [−1, 1]:
+¿```(cid:192) kQ
+The centering does not change the size of the cover calculated in (19), but allows us to
+4α + 12√
+
+log N∞ (β , Gj , z) dβ
+RT (φ ○ G , z) ≤ inf
+T S 1
+j=1
+4α + 12√
+ .
+
+≤ inf
+log N∞ (β , Gj , z) dβ
+α
+kQ
+α
+S 1
+j=1
+(20)
+We substitute the upper bound on covering numbers in (8) for each Gj and arrive at an
+T
+α
+α
+4α + 12√
+ .
+
+upper bound of
+fatβ (Gj ) log(2eT ~β )dβ
+kQ
+S 1
+j=1
+inf
+Lemma 2 of Rakhlin et al. (2014) implies that for any β > 2RT (Gj ),
+T
+α
+α
+fatβ (Gj ) ≤ 32T RT (Gj )2
+RT (Gj ). Substituting this together with the value of α = 2RT (Gj ∗ ) into
+Let j ∗ = argmax
+.
+β 2
+j
+
+√
+(21) yields an upper bound
+8 RT (Gj ∗ ) + 48
+log(2eT ~β )dβ .
+RT (Gj ) S 1
+kQ
+2RT (Gj∗ ) 1
+j=1
+2
+Using the fact that for any b > 1 and α ∈ (0, 1)
+β
+
+
+≤ 2
+log3~2 (x)b~α
+log3~2 (b~α)
+log xdx = 2
+log(b~β )dβ = S b~α
+S 1
+1
+1
+β
+x
+3
+3
+b
+α
+b
+√
+we obtain a further upper bound of
+RT (Gj ∗ )  .
+8 RT (Gj ∗ ) + 32
+RT (Gj ) log3~2 
+kQ
+j=1
+eT
+
+(21)
+
+(22)
+
+2
+
+174
+
+Online Learning via Sequential Complexities
+Replacing the ﬁrst term by 8 ∑j RT (Gj ), we conclude that
+√
+RT (φ ○ G , z) ≤ 8 1 + 4
+2 log3~2 (eT 2 ) kQ
+RT (Gj )
+j=1
+as long as RT (Gj ) ≥ 1~T for each j . The statement is concluded by observing that z was
+chosen arbitrarily.
+Proof [of Corollary 6] We ﬁrst extend the binary function b to a function ¯b to any x ∈ Rk
+if x − a∞ < 1 for some a ∈ {±1}k
+¯b(x) =  (1 − x − a∞ )b(a)
+as follows :
+0
+otherwise
+First note that ¯b is well-deﬁned since all points in the k-cube are separated by L∞ distance
+2. Further note that ¯b is 1-Lipschitz w.r.t. the L∞ norm and so applying Lemma 4 we
+conclude the statement of the corollary.
+Proof [of Theorem 7] Let Et−1 [⋅] = E[⋅ Z1 , . . . , Zt−1 ] denote the conditional expectation.
+Using Theorem 1 we have,
+VT (F ) = sup
+(cid:96)(f , Zt )
+ft ∈F Et−1 (cid:96)(ft , ⋅) − inf
+ TQ
+f ∈F TQ
+Z1 ∼p1
+ZT ∼pT
+t=1
+t=1
+E
+E
+inf
+= sup
+sup
+f ∈F  TQ
+ft ∈F Et−1 (cid:96)(ft , ⋅) − TQ
+(cid:96)(f , Zt )
+p1
+Z1 ∼p1
+ZT ∼pT
+t=1
+t=1
+E
+E
+inf
+≤ sup
+f ∈F  TQ
+sup
+(cid:96)(f , Zt ) .
+Et−1 (cid:96)(f , ⋅) − TQ
+p1
+Z1 ∼p1
+ZT ∼pT
+t=1
+t=1
+E
+E
+. . . sup
+(23)
+p1
+pT
+also holds if the choice ft of the learner comes from a larger set G , as long as F ⊆ G . The
+The upper bound is obtained by replacing each inﬁmum by a particular choice f . This step
+proof is concluded by appealing to (3).
+Let ˜Q denote the set of distributions on Y = [−1, 1]. By convexity,
+Proof [of Theorem 8]
+(cid:96)′ ( ˆyt , yt ) ( ˆyt − f (xt )) ,
+(cid:96)(f (xt ), yt ) ≤ sup
+(cid:96)( ˆyt , yt ) − inf
+f ∈F TQ
+f ∈F TQ
+TQ
+t=1
+t=1
+t=1
+where (cid:96)′ ( ˆyt , yt ) is a subgradient of the function y  (cid:96)(⋅, yt ) at ˆyt . Then the minimax value
+(10) can be upper bounded as
+(cid:96)′ ( ˆyt , yt ) ( ˆyt − f (xt )) .
+E ˆyT ∼qT sup
+T (F ) ≤ sup
+V S
+f ∈F TQ
+ˆy1 ∼q1
+t=1
+q1 ∈ ˜Q
+E
+inf
+x1
+
+qT ∈ ˜Q
+inf
+
+. . . sup
+xT
+
+. . . sup
+pT
+
+. . . sup
+pT
+
+sup
+y1
+
+sup
+yT
+
+175
+
+(24)
+
+sup
+yT
+
+Rakhlin, Sridharan and Tewari
+By the Lipschitz property of (cid:96), we can replace each subgradient (cid:96)′ ( ˆyt , yt ) with a number
+st ∈ [−L, L] to obtain the upper bound
+sT ∈[−L,L] sup
+st ( ˆyt − f (xt )) .
+f ∈F TQ
+ˆyT ∼qT
+ˆy1 ∼q1
+s1 ∈[−L,L] . . . sup
+t=1
+qT ∈ ˜Q
+q1 ∈ ˜Q
+E
+E
+sup
+inf
+sup
+sup
+inf
+sup
+x1
+y1
+xT
+st ( ˆyt − f (xt ))
+sT ∈[−L,L] sup
+Since yt ’s no longer appear in the optimization ob jective, we can simply write the above as
+f ∈F TQ
+ˆyT ∼qT
+ˆy1 ∼q1
+s1 ∈[−L,L] . . . sup
+t=1
+qT ∈ ˜Q
+q1 ∈ ˜Q
+E
+E
+sup
+inf
+sup
+inf
+sup
+st ( ˆyt − f (xt )) ,
+sT ∈[−L,L] sup
+= sup
+f ∈F TQ
+x1
+xT
+ˆyT ∈[−1,1]
+s1 ∈[−L,L] . . . sup
+ˆy1 ∈[−1,1]
+t=1
+sup
+inf
+sup
+inf
+x1
+xT
+where the equality follows because inﬁma are obtained at point distributions. By the same
+stf (xt ) .
+st ⋅ ˆyt − inf
+EsT ∼pT  TQ
+reasoning, we now pass to distributions over st ’s:
+f ∈F TQ
+s1 ∼p1
+ˆy1 ∈[−1,1] sup
+ˆyT ∈[−1,1] sup
+t=1
+t=1
+E
+. . . sup
+inf
+sup
+inf
+xT
+x1
+p1
+pT
+supported on [−L, L], for any t, and st has distribution pt . Now note that
+From now on, it will be understood that the supremum over pt ranges over all distributions
+st ⋅ f (xt )
+st ⋅ ˆyt − inf
+EsT  TQ
+f ∈F TQ
+t=1
+t=1
+stf (xt ) = sup
+st ⋅ ˆyt − inf
+EsT  TQ
+ˆyT ∈[−1,1] EsT  TQ
+stf (xt )
+st ⋅ ˆyt − inf
+is concave (linear) in pT and is convex in ˆyT and hence by the minimax theorem,
+f ∈F TQ
+f ∈F TQ
+ˆyT ∈[−1,1] sup
+t=1
+t=1
+t=1
+t=1
+
+stf (xt ) ,
+inf
+inf
+= T −1Q
+st ⋅ ˆyt + sup
+ˆyT ∈[−1,1] EsT [sT ] ⋅ ˆyT − inf
+f ∈F TQ
+pT
+pT
+t=1
+t=1
+EsT
+inf
+pT
+
+T −1Q
+stf (xt )
+
+where the last step is similar to the one in the proof of Theorem 1, speciﬁcally (18). Similarly
+ˆyT ∈[−1,1] EsT [sT ] ⋅ ˆyT − inf
+st ⋅ ˆyt + sup
+f ∈F TQ
+note that the term
+EsT −1
+t=1
+t=1
+EsT
+inf
+pT ,xT
+is concave (linear) in pT −1 and is convex in ˆyT −1 and hence again by the minimax theorem,
+
+ T −1Q
+stf (xt )
+
+ˆyT ∈[−1,1] EsT [sT ] ⋅ ˆyT − inf
+st ⋅ ˆyt + sup
+f ∈F TQ
+ˆyT −1 ∈[−1,1] sup
+t=1
+t=1
+
+ T −1Q
+E
+E
+pT −1
+sT −1
+stf (xt )
+
+inf
+inf
+ˆyT ∈[−1,1] EsT [sT ] ⋅ ˆyT − inf
+st ⋅ ˆyt + sup
+= sup
+f ∈F TQ
+pT ,xT
+sT
+ˆyT −1 ∈[−1,1] E
+t=1
+t=1
+EsT
+stf (xt ) .
+ TQ
+pT −1
+sT −1
+inf
+inf
+= T −2Q
+ˆyt ∈[−1,1] Est [st ] ⋅ ˆyt − inf
+st ⋅ ˆyt + sup
+f ∈F TQ
+pT ,xT
+t=1
+t=1
+t=T −1
+EsT
+E
+sT −1
+pT −1
+inf
+sup
+pT ,xT
+176
+
+Online Learning via Sequential Complexities
+
+sup
+pT
+
+Proceeding in similar fashion and using this in (24) we conclude that,
+EsT ∼pT  TQ
+st ⋅ ˆyt − inf
+stf (xt )
+V S
+T (F ) ≤ sup
+f ∈F TQ
+s1 ∼p1
+ˆy1 ∈[−1,1] sup
+ˆyT ∈[−1,1] sup
+t=1
+t=1
+ TQ
+stf (xt )
+E
+inf
+. . . sup
+inf
+ˆyt ∈[−1,1] Est ∼pt [st ] ⋅ ˆyt − inf
+= sup
+f ∈F TQ
+pT
+x1
+xT
+p1
+sT ∼pT
+s1 ∼p1
+t=1
+t=1
+E
+E
+inf
+sup
+. . . sup
+sup
+EsT ∼pT sup
+(Est ∼pt [st ] − st ) f (xt ) ,
+≤ sup
+f ∈F TQ
+pT
+x1
+p1
+xT
+s1 ∼p1
+t=1
+E
+sup
+. . . sup
+sup
+where we replaced each ˆyt with a potentially suboptimal choice f (xt ). Passing the expec-
+pT
+x1
+p1
+xT
+tation past the suprema we obtain an upper bound
+s′
+t − st f (xt )
+T ∼pT sup
+f ∈F TQ
+EsT ,s′
+1 ∼p1
+t=1
+s1 ,s′
+E
+sup
+. . . sup
+sup
+t s′
+t − st f (xt )
+= sup
+ET sup
+f ∈F TQ
+x1
+p1
+xT
+1 ∼p1
+T ∼pT
+t=1
+s1 ,s′
+sT ,s′
+E
+E
+E
+. . . sup
+sup
+sup
+≤ sup
+tstf (xt )
+sT ∈[−2L,2L] ET sup
+f ∈F TQ
+xT
+p1
+1
+x1
+pT
+s1 ∈[−2L,2L] E
+t=1
+sup
+. . . sup
+sup
+= sup
+tstf (xt )
+sT ∈{−2L,2L} ET sup
+f ∈F TQ
+1
+x1
+xT
+s1 ∈{−2L,2L} E
+t=1
+. . . sup
+sup
+sup
+= 2L sup
+sT ∈{−1,1} ET sup
+tstf (xt ) ,
+f ∈F TQ
+x1
+1
+xT
+s1 ∈{−1,1} E
+t=1
+sup
+. . . sup
+sup
+(27)
+where the last inequality is because, for every t ∈ [T ], we have convexity in st and so
+xT
+x1
+1
+supremum is achieved at either −2L or 2L. Notice that after using convexity to go to
+ψ ∶ {±1}  R, we have that
+gradients, the proof technique above basically mimics the proofs of Theorems 1 and 7 to get
+to a symmetrized term as we did in those theorems. Now consider any arbitrary function
+2 (ψ(+s) + ψ(−s)) = 1
+2 (ψ(+1) + ψ(−1)) = E [ψ()] .
+s∈{±1} E [ψ(s ⋅ )] = sup
+s∈{±1} 1
+sup
+Since in (27), for each t, st and t appear together as t ⋅ st using the above equation
+repeatedly, we conclude that
+sT ∈{−1,1} ET sup
+tstf (xt )
+T (F ) ≤ 2L sup
+V S
+f ∈F TQ
+s1 ∈{−1,1} E1 . . . sup
+t=1
+sup
+sup
+tf (xt ) .
+ET sup
+= 2L sup
+f ∈F TQ
+xT
+x1
+t=1
+E1 . . . sup
+(28)
+We now claim that the above supremum can be written in terms of an X -valued tree. Brieﬂy,
+x1
+xT
+the solution for x1 in (28) is attained (for simplicity, assume the supremum is attained) at
+
+(25)
+
+(26)
+
+177
+
+Rakhlin, Sridharan and Tewari
+2 can be calculated for 1 = 1 and 1 = −1. Arguing
+1 . The optimal value x∗
+an optimal value x∗
+in this manner leads to a tree x. We conclude
+tf (xt ()) = 2 L T RT (F ).
+E1∶T sup
+T (F ) ≤ 2L sup
+V S
+f ∈F TQ
+t=1
+x
+
+Proof [of Proposition 9] For the upper bound, we start by using Theorem 8 for absolute
+loss, which has a Lipschitz constant of 1, to bound the value of the game by sequential
+T V S
+T (F ) ≤ 2 RT (F ) .
+Rademacher complexity,
+1
+joint distribution on sequences (x1 , y1 ), . . . , (xt , yt ) in (2):
+We combine the above inequality with (7) and (8) to obtain the upper bound.
+Observe that a lower bound on the value can be obtained by choosing any particular
+T (F ) ≥ E  TQ
+V S
+ yt − f (xt )  .
+ft ∈F E(xt ,yt )  yt − ft (xt )   (x, y)1∶t−1  − inf
+f ∈F TQ
+t=1
+t=1
+inf
+To this end, choose any X -valued tree x of depth T . Let y1 , . . . , yT be i.i.d. Rademacher
+random variables and deﬁne xt = x(y1∶t−1 ) deterministically (that is, the conditional dis-
+tribution of xt is a point distribution on x(y1∶t−1 )). It is easy to see that this distribution
+makes the choice ft irrelevant, yielding
+T (F ) ≥ E  TQ
+V S
+ yt − f (xt )  = Ey1 ,...,yT sup
+1 − inf
+ytf (xt ).
+f ∈F TQ
+f ∈F TQ
+t=1
+t=1
+t=1
+T (F ) ≥ RT (F ). The
+Since this holds for any tree x, we obtain the desired lower bound V S
+ﬁnal lower bound on RT (F ) (in terms of the fat-shattering dimensions) is proved by Rakhlin
+et al. (2014, Lemma 2).
+First, suppose that fatα is inﬁnite for some α > 0. Then, the lower bound says that V S
+T (F ) ≥
+√
+√
+2) and hence lim supT →∞ V S
+T (F )~T ≥ α~(4
+2). Thus, the class F is not online
+αT ~(4
+Proof [of Theorem 10] The equivalence of 1 and 2 follows directly from Proposition 9.
+learnable in the supervised setting. Now, assume that fatα is ﬁnite for all α. Fix an  > 0
+and choose α = ~16. Using the upper bound, we have
+
+√
+T (F ) ≤ 8T α + 24
+β  dβ
+fatβ log  2eT
+V S
+T S 1
+T (1 − α)
+√
+≤ 8T α + 24
+fatα log  2eT
+α 
+α
+≤ T ~2 + T ~2
+
+178
+
+Online Learning via Sequential Complexities
+for T large enough. Thus, lim supT →∞ V S
+T (F )~T ≤ . Since  > 0 was arbitrary, this proves
+that F is online learnable in the supervised setting.
+The statement that V S
+T (F ), RT (F ), and DT (F ) are within a multiplicative factor of
+O(log3~2 T ) of each other whenever the problem is online learnable follows immediately
+from Eq. (10) in (Rakhlin et al., 2014) and Proposition 9.
+Proof [of Lemma 13] Consider the game (F , Zcvx ) and ﬁx a randomized strategy π of
+the player. Then, the expected regret of a randomized strategy π against any adversary
+playing g1 , . . . , gT can be lower-bounded via Jensen’s inequality as
+gt Eut ∼πt (g1∶t−1 ) [ut ] − inf
+Eut ∼πt (g1∶t−1 ) [gt (ut )] − inf
+gt (u) ≥ TQ
+gt (u),
+TQ
+u∈F TQ
+u∈F TQ
+t=1
+t=1
+t=1
+t=1
+which is simply regret of a deterministic strategy obtained from π by playing Eut ∼πt (g1∶t−1 ) [ut ]
+T (F , Zcvx ) where V det
+tic ones. Hence, VT (F , Zcvx ) = V det
+on round t. Thus, to any randomized strategy corresponds a deterministic one that is no
+worse. On the other hand, the set of randomized strategies contains the set of determinis-
+Abernethy et al. (2008) that says V det
+T (F , Zcvx ) = V det
+T (F , Zlin ). Note that Abernethy et al.
+is deﬁned as the minimax regret
+T
+obtainable only using deterministic player strategies. Now, we appeal to Theorem 14 of
+(2008) deal with convex sets in ﬁnite dimensional spaces only. However, their proof relies
+bounds the convex function). Since Zlin also consists of convex (in fact, linear) functions,
+on fundamental properties of convex functions that are true in any general vector space
+the above argument again gives V det
+T (F , Zlin ) = VT (F , Zlin ). This ﬁnishes the proof of the
+(such as the fact that the ﬁrst order Taylor expansion of a convex function globally lower
+lemma.
+Proof [of Proposition 15] We shall prove that for any i ∈ {2, . . . , k},
+√
+RT (Fi ) ≤ 16LBi 1 + 4
+2 log3~2 (eT 2 ) RT (Fi−1 ).
+To see this note that for any x, RT (Fi , x) is equal to
+
+
+
+j σ (fj (xt ()))ï
+ïïQ
+≤ E
+TQ
+wi ∶wi 1 ≤Bi
+wi ∶wi 1 ≤Bi
+t=1
+E
+w i
+sup
+sup
+t
+∀j fj ∈Fi−1
+∀j fj ∈Fi−1
+j
+by H¨older’s inequality. Then RT (Fi ) is upper bounded as
+tσ (f (xt ()))
+tσ (f (xt ())) , − TQ
+max  TQ
+E Bi sup
+f ∈Fi−1
+t=1
+t=1
+sup
+−tσ (f (xt ())) .
+tσ (f (xt ())) , sup
+≤ sup
+E Bi max  sup
+TQ
+TQ
+x
+f ∈Fi−1
+f ∈Fi−1
+t=1
+t=1
+x
+
+tσ (fj (xt ()))
+
+
+
+w i 1 max
+j
+
+ TQ
+t=1
+
+179
+
+(29)
+
+Rakhlin, Sridharan and Tewari
+Since 0 ∈ Fi together with the assumption of σ(0) = 0, both terms are non-negative, and
+thus the maximum above can be upper bounded by the sum
+E Bi sup
+E Bi sup
+tσ (f (xt ())) + sup
+−tσ (f (xt ())) .
+TQ
+TQ
+f ∈Fi−1
+f ∈Fi−1
+t=1
+t=1
+sup
+Indeed, let x∗ be the tree achieving the
+x
+x
+achieved). Then the mirror tree x deﬁned via xt () = x∗
+t (−) yields the same value for the
+We now claim that the two terms are equal.
+supremum in the ﬁrst term (a modiﬁed analysis can be carried out if the supremum is not
+second term. Since the argument can be carried out in the reverse direction, the two terms
+are equal, and the upper bound of
+E  sup
+tσ (f (xt ()))
+TQ
+f ∈Fi−1
+t=1
+2Bi sup
+x
+√
+2 log3~2 (eT 2 ) RT (Fi−1 ).
+16BiL 1 + 4
+follows. In view of contraction in Corollary 5, we obtain a further upper bound of
+To ﬁnish the proof we note that for the base case of i = 1, RT (F1 ) is equal to
+
+twxt ()
+TQ
+w∈Rd ∶w1 ≤B1
+t=1
+E
+sup
+sup
+x
+
+ ≤ B1 sup
+which is upper bounded by
+txt ()∞
+w1  TQ
+i∈[d]  TQ
+E max
+txt ()[i] .
+w∈Rd ∶w1 ≤B1
+t=1
+t=1
+E
+sup
+sup
+Note that the instances x ∈ X are vectors in Rd and so for a given instance tree x, for any
+x
+x
+i ∈ [d], x[i] given by only taking the ith co-ordinate is a valid real valued tree. By (4),
+
+txt ()[i] ≤ B1
+E max
+T ⋅ RT (F1 ) ≤ B1 sup
+i∈[d]  TQ
+2T X 2∞ log d.
+t=1
+x
+Using the above and (29) repeatedly we conclude the proof.
+Proof [of Proposition 16] Fix a γ > 0 and use loss
+(cid:96)( ˆy , y) =  1
+ˆyy ≤ 0
+1 − ˆyy~γ 0 < ˆyy < γ
+ˆyy ≥ γ
+Since this loss is 1~γ -Lipschitz, we can use (11) and the Rademacher contraction Corollary 5
+0
+to show that for each γ > 0 there exists a randomized strategy τ γ such that for any data
+(cid:96)(f (xt ), yt ) + γ −1ρT T RT (F ),
+t (z1∶t−1 ) [(cid:96)( ˆyt , yt )] ≤ inf
+f ∈F TQ
+TQ
+sequence
+ˆyt ∼τ γ
+t=1
+t=1
+E
+180
+
+Online Learning via Sequential Complexities
+√
+2 log3~2 (eT 2 ) throughout the proof. Further, observe that the loss
+where ρT = 16 1 + 4
+function is lower bounded by the zero-one loss 1 { ˆyy < 0} and is upper bounded by the
+margin zero-one loss 1 { ˆyy < γ }. Hence,
+t (z1∶t−1 ) [1 { ˆytyt < 0}] ≤ inf
+1 {ytf (xt ) < γ } + γ −1ρT T RT (F ).
+TQ
+f ∈F TQ
+ˆyt ∼τ γ
+t=1
+t=1
+E
+(30)
+we discretize the set of γ ’s as γi = 1~2i and use the output of the randomized strategies
+The above bound holds for randomized each strategy given by τ γ , for any given γ . Now
+experts algorithm (Algorithm 1) with initial weight for expert i as pi =
+algorithm achieves O(√
+τ γ1 , τ γ2 , . . ., that attain the regret bounds given in (30), as experts. We then run a countable
+T log(1~pi )) regret w.r.t. expert i. In view of Proposition 20, for
+6
+π2 i2 . Such an
+i ρT T RT (F ) + √
+T 1 + 2 log  iπ√
+ .
+1 {ytf (xt ) < γi} + γ −1
+E ˆyt ∼τt (z1∶t−1 ) [1 { ˆytyt < 0}] ≤ inf
+this randomized strategy τ , for any i,
+f ∈F TQ
+TQ
+t=1
+t=1
+For any γ > 0, let iγ ∈ 0, 1, . . . , be such that 2−(iγ +1) < γ ≤ 2−iγ . Then above right-hand side
+6
+1 {ytf (xt ) < 2γ } + γ −1ρT T RT (F ) + √
+T 1 + 2 log  iγ π√
+ .
+is upper bounded by
+f ∈F TQ
+t=1
+The proof is concluded using the inequality iγ ≤ log(1~γ ) and upper bounding constants.
+inf
+6
+Proof [of Proposition 17] Fix some L > 0. The loss
+φL (α) = 
+if α ≤ 0
+1 − Lα if 0 < α ≤ 1~L
+1
+is L-Lipschitz and so by Theorem 7 and Corollary 5 we have that for every L > 0, there exists
+otherwise
+0
+a randomized strategy τ L for the player, such that for any sequence z1 = (x1 , y1 ), . . . , zT =
+(xT , yT ),
+t (z1∶t−1 ) [φL (yt ˆyt )] ≤ inf
+φL (ytf (xt )) + LρT T RT (F ),
+f ∈F TQ
+TQ
+ˆyt ∼τ L
+t=1
+t=1
+√
+E
+(31)
+where ρT = 16 1 + 4
+2 log3~2 (eT 2 ) throughout this proof. Since φL dominates the step
+t (z1∶t−1 ) [1 { ˆyt ≠ yt}] .
+function, the left hand side of (31) also upper-bounds the expected indicator loss
+TQ
+ˆyt ∼τ L
+t=1
+E
+For any f ∈ F , we can relate the φL -loss to the indicator loss by
+C (l)φL (wl ).
+1 {ytf (xt ) ≤ 0} + Q
+φL (ytf (xt )) = TQ
+TQ
+t=1
+t=1
+l
+
+181
+
+Rakhlin, Sridharan and Tewari
+Let us now use the above decomposition in (31). Crucially, the sign of f (x) does not depend
+on wl , but only on the label σl of the unique leaf l reached by x. Thus, the inﬁmum in (31)
+can be split into two inﬁma:
+C (l)φL (wl ),
+1 {ytf (xt ) ≤ 0} + inf
+φL (ytf (xt )) = inf
+Q
+f ∈F TQ
+f ∈F TQ
+t=1
+t=1
+inf
+where it is understood that the C (l) term on the right hand side is computed using the
+wl
+l
+C (l)φL (wl ) ≤ Q
+C (l) max(0, 1 − Lwl ) = Q
+max (0, (1 − Lwl )C (l)) .
+Q
+function f minimizing the ﬁrst sum on the right hand side. We can further write
+l
+l
+l
+experts corresponding to the values L ∈ N. The prior on expert L is taken to be pL = 6
+So far, we have derived a regret bound for a given L. Let us now remove the requirement
+π2 L−2
+so that ∑ pL = 1. For the randomized strategy τ obtained in this manner, from Proposition
+to know L a priori by running the experts Algorithm 1 with τ 1 , τ 2 , . . . as a countable set of
+20, for any sequence of instances and any L ∈ N,
+max (0, (1 − Lwl )C (l))
+1 {ytf (xt ) ≤ 0} + inf
+E ˆyt ∼τt (z1∶t−1 ) [1 { ˆy ≠ yt}] ≤ inf
+f ∈F Q
+f ∈F TQ
+TQ
++ LρT T RT (F ) + √
+√
+T log(Lπ~√
+t=1
+t=1
+T + 2
+6).
+l
+Now we pick L =  {l ∶ C (l) > ρT T RT (F )}  ≤ N and upper bound the second inﬁmum by
+choosing wl = 0 if C (l) ≤ ρT T RT (F ) and wl = 1~L otherwise:
+C (l)1 {C (l) ≤ ρT T RT (F )}
+max (0, (1 − Lwl )C (l)) + LρT T RT (F ) ≤ Q
+Q
++ ρT T RT (F ) Q
+1 {C (l) > ρT T RT (F )}
+inf
+wl
+l
+l
+l
+min{C (l), ρT T RT (F )}.
+which can be written succinctly asQ
+l
+E ˆyt ∼τt (z1∶t−1 ) [1 { ˆyt ≠ yt}] ≤ inf
+1 {ytf (xt ) ≤ 0}
+We conclude that
+f ∈F TQ
+TQ
+min(C (l), ρT T RT (F )) + √
+T 1 + 2 log(N π~√
+t=1
+t=1
++ Q
+6) .
+Finally, we apply Corollary 6 and Lemma 3(2) to bound RT (F ) ≤ dO(log3~2 T ) RT (H) and
+l
+thus conclude the proof.
+(1959), the class G of all bounded Lipschitz functions on a bounded interval has small metric
+Proof [of Proposition 18] First, by the classical result of Kolmogorov and Tikhomirov
+182
+
+Online Learning via Sequential Complexities
+log ̂N∞ (α, G ) = Θ(1~α). For the particular class of non-decreasing 1-Lipschitz
+functions, it is trivial to verify that the entropy is in fact bounded by 2~α. Considering all
+1-Lipschitz functions increases this to c0 ~α for some universal constant c0 .
+entropy:
+Next, consider the class F = {w, x   w2 ≤ 1} over the Euclidean ball. By Proposi-
+tion 14, RT (F ) ≤ 1~√
+T . Using the lower bound of Proposition 9, fatα ≤ 32~α2 whenever
+2~√
+2~√
+√
+√
+T . This implies that N∞ (α, F , T ) ≤ (2eT ~α)32~α2
+whenever α > 4
+α > 4
+that this bound does not depend on the ambient dimension of X .
+Next, we show that a composition of G with any “small” class F ⊂ [−1, 1]X also has
+T . Note
+a small cover. To this end, suppose N∞ (α, F , T ) is the covering number for F . Fix a
+particular tree x and let V = {v1 , . . . , vN } be an (cid:96)∞ cover of F on x at scale α. Analogously,
+let W = {g1 , . . . , gM } be an (cid:96)∞ cover of G with M = ̂N∞ (α, G ). Consider the class G ○ F =
+{g ○ f ∶ g ∈ G , f ∈ F }. The claim is that {g(v) ∶ v ∈ V , g ∈ W } provides an (cid:96)∞ cover for G ○F on
+x. Fix any f ∈ F , g ∈ G and  ∈ {±1}T . Let v ∈ V be such that maxt∈[T ]  f (xt ()) − vt ()  ≤ α,
+and let g ′ ∈ W be such that g − g ′ ∞ ≤ α. Then, using the fact that functions in G are
+1-Lipschitz, for any t ∈ [T ],
+ g(f (xt ())) − g ′ (vt ())  ≤  g(f (xt ())) − g ′ (f (xt ())  +  g ′ (f (xt ()) − g ′ (vt ())  ≤ 2α .
+Hence, N∞ (2α, G ○ F , T ) ≤ ̂N∞ (α, G ) × N∞ (α, F , T ).
+by 8T times the sequential Rademacher complexity of the class G ○ F = {u(w, x)   u ∶
+[−1, 1] → [−1, 1] is 1-Lipschitz , w2 ≤ 1} since the squared loss is 4-Lipschitz on the space
+Finally, we put all the pieces together. By Theorem 8, the minimax value is bounded
+
+√
+T DT (G ○ F ) ≤ 32
+T log N (δ, G ○ F , T ) dδ
+T + 12 S 1
+of possible values. The latter complexity is then bounded by
+8~√
+
+√
+√
+≤ 32
+log(2eT )dδ .
+δ + 128
+T + 12
+T S 1
+T
+8~√
+4c0
+bounded by O(√
+δ2
+T log3~2 (T )).
+T
+We therefore conclude that the value of the game for the supervised learning problem is
+
+Appendix C. Exponentially Weighted Average (EWA) Algorithm on
+Countable Experts
+
+We consider here a version of the exponentially weighted experts algorithm for a countable
+(possibly inﬁnite) number of experts and provide a bound on the expected regret of the
+randomized algorithm. The proof of the result closely follows the ﬁnite case (e.g., Cesa-
+Bianchi and Lugosi, 2006, Theorem 2.2). This result is well known and we include it here
+for completeness, as it is needed in the proofs of Proposition 16 and Proposition 17.
+produces an element of F at round t. Here we also assume that F ⊆ [0, 1]X . Denote by
+Suppose we are provided with countable experts E1 , E2 , . . ., where each expert can
+herself be thought of as a randomized/deterministic player strategy which, given history,
+each expert p1 , p2 , . . . such that ∑i pi = 1.
+f i
+t the function output by expert i at round t given the history. The EWA algorithm we
+consider needs access to the countable set of experts and also needs an initial weighting on
+
+183
+
+Rakhlin, Sridharan and Tewari
+
+i ← pi
+for t = 1 to T do
+Algorithm 1 EWA (E1 , E2 , . . ., p1 , p2 , . . .)
+Initialize each w1
+Play ft = f t
+Pick randomly an expert i with probability wt
+i
+= wt
+i
+Update for each i, wt+1
+i e−ηf t
+i (xt )
+Receive xt
+∑i wt
+−ηf t
+i (xt )
+i
+i e
+end for
+Proposition 20 The exponential ly weighted average forecaster (Algorithm 1) with η =
+T −1~2 enjoys the regret bound
+i (xt ) + √
+8 + √
+T log (1~pi )
+E [ft (xt )] ≤ TQ
+TQ
+t=1
+t=1
+T
+f t
+
+for any i ∈ N.
+References
+
+J. Abernethy, P. L. Bartlett, A. Rakhlin, and A. Tewari. Optimal strategies and minimax
+lower bounds for online convex games. In Proceedings of the 21st Annual Conference on
+Learning Theory, pages 414–424. Omnipress, 2008.
+
+J. Abernethy, A. Agarwal, P. L. Bartlett, and A. Rakhlin. A stochastic view of optimal regret
+through minimax duality.
+In Proceedings of the 22nd Annual Conference on Learning
+Theory, 2009.
+
+P. L. Bartlett and S. Mendelson. Rademacher and Gaussian complexities: risk bounds and
+structural results. Journal of Machine Learning Research, 3:463–482, 2003.
+
+S. Ben-David, D. Pal, and S. Shalev-Shwartz. Agnostic online learning. In Proceedings of
+the 22th Annual Conference on Learning Theory, 2009.
+
+D. Blackwell. An analog of the minimax theorem for vector payoﬀs. Paciﬁc Journal of
+Mathematics, 6(1):1–8, 1956a.
+
+D. Blackwell. Controlled random walks. In Proceedings of the International Congress of
+Mathematicians, 1954, volume 3, pages 336–338. North Holland, 1956b.
+
+V.I. Bogachev. Measure Theory, volume 2. Springer, 2007. ISBN 3540345132.
+
+J.M. Borwein. A very complicated proof of the minimax theorem. Minimax Theory and Its
+Applications, 1(1), 2014.
+
+J.M. Borwein and D Zhuang. On Fan’s minimax theorem. Mathematical programming, 34
+(2):232–234, 1986.
+
+184
+
+Online Learning via Sequential Complexities
+
+N. Cesa-Bianchi and G. Lugosi. On prediction of individual sequences. Annals of Statistics,
+pages 1865–1895, 1999.
+
+N. Cesa-Bianchi and G. Lugosi. Prediction, Learning, and Games. Cambridge University
+Press, 2006.
+
+N. Cesa-Bianchi, Y. Freund, D. Haussler, D. P. Helmbold, R. E. Schapire, and M. K.
+Warmuth. How to use expert advice. Journal of the ACM, 44(3):427–485, 1997.
+
+T. Cover. Behavior of sequential predictors of binary sequences. In Transactions of the
+Fourth Prague Conference on Information Theory, Statistical Decision Functions, Ran-
+dom Processes, 1965, pages 263–272. Publishing House of the Czechoslovak Academy of
+Sciences, 1967.
+
+T. M. Cover and A. Shenhar. Compound Bayes predictors for sequences with apparent
+Markov structure. IEEE Transactions on Systems, Man and Cybernetics, 7(6):421–424,
+1977.
+
+L. Davisson. Universal noiseless coding. Information Theory, IEEE Transactions on, 19
+(6):783–795, 1973.
+
+M. Feder, N. Merhav, and M. Gutman. Universal prediction of individual sequences. In-
+formation Theory, IEEE Transactions on, 38(4):1258–1270, 1992.
+
+D. P. Foster and R. V. Vohra. Calibrated learning and correlated equilibrium. Games and
+Economic Behavior, 21(1):40–55, 1997.
+
+J. Hannan. Approximation to Bayes risk in repeated play. Contributions to the Theory of
+Games, 3:97–139, 1957.
+
+S. Hart and A. Mas-Colell. A simple adaptive procedure leading to correlated equilibrium.
+Econometrica, 68(5):1127–1150, 2000.
+
+S. M. Kakade and A. T. Kalai. From batch to transductive online learning. In Y. Weiss,
+B. Sch¨olkopf, and J.C. Platt, editors, Advances in Neural Information Processing Systems
+18, pages 611–618. MIT Press, 2006.
+
+A. Kalai and S. Vempala. Eﬃcient algorithms for online decision problems. Journal of
+Computer and System Sciences, 71(3):291–307, 2005.
+
+A. T. Kalai and R. Sastry. The isotron algorithm: High-dimensional isotonic regression. In
+Proceedings of the 22th Annual Conference on Learning Theory, 2009.
+
+A.N. Kolmogorov and V.M. Tikhomirov. ε-entropy and ε-capacity of sets in function spaces.
+Uspekhi Matematicheskikh Nauk, 14(2):3–86, 1959.
+
+V. Koltchinskii and D. Panchenko. Empirical margin distributions and bounding the gen-
+eralization error of combined classiﬁers. Annals of Statistics, 30(1):1–50, 2002.
+
+M. Ledoux and M. Talagrand. Probability in Banach Spaces. Springer-Verlag, New York,
+1991.
+
+185
+
+Rakhlin, Sridharan and Tewari
+
+N. Littlestone. Learning quickly when irrelevant attributes abound: A new linear-threshold
+algorithm. Machine Learning, 2(4):285–318, 04 1988.
+
+N. Littlestone and M. K. Warmuth. The weighted ma jority algorithm. Information and
+Computation, 108(2):212–261, 1994.
+
+A. Rakhlin and K. Sridharan. Statistical learning and sequential prediction, 2014. Available
+at http://stat.wharton.upenn.edu/~rakhlin/courses/stat928/stat928_notes.pdf.
+
+A. Rakhlin, K. Sridharan, and A. Tewari. Online learning: Random averages, combinatorial
+parameters, and learnability. In Advances in Neural Information Processing Systems 23,
+pages 1984–1992, 2010.
+
+A. Rakhlin, K. Sridharan, and A. Tewari. Online learning: Beyond regret. In Proceedings
+of the 24th Annual Conference on Learning Theory, volume 19 of JMLR Workshop and
+Conference Proceedings, pages 559–594, 2011.
+
+A. Rakhlin, O. Shamir, and K. Sridharan. Relax and randomize: From value to algorithms.
+In Advances in Neural Information Processing Systems 25, pages 2150–2158, 2012.
+
+A. Rakhlin, K. Sridharan, and A. Tewari. Sequential complexities and uniform laws of large
+numbers. Probability Theory and Related Fields, 2014.
+
+J. Rissanen. Universal coding, information, prediction, and estimation. Information Theory,
+IEEE Transactions on, 30(4):629–636, 1984.
+
+H. Robbins. Asymptotically subminimax solutions of compound statistical decision prob-
+lems. In Proceedings of the Second Berkeley Symposium on Mathematical Statistics and
+Probability, pages 131–149. University of California Press, 1950.
+
+R. E. Schapire, Y. Freund, P. Bartlett, and W.S. Lee. Boosting the margin: A new expla-
+nation for the eﬀectiveness of voting methods. The Annals of Statistics, pages 322–330,
+1997.
+
+S. Shalev-Shwartz. Online learning and online convex optimization. Foundations and Trends
+in Machine Learning, 4(2):107–194, 2011.
+
+S. Shalev-Shwartz, O. Shamir, N. Srebro, and K. Sridharan. Stochastic convex optimization.
+In Conference on Learning Theory, 2009.
+
+A. W. van der Vaart and J. A. Wellner. Weak Convergence and Empirical Processes with
+Applications to Statistics. Springer-Verlag, New York, 1996.
+
+V. Vovk. A game of prediction with expert advice. Journal of Computer and System
+Sciences, 56(2):153–173, 1998.
+
+M. Zinkevich. Online convex programming and generalized inﬁnitesimal gradient ascent.
+In Proceedings of the Twentieth International Conference on Machine Learning, pages
+928–936, 2003.
+
+J. Ziv and A. Lempel. A universal algorithm for sequential data compression. Information
+Theory, IEEE Transactions on, 23(3):337–343, 1977.
+
+186
+
+

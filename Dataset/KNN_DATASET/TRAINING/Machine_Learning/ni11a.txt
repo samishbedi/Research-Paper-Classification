@@ -1,0 +1,313 @@
+Journal of Machine Learning Research 12 (2011) 1-30
+
+Submitted 5/10; Revised 11/10; Published 1/11
+
+Exploitation of Machine Learning Techniques in Modelling Phrase
+Movements for Machine Translation
+
+Yizhao Ni
+Pattern Analysis and Intelligent Systems Group
+Department of Engineering Mathematics, University of Bristol
+Bristol, BS8 1UB, United Kindom
+Craig Saunders
+Xerox Research Centre Europe
+6 Chemin de Maupertuis
+38240 Meylan, France
+
+Sandor Szedmak
+Mahesan Niranjan
+ISIS Group, School of Electronics and Computer Science
+University of Southampton, Southampton
+SO17 1BJ, United Kingdom
+
+Editor: John Shawe-Taylor
+
+ENXYN@BR I S TO L .AC .UK
+
+CRA IG . SAUND ER S@XRC E .X EROX .COM
+
+S S 0 3V@ EC S . SOTON .AC .UK
+MN@ EC S . SOTON .AC .UK
+
+Abstract
+We propose a distance phrase reordering model (DPR) for statistical machine translation (SMT),
+where the aim is to learn the grammatical rules and context dependent changes using a phrase
+reordering classi ﬁcation framework. We consider a variety of machine learning techniques, includ-
+ing state-of-the-art structured prediction methods. Techniques are compared and evaluated on a
+Chinese-English corpus, a language pair known for the high reordering characteristics which can-
+not be adequately captured with current models. In the reordering classi ﬁcation task, the method
+signi ﬁcantly outperforms the baseline against which it was
+tested, and further, when integrated as
+a component of the state-of-the-art machine translation system, MOSES, it achieves improvement
+in translation results.
+Keywords: statistical machine translation (SMT), phrase reordering, lexicalized reordering (LR),
+maximum entropy (ME), support vector machine (SVM), maximum margin regression (MMR) ,
+max-margin structure learning (MMS)
+
+1. Introduction
+
+Machine translation (MT) is a challenging problem in artiﬁcial intelligence. Natural languages
+are characterised by large variabilities of expressions, exceptions to grammatical rules and context
+dependent changes. Differences in these across different languages make automatic translation a
+very difﬁcult task. While early work in machine translation was dominated by ru le based approaches
+(Bennett and Slocum, 1985), the availability of large corpora, and the ease with which they can be
+processed on computers has, similar to developments in other areas of artiﬁc ial intelligence, paved
+the way for statistical methods to be applied. The process of translation from a source language
+to a target language is considered equivalent to a problem of retrieving a target message from the
+
+c(cid:13)2011 Yizhao Ni, Craig Saunders, Sandor Szedmak and Mahesan Niranjan.
+
+N I , SAUND ER S , S Z EDMAK AND N IRAN JAN
+
+Symbol
+f
+e
+f j
+ei
+¯fI
+¯eI
+¯f j
+
+Notation
+the source sentence (string)
+the target sentence (string)
+the j-th word in the source sentence
+the i-th word in the target sentence
+the source phrase sequence
+the target phrase sequence
+the source phrase where ¯f denotes the sequence of words [ f jl , . . . , f jr ]
+and j denotes that ¯f j is the j-th phrase in ¯fI
+the target phrase where ¯e denotes the sequence of words [eil , . . . , eir ]
+and i denotes that ¯ei is the i-th phrase in ¯eI
+the set of phrase pairs ( ¯f j , ¯ei ) ∈ ¡
+the number of examples in ¡
+the n-th example in ¡ that is also abbreviated as ( ¯f n
+the feature vector of phrase pair ( ¯f j , ¯ei )
+the phrase reordering distance
+the phrase orientation class
+the set of phrase orientations o ∈ O
+the number of phrase orientations in O
+embedding function to map the orientation set to an output space j : O → R
+wo
+weight vector measuring features’ contribution to an orientation o
+{wo}o∈O The set of weight vectors for the phrase reordering model
+the dimension of
+d im
+
+N
+( ¯f n
+j , ¯en
+i )
+f( ¯f j , ¯ei )
+d
+o
+
+O
+
+CO
+j
+
+¯ei
+
+¡
+
+, ¯en )
+
+Table 1: Notation used in this paper.
+
+“source code” (Weaver, 1949). This view enables a probabilistic formu lation in which the task
+becomes the maximisation of the posterior probability over all the phrase sequences in the target
+language. Principled approaches to designing the different components of such a system, shown in
+Figure 1, have been developed in recent years (Koehn et al., 2005).
+Phrase-based statistical machine translation (SMT) is a task where each source sentence f is
+segmented into a sequence of I phrases ¯fI and translated into a target sequence ¯eI , often by means of
+a stochastic process that maximises the posterior probability ¯eI = arg max ˆeI ∈E (cid:8)P( ˆeI |¯fI )(cid:9). Usually
+the posterior probability P( ˆeI |¯fI ) is modelled in a log-linear maximum entropy framework (Berger
+et al., 1996) which permits easy integration of additional models, and is given by
+exp (cid:0) (cid:229)m lmhm (¯fI
+, ˆeI )(cid:1)
+I ′ , ˆeI ′ exp (cid:0) (cid:229)m lmhm (¯fI ′
+, ˆeI ′ )(cid:1) ,
+(cid:229)
+2
+
+P( ˆeI |¯fI ) =
+
+EX P LO I TAT ION O F ML T ECHN IQU E S IN MOD E L L ING PHRA S E MOV EM EN T S FOR MT
+
+where {hm} represent sub-models with scaling factors {lm}. As the denominator only depends
+on the source phrase sequence ¯fI , it is usually discarded and the solution is also represented as
+¯eI = arg max ˆeI ∈E (cid:8) exp (cid:0) (cid:229)m lmhm (¯fI
+, ˆeI )(cid:1)(cid:9).
+
+Figure 1: Training (top box) and decoding (bottom box) procedures for a state-of-the-art SMT sys-
+tems (dotted line box) and our MT system (solid line box).
+
+A combination of several sub-models {hm} (see Figure 1), including a phrase translation proba-
+bility model, a language model and a phrase reordering model are commonly used. Each sub-model
+is trained individually and then weighted by a scale factor lm tuned to achieve good ﬁnal translation
+quality (Och, 2003). Finally, the decoder searches a Viterbi-best string path given the joint decoding
+information. The reader is referred to Ni (2010) for detailed discussions on these models.
+
+1.1 Modelling Phrase Movements
+
+In this paper, we focus on developing a crucial component in statistical machine translation—the
+phrase reordering model. Word or phrase reordering is a common problem in bilingual translations
+arising from different grammatical structures. For example, the Chinese “ NP1 DEG NP2 ” sequence
+is analogous to the English possessive structure of “NP 1 ’s NP2 ” and does not require reordering
+(see Figure 2 (a)). However, due to different linguistic environment it may come from, this Chinese
+possessive structure can express more sophisticated relationships which are inappropriate for the
+“NP 1 ’s NP2 ” expression, for example, the “NP 2 of NP1 ” sequence which requires phrase swapping
+(see Figure 2 (b)). In general, if the decoder “knows ” the orders of
+phrase translations in the target
+
+3
+
+N I , SAUND ER S , S Z EDMAK AND N IRAN JAN
+
+Figure 2: Example: the distance phrase reordering in Chinese-to-English bilingual translation.
+
+Figure 3: The phrase reordering distance d .
+
+language, the ﬂuency of machine translation can be greatly improved. This mo tivates investigations
+into, and development of models for, phrase reordering.
+Now taking a Chinese-to-English translation (see Figure 3) for example, obviously not all words
+are translated one by one and some words are translated far behind after its preceding words are
+translated (e.g., phrase “a ﬁre”). Therefore, an ideal phrase reor
+dering model should be able to
+handle arbitrary distance phrase movements. However, handling such movements is a computation-
+ally expensive problem (Knight, 1999). Within recently developed SMT systems, a simple phrase
+reordering model, named word distance-based reordering model (WDR), is commonly used (Och
+et al., 1999; Koehn, 2004; Zens et al., 2005). This model deﬁnes a reo rdering distance for the j-th
+source phrase ¯f j as (see Figure 3 for an illustration of this.)
+
+d j
+
+:= abs(last source word position of previously translated phrase + 1
+− ﬁrst source word position of newly translated phrase ¯f j )
+
+,
+
+(1)
+
+and the total cost of phrase movements for a sentence pair (f, e) is linear proportional to these
+, ¯eI ) = −a (cid:229)
+d j with a tuning parameter a. Although computationally
+reordering distances hd (¯fI
+j
+efﬁcient, this model has been shown to be weak due to its content independe nce. A content-based
+extension to WDR is the lexicalized reordering model (LR) (Tillmann, 2004; Koehn et al., 2005),
+which splits the distance space into several segments, each of which represents a phrase reordering
+orientation o (see Figure 4). Then the phrase reordering probability for a phrase pair ( ¯f j , ¯ei ) is
+
+4
+
+EX P LO I TAT ION O F ML T ECHN IQU E S IN MOD E L L ING PHRA S E MOV EM EN T S FOR MT
+
+Figure 4: The phrase reordering orientations: the three-class setup (top) and the ﬁve-class setup
+(bottom).
+
+predicted using maximum likelihood estimation (MLE)
+
+p(cid:0)o|( ¯f j , ¯ei )(cid:1) =
+
+count (o, ( ¯f j , ¯ei ))
+(cid:229)
+count (o′ , ( ¯f j , ¯ei ))
+o′
+
+,
+
+, ¯eI ) =
+
+where hd (¯fI
+
+p(o|( ¯f j , ¯ei )) is used to represent the cumulative cost of phrase move-
+
+(cid:229)
+( ¯f j , ¯ei )∈(¯fI , ¯eI )
+ments. Although the overall performance is better than WDR, it usually suffers from data sparse-
+ness, and some heuristics have to be employed to make the approach effective.
+Adopting the idea of predicting phrase reordering orientations, researchers started exploiting
+context or grammatical content which may relate to phrase movements (Tillmann and Zhang, 2005;
+Xiong et al., 2006; Zens and Ney, 2006). In general, the distribution of phrase reorderings is ex-
+pressed with a log-linear form
+
+p(o|( ¯f j , ¯ei ), wo ) =
+
+f( ¯f j , ¯ei ))
+h(wT
+o
+Z ( ¯f j , ¯ei )
+f( ¯f j , ¯ei )). The feature parameters {wo}o∈O are then
+with the normalisation term Z ( ¯f j , ¯ei ) = (cid:229)
+h(wT
+o
+o∈O
+tuned by different discriminative models, among which the maximum entropy (ME) framework is a
+popular candidate. To characterise phrase movements, a variety of linguistic features are proposed
+
+(2)
+
+• Context features – word sequence (n-gram) features in (or around)
+the phrases. These indi-
+cator functions are the basic features used in Zens and Ney (2006) and also used in other MT
+experiments such as the word-sense disambiguation of Vickrey et al. (2005).
+
+5
+
+N I , SAUND ER S , S Z EDMAK AND N IRAN JAN
+
+• Shallow syntactic features – part-of-speech (POS) tags or word-class
+features in (or around)
+the phrases. These indicator features are also used in the models above, and also in the
+context-aware phrase selection model of Gim ´enez and M `arquez (2007).
+
+• Statistical features – features such as the lexicalized reordering probab ility (Koehn et al.,
+2005) and the language model probability, etc. These real-value features are introduced by
+Tillmann and Zhang (2005) and are shown to be beneﬁcial in capturing the lo cal phrase re-
+ordering information.
+
+Many other feature sets, such as lemma features and syntactic relationships in POS tags have also
+been investigated, posing a feature selection problem for any learning algorithm. Instead of inves-
+tigating features sets, in this paper we concentrate on exploiting a limited set of linguistic features
+with different learning agents. We propose a distance phrase reordering model (DPR) that is also
+inspired by the orientation prediction framework (Koehn et al., 2005). Unlike Xiong et al. (2006)
+and Zens and Ney (2006) we regard phrase movements as a classiﬁcation p roblem and use three
+multi-class learning agents —
+support vector machine (SVM), maximum margin regression (MMR)
+and max-margin structure learning (MMS) to perform the classiﬁcation. Our goal is to ﬁnd a learn-
+ing agent that provides good tradeoff between classiﬁcation accuracy with a limited feature set and
+computational efﬁciency. Furthermore, we also integrate the DPR model in a tr aditional SMT sys-
+tem, and the resulting MT system (solid line box in Figure 1) is compared with a state-of-the-art
+SMT system (dotted line box in Figure 1) on a Chinese-to-English MT task so as to demonstrate the
+effectiveness of the proposed DPR model.
+
+1.2 Contribution and Structure
+
+This paper makes two signiﬁcant contributions. The ﬁrst is a comparison, in
+terms of classiﬁcation
+accuracy and computational efﬁciency, between different machine lear ning techniques for distance
+phrase movements in machine translation. This is mainly in the paradigm of structured learning,
+including maximum margin structure learning (MMS) and maximum margin regression (MMR),
+which is seen as a powerful framework that takes advantage of output structures in supervised
+learning problems, in modern machine learning literature. Our second contribution is the demon-
+stration that this paradigm is effective in the task of phrase movements, which is acknowledged as
+a challenging task in machine translation. This turns out to be true, both in stand-alone translation
+tasks and when the method is integrated into a complete end-to-end statistical machine translation
+system. This is sufﬁciently encouraging that we have made our work availab le as a public domain
+software package1 (Ni et al., 2010a) in a form that it can be integrated into the widely used MOSES
+system.2
+The remainder of the paper is organised as follows: a general framework of the DPR model is
+given in Section 2, which speciﬁes the modelling of phrase movements and des cribes the motiva-
+tions of using the three learning agents. Then in Section 3 we demonstrate the linguistic features
+used and the training procedure for the DPR model. Section 4 evaluates the performance of the DPR
+model with both phrase reordering classiﬁcation and machine translation exp eriments. Finally, we
+draw conclusions and mention areas for future work in Section 5.
+
+1. The software is available at http://patterns.enm.bris.ac.uk/distance- phrase- reordering- for- moses.
+2. MOSES is available at http://www.statmt.org/moses/.
+
+6
+
+

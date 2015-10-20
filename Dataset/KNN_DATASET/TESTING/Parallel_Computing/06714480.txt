@@ -1,0 +1,1222 @@
+IEEE TRANSACTIONS ON PARALLEL AND DISTRIBUTED SYSTEMS, VOL. 25, NO. 12, DECEMBER 2014
+
+3221
+
+KASR: A Keyword-Aware Service Recommendation
+Method on MapReduce for Big
+Data Applications
+
+Shunmei Meng, Wanchun Dou, Xuyun Zhang, and Jinjun Chen, Senior Member, IEEE
+
+Abstract—Service recommender systems have been shown as valuable tools for providing appropriate recommendations to users. In
+the last decade, the amount of customers, services and online information has grown rapidly, yielding the big data analysis problem for
+service recommender systems. Consequently, traditional service recommender systems often suffer from scalability and inefﬁciency
+problems when processing or analysing such large-scale data. Moreover, most of existing service recommender systems present the
+same ratings and rankings of services to different users without considering diverse users’ preferences, and therefore fails to meet
+users’ personalized requirements. In this paper, we propose a Keyword-Aware Service Recommendation method, named KASR, to
+address the above challenges. It aims at presenting a personalized service recommendation list and recommending the most
+appropriate services to the users effectively. Speciﬁcally, keywords are used to indicate users’ preferences, and a user-based
+Collaborative Filtering algorithm is adopted to generate appropriate recommendations. To improve its scalability and efﬁciency in big
+data environment, KASR is implemented on Hadoop, a widely-adopted distributed computing platform using the MapReduce parallel
+processing paradigm. Finally, extensive experiments are conducted on real-world data sets, and results demonstrate that KASR
+signiﬁcantly improves the accuracy and scalability of service recommender systems over existing approaches.
+
+Index Terms—Recommender system, preference, keyword, big data, MapReduce, Hadoop
+Ç
+
+1 INTRODUCTION
+1.1 Background
+I N recent years, the amount of data in our world has been
+increasing explosively, and analyzing large data sets—so-
+called “Big Data”—becomes a key basis of competition
+underpinning new waves of productivity growth, innova-
+tion, and consumer surplus [1]. Then, what is “Big Data”?,
+Big data refers to data sets whose size is beyond the ability
+of current technology, method and theory to capture, man-
+age, and process the data within a tolerable elapsed time.
+Today, Big Data management stands out as a challenge for
+IT companies. The solution to such a challenge is shifting
+increasingly from providing hardware to provisioning
+more manageable software solutions [2]. Big data also
+brings new opportunities and critical challenges to industry
+and academia [3], [4].
+Similar to most big data applications, the big data tend-
+ancy also poses heavy impacts on service recommender
+systems. With the growing number of alternative services,
+effectively recommending services that users preferred has
+become an important research issue. Service recommender
+
+ S. Meng and W. Dou are with the State Key Laboratory for Novel Software
+Technology, the Department of Computer Science and Technology, Nanj-
+ing University, Nanjing 210023, China.
+E-mail: shunmei89@gmail.com, douwc@nju.ed-u.cn.
+ X. Zhang and J. Chen are with the Faculty of Engineering and IT, Univer-
+sity of Technology, Sydney, NSW 2007, Australia.
+E-mail: {xyzhanggz, jinjun}@gmail.com.
+
+Manuscript received 1 Dec. 2013; revised 15 Dec. 2013; accepted 16 Dec.
+2013. Date of publication 15 Jan. 2014; date of current version 14 Nov. 2014.
+Recommended for acceptance by V. Misic.
+For information on obtaining reprints of this article, please send e-mail to:
+reprints@ieee.org, and reference the Digital Object Identiﬁer below.
+Digital Object Identiﬁer no. 10.1109/TPDS.2013.2297117
+
+systems have been shown as valuable tools to help users
+deal with services overload and provide appropriate rec-
+ommendations to them. Examples of such practical appli-
+cations include CDs, books, webpages and various other
+products now use recommender systems [5], [6], [7]. Over
+the last decade, there has been much research done both in
+industry and academia on developing new approaches for
+service recommender systems [8], [9].
+
+1.2 Motivation
+With the success of the Web 2.0, more and more compa-
+nies capture large-scale information about their custom-
+ers, providers, and operations. The rapid growth of the
+number of customers, services and other online informa-
+tion yields service recommender systems in “Big Data”
+environment, which poses critical challenges for service
+recommender systems. Moreover, in most existing service
+recommender systems, such as hotel reservation systems
+and restaurant guides, the ratings of services and the ser-
+vice recommendation lists presented to users are the
+same. They have not considered users’ different preferen-
+ces, without meeting users’ personalized requirements.
+Following is an example in hotel reservation system illus-
+trating such a case.
+Example 1. Alice and Tom are respectively browsing a hotel
+reservation website to reserve a hotel in Kowloon, Hong
+Kong. But the ratings and recommendation list of the
+hotels provided by the website to them are the same.
+Assuming there are three hotels in Kowloon: A, B and C.
+Comparing the three hotels, A is convenient to the air-
+port and has a shopping mall nearby; B has convenient
+transportation with an underground station nearby and
+owns
+comfortable
+accommodation equipment;
+the
+1045-9219 ß 2013 IEEE. Personal use is permitted, but republication/redistribution requires IEEE permission.
+See http://www.ieee.org/publications_standards/publications/rights/index.html for more information.
+
+3222
+
+IEEE TRANSACTIONS ON PARALLEL AND DISTRIBUTED SYSTEMS, VOL. 25, NO. 12, DECEMBER 2014
+
+2 PRELIMINARY KNOWLEDGE
+2.1 Recommender Systems and Collaborative
+Filtering
+Recommender systems developed as an independent
+research area in the mid-1990s when recommendation
+problems started focusing on rating models [10], [11].
+According to the deﬁnition of recommender system in [12],
+recommender system can be deﬁned as system that produ-
+ces individualized recommendations as output or has the
+effect of guiding the user in a personalized way to interest-
+ing or useful services in a large space of possible options.
+Current recommendation methods usually can be classi-
+ﬁed into three main categories: content-based, collabora-
+tive,
+and hybrid recommendation approaches
+[13].
+Content-based approaches recommend services similar to
+those the user preferred in the past. Collaborative ﬁltering
+approaches recommend services to the user that users with
+similar tastes preferred in the past. Hybrid approaches
+combine content-based and CF methods in several differ-
+ent ways.
+CF algorithm is a classic personalized recommendation
+algorithm, which is widely used in many commercial rec-
+ommender systems [13].
+In CF based systems, users
+receive recommendations based on people who have simi-
+lar tastes and preferences, which can be further classiﬁed
+into item-based CF and user-based CF. In item-based sys-
+tems, the predicted rating depends on the ratings of other
+similar items by the same user. While in user-based sys-
+tems, the prediction of the rating of an item for a user
+depends upon the ratings of the same item rated by similar
+users. And in this work, we will take advantage of a user-
+based CF algorithm to deal with our problem. More details
+of user-based CF algorithm can be found in Appendix A.1,
+which can be found on the Computer Society Digital
+Library at http://doi.ieeecomputersociety.org/10.1109/
+TPDS.2013.2297117.
+
+2.2 Cloud Computing and MapReduce
+Cloud computing is a successful paradigm of service ori-
+ented computing and has revolutionized the way comput-
+ing infrastructure is abstracted and used. The major goal of
+cloud computing is to share resources, such as infrastruc-
+ture, platform, software, and business process [14].
+Cloud computing can provide effective platforms to
+facilitate parallel computing, which has gained signiﬁcant
+attention in recent years to process large volume of data.
+There are several cloud computing tools available, such as
+Hadoop (http://hadoop.apache.org/), Mahout
+(http://
+mahout.apache.org/), MapReduce of Google [15],
+the
+Dynamo of Amazon.com [16], the Dryad of Microsoft and
+Neptune of Ask.com [17], etc. Among these tools, Hadoop
+is the most popular open source cloud computing platform
+inspired by MapReduce and Google File System papers
+[18], which supports MapReduce programming framework
+and mass data storage with good fault tolerance. MapRe-
+duce is a popular distributed implementation model pro-
+posed by Google, which is inspired by map and reduce
+operations in the Lisp programming language. More details
+about MapReduce can be found in Appendix A.2, available
+in the online supplemental material.
+
+Fig. 1. Two reviews of W Hong Kong hotel.
+
+breakfast and food of C is delicious and its view is very
+good. According to the overall ratings provided by the
+website, B is better than A and A is better than C. How-
+ever, in this travel, Alice prefers a shopping mall near the
+hotel and good location, while Tom is concerned about
+food and wishes good view around the hotel. So hotel B
+may not be the best choice for them, and hotel A and C
+may be more appropriate to Alice and Tom respectively.
+
+So the problem is how to provide Alice and Tom a per-
+sonalized recommendation list respectively to recommend
+the most appropriate hotels to them in “Big Data” environ-
+ment efﬁciently.
+As shown in Figs. 1a and 1b, there are two reviews of
+W Hong Kong hotel snapshotted from a well-known
+travel review site (www.tripadvisor.com). From Fig. 1,
+we can see that user ua prefers modern feel and delicious
+food, while another user ub is concerned more about good
+location, great service, breakfast, shopping and conve-
+nient transportation. We know that the reviews of the
+users commented for the hotels are related with both their
+preferences and the quality of the hotels. So the review of
+ub to is useful to both Alice and Tom, while the review of
+ua is useful to Tom only, since the review of ua is irrele-
+vant to the preferences of Alice. Thus it could be found
+that the information extracted from the reviews of previ-
+ous users can be used to help recommend appropriate
+services to new users.
+Motivated by these observations,
+in this paper, we
+address these challenges through the following contribu-
+tions:
+(1) A keyword-aware service recommendation
+method, named KASR, is proposed in this paper, which
+is based on a user-based Collaborative Filtering (CF) algo-
+rithm. (2) In KASR, keywords extracted from reviews of
+previous users are used to indicate their preferences.
+Moreover, we implement it on a distributed computing
+platform, Hadoop, which uses MapReduce as its comput-
+ing framework.
+The remainder of the paper is organized as follows: Sec-
+tion 2 introduces the preliminary knowledge of our
+method. Then a keyword-aware service recommendation
+method, named KASR, is described in Section 3. Section 4
+presents the implementation of KASR on MapReduce. In
+Section 5, experiments are designed and analyzed to evalu-
+ate the accuracy and scalability of KASR. Related works are
+presented in Section 6. Section 7 concludes the paper and
+gives an outlook on possible continuations of our work.
+
+MENG ET AL.: KASR: A KEYWORD-AWARE SERVICE RECOMMENDATION METHOD ON MAPREDUCE FOR BIG DATA APPLICATIONS
+
+3223
+
+TABLE 1
+Basic Symbols and Notations
+
+TABLE 2
+Keyword-Candidate List of Hotel Reservation System
+
+Nowadays, the trend “everything as a service” has
+been creating a Big Services era due to the foundational
+architecture of services computing. And “servicelization”
+is the way of offering social networking services, big data
+analytics, and Internet services [19], [20]. Thus the cloud
+computing tools aforementioned can be used to improve
+the scalability and efﬁciency of service recommendation
+methods in the “Big Data” environment.
+
+3 KEYWORD-AWARE SERVICE RECOMMENDATION
+METHOD
+
+Deﬁnition 1 (Keyword-Aware Service Recommendation
+method, KASR). In this paper, we propose a keyword- aware
+service
+recommendation method, named KASR.
+In this
+method, keywords are used to indicate both of users’ preferen-
+ces and the quality of candidate services. A user-based CF algo-
+rithm is adopted to generate appropriate recommendations.
+KASR aims at calculating a personalized rating of each candi-
+date service for a user, and then presenting a personalized ser-
+vice
+recommendation list and recommending the most
+appropriate services to him/her.
+
+Moreover, to improve the scalability and efﬁciency of our
+recommendation method in “Big Data” environment, we
+implement it in a MapReduce framework on Hadoop by
+splitting the proposed algorithm into multiple MapReduce
+phases. Table 1 summarizes the basic symbols and notations
+used in this paper.
+
+3.1 Keyword-Candidate List and Domain Thesaurus
+In our method, two data structures, “keyword-candidate
+list” and “specialized domain thesaurus”, are introduced to
+help obtain users’ preferences.
+Deﬁnition 2 (Keyword-candidate list). The keyword-candi-
+date list is a set of keywords about users’ preferences and multi-
+criteria of the candidate services, which can be denoted as
+K ¼ fk1 ; k2 ; . . . ; kn g; n is the number of the keywords in the
+keyword-candidate list. An example of a simple keyword-candi-
+date list of the hotel reservation system is described in Table 2.
+Keywords in the keyword-candidate list can be a word or multi-
+ple words related with the quality criteria of candidate services.
+
+In this paper, the preferences of previous users will be
+extracted from their reviews for candidate services and for-
+mailized into a keyword set. Usually, since some of words
+in reviews can not exactly matach the corresponding key-
+words in the keyword-candidate list which characterize the
+same aspects as the words. The corresponding keywords
+should be extracted as well. In this paper, we assume that
+specialized domain thesauruses are built to support the key-
+word extraction, and different domain thesauruses are built
+for different service domains.
+Deﬁnition 3 (Domain thesaurus). A domain thesaurus is a ref-
+erence work of the keyword-candidate list that lists words
+grouped together according to the similarity of keyword mean-
+ing, including related and contrasting words and antonyms
+[21], [22]. An example of a simple domain thesaurus of hotel
+reservation system is shown in Fig. 2. As shown in Fig. 2, the
+words in the red rectangle are the keywords in the correspond-
+ing keyword-candidate list, and the words in the ovals are the
+related words of the keywords. Often, domain thesauruses are
+updated regularly to ensure the timeliness of the words.
+
+Fig. 2. An example of a simple domain thesaurus of hotel reservation system.
+
+3224
+
+IEEE TRANSACTIONS ON PARALLEL AND DISTRIBUTED SYSTEMS, VOL. 25, NO. 12, DECEMBER 2014
+
+TABLE 3
+Importance Degree of the Keywords
+
+usually done when setting up Information
+Retrieval systems [23].
+b) Keyword extraction. In this phase, each review will
+be transformed into a corresponding keyword set
+according to the keyword-candidate list and
+domain thesaurus. If the review contains a word in
+the domain thesaurus, then the corresponding key-
+word should be extracted into the preference key-
+word set of the user. For example, if a review of a
+previous user for a hotel has the word “spa”,
+which is corresponding to the keyword “Fitness”
+in the domain thesaurus,
+then the keyword
+“Fitness” should be contained in the preference
+keyword set of the previous user. If a keyword
+appears more than once in a review, the times of
+repetitions will be recorded. In this paper, it is
+regarded that keywords appearing multiple times
+are more important. The times of repetitions will
+be used to calculate the weight of the keyword in
+preference keyword set in the next step.
+(2) Similarity computation. The second step is to identify
+the reviews of previous users who have similar tastes to
+an active user by ﬁnding neighborhoods of the active
+user based on the similarity of their preferences. Before
+similarity computation,
+the reviews unrelated to the
+active user’s preferences will be ﬁltered out by the inter-
+section concept in set theory. If the intersection of the
+preference keyword sets of the active user and a previous
+user is an empty set, then the preference keyword set of
+the previous user will be ﬁltered out.
+Two similarity computation methods are introduced in
+our recommendation method: an approximate similarity
+computation method and an exact similarity computation
+method. The approximate similarity computation method is
+for the case that the weights of the keywords in the prefer-
+ence keyword set are unavailable, while the exact similarity
+computation method is for the case that the weight of the
+keywords are available.
+
+a) Approximate similarity computation. A frequently used
+method for comparing the similarity and diversity of
+sample sets, Jaccard coefﬁcient, is applied in the
+approximate similarity computation.
+Jaccard coefﬁcient is measurement of asymmetric
+information on binary (and non-binary) variables,
+and it is useful when negative values give no infor-
+mation. The similarity between the preferences of
+the active user and a previous user based on Jaccard
+coefﬁcient is described as follows:
+simðAPK; PPK Þ ¼ JaccardðAPK; PPK Þ
+j
+¼ APK \ PPK
+j
+APK \ PPK
+j
+j;
+
+(1)
+
+Fig. 3. KASR’s main steps.
+
+3.2 A Keyword-Aware Service Recommendation
+Method
+The main steps of KASR are depicted in Fig. 3, which are
+described in detail as follows:
+(1) Capture user preferences by a keyword-aware approach: In
+this step, the preferences of active users and previous users
+are formalized into their corresponding preference keyword
+sets respectively. In this paper, an active user refers to a cur-
+rent user needs recommendation.
+
+
+Preferences of an active user. An active user can give
+his/her preferences about candidate services by
+selecting keywords from a keyword-candidate list,
+which reﬂect the quality criteria of the services he/
+she is concerned about. The preference keyword set
+of the active user can be denoted as APK ¼ fak1 ;
+ak2 ; . . . ; akl g, where aki ð1  i  lÞ is the ith keyword
+selected from the keyword-candidate list by the
+active user, l is the number of selected keywords.
+Besides, the active user should also select the
+importance degree of the keywords. The importance
+degree of the keywords is shown in Table 3: “1” rep-
+resents the general, “3” represents important and
+“5” represents very important:
+Preferences of previous users. The preferences of a
+previous user for a candidate service are extracted
+from his/her reviews for the service according to
+the keyword-candidate list and domain thesaurus.
+And a review of the previous user will be formal-
+ized into the preference keyword set of him/her,
+which can be denoted as PPK ¼ fpk1 ; pk2 ; . . . ; pkhg,
+where pki ð1  i  hÞ is the ith keyword extracted
+from the review, h is the number of extracted
+keywords.
+The keyword extraction process is described as follows:
+
+
+
+a)
+
+Preprocess. First, HTML tags and stop words in the
+reviews snippet collection should be removed to
+avoid affecting the quality of the keyword extrac-
+tion in the next stage. And the Porter Stemmer
+algorithm (keyword stripping)
+[23]
+is used to
+remove the commoner morphological and inﬂexio-
+nal endings from words in English. Its main use is
+as part of a term normalization process that is
+
+MENG ET AL.: KASR: A KEYWORD-AWARE SERVICE RECOMMENDATION METHOD ON MAPREDUCE FOR BIG DATA APPLICATIONS
+
+3225
+
+where APK is the preference keyword set of the active
+user, PPK is the preference keyword set of a previous
+user. And the weight of the keywords is not consid-
+ered in this approach.
+Algorithm 1, SIM-ASC, illustrates the function-
+ality of the approximate similarity computation
+method.
+
+b)
+
+Exact similarity computation. A cosine-based approach
+is applied in the exact similarity computation, which
+is similar to the vector space model (VSM) in infor-
+mation retrieval [24], [25].
+Deﬁnition 4 (Preference weight vector). In this cosine-
+based approach, The preference keyword sets of the active user
+and previous users will be transformed into n-dimensional
+weight vectors respectively, namely preference weight vector,
+which can be denoted as ~WP ¼ ½w1 ; w2 ; . . . ; wn ; n is the num-
+ber of keywords in the keyword-candidate list, wi is the weight
+of the keyword ki in the keyword-candidate list. If the keyword
+ki is not contained in the preference keyword set, then the weight
+of ki in the preference weight vector is 0, i.e., wi ¼ 0. The prefer-
+ence weight vectors of the active user and a previous user are
+noted as ~WAP and ~WPP , respectively.
+
+In this paper, we use the Analytic Hierarchy Process
+(AHP) model to decide the weight of the keywords in the
+preference keyword set of the active user. AHP method is
+provided by Saaty in 1970s to choose the best satisﬁed busi-
+ness role for its hierarchy nature [26]. The weight comput-
+ing based on the AHP model is decied as follows:
+Firstly, we construct the pair-wise comparison matrix in
+terms of the relative importance between each two key-
+words. The pair-wise comparison matrix Am ¼ ðaij Þm must
+satisfy the following properties, aij represents the relative
+importance of two keywords:
+aij ¼ 1;
+i ¼ j ¼ 1; 2; 3; . . . ; m:
+1.
+i; j ¼ 1; 2; 3; . . . ; m and i 6¼ j:
+aij ¼ 1=aji ;
+2.
+i; j; k ¼ 1; 2; 3; . . . ; m and i 6¼ j:
+aij ¼ aik=ajk ;
+3.
+After checking the consistence of the matrix, then we cal-
+culate the weight by the following function:
+Xm
+aijP
+m
+k¼1 akj
+j¼1
+
+wi ¼ 1
+m
+
+(2)
+
+;
+
+where aij is the relative importance between two keywords,
+m is the number of the keywords in the preference keyword
+set of the active user.
+The weight vector of the preference keyword set of a pre-
+vious user can be decided by the term frequency/inverse docu-
+ment frequency (TF-IDF) measure [27], which is one of the
+best-known measures for specifying the weight of keywords
+in Information Retrieval.
+
+In the TF-IDF approach,
+to calculate the preference
+weight vector of a previous user u’, “all reviews” by user u’
+should be collected. Here, “all reviews” contain the reviews
+by user u’ for the candidate services and similar services not
+in the candidate services. The reviews should also be trans-
+formed into keyword sets respectively according to the key-
+word-candidate list and the domain thesaurus.
+TF, the term frequency of the keyword pki in the prefer-
+ence keyword set of user u’ is deﬁned as
+TF ¼ NpkiP
+g Npki
+
+(3)
+
+;
+
+where Npki is the number of occurrences of the keyword pki
+in all the keyword sets of the reviews commented by the
+same user u’, g is the number of the keywords in the prefer-
+ence keyword set of the user u’.
+The inverse document frequency (IDF) is obtained by
+dividing the number of all reviews by the number of
+reviews containing the keyword pki .
+jR0 j
+IDF ¼ log
+jr0 : pki 2 r0 j;
+
+(4)
+
+where jR0 j is the total number of the reviews commented by
+user u’, and jr0 : pki 2 r0 j is the number of reviews where key-
+word pki appears. So the TF-IDF weight of the keyword pki
+in the preference keyword set of user u’ can be decided by
+the following function:
+wpki ¼ TF  IDF ¼ NpkiP
+g Npki
+
+jR0 j
+ log
+jr0 : pki 2 r0 j:
+
+(5)
+
+¼
+
+Then the similarity based on the cosine-based approach
+is deﬁned as follows:
+ ~WPP
+
+
+ ~WAP
+~WAP  ~WPP
+simðAPK; PPK Þ ¼ cosð ~WAP ; ~WPP Þ ¼
+2 
+P
+2
+ﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃ
+q
+ﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃ
+q
+~WAP;i  ~WPP;i
+P
+P
+n
+i¼1
+;
+~W 2
+~W 2
+n
+n
+i¼1
+i¼1
+PP;i
+AP;i
+
+ð6Þ
+where ~WAP and ~WPP are respectively the preference weight
+vectors of the active user and a previous user. ~WAP;i is the
+i-th dimension of ~WAP and represents the weight of the key-
+word ki in preference keyword set APK, ~WPP;i is the ith
+dimension of ~WPP and represents the weight of the keyword
+ki in preference keyword set PPK.
+Algorithm 2, SIM-ESC, illustrates the functionality of the
+exact similarity computation method.
+(3) Calculate personalized ratings and generate recommenda-
+tions. Based on the similarity of the active user and previous
+users, further ﬁltering will be conducted. Given a threshold
+d, if simðAPK; PPKj Þ < d, the preference keyword set of a
+previous user PPKj will be ﬁltered out, otherwise PPKj
+will be retained. The thresholds given in two similarity com-
+putation methods are different, which are both empirical
+values.
+Once the set of most similar users are found, the per-
+sonalized ratings of each candidate service for the active
+
+3226
+
+IEEE TRANSACTIONS ON PARALLEL AND DISTRIBUTED SYSTEMS, VOL. 25, NO. 12, DECEMBER 2014
+
+user can be calculated. Finally, a personalized service rec-
+ommendation list will be presented to the user and the
+service(s) with the highest rating(s) will be recommended
+to him/her.
+
+(see Algorithm 1) and exact similarity computation (see
+Algorithm 2). Line 16 to line 18 is to calculate the personal-
+ized ratings of the candidate services for the active user.
+Finally, line 19 and line 20 is to sort the candidate services
+according to the personalized ratings and recommend the
+services with the Top-K highest ratings to the active user.
+
+(7)
+
+Here, we use a weighted average approach to calculate
+X
+the personalized rating pr of a service for the active user.
+pr ¼ r þ k
+simðAPK; PPKj Þ  ðrj   rÞ;
+ X
+PPKj 2 ^R
+simðAPK; PPKj Þ;
+k ¼ 1
+PPKj 2 ^R
+where simðAPK; PPKj Þ is the similarity of the preference
+keyword set of the active user APK and the preference key-
+word set of a previous user PPKj ; multiplier k serves as a
+normalizing factor; ^R denotes the set of the remaining pref-
+erence keyword sets of previous users after ﬁltering; rj is
+the rating of the corresponding review of PPKj , and r is
+deﬁned as the average ratings of the candidate service.
+Repeating the steps above, we can calculate the personal-
+ized ratings of all candidate services for the active user.
+Then we can rank the services by the personalized ratings
+and present a personalized service recommendation list to
+him/her. Without loss of generality, we assume that the
+services with higher ratings are more preferable to the user.
+So the service(s) with the highest rating(s) will be recom-
+mended to the active user. Alternatively, we can recom-
+mend the Top-K services to the user.
+Algorithm 3 illustrates the basic algorithm of KASR. The
+input contains the preference keyword set of the active user
+APK, the candidate services WS ¼ fws1 ; ws2 ; . . . ; wsN g, the
+threshold d in the ﬁltering phase, and the number K. In line
+2, ^R is used to store the remaining preference keyword sets
+of previous users, and sum is to record the number of the
+remaining preference keyword sets of previous users. Line
+3 to line 8 is used to process each review of the previous
+users into the corresponding preference keyword sets, and
+then do a simple ﬁltering to ﬁlter out the reviews unrelated
+with the active user’s preferences. Line 9 to line 15 are to cal-
+culate the similarity of APK and PPKj , and then ﬁlter out
+the keyword set PPKj whose similarity with APK is less
+than the threshold d. In this paper, there are two methods to
+calculate the similarity: approximate similarity computation
+
+For convenience, KASR with the approximate and exact
+similarity computation methods are denoted as KASR-ASC
+and KASR-ESC, respectively. Suppose there are N candi-
+date services and each service with R reviews on average.
+Moreover, suppose that there are n keywords in the key-
+word-candidate list. Then, the time complexity of KASR-
+ASC and KASR-ESC are O(NR) and O(NRn), respectively.
+
+4 IMPLEMENTATION ON MAPREDUCE
+
+To improve the scalability and efﬁciency of KASR in “Big
+Data” environment, we implement it
+in a MapReduce
+framework on Hadoop platform. The whole computation
+ﬂowcharts of KASR-ASC and KASR-ESC on MapReduce
+are respectively shown in Figs. 4a and 4b. Due to the space
+limit, the notations of symbols in Fig. 4a and Fig. 4b are
+explained in detail in Appendix B.1 and Appendix B.2,
+available in the online supplemental material, respectively.
+(1) KASR-ASC on MapReduce. Fig. 4a shows the computa-
+tion ﬂowchart of KASR-ASC on MapReduce, which consists
+of three steps. And Step 1 is ofﬂine executed, Step 2 and
+Step 3 are online executed.
+Step 1. The ﬁrst step is to process the reviews for candi-
+date services by previous users into their preference key-
+word sets and compute the average ratings for each
+
+MENG ET AL.: KASR: A KEYWORD-AWARE SERVICE RECOMMENDATION METHOD ON MAPREDUCE FOR BIG DATA APPLICATIONS
+
+3227
+
+Fig. 4. The computation ﬂowchart of KASR on MapReduce. (a) Shows the computation ﬂowchart of KASR-ASC on MapReduce, which consists of
+three steps; (b) shows the computation ﬂowchart of KASR-ESC on MapReduce, which consists of four steps.
+
+candidate service. Map-I: Map < i; j; rij ; Rij > on i such
+that the tuples with the same i are shufﬂed to the same
+node in the form of < j; rij ; Rij > . Reduce-I: Take < j; rij ;
+Rij > as the input and emit < i; j; rij ; PPKij ; ri > for each
+input of Map-I. The output of Reduce-I O1 ¼ f < i; j; rij ;
+PPKij ; ri > g; i 2 ½1; N  will be used as the input of Map-II
+to calculate the similarity.
+Step 2. The second step is to compute the similarity
+between the active user and previous users. Map-II: Map
+< i; j; rij ; PPKij ; rj > on i, and tuples with the same i are
+shufﬂed to the same node in form of < j; rij ; PPKij ; ri > .
+Reduce-II: Take < APK > and < j; rij ; PPKij ; ri > as the
+ASC ; ri > ; i 2 ½1; N .
+input, then emit sim ¼ < i; j; rij ; sij
+Step 3. The third step aims to calculate the personalized
+rating of each candidate service and present a personal-
+ized recommendation list to the active user. Based on the
+output of this step, the recommendation can be obtained.
+Map-III: Map < i; j; rij ; sij
+ASC ; ri > on i so that the tuples
+with the same i are shufﬂed to the same node in form
+of < j; rij ; sij
+ASC ; ri > . Reduce-III: Take < j; rij ; sij
+ASC ; ri > as
+the input, and emitRanking   list ¼ f < pri ; i > g; i 2 ½1; N ,
+where pri is the personalized rating of the active user to
+service i. The tuples of the output are ordered by the
+services id i, which is just the personalized service recom-
+mendation list to the active user.
+(2) KASR-ESC on MapReduce. Fig. 4b shows the computa-
+tion ﬂowchart of KASR-ESC on MapReduce, which consists
+of four steps. Step 1 and Step 2 are ofﬂine executed, and
+Step 3 and Step 4 are online executed.
+Step 1. The ﬁrst step of ﬂowchart of KASR-ESC on Map-
+Reduce is the same as Step 1 of the ﬂowchart of KASR-ASC
+on MapReduce.
+Step 2. The second step is to process all reviews of each
+previous user into the corresponding keyword sets respec-
+tively and takes advantage of the TF-IDF measurement to
+
+calculate the preference weight vectors of the previous
+users. Map-II: Map < j; R0
+jv > on j such that reviews of the
+same user j are shufﬂed to the same node in form
+of < R0
+jv > . Reduce-II: Take < R0
+jv > as the input and
+emit < j; ~WPPj > . ~WPPj is the preference weight vector of a
+previous user j. And the tuples f < j; ~WPPj > g will be used
+to calculate the similarity in Reduce-III.
+Step 3. The third step is to compute the similarity
+between the active user and previous users. Map-III: Map
+< i; j; rij ; PPKij ; ri > on i, and tuples with the same i are
+shufﬂed to the same node in form of < j; rij ; PPKij ; ri > .
+Reduce-III: Take < ~WAP > ; < j; ~WPPj > and < j; rij ; PPKij ;
+then emit sim ¼ < i; j; rij ; sij
+ri > as the input,
+ESC ; ri > ;
+i 2 ½1; N .
+Step 4. The last step is the same as Step 3 of the ﬂowchart
+of KASR-ASC on MapReduce. Based on the output of this
+step, we can present a personalized service recommenda-
+tion list to the active user and recommend the most appro-
+priate services to him/her.
+
+5 EXPERIMENTAL EVALUATION
+
+In this section, experiments are designed and analysed to
+evaluate the accuracy and scalability of KASR. To evalu-
+ate the performance of KASR in accuracy, we compare
+KASR with other two well-known recommendation meth-
+ods: user-based algorithm using Pearson Correlation
+Coefﬁcient (PCC) and item-based algorithm using PCC,
+which are called as UPCC [13] and IPCC [28] respec-
+tively. Three metrics are used to evaluate the accuracy:
+mean absolute error (MAE) [29], mean average precision
+(MAP) [30] and discounted cumulative gain (DCG) [31].
+The deﬁnitions of MAE, MAP and DCG can be found
+in Appendix C.1, available in the online supplemental
+material. As to the scalability, a well-accepted scalability
+
+3228
+
+IEEE TRANSACTIONS ON PARALLEL AND DISTRIBUTED SYSTEMS, VOL. 25, NO. 12, DECEMBER 2014
+
+Fig. 5. Comparison of UPCC, IPCC, KASR-ASC and KASR-ESC in
+MAE.
+
+metric, Speedup [32], is adopted to measure the perfor-
+mance in the scalability of KASR.
+
+5.1 Experiment Setup and Datasets
+Technically, our experiments are conducted in a Hadoop
+platform. And to evaluate the accuracy and scalability of
+KASR, two kinds of data set are adopted in the experiments:
+a real data set and a synthetic data set. Due to the space
+limit, more details about the experiment settings and data
+set can be found in Appendix C.2 and Appendix C.3, avail-
+able in the online supplemental material, respectively.
+
+5.2 Experiment Evaluation
+Two groups of experiments are conducted to evaluate the
+accuracy and scalability of KASR. In the ﬁrst one, we com-
+pare KASR with UPCC and IPCC in MAE, MAP and DCG
+to evaluate the accuracy of KASR. The other is to explore
+the scalability of KASR.
+
+5.2.1 Accuracy Evaluation
+(1) Comparison of UPCC, IPCC, KASR-ASC and KASR-ESC in
+MAE. MAE is a statistical accuracy metric often used in CF
+methods to measure the prediction quality. And the normal-
+ized mean absolute error (NMAE) metric is also used to
+measure the prediction accuracy. The lower the MAE or
+NMAE presents the more accurate predictions.
+Fig. 5 shows the MAE and NMAE values of UPCC,
+IPCC, KASR-ASC and KASR-ESC. It could be found that
+the MAE and NMAE vaules of KASR-ASC and KASR-
+ESC are much lower than UPCC and IPCC (e.g., the
+MAE and NMAE values of KASR-ASC are respectively
+
+Fig. 7. Comparison of UPCC, IPCC, KASR-ASC and KASR-ESC in the
+DCG values of Top-K (K ¼ 3, 5, 7) recommendation list. (a) Shows the
+comparison of UPCC, KASR-ASC and KASR-ESC in DCG. (b) shows
+the comparison of IPCC, KASR-ASC and KASR-ESC in DCG.
+30.02% ((0.6792–0.4753) / 0.6792 ¼ 30.02%) and 35.73%
+lower than UPCC. And the MAE and NMAE values of
+KASR-ESC are respectively 23.28 and 22.87 percent lower
+than IPCC). Thus our methods KASR-ASC and KASR-
+ESC can provide more accurate predictions than tradi-
+tional methods UPCC and IPCC.
+(2) Comparison of UPCC, IPCC, KASR-ASC and KASR-ESC
+in MAP and DCG. In most service recommender systems,
+users tend to be recommended the top services of the
+returned result list. The services in higher position, espe-
+cially the ﬁrst position, should be more satisfying than the
+services in lower position of the returned result list. To evalu-
+ate the quality of Top-K service recommendation list, MAP
+and DCG are used as performance evaluation metrics. And
+the higher MAP or DCG presents the higher quality of the
+predicted service recommendation list.
+Figs. 6 and 7 respectively show the MAP values and DCG
+values of Top-K (K ¼ 3, 5, 7) recommendation list of UPCC,
+IPCC, KASR-ASC and KASR-ESC. From Figs. 6 and 7, we
+can see that the MAP values and DCG values of KASR-ASC
+and KASR-ESC are comparatively higher than UPCC and
+IPCC. It also could be found that the MAP values decrease
+when K increases, while the DCG values increase when K
+increases.
+For a more intuitive illustration, the percentage values
+that KASR-ASC and KASR-ESC outperform UPCC and
+IPCC in MAP and DCG of Top-K ðK ¼ 3; 5; 7Þ recommen-
+dation list are calculated and listed in Tabel 4 and
+Table 5. Table 4a presents the percentage values of
+KASR-ASC and KASR-ESC outperform UPCC in MAP of
+Top-K recommendation list (e.g., When K ¼ 3, KASR-
+ASC outperforms UPCC 3.56% ((0.8265–0.7981)/0.7981 ¼
+3.56%) in MAP of Top-3 recommendation list). Table 4b
+
+TABLE 4
+The Percentage Values that KASR-ASC and KASR-ESC Out-
+perform UPCC and IPCC in MAP of Top-K (K ¼ 3; 5; 7)
+Recommendation List
+
+Fig. 6. Comparison of UPCC, IPCC, KASR-ASC and KASR-ESC in the
+MAP values of Top-K (K ¼ 3, 5, 7) recommendation list. (a) Shows the
+comparison of UPCC, KASR-ASC and KASR-ESC in MAP. (b) shows
+the comparison of IPCC, KASR-ASC and KASR-ESC in MAP.
+
+MENG ET AL.: KASR: A KEYWORD-AWARE SERVICE RECOMMENDATION METHOD ON MAPREDUCE FOR BIG DATA APPLICATIONS
+
+3229
+
+TABLE 5
+The Percentage Values that KASR-ASC and KASR-ESC
+Outperform UPCC and IPCC in DCG of Top-K (K ¼ 3; 5; 7)
+Recommendation List
+
+presents presents the percentage values of KASR-ASC
+and KASR-ESC outperform IPCC in MAP of Top-K rec-
+ommendation list. (a) and (b) in Table 5 respectively
+present the percentage values of KASR-ASC and KASR-
+ESC outperform UPCC and IPCC in DCG of Top-K (K ¼
+3, 5, 7) recommendation list.
+It could be found that
+KASR-ASC and KASR-ESC can provide more accurate
+service recommendation list than UPCC and IPCC.
+Generally speaking, KASR-ASC and KASR-ESC per-
+form better than traditional methods, UPCC and IPCC, in
+MAE, MAP and DCG. Thus the personalized service rec-
+ommendation lists provided by our method would satisfy
+users better.
+
+5.2.2 Scalability Evaluation
+A well-accepted scalability metric, Speedup [33], is adopted
+to measure the performance in the scalability of KASR.
+Speedup refers to how much a parallel algorithm is faster
+than a corresponding sequential algorithm, which can be
+deﬁned as follows:
+
+Sp ¼ T1
+Tp
+
+;
+
+(8)
+
+where p is the number of processors, T1 is the sequential
+execution time, Tp is the parallel execution time with p pro-
+cessors. If the speedup has a linear relation with the num-
+bers of nodes with the datasize ﬁxed, the algorithm will
+have good scalability.
+To verify the scalability of KASR, experiment is con-
+ducted respectively in a cluster of nodes ranging from 1
+to 8. There are four synthetic data sets used in the
+experiments (128M, 256M, 512M and 1 G datasize).
+Fig. 8 shows the speedup of KASR (Here, KASR-ESC
+method is adopted in the scalability experiment). From
+Fig. 8, we can see that the speedup of KASR increases
+relative linearly with the growth of the number of nodes.
+Meanwhile,
+larger data set obtained a better speedup.
+When the datasize is 1 G and the number of nodes is 8,
+the speedup value reaches 6.412, which is 80.15 percent
+(6.412/8 ¼ 80.15%) of the idealspeedup. The experimen-
+tal result shows that KASR on Map-Reduce in Hadoop
+platform has good scalability over “Big Data” and per-
+forms better with larger data set.
+Overall, these experimental results show that KASR per-
+forms well in accuracy, and KASR on Mapreduce frame-
+work has good scalability in “Big Data” environmrnt.
+
+Fig. 8. Speedup of KASR.
+
+6 RELATED WORK
+
+There have been many recommender systems developed
+in both academia and industry. In [33], the authors pro-
+pose a Bayesian-inference-based recommendation system
+for online social networks. They show that the proposed
+Bayesian-inference-based recommendation is better than
+the existing trust-based recommendations and is compa-
+rable to Collaborative Filtering recommendation. In [13],
+Adomavicius and Tuzhilin give an overview of the ﬁeld
+of recommender systems and describe the current gener-
+ation of recommendation methods. They also describe
+various limitations of current service recommendation
+methods, and discuss possible extensions
+that
+can
+improve recommendation capabilities and make recom-
+mender systems applicable to an even broader range of
+applications. Most existing service recommender systems
+are only based on a single numerical rating to represent
+a service’s utility as a whole [34]. In fact, evaluating a
+service through multiple criteria and taking into account
+of user feedback can help to make more effective recom-
+mendations for the users.
+With the development of cloud computing software
+tools such as Apache Hadoop, Map-Reduce, and Mahout,
+it becomes possible to design and implement scalable rec-
+ommender systems in “Big Data” environment. The
+authors of [35] implement a CF algorithm on Hadoop.
+They solve the scalability problem by dividing data set.
+But their method doesn’t have favorable scalability and
+efﬁciency if the amount of data grows. [36] presents a
+parallel user proﬁling approach based on folksonomy
+information and implements a scalable recommender sys-
+tem by using Map-Reduce and Cascading techniques. Jin
+et al. [37] propose a large-scale video recommendation
+system based on an item-based CF algorithm. They imple-
+ment their proposed approach in Qizmt, which is a .Net
+Map-Reduce framework, thus their system can work for
+large-scale video sites.
+Generally speaking, comparing with existing methods,
+KASR utilizes reviews of previous users to get both of
+user preferences and the quality of multiple criteria of can-
+didate services, which makes recommendations more
+accurate. Moreover, KASR on MapReduce has favorable
+scalability and efﬁciency.
+
+3230
+
+IEEE TRANSACTIONS ON PARALLEL AND DISTRIBUTED SYSTEMS, VOL. 25, NO. 12, DECEMBER 2014
+
+7 CONCLUSIONS AND FUTURE WORK
+
+In this paper, we have proposed a keyword-aware service
+recommendation method, named KASR. In KASR, key-
+words are used to indicate users’ preferences, and a user-
+based Collaborative Filtering algorithm is adopted to gener-
+ate appropriate recommendations. More speciﬁcally, a key-
+word-candidate list and domain thesaurus are provided to
+help obtain users’ preferences. The active user gives his/her
+preferences by selecting the keywords from the keyword-
+candidate list, and the preferences of the previous users can
+be extracted from their reviews for services according to the
+keyword-candidate list and domain thesaurus. Our method
+aims at presenting a personalized service recommendation
+list and recommending the most appropriate service(s) to
+the users. Moreover, to improve the scalability and efﬁ-
+ciency of KASR in “Big Data” environment, we have imple-
+mented it on a MapReduce framework in Hadoop platform.
+Finally, the experimental results demonstrate that KASR
+signiﬁcantly improves the accuracy and scalability of ser-
+vice recommender systems over existing approaches.
+In our future work, we will do further research in how to
+deal with the case where term appears in different catego-
+ries of a domain thesaurus from context and how to distin-
+guish the positive and negative preferences of the users
+from their reviews to make the predictions more accurate.
+
+ACKNOWLEDGMENTS
+
+W. Dou and J. Chen are the corresponding co-authors of this
+paper. This paper was partly supported by project National
+Science Foundation of China under Grant 91318301, and
+61321491; National Key Technology R&D Program of the
+Ministry of
+and Technology under Grant
+Science
+2011BAK21B06.
+
+REFERENCES
+
+[3]
+
+[1]
+
+J. Manyika et al., “Big Data: The Next Frontier for Innovation,
+Competition, and Productivity,” 2011.
+[2] C. Lynch, “Big Data: How Do Your Data Grow?” Nature, vol. 455,
+no. 7209, pp. 28-29, 2008.
+F. Chang, J. Dean, S. Ghemawat, and W.C. Hsieh, “Bigtable: A
+Distributed Storage System for Structured Data,” ACM Trans.
+Computer Systems, vol. 26, no. 2, article 4, 2008.
+[4] W. Dou, X. Zhang, J. Liu, and J. Chen, “HireSome-II: Towards
+Privacy-Aware Cross-Cloud Service Composition for Big Data
+Applications,” IEEE Trans. Parallel and Distributed Systems, 2013.
+[5] G. Linden, B. Smith, and J. York, “Amazon.com Recommenda-
+tions: Item-to-Item Collaborative Filtering,” IEEE Internet Comput-
+ing, vol. 7, no. 1, pp. 76-80, Jan. 2003.
+[6] M. Bjelica, “Towards TV Recommender System Experiments with
+User Modeling,” IEEE Trans. Consumer Electronics, vol. 56, no. 3,
+pp. 1763-1769, Aug. 2010.
+[7] M. Alduan, F. Alvarez, J. Menendez, and O. Baez, “Recommender
+System for Sport Videos Based on User Audiovisual Con-
+sumption,” IEEE Trans. Multimedia, vol. 14, no. 6, pp. 1546-1557,
+Dec. 2012.
+[8] Y. Chen, A. Cheng, and W. Hsu, “Travel Recommendation by
+Mining People Attributes and Travel Group Types from Commu-
+nity-Contributed Photos,” IEEE Trans. Multimedia, vol. 25, no. 6,
+pp. 1283-1295, Oct. 2013.
+[9] Z. Zheng, X. Wu, Y. Zhang, M. Lyu, and J. Wang, “QoS Ranking
+Prediction for Cloud Services,” IEEE Trans. Parallel and Distributed
+Systems, vol. 24, no. 6, pp. 1213-1222, June 2013.
+[10] W. Hill, L. Stead, M. Rosenstein, and G. Furnas, “Recommending
+and Evaluating Choices in a Virtual Community of Use,” Proc.
+SIGCHI Conf. Human Factors in Computing System (CHI ’95),
+pp. 194-201, 1995.
+
+[15]
+
+[11] P. Resnick, N. Iakovou, M. Sushak, P. Bergstrom, and J. Riedl,
+“GroupLens: An Open Architecture for Collaborative Filtering of
+Netnews,” Proc. ACM Conf. Computer Supported Cooperative Work
+(CSCW ’94), pp. 175-186, 1994.
+[12] R. Burke,
+Survey and
+Systems:
+“Hybrid Recommender
+Experiments,” User Modeling and User-Adapted Interaction, vol. 12,
+no. 4, pp. 331-370, 2002.
+[13] G. Adomavicius and A. Tuzhilin, “Toward the Next Generation of
+Recommender Systems: A Survey of the Stateof- the-Art and Pos-
+sible Extensions,” IEEE Trans. Knowledge and Data Eng., vol. 17,
+no. 6, pp. 734-749, June 2005.
+[14] D. Agrawal, S. Das, and A. El Abbadi, “Big Data and Cloud Com-
+puting: New Wine or Just New Bottles?” Proc. VLDB Endowment,
+vol. 3, no. 1, pp. 1647-1648, 2010.
+J. Dean and S. Ghemawat, “MapReduce: Simpliﬁed Data Process-
+ing on Large Clusters,” Comm. ACM, vol. 51, no. 1, pp. 107-113,
+2005.
+[16] G. DeCandia, D. Hastorun, M. Jampani, G. Kakulapati, A.
+Lakshman, A. Pilchin, S. Sivasubramanian, P. Vosshall, and W.
+Vogels, “Dynamo: Amazons Highly Available Key-Value
+Store,” In Proc. 21st ACM Symp. Operating Systems Principles,
+pp. 205-220, 2007.
+[17] M. Isard, M. Budiu, Y. Yu, A. Birrell, and D. Fetterly, “Dryad: Dis-
+tributed Data-Parallel Programs
+from Sequential Building
+Blocks,” Proc. European Conf. Computer Systems, pp. 59-72, 2007.
+[18] S. Ghemawat, H. Gobioff, and S. T. Leung, “The Google File Sys-
+tem,” Proc. 19th ACM Symp. Operating Systems Principles, pp. 29-
+43, 2003.
+[19] L. Zhang, “Editorial: Big Services Era: Global Trends of Cloud
+Computing and Big Data,” IEEE Trans. Services Computing, vol. 5,
+no. 4, pp. 467-468, Fourth Quarter, 2012.
+[20] Z. Luo, Y. Li, and J. Yin, “Location: A Feature for Service Selection
+in the Era of Big Data,” Proc. IEEE 20th Int’l Conf. Web Service,
+pp. 515-522, 2013.
+[21] H. Sch €utze and J. O. Pedersen, “A Cooccurrence-Based Thesaurus
+and Two Applications to Information Retrieval,” Information Proc-
+essing & Management, vol. 33, no. 3, pp. 307-318, 1997.
+[22] Y. Jing and W. Croft, “An Association Thesaurus for Information
+Retrieval,” Proc. Intelligent Multimedia Retrieval Systems and Man-
+agement Conf. (RIAO), vol. 94, pp. 146-160, 1994.
+[23] B. Issac and W.J. Jap, “Implementing Spam Detection Using
+Bayesian and Porter Stemmer Keyword Stripping Approaches,”
+Proc. IEEE Region 10 Conf. (TENCON ’09), pp. 1-5, 2009.
+[24] P. Castells, M. Fernandez, and D. Vallet, “An Adaptation of the
+Vector-Space Model for Ontology-Based Information Retrieval,”
+IEEE Trans. Knowledge and Data Eng., vol. 19, no. 2, pp. 261-272,
+Feb. 2007.
+[25] Y. Zhu and Y. Hu, “Enhancing Search Performance on Gnutella-
+like P2P Systems,” IEEE Trans. Parallel and Distributed Systems,
+vol. 17, no. 12, pp. 1482-1495, Dec. 2006.
+[26] A. Chu, R. Kalaba, and K. Spingarn, “A Comparison of two Meth-
+ods for Determining the Weights of Belonging to Fuzzy Sets,” J.
+Optimization Theory and Applications, vol. 27, no. 4, pp. 531-538,
+1979.
+[27] G. Salton, Automatic Text Processing. Addison-Wesley, 1989.
+[28] B. Sarwar, G. Karypis, J. Konstan, and J. Riedl, “Item-Based Col-
+laborative Filtering Recommendation Algorithms,” Proc. 10th Int’l
+Conf. World Wide Web, pp. 285-295, 2001.
+[29] K. Lakiotaki, N.F. Matsatsinis, and A. Tsoukis, “Multi-Criteria
+User Modeling in Recommender Systems,” IEEE Intelligent Sys-
+tems, vol. 26, no. 2, pp. 64-76, Mar./Apr. 2011.
+[30] Y. Pan and L. Lee, “Performance Analysis for Lattice-Based
+Speech Indexing Approaches Using Words and Subword Units,”
+IEEE Trans. Audio, Speech, and Language Processing, vol. 18, no. 6,
+pp. 1562-1574, Aug. 2010.
+[31] G. Kang, J. Liu, M. Tang, X. Liu, and B. cao, “AWSR: Active Web
+Service Recommendation Based on Usage History,” Proc. IEEE
+19th Int’l Conf. Web Services (ICWS), pp. 186-193, 2012.
+[32] G.M. Amdahl, “Validity of the Single-Processor Approach to
+Achieving Large Scale Computing Capabilities,” Proc. Spring Joint
+Computer Conf., pp. 483-485, 1967.
+[33] X. Yang, Y. Guo, and Y. Liu, “Bayesian-Inference Based Recom-
+mendation in Online Social Networks,” IEEE Trans. Parallel and
+Distributed Systems, vol. 24, no. 4, pp. 642-651, Apr. 2013.
+[34] G. Adomavicius and Y. Kwon, “New Recommendation Techni-
+ques for Multicriteria Rating Systems,” IEEE Intelligent Systems,
+vol. 22, no. 3, pp. 48-55, May/June 2007.
+
+MENG ET AL.: KASR: A KEYWORD-AWARE SERVICE RECOMMENDATION METHOD ON MAPREDUCE FOR BIG DATA APPLICATIONS
+
+3231
+
+[35] Z.D. Zhao and M.S. Shang, “User-Based Collaborative-Filtering
+Recommendation Algorithms on Hadoop,” Proc. Third Int’l Work-
+shop Knowledge Discovery and Data Mining, pp. 478-481, 2010.
+[36] H. Liang, J. Hogan, and Y. Xu, “Parallel User Proﬁling Based on
+Folksonomy for Large Scaled Recommender Systems: An Impli-
+mentation of Cascading MapReduce,” Proc. IEEE Int’l Conf. Data
+Mining Workshops, pp. 156-161, 2010.
+[37] Y. Jin, M. Hu, H. Singh, D. Rule, M. Berlyant, and Z. Xie,
+“MySpace Video Recommendation with Map-Reduce on Qizmt,”
+Proc. IEEE Fourth Int’l Conf. Semantic Computing, pp. 126-133, 2010.
+
+Shunmei Meng received the bachelor’s degree
+in computer science from Nanjing University of
+Science and Technology. She is currently work-
+ing toward the PhD degree at the Department of
+computer Science and Technology, Nanjing Uni-
+versity, China. Her research interests include
+cloud computing, service computing, service rec-
+ommendation, big data, and MapReduce.
+
+Wanchun Dou received the PhD degree in
+mechanical and electronic engineering from
+Nanjing University of Science and Technology,
+China, in 2001. From April 2001 to December
+2002, he did his postdoctoral research in the
+Department of Computer Science and Technol-
+ogy, Nanjing University, China. Currently, he is a
+full professor of the State Key Laboratory for
+Novel Software Technology, Nanjing University,
+China. From April 2005 to June 2005 and from
+November 2008 to February 2009, he respec-
+tively visited the Department of Computer Science and Engineering,
+Hong Kong University of Science and Technology, as a visiting scholar.
+Up to now, he has chaired three NSFC projects and published more
+than 60 research papers in international journals and international con-
+ferences. His research interests include workﬂow, cloud computing and
+service computing.
+
+Xuyun Zhang Before joining UTS, he has
+received the bachelor’s and master’s degrees in
+computer science from Nanjing University, China.
+He is currently working toward the PhD degree at
+the Faculty of Engineering & IT, University of
+Technology, Sydney, Australia. His research
+interests include cloud computing, privacy and
+security, big data, MapReduce and OpenStack.
+He has published several papers in refereed inter-
+national journals including IEEE Transactions on
+Parallel and Distributed Systems (TPDS).
+
+Jinjun Chen received the PhD degree in com-
+puter science and software engineering from
+Swinburne University of Technology, Australia.
+He is the director of Lab of Cloud Computing and
+Distributed Systems at UTS. He is an associate
+professor from the Faculty of Engineering and IT,
+University of Technology Sydney (UTS), Aus-
+tralia. His research interests include cloud com-
+puting, big data, workﬂow management, privacy
+and security, and related various research topics.
+His research results have been published in
+more than 100 papers in high-quality journals and at conferences,
+including IEEE Transactions on Service Computing, ACM Transactions
+on Autonomous and Adaptive Systems, ACM Transactions on Software
+Engineering and Methodology (TOSEM), IEEE Transactions on Soft-
+ware Engineering (TSE), and IEEE Transactions on Parallel and Distrib-
+uted Systems (TPDS). He received Swinburne Vice-Chancellor’s
+Research Award for early career researchers (2008), IEEE Computer
+Society Outstanding Leadership Award (2008-2009) and (2010–2011),
+IEEE Computer Society Service Award (2007), Swinburne Faculty of
+ICT Research Thesis Excellence Award (2007). He is an associate edi-
+tor for IEEE Transactions on Parallel and Distributed Systems. He is the
+vice chair of IEEE Computer Society’s Technical Committee on Scalable
+Computing (TCSC), the vice chair of Steering Committee of Australasian
+Symposium on Parallel and Distributed Computing, Founder and a coor-
+dinator of IEEE TCSC Technical Area on Workﬂow Management in Scal-
+able Computing Environments, the founder and the steering committee
+co-chair of International Conference on Cloud and Green Computing,
+and International Conference on Big Data and Distributed Systems. He
+is a senior member of the IEEE.
+
+" For more information on this or any other computing topic,
+please visit our Digital Library at www.computer.org/publications/dlib.
+
+

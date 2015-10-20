@@ -1,0 +1,878 @@
+                          Volume 2, Issue 4, April 2012                              ISSN: 2277 128X  
+International Journal of Advanced  Research in  
+ Computer Science and Software Engineering  
+                                                                  Research Paper 
+                                     Available  online  at: www.ijarcsse .com 
+
+A Framework of  Dis tributed  Databas e Managem ent  Sys tems  
+in the  Modern En terpris e and the Uncer tainties  removal    
+
+ 
+                                       Ms .Monik a Tri pathi  
+ 
+Prof . (Dr. ) An an d K. Tri pathi  
+                                                   A ss tt . Pro f. , A rya Kanya PG     
+Head  o f Dep t t . CSE & IT  
+ 
+ 
+Co l lege,Jhans i ,Ind ia  
+ 
+SR Group  o f Ins t itu t ions ,CSE,Jhans i ,Ind ia  
+                     
+ 
+d r.aktr ipath i@g ma il .co m                                                                  
+ 
+mon ikatr ipath i.d@g ma il .co m 
+
+      
+
+Abstract   :This  research  paper  stud ies  the  use  o f  d istributed   da tabase management   systems  (DDBM Ss)  in  the  in forma t ion 
+infrastructure  o f  modern   organiza t ions   to   reduce  the  uncerta int ies  occurring   in   organiza t ion .  The  key   purpose  o f  the  
+research  is  to   determine  the  feasib i l i ty  and   appl icab i l ity  o f DDBMS s  for  today's  business  app l ica t ions. The  forces which  
+drove  the  selection  o f  this  top ic  were  the  improvements  o f  d istributed   features  in  lead ing   da tabase  management   systems 
+(DBMSs )  in   recent   years,   as  wel l   as  the  po tent ia l   o f  d istributed   da tabases  to   provide  compet it ive  advantages  for 
+organiza t ions for proper ut i l iza t ion o f infrastructure to  ob ta in the meaning ful   informa t ion.  
+
+ Keywords:  Distributed  Da tabase Management  Systems:  DDBMS,  DBM S.  
+
+1 .  PRES ENT  STATE  O F  KNOWLEDG E:  Today ‟s 
+bus iness   env ironmen t   has   an   increas ing   need   fo r  d istribu ted 
+databas e  and   clien t /server  app licat ions   as   the  des ire  fo r  
+rel iab le,   s calab le  and   access ib le  in fo rmat ion   is   s tead ily   r is ing . 
+Dis tribu ted   databas e  s ystems   p rov ide  an   imp rovemen t   on  
+commun icat ion   and  data  p rocess ing   due to   its   data d is tribu t ion 
+th roughou t   d ifferen t   netwo rk   s ites .  DDS  makes   no t   on ly  
+ma kes   data   acces s   fas ter,  bu t   a  s ing le -po in t   o f  fai lu re  is   les s 
+like ly   to   occu r,  and   it   p rov ides   loca l  con tro l  o f  data  fo r  us ers . 
+However,  there  is   s ome  comp le xity   when   at temp t ing   to  
+manage and  con tro l d is tribu ted  databas e s ys tems .  
+
+The  in fo rmat ion   requ ire men ts   o f  o rgan izat ions   and   d istribu ted 
+databas e  techno logy   bo th   have  g rown   very   tremendous ly   in 
+recen t   years .  In   fact ,  nearly   all  modern  DBM Ss   come  s tandard 
+with   powerfu l  d is tribu ted   featu res ,  bu t  thes e  featu res  mus t   be 
+imp le men ted   and   admin is tered   by   s kil led   p ro fes s ionals . 
+Dis tribu ted   databas es   are  much   mo re  co mp le x  than   their  
+cen tralized   databas e  cous in s ,  bu t  when   p roperly   imp le men ted  
+in   the  app rop riate  enterp ris e  app licat ions ,  they  can  p rov ide 
+g reat  benefits  to  the o rgan izat ions  they  suppo rt .  
+
+Demand s  for DDBMSs  
+
+Pr io r  to   the  popu lar  accep tance  o f  DDBMSs ,  co rpo rat ions 
+no rma lly   rel ied   on   cen tralized   databas es   des igned   to   s erve 
+very   s tructu red  in fo rmat ion   requ ire men ts .  Thes e  cen tralized  
+
+databas es   had  s ome  characteris t ics   in   common .  F irs t ,  they 
+ran   on   powerfu l  and   e xpens ive  hardware  that   cou ld 
+hand le  very  large  po rt ions   o f  a  firm's   data  reliab ly .  
+Second ,  they   were  ad min is tered   by   a  sma ll   nu mber  o f  
+wel l-t rained   peop le  who   cou ld   manage  the  o rgan izat ion 's  
+compu ters  
+to   reduce 
+the  uncertain t ies   occu rring  
+in  
+o rgan izat ions   [1 ].Th ird ,  the  ded icated   data  lines   fo rming  
+the  co rpo rate wide  area  netwo rk  (WAN )  had   to   be  h ig h ly 
+rel iab le  and   have  a  large  capacity ,  becaus e  any  down t ime  
+wi l l  p reclude  at   leas t   one  s ite  fro m  operat ing ,  and   every 
+operat ion   had   to   be  transmit ted   to   and  from  the  cen tral 
+databas e  in   real  t ime.   Thes e  cen tralized   databas es   cou ld 
+p rov ide  adequate  perfo rmance  to   firms   ab le  to   wo r k  
+around   their  s ho rtcomings .  Thes e  sho rtcomings   include 
+the  lack  o f   f le xib i l ity   in   the  app l icat ion   o f  the  f irm's  
+in fo rmat ion   and   the  requ ire men t   to   imp le men t   a  s ing le  
+po in t  o f fai lu re  fo r the en t ire  en terp ris e. 
+
+Th is   s ect ion   exp lo re s   the  les s ons   learned   abou t   the 
+limitat ions   o f  cen tralized   databas e s ys tems   over  the  th irty 
+years   they   have  been  in   general  us e.  Firs t   the  bus iness 
+forces   are  e xp lo red .   Each   o f  thes e  bus ines s   iss ues   has 
+generated  
+in fo rmat ion  
+techno logy  
+requ ire men ts  
+that 
+d is tribu ted   databas e  arch itectu res   are  un iquely   capab le  o f 
+s uppo rt ing .  Second ,  the  technol ogy  is s ues   are  e xp lo red .  
+Thes e  have  come  abou t   from  advances   in   in fo rmat ion  
+techno logy   that  have made  the  cen tralized   databas e model 
+less  relevant  in  today 's  o rgan izat ions . 
+
+Vo lu me  2,  Is s ue 4, Ap ri l  2012                                                                                                                                                                www. i jarcs s e.com 
+
+Bus iness  Forces  
+
+Geographic Dispersion 
+
+Geog raph ic  d is pers ion   o f  o rgan izat ions   is   no t   an   en t irely   new  
+concept . Large  f irms   have  connected  majo r  reg ional  o ff ices   to 
+their  cen tralized   databas es   us ing  ded icated  lines   fo r  years . The 
+d iffe rence now  is  that  g eog raph ic d is pers ion  is  taken  to  g reater 
+e xtre mes   to   p rov ide  cos t   s av ings   and   imp roved   con tact   with  
+the 
+reg ional  o ff ices   are 
+[10] .  Large 
+firm's   cus tomers  
+increas ing ly   rep laced  with   smal ler  locat ions   in   all  o f  the  firm's  
+ma rkets .  Th is   change  g reat ly  
+increas es   the  number  o f 
+ded icated   lines wh ich ,  if  p rov ided   at  the s ame  s erv ice  levels   as 
+in   the  o lder  cen tralized   s ystems ,  cou ld   add   up  to   an  eno rmous 
+e xpens e.  Clea rly ,   the  trad it ional   cen tral ized   database  model  
+creates   a  p rob lem  fo r  f irms   w is h ing   to   benefit   by   s uch 
+increas ed  geog raph ic d is pers ion . 
+
+Ano ther  aspect   o f  the  geog raph ic  d is pers ion   p rob lem  is   the 
+g rowing   abundance  o f  po rtab le  compu ter  us e  by   mob ile  
+p ro fes s ionals .  A   common   e xa mp le  o f   th is   is   the  traveling  
+s ales pers on   us ing   a  lap top -bas ed   database  to   query   availab le 
+inven to ry   and   take  customer  o rders .  The  natu re  o f  th is   wo rk  
+p reven ts   a  fu ll-t ime  netwo r k  connect ion ,  and   the  databas e  on 
+the  mob i le  s ys tem  mus t   somehow  be  l inked   to   the  f irm's  
+mas ter  databas e  at   regu lar  in tervals   to   update  the  d istribu ted 
+cop ies   o f  any   data  that   has   been   changed . Th is  is   another  cas e 
+where  geog raph ic  d is pers ion   has   rendered   the  cen tralized  
+databas e arch itectu re obs o lete [11 ].  
+
+Geog raph ical ly   d is pers ed   o rgan izat ions   requ ire  an   arch itectu re 
+that   allows   the  bu lk  o f  data  retrieval  and   updates   to   be 
+perfo rmed   on   fas t  and  inexpens ive  local  area  netwo rks  
+(LANs ).  Th is   arch itectu re  s hou ld   res erve  the  mo re  expens ive 
+WAN  fo r  data  updates   that   are  relevan t   to   o ther s ites . Mob ile 
+us ers   shou ld   have  a  copy  o f  the  data  fo r  their  local  us e  and  an 
+eff icien t  means  to  update us ing  a part -t ime  connect ion  [12 ].  
+
+ 
+
+Informa t ion as a  Resource  
+
+impo rtance  o f 
+the 
+today   unders tand  
+leaders 
+Bus iness  
+in fo rmat ion   as   a  bus ines s   resou rce. W ith   cen tralized   databas e 
+s ys tems ,  an   o rgan izat ion 's   in fo rmat ion   is   ma in tained   an d 
+con tro lled   by   a  few  h igh ly   s kil led   ind iv iduals   at   one  locat ion  
+[8 ]. T wo   ma jo r  facto rs   have  led   many   bus iness   us ers   to   reject  
+the  centralized   databas e  model:  the  natu ral  tendency   fo r 
+humans   no t  to  share  and   the  in troduct ion  o f  pers onal  compu ter 
+(PC)  -bas ed   DBMSs   powerfu l  enough   to   hand le  many  
+concu rren t   us ers .  A rmed   with   s uch   too ls ,  departmen ts   and 
+wo rkg roups   can   eas ily   bu ild   their  own   databas es ,  wres t ing 
+con tro l  o f  the  in fo rmat ion   res ou rce  fro m  the  ad min is trato rs   o f 
+
+the  o rgan izat ion 's   cen tral  databas es   an d   s at is fy ing   their 
+natu ral tendency  no t  to  s hare. 
+
+The  e xp los ion   o f  ind iv idual   databases   runn ing   on   PC 
+p latfo rms   can   p rov ide  new  oppo rtun it ies   to   heads   o f 
+departmen ts ,  but   may   als o   pos e  p rob lems   fo r 
+the 
+o rgan izat ion   as   a  who le.  In fo rmat ion   that   cou ld   benefit  
+the  en t ire  o rgan izat ion   o ften   becomes   ou t   o f  reach   fo r 
+us ers   unab le  to   access   it   o r  unaware  o f  its   e xis tence. 
+Add it ionally ,  becaus e  o f  the  cheaper  hardware  and  
+s o ftware  us ed ,  and   generally   lowe r  s ki l ls   o f  the  personnel 
+admin is tering  
+thes e 
+s ys tems , 
+reliab i l ity  
+can   be 
+s ign ifican t ly   les s   than   with   cen tralized   s ys tems .  Data 
+incons istency   is   another  p rob lem  that   occu rs   in   s uch   an 
+env ironmen t ,  as   the s ame  data  is  s to red   in  many   databas es 
+with  no  s ystem  fo r manag ing  the mu lt ip le cop ies  [ 12].  
+
+The  centralized   and   decen tralized  models   des cribed   above 
+bo th  generate  majo r  p rob le ms   fo r  large  o rgan izat ions . 
+Some  type  o f  arch itectu re  that   p rov ides   the  advantages   o f 
+bo th  withou t   the  d rawbacks   wou ld   be  idea l[2 ].  Th is  
+arch itectu re  s hou ld   allow   decen tralized   us e  o f  data, wh ile  
+p rov id ing  
+fo r  databas e  admin is trat ion  
+that  can   be 
+perfo rmed   by   pers onnel  with   the  in terests  o f  the  who le 
+firm  in  mind  [ 2] .  
+
+Corpora te Rightsizing 
+
+Modern   co rpo rat ions   expand   and   con tract   frequen t ly   as 
+they   res pond   to   chang ing  compet it ive  p res su res .  A  s tud y 
+o f  3, 628  co mpan ies   done  by  Cas cio   and   Young   repo rted 
+in  Mo rr is ,  and   found   that  one  th ird   had   fired   at   leas t   15%  
+o f  their  e mp loyees   du ring   the  period   o f  the  s tudy   .  The 
+s tudy   als o   concluded  that   in   mos t   cas es ,  the  compan ies 
+had   expanded  to  their  o rig inal  s izes ,  o ften  with in   les s  than 
+th ree  years .  Such   act iv ity   is   referred   to   as   co rpo rate 
+downs izing   o r  r igh ts izing ,  no t   to   be  con fus ed   with   the 
+s ame  terms   app lied   to   in fo rmat ion   techno logy   and   clien t -
+s erver  s ys tems .  It   is   o ften   th rough   the  us e  o f  in fo rmat ion  
+techno logy  
+that   execu t ives  
+iden t ify   s uch   bus iness 
+oppo rtun it ies   and  transmit   the  decis ions   and   p lans   to 
+ma ke  the  changes   very   rap id ly .  Iron ica l ly ,  it   is   o ften   the 
+in fo rmat ion   techno logy   res ou rce  o f  an  o rgan izat ion   that  is 
+us ually   the  leas t   ab le  to   res pond   t o   such   righ ts izing  
+decis ions . 
+
+Cen tral ized   databas es   runn ing   on   comp le x  and   e xpens ive 
+ma in f ra mes   and   min ico mpu ters   are  us ually   very   d ifficu lt  
+to   s cale  to   h igh   deg rees . Add ing  o r  remov ing   p rocess ing 
+capacity   and  s to rage  can  be  expens ive  and  d ifficu lt . Many  
+o rgan izat ions   requ ire  a  scalab le  databas e  sys tem  that   can 
+allo w  s ys tem  admin is trato rs   to   hand le  chang ing   demand 
+with   no th ing  mo re  than   the  incremen tal  pu rchas e  o r 
+re moval  o f  commod ity   hardware  and   s o ftware.  Such   a 
+s o lu t ion   s hou ld   p rov ide  a  g rowing   firm  w ith   a  s o lu t ion 
+
+© 2012 , IJARCS S E Al l  Righ ts  Res er ve d                                                                                                                                                        Pa ge | 61  
+
+Vo lu me  2,  Is s ue 4, Ap ri l  2012                                                                                                                                                                www. i jarcs s e.com 
+
+that   allows   rap id   in teg rat ion   in to   the  e xis t ing   arch itectu re  and  
+a p red ictab le  increas e in  capacity  and  perfo rmance [ 7] .  
+
+Tech nol ogy Forces  
+
+Infu sion o f PCs  and  LA Ns in  the Workp lace: 
+
+The  s tage  fo r  d is tribu ted   databas es  was   s et   in   the  1980s  when  
+PCs   began   to   take  ho ld   o f  the  co rpo rate  des ktop   in   large 
+numbers .  The  natu ral  extens ion   o f  thes e  mach ines   being   on 
+many   des ks   was   to   connect   them  us ing   local  netwo rks   and 
+s ervers .  Office  f iles ervers   p rov ided   small  o rgan izat ions   with  
+decen tralized   s erver  power.  The  cu ltu re  and   in fras tructu re  o f 
+co rpo rate  compu t ing   reflected   an  increas ing ly   decen tralized  
+b ias ,  d riven   in   many   cas es   by  end -us ers   who   began   to 
+understand  and  exp lo re the power o f  decen tralized  co mpu t ing   
+
+Increasing  De mands o f the  Inter net  
+
+The  g rowth   in   In ternet   us e  and   the  exp los ion   o f  web   pages 
+with   rea l-t ime  in fo rmat ion   have  d ramat ica l ly   increas ed   the 
+demands   on   bus iness  web  s ites   in   recent   years . Web  pages   fu ll 
+o f dynamic    
+
+ BROAD OUTLINES  O F THE WORK:  
+
+Dis tribu ted   databas e  s ys tems   are  bas ed   upon   several  models  
+and   their  imp le men tat ions   can   include  a  number  o f  d if feren t  
+featu res .  Th is   has  developed   from  the  many   varied   s ituat ions 
+and   requ ire men ts   o rgan izat ions   are  faced   w ith   in   pu t t ing   the 
+techno logy   to   use.  The  top ics   des cribed   below  are  key   to  
+understand ing  the  capabi l ities   an d  l i mit ati ons   of  dis tri bu te d 
+da tabas e s ys tems .  
+
+Fragmenta t ion 
+
+The 
+fo r  d is tribu ted   databas es 
+techn ique 
+frag men tat ion  
+invo lves   sp lit t ing   the  cen tralized   databas e  in to   po rt ions   and 
+mov ing   them  to   d ifferen t   locat ions .  Th is  d istrib u t ion   is 
+accomp l is hed   by   ho rizon tal  and /o r  vert ical  part it ion ing .  No  
+data  is   s to red   redundan t ly  with   the  e xcep t ion   o f  p r ima ry   keys  
+in   the  cas e  o f  vert ical  frag men tat ion .  Us ing   the  relat ional  
+model , ho r izon tal  frag men tat ion  is  acco mp l is hed  by  separat ing 
+rows   and  vert ical  frag men tat ion   is   accomp lis hed   by  separat ing 
+co lumns . Data is  no rma lly  frag men ted  acco rd ing  to  the s ect ion 
+o f  the  o rgan izat ion   wh ich   us es   o r  mod if ies   the  data  mos t 
+frequen t ly .  Fo r  exa mp le,  a  f irm  may   us e  a  departmen t   code 
+fie ld   to   determine  wh ich   departmen t   is   res pons ib le  fo r  each 
+reco rd   and   where  the  data  s hou ld   phys ically   res ide  in   a  
+ho rizon tal ly  f rag men ted  s ys tem. 
+
+Key   p rinc ip les   o f  the  frag men ted   d is tribu t ion   model   are  that  
+on ly   one  copy   o f  the  data  exis ts   in   the  database,  and  that 
+owners h ip   and   ab ility   to  update  the  databas e  are  s hared .  Th is 
+
+model  is   s imi lar  to   the  cen tralized   model  in   that   the  data 
+is   always   cons is ten t   and   cu rren t .  The  on ly   redundancies 
+e xis t   with   p rima ry   key   fie lds   when   us ing   vert ical 
+frag men tat ion .  Frag men ted   databas e  s ys tems   are  mo re 
+comp le x  than   cen tralized   s ys tems ,  but   s imp ler  than  
+rep licated   s ys tems . The  is sue o f  a s ing le  po in t  o f  failu re  is  
+reduced ,  bu t   not   eliminated .  Netwo rk   us age  is   generally  
+lower  in   frag men ted  s ystems  than  in  cen tralized  s ys tems .  
+
+Fa i lure Recovery 
+
+One  o f  the  advan tages   o f  rep licated   databas e  s ystems   is  
+that   they   can   p rov ide  a  level  o f  fau lt -to lerance  beyond 
+what   can   be  ach ieved   th rough   mo re  trad it ional  means  
+s uch   as   the  us e  o f  redundan t   array   o f  ine xpens ive  d is ks  
+(RA ID) .  By   rep l icat ing   the  databas e  s o   that   it   is   on   two 
+s eparate  mach ines   in   d ifferen t   phys ical  locat ions   on   the 
+netwo rk,  the  p robab ility   that   failu res   wil l  caus e  a  loss   o f 
+reduced .  Two   op t ions  
+is   s ign ifican t ly  
+s erv ice 
+fo r 
+imp le men t ing  
+fai lu re 
+recovery  
+th rough  
+databas e 
+rep licat ion  are ava i lab le : warm s tandby  and  hot  s tandby . 
+
+W arm  s tandby   us es   as ynch ronous   rep licat ion   to   main tain  
+the s tandby  s erver  in   a  state  nearly   cons is tent  with   that   o f 
+the  p rimary   s erver.  Due  to   the  lag  between  trans act ions 
+being   commit ted   on   the  p rimary   s erver  and   rep l icat ion   to  
+the  s tandby   s erver,  a  sma ll   nu mber  o f   trans act ions   are 
+no rma lly  
+los t   du ring   a  p rima ry   s erver  failu re  and  
+switchover to  the s tandby  s erver. 
+
+Ho t   s tandby   us es  s ynch ronous   rep licat ion   to  ma in tain   the 
+s tandby   s erver  in   a  s tate  always   cons is tent   with   the 
+p rima ry  s erver. F ro m an  ava ilab il ity  pers pect ive th is  is  the 
+p referred   s o lu t ion ,  bu t   the  h igher  cos ts   and   po ten t ial 
+lower  perfo rmance  o f  synch ronous  rep licat ion   databas es 
+caus e  many   o rgan izat ions   to   s elect   a  warm  s tandby 
+s o lu t ion .  Bu ret ta  recommends   a  comb inat ion   o f  local  ho t 
+s tandby ,  no rmal ly   RA ID,  and   o ffs ite  warm  s tandby 
+s erver. 
+
+PR IMARY W ORK DONE ON THE LINES :  
+
+ In  the ear lies t  days  o f cen tralized  databas es , p ro fess ionals 
+no rma lly   us ed   a  one-s ize  fits   all  app roach   to  DBMS  
+s o ftware. 
+
+ A s  databas e s ys tems   g rew,  increas ed  in   impo rtance  to   the 
+o rgan izat ion ,  and   began   operat ing   in   d ivers e  app licat ions , 
+it   beca me  apparen t   that   DBMSs   s hou ld   be  specialized .  
+One  o f  the  ma jo r  s h ifts   occu rred   when   data  cen ters 
+runn ing   ma in fra mes   w ith  
+la rge  re lat ional  databas es 
+op t imized   fo r  trans act ion   s peed   began   to   not ice  poo r 
+perfo rmance  du ring   t imes  when   repo rts   and   queries  were  
+p rocess ed .  It   was   at  
+th is   po in t   that  
+the  d ifferen t  
+
+© 2012 , IJARCS S E Al l  Righ ts  Res er ve d                                                                                                                                                        Pa ge | 62  
+
+Vo lu me  2,  Is s ue 4, Ap ri l  2012                                                                                                                                                                www. i jarcs s e.com 
+
+requ ire men ts   o f  on line  transact ion   p roces s ing   (OLTP)   and  
+on line  analy t ical  p roces s ing   (OLAP )  beca me  apparen t .  Some  
+o rgan izat ions  
+res ponded  
+to  
+the  perfo rmance 
+is s ues   by 
+res trict ing  OLAP  to  late n igh t  and  o ther o ff-peak  t imes . Th is  is  
+les s   than   an   ideal  s o lu t ion   as   it   limits   the  us e o f OLAP  fo r  the 
+compet it ive  advan tage 
+it   shou ld   p rov ide,  and   may   be 
+impos s ib le  when   an   o rgan izat ion   operates  round   the  clock  o r 
+in  many  t ime   zones . 
+
+Securi ty 
+
+Imp le men t ing   e ffect ive  s ecu rity  
+in   a  w idely   d is tr ibu ted 
+databas e  is   no  smal l  tas k.  It   is   obs erved   that   pos s ib le  s ecu rity 
+s erv ices   in   a  mu lt it ier  a rch itectu re  inc lude  au then t icat ion , 
+au tho rizat ion ,  non repud iat ion ,  con fiden t iality ,  and   data 
+in teg rity .  Au thent icat ion   is   the  p rocess   o f  hav ing  each   us er, 
+host ,  o r  app licat ion   s erver  p rove   it   self  that   who   they   are 
+real ly .  Au tho rizat ion   is   the  p rocess   o f  ens u ring   that   each 
+au thent icated   us er  has   the  neces s ary   permis s ion   level  to 
+perfo rm  the  reques ted   tas ks .  Non repud iat ion   is   ensu ring   that 
+au thent icated   and   au tho rized   us ers   may   not   deny   that  they 
+us ed  
+a  des ignated  
+resou rce.  Con fiden t ial ity   p reven ts 
+unau tho rized   us ers   from  access ing   s e ns it ive  data.  Data 
+in teg rity  p reven ts  data fro m being  mod if ied  in  an  unau tho rized  
+manner  (11 ).  
+
+Th is  ma kes   some  reco mmendat ions   fo r  imp le men t ing   s ecu rity 
+in  a rep licated  databas e env ironmen t . The  f irs t  is  that  all  s to red 
+and /o r  d is p layed   passwo rds   mus t   be  e ncryp ted   s o   that 
+unau tho rized   pers ons   and   p rocess es   may   no t   ob tain   them.  
+Ps eudo -us er  accoun ts , 
+thos e  es tab lis hed   fo r  s ystems  
+to 
+au tomat ical ly  
+in  
+the  netwo rk,  are  common  
+to 
+log   on  
+d is tribu ted   databas e  env ironmen ts .  Bu ret ta  po in ts   ou t   that 
+thes e  accoun ts   mus t   comp ly   with   the  f irm's   s ecu rity   po licies  
+and   knowledge  o f  their  passwo rds   s hou ld   be  limited .  A l l  f ile  
+s ys tems ,  raw  dev ices ,  and /o r  databas e  structu res   us ed   to  s to re 
+queued  data and/o r mes s ages  mus t  be s ecu re. Th is   item  po in ts 
+ou t   the  many   avenues   in   a  d istribu ted   s ys tem  availab le  to  
+unau tho rized   us ers ,  wh ich   mus t   be  p ro tected .  Finally ,  
+encryp t ion  
+techn iques   mus t   be 
+in teg rated   with in  
+the 
+rep licat ion   s erv ice.  Th is   p reven ts   in tercep t ion   o f  the  data 
+transmit ted  over the netwo rk  (12) .  
+
+Th is   makes   the  po in t   that   d is tribu ted  databas e  s ys tems   may  
+us e  either  app licat ion -  o r  data-level  s ecu rity . App licat ion -level  
+s ecu rity ,  as   its   name  s ugges ts ,  is   p rog rammed   in to   the 
+app licat ion  
+log ic.  Each   app licat ion  
+is  
+respons ib le 
+fo r 
+govern ing   us er  acces s   to   the  data.    Data  level  s ecu rity   is  
+imp le men ted   in   the  databas e  eng ine.  Pro files   o f  accep tab le 
+data  items   and  operat ions  are  sto red   and   checked   by   the 
+databas e  eng ine  against   the  end -us er's   permis s ion   level  on  
+each   databas e  operat ion .  Bu rles on  
+recommends  
+that 
+app licat ion -leve l  s ecu rity   be  removed   and   rep laced   with   data 
+level  s ecu rity   to   make  the  d is tribu ted   database  mo re  s ecu re  . 
+The  argumen t   fo r  th is   is   that   a  s ki l led   end -us er  with   a  
+
+wo rks tat ion   and   common ly   availab le  develop men t   too ls 
+cou ld   eas ily  w rite  an   app l icat ion   that   does   not   fo llow   the 
+o rgan izat ion 's   s ecu rity   po licy   [11 ].  Such   a  s ecu rity   ho le 
+may   be  created   either  un in ten t ionally   by   a  well-mean ing  
+emp loyee  o r  in tent ionally   by   s omeone  with   mal ic ious 
+in ten t .  W hen   data -level  s ecu rity   is  imp le men ted ,  s uch 
+s ecu rity  ho les  are n o t  poss ib le (11)  
+
+The  Future  Prospects  for  DDBMSs :  The  is s ues   above 
+demons trate  that   a  good   DDBMS  mus t   p rov ide  s ecu rity  
+s erv ices ,  and   that   o rgan izat ions   mus t   know  how   to  
+p roperly   imp le men t   them  [ 4] .  A s   data  is   d is tribu ted   and 
+end -users   are  g iven   mo re  p roces s ing  power,  poten t ial  fo r 
+s ecu rity  
+p rob lems  
+increas es .  Organ izat ions   with  
+d is tribu ted   databas es  mus t   be  competen t  and  v ig ilan t   in  
+their e xecu t ion  o f s ecu rity .   
+
+DDBMS   techno logy   has   poten t ial,  bu t   its   con t inued 
+g rowth   in   popu larity   is   not   guaran teed .  Jus t   as   DDBMSs  
+g rew  in   popu larity   w ith   clien t -s erver,  the  po tent ial  fo r  
+fu rther  g rowth   in   their  popu lar ity   wi l l  l ikely   be  t ied   to  
+clien t -s erver.  The 
+fo llo wing   s ect ion   exa mines  
+the 
+po tent ial  fo r  fu tu re  s uccess  o r  fai lu re  o f DDBMS  s ys tems 
+with   a   focus   on   clien t -s erver  trends   as   ind icato rs   o f what  
+the fu tu re may  ho ld .  
+
+Growth o f I nternet  Comput ing  
+
+Expe r ience  with   d is tribu ted   databas e 
+clien t -s erver 
+arch itectu res   has  s hown   that   the  comp le xity   and   expens e 
+o f  thes e  app roaches   can   be  overwhelming .  A s   a  resu lt , 
+s ome  firms   have  decided  to   go   back  in   the  d irect ion   o f 
+cen tralized  databas es . Pro fes s ional  have res ponded  to  th is 
+demand   by   p rov id ing   s o lu t ions   us ing  s ervers   bas ed   on 
+ma in f ra me  o r  min ico mpu ter  p latfo rms   and   th in   clien ts , 
+wh ich   in   mos t   cas es   run   on ly   a  web   b rows er.  T h is  
+arch itectu re 
+is   s omet imes  
+refer red  
+to   as  
+Internet 
+compu t ing .   
+
+Proponen ts   o f  In ternet   compu t ing   claim  that   s imp l ify ing  
+the d is tribu ted  components  o f the arch itectu re and  mov ing  
+data  to   one  p ro fess ionally -managed   locat ion   p rov ides 
+h igher  rel iab i lity   and   lower  operat ing   cos ts .  One  o f  the 
+o rig inal   argu men ts   fo r  cl ien t -s erver  was   the  ab il ity   to  
+rep lace 
+termina ls   with   GUI -bas ed 
+character-bas ed 
+wo rks tat ions ,  wh ich   are  mo re  f le xib le  and   eas ier  to   us e. 
+In ternet   compu t ing   retains   the  benefits   o f  a  cen tral   data 
+s to re  and   GU I-bas ed   wo r ks tat ions .  The  benefits   o f 
+In ternet   compu t ing   may   generate  s t iff  co mpet it ion   fo r  
+wide ly  d is tribu ted  databas e s ys tems . 
+
+Imma turi ty o f Cl ient -Server  
+
+© 2012 , IJARCS S E Al l  Righ ts  Res er ve d                                                                                                                                                        Pa ge | 63  
+
+Vo lu me  2,  Is s ue 4, Ap ri l  2012                                                                                                                                                                www. i jarcs s e.com 
+
+A lthough   clien t -s erver  techno logy   has   been   in  wides p read   us e 
+fo r  over  a  decade,  s ome  argu e  that   it   is   no t   yet   developed   to 
+the  level  to   p rov ide  s u ff icien t   advan tages   to   bus iness es 
+imp le men t ing   new  s ys tems .  A   panel  o f  indus try   experts 
+s peaking   at   the Cl ien t -Server  Leaders h ip   Fo ru m  in  To ron to   in  
+1996  concluded   that   the  clien t -s erver  mar ket   is   s t ill   in  
+ado les cence. The  panel  reiterated   the popu lar  v iew  that   three-
+tiered  cl ient -s erver  s ys te ms   are  far  s uperio r  to   two -t iered  
+s ys tems .  Th ree-t iered   arch itectu res   requ ire  mo re  res ou rces   to 
+imp le men t ,  bu t   are  generally   mo re  s calab le  and   al low   fo r  
+th inner,  eas ier  to  main tain   cl ien ts  than  two -t iered   arch itectu res 
+does .  The  panel  s aw  the  clien t -s erver  indus try   as   immatu re,  
+due 
+to  
+the 
+low  numbers   o f 
+th ree -t iered  
+s ys tems 
+imp le men tat ion . Many   p ro fes s ionals   felt   that   unt il  th ree -t ie red  
+s ys tems   become  the  no rm,  th e  benefits   o f  clien t -s erver 
+arch itectu res   canno t   be  realized .  So me  o f   the  me mbers   felt  
+that   th is  weakness  may   lead   to   clien t -s erver  being   rep laced   by 
+In ternet  compu t ing  Lack  o f DDBMS  Standards    :   
+
+A   d is tribu ted   databas e  needs  thes e   fou r  issues  fo r DDBMSs   to 
+reach   at   their  fu ll  po ten t ial.  1.  Hardwa re   independence,  2. 
+Operat ing   s ystem  independence,  3.  Net wo rk  independence, 
+and   4. Databas e   independence. Today 's  DDBMS   p roducts   are 
+s t ill do  no t  meet  thes e fou r s tandards . 
+
+ DDBM S  techno logy  is   relat ively   new,  and   is  st ill  s u ffer ing  
+fro m  p ro fes s ionals   figh t ing   to   develop   and   ho ld   on   to 
+p rop rietary   featu res .  Today   the  s ituat ion   is   imp rov ing ,  bu t  
+cross -vendo r  connect iv ity   is   somet imes   l imited ,  es pecial ly   fo r  
+legacy  s ys tems  that  do  no t  imp le men t  newer s tandards . 
+
+DDBMS s Cur rent ly Ava i lab le   
+
+Several  years   ago   find ing   the  r igh t   too l  fo r  imp le men t ing  
+d is tribu ted   databas es   was   a  challenge  due  to   the  lack  o f 
+DDBMSs   availab le . Today   d istribu ted   featu res  are  common   in  
+the  lates t  DBMS  o ffer ings   from  all  ma jo r  vendo rs .  In  fact ,  it   is 
+rare  fo r  DBM Ss   with   d is tribu ted   featu res   to   be  referred   to   as 
+" d is tribu ted"  databas es  at  all  -  the  featu re  is  s o  p revalen t  that   it 
+does   not   d is t ingu is h   one  p roduct  from  ano ther.  The  ma jo r  
+d iffe rences   between   p roducts  now  are  the  techn ical  details   o f 
+how  the data d is tribu t ion   is  perfo rmed   and   the s pecial  featu res 
+the DBMS  p rov ides . 
+
+The  DBMS  mar ket   is   fierce ly   compet it ive,  w ith   no   one 
+p ro fes s ional  dominat ing   comp lete ly .  A cco rd ing   to   Dataques t 
+figu res   repo rted   in   Compu ter  Resel ler  News,  the  1998  
+databas e  licens e  revenue  leaders   were  IBM   with   32. 3%,  
+Orac le  w ith   29. 4%,  M icros o ft   with   10 .2% ,  In fo rmix  w ith  
+4. 4%,  and  Sybas e with  3. 5% . IBM 's  lead   is  due p rimar i ly  to  its  
+dominance  in   the  ma in fra me   and   AS/400   p latfo rms ;   on   al l  
+o ther  p latfo rms  Oracle  is   the  leader. Th is  s ect ion  firs t   p rov ides 
+an   overv iew  o f  featu res  common   among   today 's   lead ing 
+d is tribu ted   databas e  p roduct  o fferings .  Later  it   e xa mines   the 
+d iffe rences   between   each   vendo r's   p roducts   as   well  as   their 
+
+d ivers e  strateg ies   to   p rov ide  an   ind icat ion   o f  the  fu tu re 
+o ffer ings  that  may  beco me avai lab le  in  the fu tu re.    
+
+Ab i l ity o f DDBM Ss to  meet  Bu siness Requireme nts  
+
+Thes e 
+recen t ly  
+o rgan izat ional 
+d is cus es  
+s ect ion  
+imp le men ted   d is tribu ted  databas es   and  the  res u lts   they 
+have ob tained . Thes e cas es  are rep res entat ive o f the us e o f 
+d is tribu ted   databas es   in   bus iness   today   [9].  Each   cas e 
+il lus trates  s pecific  capab il it ies   o f  today 's  DDBMSs .  Later  
+th is   s ect ion   wi ll   analyze   the  capab ilit ies   o f  DDBMS  
+p roducts  to  meet  the bus iness  and  techno logy  demands  fo r 
+them ou t lined  ear l ie r.  
+
+1 . Ana lysis 
+
+Recen t  developmen ts  in  DDBMS techno logy , many  o f the 
+bus iness   and   techno logy   requ ire men ts   fo r  d is tribu ted 
+databas es   can   be  met .  Belo w  are   the  bus ines s   and 
+techno logy  
+requ ire men ts   d is cuss ed   earlier  w ith   an  
+analys is   o f  the  ab ility   o f  today 's  DDBMS  p roducts   to 
+adequately  meet  the needs .  
+
+2 . Geographic Dispersion 
+
+DDBMS   vendo rs   have  done  a  remar kab le  job   o f  meet ing  
+the  demands  o f  bus ines ses  to  s uppo rt  their  geog raph ically  
+d is pers ed   operat ions .  Many   o f  the  advances   in   th is   area 
+are  due  to  the  wo rk  in   ma k ing   effic ien t   us e  o f  netwo rk 
+connect ions .  Netwo rk  loads   resu lt ing   fro m  rep l icat ion  
+act iv ity  
+is  s ign ifican t ly   reduced . 
+in   recen t   vers ions  
+Su rr idge  Daws on 's   us e  o f  ISDN  to   rep licate  hund reds   o f 
+thous ands   o f  trans act ions   in   on ly   two   hou rs   every   day 
+il lus trates   th is   po in t . Rep licat ion   to   smal l  c l ien t   databas es 
+us ing   occas ional  d ial-up   connect ions ,  typ ically   w ith  
+lap top   compu ters ,  is   als o   an   area  where  recen t   wo rk   on  
+ligh twe igh t   rep l icat ing   DBMS   vers ions   has   p rov ided 
+o rgan izat ions  w ith  a power fu l  too l fo r   meet ing  the need  to 
+s uppo rt   mob ile   wo r kers .  W ith   a  carefu l   analys is   o f 
+bus iness  
+requ ire men ts   and   p roper  netwo rk  des ign , 
+DDBMSs   can   s uppo rt   mos t   geog raph ically   d is pers ed 
+bus iness  operat ions . 
+
+3 . Con trol   of  the   In for ma tion  Res ource  
+
+DDBMSs   now  p rov ide  in fo rmat ion   managers   with   a 
+means  fo r  cen tral ly  con tro ll ing  and  e xp lo it ing   in fo rmat ion  
+s cattered   by   s erver  p ro liferat ion .  Robust  
+fo r 
+too ls  
+hand ling   heterogeneous   s erver  p latfo rms   and   rep licat ion  
+that   is   trans parent   to   legacy  app licat ions   are  key   facto rs   in 
+th is .  No rthwes t   A irl ines   is   a  good  exa mp le  o f  how 
+o rgan izat ions   can   us e  the  latest   d is tribu ted   databas e 
+p roducts   to   leverage  exis t ing   hardware  and   s o ftware 
+o rig inal ly   mean t   fo r  us e  by  on ly   one  elemen t   o f  the 
+
+© 2012 , IJARCS S E Al l  Righ ts  Res er ve d                                                                                                                                                        Pa ge | 64  
+
+Vo lu me  2,  Is s ue 4, Ap ri l  2012                                                                                                                                                                www. i jarcs s e.com 
+
+o rgan izat ion   to  ma ke  the  en t ire  o rgan izat ion  mo re  co mpet it ive 
+[5 ].  Becaus e  the  d istribu ted   databas e  model  wo r ks   we ll  w ith  
+cen tralized   p lann ing   and   decen tralized   operat ions ,  databas e 
+des igners   and   admin is trato rs   can  main tain   con tro l  o f  the  firm's  
+in fo rmat ion  wh i le a l low ing  it  to  be us ed  fle xib ly .  
+
+the  p res en t   and   fu tu re  needs  o f  the  firm  can   be  met .  Th is  
+is   ano ther  area where DDBMS  featu res  wi l l  never  rep la ce 
+talen ted  peop le. 
+
+Demands o f  the I nternet  
+
+4 . Mergers and  Acquisi t ions 
+
+The  d is tribu ted   databas e  p roducts   availab le  now   can   faci l itate 
+me rgers   and   acqu is it ions ,  es pecially   if  the  o rgan izat ion   is  
+an t icipat ing   s uch   act iv ity   and   p lans   ahead .  However,  the 
+p rev ious ly   cited  exper iences   o f  Pricewaterhous e  and   o ther 
+large  co rpo rat ions   attemp t ing   to   merge  in fo rmat ion   res ou rces 
+with   o ther  f irms   on   s ho rt   no t ice  h igh ligh ts   the  limitat ions   o f 
+DDBMSs   and  midd le ware  to  s o lve  very  comp le x  p rob le ms [6 ].  
+Is sues   with   d ifferen t   databas e  s chema,  inco mpat ib le  netwo r k  
+in fras tructu re, and  p res su re to  imp le men t  a s o lu t ion  rap id ly  are  
+facto rs   that   wil l  pos e  s ign ifican t   challenges   to   a  smoo th 
+me rger  o f  in fo rmat ion   res ou rces   fo r  many   years   to   come.  In  
+thes e  cases   DDBMS  s o ftware  featu res   are  no   subs t itu te  fo r 
+h igh  quality  pers onnel and  p roper p lann ing . 
+
+Sea-Land   Serv ices   is   in   a  bus iness   no rmal ly   cons idered 
+low-tech ,  bu t   it   has   exp lo ited   the  In ternet   as   a  s ou rce  o f 
+compet it ive  advan tage  th rough   its   web   s ite  that   allows  
+customers   to   track  s h ipmen ts   and   en ter  bookings   on line. 
+Th is   is   an   exa mp le  o f  ne w  on line  s erv ices   increas ing  
+loads   on   databas e  s ervers   as   large  numbers   o f  firms  
+leverage  the  In ternet   to   p rov ide  imp roved   s erv ice.  By  
+rep licat ing   the  relevan t   data  to   a  server  ded icated   fo r 
+p rov id ing   s erv ice  to   the  web   s ite,  firms   can   reduce  the 
+impact   o f  th is   increas ed   demand   on   in ternal  operat ions 
+wh i le  no t   los ing   on line  customers   as   a  resu lt   o f  e xces s ive 
+page  generat ion   t imes . DBM S  developers  have  latched  on 
+to   the  In ternet   as   a market   fo r  their  p roducts ,  and  we wil l  
+con t inue to  s ee  an   increas e  in   the  power  o f  thes e  p roducts 
+to  s uppo rt  e-bus ines s  on  the In ternet . 
+
+Corpora te Rightsizing 
+
+CONCLUS ION :  
+
+DBMS  p ro fes s ionals  cont inue   to   make  advances   in   the 
+s calab ility   o f  their  p roducts  -  both   in  the  capacity  o f  ind iv idual 
+s ervers   and   the  quan t ity   o f  d is tribu ted   s ervers   that   may   be 
+included   in   a  d is tribu ted   databas e  [3].  Modern   databas e 
+p roducts   g ive  firms   var ious   op t ions   fo r  g rowing   o r  reducing  
+their  dep loyed   databases .  E-Plus   is   an   exa mp le  o f  a  firm  that  
+was   ab le  to  manage  exp los ive  g rowth   wh ile  s tay ing   with   one 
+DBMS  p roduct   family .  Rep l icat ion   al lows   o rgan izat ions   to 
+eas ily   h and le  mov ing   in to   new  ma rket   a reas .  Su rr idge 
+Daws on , fo r e xa mp le, cou ld  open  a new warehous e qu ickly  by  
+add ing   another  s lave  s erver  iden t ical  to   the  21  it   already   has 
+and   connect ing  it   with   comme rcia l ly   availab le  ISDN  s erv ice.  
+Cu rren t   DDBMSs   p rov ide  s calab il ity   adequate  fo r  mos t 
+bus iness   app licat ions ,  and   the  emphas is   p laced   on   th is   by 
+DDBMS  developers  wil l  ens u re  that  thos e  availab le  in   coming  
+years  wi ll  al low  h igh  deg rees  o f s calab il ity . 
+
+Cl ient -Server Systems  
+
+A ll  o f  the ma jo r  DBM S  developers   have made  s ign ifican t  
+imp rove men ts   to  their  newer  p roducts   in   the  area  o f 
+hand ling   h igh   loads   o f  s imu ltaneous   OLTP   and   OLAP  
+operat ions   on   the  s ame  s erver.  Recen t   advances   such   as 
+imp roved   us e  o f mu lt ip roces s o r hardware,  mu lt ith read ing ,  
+and   row-level 
+loc king   have  allowed  
+th is  
+imp roved  
+perfo rmance.  However,   there  are   s t il l  OLAP   app licat ions 
+that   generate s uch   h igh  s ys tem  de mands   that   they   canno t 
+funct ion   together  effect ively   w ith   OLT P  app l icat ions   on 
+the  s ame  s erver. The  rep licat ion   featu res   o f  today 's  majo r  
+DBMSs   fi l l  th is   need   n icely .  Firms   can   us e  as ynch ronous 
+rep licat ion   to  main tain   an  OLA P  s erver  s eparate  from  the  
+OLTP  s erver  and   p rov ide  h igh   perfo rmance  fo r  bo th 
+app licat ions .  Fu tu re  advances  
+in  
+ind iv idual  s erver 
+capab ilit ies   to   s imu ltaneous ly   s uppo rt   OLTP   and   OLAP  
+p lus   imp roved   rep licat ion   perfo rmance  wi l l  mean   that   IT 
+managers   wi l l  no t   need   to   comp ro mis e  to   p rov ide  h igh 
+perfo rmance in  bo th  thes e areas . 
+
+The  lates t  vers ions   o f  DDBMSs   and   midd le ware  ma ke  a 
+developer's  
+tas k  o f 
+imp le men t ing  
+th ree-t ier  cl ien t -s erver 
+arch itectu re  much   s imp ler.  Many   o f  the  componen ts   that 
+fo rmer ly   requ ired   a  heavy   p rog ra mming   effo rt   are  now  
+availab le  in   o ff-the-s helf  vers ions   robust   and   fle xib le  enough 
+to   hand le  mos t   tas ks .  Organ izat ions   that  in teg rate  s uch 
+p roducts   in to   their  in fo rmat ion   arch itectu re  w il l  reap   the 
+benefits   o f  th ree -t ier  cl ien t -s erver.  Thes e  arch itectu res   wil l  
+allo w  fo r  mo re  fle xib i lity   and   the  ab ility   to   rap id ly   take 
+advan tage  o f  bus iness   and   techno logy   oppo rtun it ies  that   aris e 
+in   the  fu tu re.  However,  th ree  t ier  cl ien t   s erver  sys tems   wil l  
+always   requ ire   s ki l led   p lann ing   and   imp le men tat ion   to   ens u re 
+
+ 
+
+References    
+
+1)  Pro f.  (Dr. )  Anand   K.  Tr ipath i  and   Mrs .  Mon ica 
+Tripath i :  “MIS  Uncertain t ies   and   the Compu ter  Suppo rt”: 
+An   Analy t ical  App roach”,  Proceed ing   o f  the  Nat ional 
+Con ference  on   Ne xt   Generat ion   Co mpu t ing   Techn o logy , 
+at   ITS  Ghaziabad   pub licat ion   wis dom  pub l icat ion ,  Delh i-
+16 -17 Oct - 2008. ,ed it ion - 3,vo l- 1  
+ 
+
+© 2012 , IJARCS S E Al l  Righ ts  Res er ve d                                                                                                                                                        Pa ge | 65  
+
+Vo lu me  2,  Is s ue 4, Ap ri l  2012                                                                                                                                                                www. i jarcs s e.com 
+
+ 
+ 
+10 .  Cos t   Benefit   Analys is   agains t   Compu terizat ion   o f 
+Oran izat ion .”Jou rnal  P res t ige  Ins t itu te  o f  Managemen t , 
+Dewas   (MP )  Vo l. - 1  No .  1,MPENG00969/12/1/ 2009-
+TC, Jan .  2010 ,  ed it ion - 1,vo l -1 ,,pg .  724- 731  
+11 .  “  Data  Secu rity   levels   fo r  Co mpu terized   MIS”  
+A rt if icia l  In tel l igence  &  its   App licat ions   (A IA   –   2009 )  ,
+ 
+Depart men t  
+o f 
+Co mpu ter 
+Sc ience  &  
+Eng ineer ing ,  Facu lty   o f  Eng ineer ing  & Techno logy , RBS  
+Co l lege,  Bichpu ri , Ag ra (UP ),  
+Sep te mber  
+12 -13 
+2009, ed it ion - 1,vo l- 1,  ,pg .  555- 559  
+ 
+ 
+12 .  Ro le  o f  IT  In f ras tructu re  fo r Bus iness  Trans fo rmat ion
+o f  
+ 
+Pro f icien t -An  
+In ternat ional 
+Jou rnal 
+Managemen t ,  Malv iya  Nagar ,  Ja ipu r,Rajas tan  
+,IS SN  
+No .0975 -475X ,Vo l. -1 ,Ju ly -Dec.- 2009  (Refer red   Bas ed ), 
+ed it ion -4,vo l- 1,  ,pg . 789- -793  
+ 
+ 
+
+ 
+
+2)    P ro f.  (D r.)  Anand   K.  Tr ipath i  and   Mrs .  Mon ica  Tripath i:  
+“A   Fra me: W hy   In fo rmat ion   Sys tem  Fa i ls ”,  Proceed ing   o f  the 
+“Manag ing   Co mp le xit y  
+Nat ional  Con ference  on  
+in  
+In fo rmat ive  W o r ld . „ ‟  pub licat ion   Bh ila i 
+Ins t itu te  o f 
+Techno logy , Du rg , Bh i la i  (CG)   dated   7- 8 Nov .- 2008.   ed it ion -
+1,vo l- 1,pg . 112 -115  
+ 
+ 
+3)  Pro f.  (D r. )  Anand   K.  Tripath i  and   Mrs .  Mon ica  Tripath i  ,  
+A ICT E  Spons o red ,  Nat ional  Con ference  on   “Next   generat ion  
+compu t ing   &  In fo rmat ion   s ys tems ”  at   Model  Ins t itu te  o f 
+Eng ineer ing  & Techno logy ,  Jammu ,  Feb .14 -15,  2009.  ed it ion -
+2,vo l- 1,pg .  724- 731  
+ 
+ 
+4)  P ro f.  (D r. )  Anand   K.  Tripath i  and   Mrs .  Mon ica  Tripath i 
+,Paper  “A   Fra mewo r k  :A  Ro le  o f  In fo rmat ion  Techno logy   fo r 
+Decis ion   Suppo rt   Sys tem”,    CSI  Spons o red   Nat ional  level  
+Con ference  on   “Cu t t ing   Edge  Co mpu ter  and   Electron ics  
+Techno log ies ”  under  TEQIP   o rgan ized   by  
+  Co llege  o f  
+Techno logy , GB  Pan t  Un ivers ity ,  Pan t  Nagar, 14 -15  Feb . 2009,  
+ed it ion -4,vo l- 1,  ,pg . 915- 919  
+ 
+ 
+5).   (Dr. )  Anand   K.  Tr ipath i  and   Mrs .  Mon ica  Tripath i  ,  
+Nat ional  level   Con fe rence  on   “Co mpu ter  In tel ligence”   at  
+Pioneer  Ins t itu te,  Indo re,  May -2009 ,Ed io t ion - 1,Vo l. - 1,  ,pg .  
+724- 729  
+ 
+6).   (Dr. )  Anand   K.  Tr ipath i  and   Mrs .  Mon ica  Tripath i  Paper  
+“In fo rmat ion   Techno logy  
+to   Trans fo rm 
+the  Bus iness 
+“Proceed ing   o f  Nat ional  Con fe rence  on   Next   Generat ion  
+Techno log ies   fo r  In fo rmat ion   Managemen t   (NGT IM - 2009)  
+,7t h  Nov .-2009   ,o rgan ized   by   ITS -Managemen t  &  IT  Ins t itu te, 
+Gha ziabad   (UP) ,ISBN  :978- 81- 89547- 69 - 1,  ed it ion -1 ,vo l- 1,  
+,pg . 1724- 1731  
+ 
+ 
+7)  “ In fo rmat ion  Techno logy   and   Structu ring  Of O rgan izat ion :  
+In fo rmat ion   Sys tem  Res earch”  Pub lis hed  
+in  
+IMSEC 
+In ternat ional  Jou rnal  o f  Res earch   IMS  Co llege  Eng ineering ,  
+Gha ziabad ,  Vo l .- 1  Ju ly -Dec.- 2009  (Re ferred   Bas ed )  ed it ion -
+1,vo l- ,1 ,  ,pg . 925- 928  
+ 
+
+ 
+8)  “ Impact   o f  H igh   P ro fes s ional  Teach ing :  In fo rmat ion  
+the  Bus iness ”  Pub lis hed  
+to   Global ize 
+Techno logy  
+in 
+In ternat ional 
+Jou rnal  on  Compu ter  Eng ineer ing  
+and 
+In fo rmat ion   Techno logy ,  Bh ila i,   ISSN  0974- 2034  (Re fer red  
+Bas ed ), ed it ion - 1,vo l -1 , ,pg .  815 - 818  
+ 
+  Know ledge,  Ski l ls   and  Ab ilit ies :  Rec ru it men t   IS/IT  
+9) 
+Pro fes s ionals  
+in  
+ 
+ 
+Fas t  
+Chang ing  
+Bus iness 
+Lands cape  Pub lis hed   in   In ternat ional  Jou rnal  on   Compu ter 
+Eng ineer ing   and   In fo rmat ion   Techno logy ,  Bh ila i,  ed it ion -
+1,vo l- 1,  ,pg .  606 -609  
+
+© 2012 , IJARCS S E Al l  Righ ts  Res er ve d                                                                                                                                                        Pa ge | 66  
+
+

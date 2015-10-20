@@ -1,0 +1,3082 @@
+Journal of Machine Learning Research 16 (2015) 103-147
+
+Submitted 6/11; Revised 7/14; Published 1/15
+
+Links Between Multiplicity Automata, Observable Operator
+Models and Predictive State Representations — a Uniﬁed
+Learning Framework
+
+Michael Thon
+Herbert Jaeger
+Jacobs University Bremen
+28759 Bremen, Germany
+
+Editor: Joelle Pineau
+
+m.thon@jacobs-university.de
+h.jaeger@jacobs-university.de
+
+Abstract
+
+Stochastic multiplicity automata (SMA) are weighted ﬁnite automata that generalize prob-
+abilistic automata. They have been used in the context of probabilistic grammatical infer-
+ence. Observable operator models (OOMs) are a generalization of hidden Markov models,
+which in turn are models for discrete-valued stochastic processes and are used ubiquitously
+in the context of speech recognition and bio-sequence modeling. Predictive state represen-
+tations (PSRs) extend OOMs to stochastic input-output systems and are employed in the
+context of agent modeling and planning.
+We present SMA, OOMs, and PSRs under the common framework of sequential sys-
+tems, which are an algebraic characterization of multiplicity automata, and examine the
+precise relationships between them. Furthermore, we establish a uniﬁed approach to learn-
+ing such models from data. Many of the learning algorithms that have been proposed can
+be understood as variations of this basic learning scheme, and several turn out to be closely
+related to each other, or even equivalent.
+Keywords: multiplicity automata, hidden Markov models, observable operator models,
+predictive state representations, spectral learning algorithms
+
+1. Introduction
+
+Multiplicity automata (MA) (Sch¨utzenberger, 1961) are weighted nondeterministic au-
+tomata which generalize both ﬁnite and probabilistic automata. The discovery that MA
+are eﬃciently learnable (Bergadano and Varricchio, 1994; Ohnishi et al., 1994) in the ex-
+act learning model of Angluin (Angluin, 1987) sparked an interest in these, and several
+versions have been studied. One such version is stochastic multiplicity automata (SMA),
+which model rational stochastic languages and have been used in the context of proba-
+bilistic grammatical inference (Denis et al., 2006; Bailly et al., 2009). Independent of this
+line of research, hidden Markov models (HMMs) (see Rabiner, 1989) for discrete-valued
+stochastic processes have been extensively studied and are now a standard tool in many
+pattern recognition domains such as speech recognition, natural language processing and
+bio-sequence modeling. Observable operator models (OOMs) are a generalization of HMMs
+that was introduced by Jaeger (1998) following previous work on deciding the equivalence
+of HMMs (Ito et al., 1992). Finally, predictive state representations (PSRs) are mod-
+
+c(cid:13)2015 Michael Thon and Herbert Jaeger.
+
+Thon and Jaeger
+
+els for stochastic input-output systems developed by Littman, Sutton, and Singh (2001)
+and inspired by OOMs. PSRs generalize partially observable Markov decision processes
+(POMDPs) (Kaelbling et al., 1998) and have been used in the context of agent modeling
+and planning (James et al., 2004; James and Singh, 2005; Wolfe and Singh, 2006; Boots
+et al., 2010). As it turns out, all of these models are instances of MA and thereby closely
+related, though this is not widely perceived, due in part to the disjoint scientiﬁc communi-
+ties.
+All of SMA, OOMs and PSRs model some form of probability distribution. A central
+task common to all cases is therefore to estimate a model from a given sample. This may
+also be referred to as learning, system identiﬁcation or model induction depending on the
+context.
+In this paper we present SMA, OOMs, and PSRs under a common framework and exam-
+ine the precise relationships between them. Furthermore, we establish a uniﬁed approach to
+learning such models from data. Many of the learning algorithms that have been proposed
+can be understood as variations of this basic learning theme, and several turn out to be
+closely related or even equivalent.
+In Section 2 we cover the essential theory for sequential systems (SSs) — a term coined
+by Carlyle and Paz (1971) for a purely algebraic characterization of MA. Though not new,
+we present this theory in a way that can be readily turned into algorithms, and with
+full proofs, because they give much insight and pave the way to the presented learning
+approach. The ﬁrst result concerns the relationship between SSs and the ob jects that they
+describe, namely formal series f : Σ∗
+→ K for K = R or K = C (see Section 1.1 for
+details). Any such function can be associated with a linear function space F , and has a SS
+representation if and only if the space F is ﬁnite dimensional. In fact, a SS can be seen as
+a representation of f w.r.t. some basis of F , and a change of basis will correspond to an
+equivalence transformation of SSs, where equivalence of two SSs means that they represent
+the same function. The remaining theory will be concerned with such transformations of
+SSs.
+It is shown how to transform any SS to an equivalent minimal SS, how to decide
+equivalence, how to normalize SSs and how to convert SSs into a so-called “interpretable”
+form.
+In Section 3 we mention the relationship between MA and the more general class
+of weighted ﬁnite automata (WFA) and their extension to input-output systems called
+weighted ﬁnite-state transducers (WFST). We then present SMA, OOMs and PSRs as
+instances of SSs with speciﬁc additional constraints that model probabilistic languages,
+stochastic processes and controlled processes, respectively, via the formal series f that they
+describe. We only sketch the basic concepts and give pointers to relevant literature. The
+main emphasis is on exploring the relations among the various model classes. We show that
+SMA are related to OOMs in the same way that probabilistic ﬁnite automata are related to
+HMMs, and show how to trivially convert any HMM into an OOM. OOMs and PSRs share
+the notion of a “predictive state” for the modeled process, which can be either implicit (as
+in the case of OOMs) or explicit (as for PSRs). Any PSR is essentially an input-output
+(IO)-OOM, while any OOM can be converted to a PSR by making the state “interpretable”.
+Finally, PSRs generalize POMDPs in the same way that OOMs generalize HMMs.
+Section 4 on learning is the main technical contribution of this paper. We present a
+learning framework that covers the cases of SMA, OOMs and PSRs in a uniﬁed way. The
+
+104
+
+Links Between MA, OOMs and PSRs
+
+only diﬀerence for the model classes concerns the way that estimates are obtained from
+the sample data. To turn the learning framework into a concrete algorithm, several design
+choices need to be made. Depending on these, many algorithms that have been proposed
+in the literature are recovered. This uniﬁed viewpoint has several advantages. First of all,
+modiﬁcations and improvements made for a speciﬁc model class can be generalized to other
+learning algorithms. Additionally, the general learning framework allows us to identify
+the key points responsible for statistical eﬃciency and thereby indicates a clear path for
+improvements. In this section, we present generalized and simpliﬁed versions of two key
+OOM learning algorithms — error controlling (EC) and eﬃciency sharpening (ES) — and
+show that these are in fact closely related to spectral learning algorithms.
+
+1.1 Notation
+Let Σ∗ be the set of words over a ﬁnite alphabet Σ, including the empty word ε. Symbols
+from the alphabet Σ will be denoted by normal variables as in x, y ∈ Σ, while words will
+be denoted by variables with a bar over them, e.g., x, y ∈ Σ∗ . For x and y in Σ∗ , let xy be
+the concatenation of words, and |x| denote the length of the word x. Furthermore, let Σk
+denote the subset of words of length k . Let {xi | i ∈ N} = Σ∗ be an enumeration of Σ∗ such
+that x0 = ε. We will be interested in characterizing functions f : Σ∗
+→ K for K = R or
+K = C, since these can be used to describe probabilistic languages, stochastic processes and
+controlled processes (cf. Deﬁnitions 18, 20, and 28). These form a K -vector space which
+we denote by K (cid:104)(cid:104)Σ(cid:105)(cid:105). For a given function f : Σ∗
+→ K , we deﬁne the system matrix F as
+the inﬁnite matrix F = [f (xj y i )]i,j∈N . Note that this is the transpose of what is commonly
+known as the Hankel matrix. Furthermore, for a given function f we deﬁne the functions
+fx : Σ∗
+→ K by setting fx (y) := f (xy) for any sequences x, y ∈ Σ∗ . Note that these
+functions correspond to the columns of the system matrix F . Let F := span{fx | x ∈ Σ∗
+}
+be the linear space spanned by these functions / the columns of F . Clearly, F ⊆ K (cid:104)(cid:104)Σ(cid:105)(cid:105).
+We deﬁne rank(f ) := rank(F ) = rank(F ).
+A d-dimensional sequential system (SS) is a structure M = (σ, {τz }, ωε ), which consists
+of an initial state vector ωε ∈ K d , a matrix τz ∈ K d×d for each z ∈ Σ and an evaluation
+we call a state of the SS M. Let τΣ = (cid:80)
+function σ : K d → K . For x = x1 · · · xn ∈ Σ∗ let τx = τxn · · · τx1 , and let ωx = τxωε , which
+z∈Σ τz .
+If the function σ is linear, we call the sequential system linear. In this paper, we will be
+dealing only with the linear case, so σ will just be a row vector, i.e., σ(cid:62)
+∈ K d .
+For a given SS M, we deﬁne its (external) function to be
+∗
+fM : Σ
+fM (x) = στxωε
+→ K,
+Finally, we deﬁne the rank of a SS M to be rank(M) := rank(fM ).
+
+(1)
+
+2. Basic Properties of Sequential Systems
+
+In this section we present the basic theory for sequential systems. This goes back to
+Sch¨utzenberger (1961), to Carlyle and Paz (1971) who coined the term sequential systems,
+and to Fliess (1974) but has been presented in various forms also for OOMs (Jaeger, 2000b)
+and PSRs (Singh et al., 2004). Here, we present the theory in a concise, self-contained
+fashion that can readily be turned into algorithms.
+
+105
+
+Thon and Jaeger
+
+We begin with a technical result that lies at the heart of the whole theory.
+Proposition 1 Let f : Σ∗
+→ K be given. If rank(f ) = d < ∞, then there exist linear
+operators ˜τz : F → F for each z ∈ Σ and a linear functional ˜σ : F → K that satisfy
+˜τz (fx ) = fxz and ˜σ(fx ) = f (x) for al l x ∈ Σ∗ . Furthermore, ˜σ( ˜τx (fε )) = f (x) for al l
+x ∈ Σ∗ , where ˜τx = ˜τxn ◦ · · · ◦ ˜τx1 .
+Proof Let J ⊂ N be an index set denoting a maximal set of linearly independent columns
+of the matrix F . Then clearly, B = {fxj | j ∈ J } is a basis for F . Deﬁne linear operators ˜τz
+and a linear functional ˜σ by their action on these basis elements:
+• ˜τz (fxj ) := fxj z for all z ∈ Σ,
+Then fx = (cid:80)
+j∈J λj fxj for suitable coordinates λj , and fxz = (cid:80)
+• ˜σ(fxj ) := fxj (ε) = f (xj ).
+We will show that then ˜τz (fx ) = fxz and ˜σ(fx ) = f (x) for all x ∈ Σ∗ . For this, let x ∈ Σ∗ .
+y ∈ Σ∗ , we have fxz (y) = fx (zy) = (cid:80)
+j∈J λj fxj (zy) = (cid:80)
+˜τz ((cid:80)
+j∈J λj fxj ) = (cid:80)
+j∈J λj fxj z = fxz , and ˜σ(fx ) = ˜σ((cid:80)
+j∈J λj fxj ) = (cid:80)
+j∈J λj fxj z , since for any
+j∈J λj fxj z (y). Therefore, ˜τz (fx ) =
+j∈J λj fxj (ε) =
+fx (ε) = f (x).
+Finally, ˜σ( ˜τx (fε )) = ˜σ(fx ) = f (x) for all x ∈ Σ∗ .
+
+The above proposition establishes a crucial property that makes this theory appealing,
+as it means that the functions f = fε , fx = ˜τx (f ), the linear operators ˜τz and the linear
+functional ˜σ have coordinate representations as vectors and matrices with respect to some
+basis B for F . Note that this remains true even if rank(f ) = ∞, but the coordinate rep-
+resentations will then be inﬁnite and of little practical use. The property f (x) = ˜σ( ˜τx (fε ))
+(cf. Equation 1) means that the function f is fully described by the data ( ˜σ , { ˜τz }, fε ). If
+these are given in some coordinate representation, then we have a SS representation:
+Proposition 2 Let f : Σ∗
+→ K be given.
+d-dimensional SS M such that f = fM .
+Proof Let B be a basis for F , and let M = (σ, {τz }, ωε ) be the coordinate representations
+of ( ˜σ , { ˜τz }, fε ) with respect to B , where we are using the deﬁnitions for ˜σ and ˜τz from the
+above Proposition 1. Then for any x ∈ Σ∗ , we have f (x) = ˜σ( ˜τx (fε )) = στxωε = fM (x).
+
+If rank(f ) = d < ∞, then there exists a
+
+Note that for the SS M constructed in Proposition 2 as a coordinate representation with
+respect to some basis B of F , the states ωx = τxωε will be the coordinate representations
+of the functions fx = ˜τx (f ) with respect to the basis B . Also note that due to Equation (1)
+we may evaluate f (x) using the SS M without knowledge of the basis B .
+The above proposition suggests that two SS might describe the same function f if and
+only if they are representations for f with respect to diﬀerent bases for F . However, this is
+only correct for so-called minimal SS, as will be detailed out in the following.
+(cid:48) are equivalent, denoted by M ∼= M
+(cid:48) , if they deﬁne the
+Deﬁnition 3 Two SSs M and M
+same function, i.e., if fM = fM(cid:48) . It is clear that this notion is an equivalence relation on
+the set of al l SSs.
+
+106
+
+Links Between MA, OOMs and PSRs
+
+We now introduce concepts needed to characterize the equivalence on SS. We give such
+a characterization for minimal SS in Proposition 12. For this, we introduce the concept of
+minimal SS, give a criteria for minimality in Corollary 8 and a procedure in Algorithm 2 to
+construct an equivalent minimal SS.
+Deﬁnition 4 For a given SS M we cal l the linear spaces W = span {τxωε | x ∈ Σ∗
+state space and ˜W = span {(στx )(cid:62)
+| x ∈ Σ∗
+} the co-state space of M.
+Deﬁnition 5 We cal l a d-dimensional SS M trimmed if it has ful l state and co-state
+spaces, i.e., if W = ˜W = K d . We cal l a SS minimal if no equivalent model of lower
+dimension exists.
+
+} the
+
+It will turn out in Corollary 8 that a SS is minimal if and only if it is trimmed. But
+ﬁrst, we show how to construct bases for the state (and co-state) space of a given SS.
+
+Proposition 6 The fol lowing procedure constructs a basis B for the state space W of a
+given d-dimensional SS in time O(max{d, |Σ|}d3 ) (the construction of a basis ˜B for the
+co-state space ˜W is analogous):
+Algorithm 1: Compute a basis B for the state space W of a given SS
+B ← {}, C ← {ωε}
+while |C | > 0 do
+ω ← some element of C , C ← C \ {ω}
+if ω is linearly independent of B then
+B ← B ∪ {ω}
+C ← C ∪ {τz ω | z ∈ Σ}
+
+Proof At any time during the run of the algorithm, B is a set of linearly independent
+vectors. Furthermore the set C of “candidate vectors” increases by |Σ| elements each time a
+new vector is added to the set B , but decreases by one element each run through the main
+loop. Therefore, the algorithm terminates after at most d|Σ| + 1 runs through the main
+loop, since there are at most d linearly independent vectors that can be added to B . Next
+we examine the runtime of the algorithm. Checking ω for linear independence from B can
+be done by checking PB ω = ω in time O(d2 ) if the orthogonal pro jection matrix PB onto
+span(B) is known. This check is performed at most d|Σ| + 1 times, yielding a complexity of
+O(d3 |Σ|). Clearly, the matrix PB must be updated every time a vector is added to B , which
+is a O(d3 ) operation that needs to performed at most d times, giving a total complexity of
+O(d4 ). Finally, every time a vector ω is added to B , the set C is increased by |Σ| vectors,
+each of which requires time O(d2 ) to be computed from ω , for a total time complexity of
+O(d3 |Σ|). Adding these together gives the claimed time complexity.
+Finally, we show that the returned set B is indeed a basis of the state-space W . Ob-
+serve that for all ω ∈ B and for all z ∈ Σ, the vectors τz ω have been added as “candidate
+vectors” to the set C at some point during the run of the algorithm — namely when ω was
+added to B . Each of these vectors is checked in turn and is at that point either linearly
+dependent on B , or added to B . Therefore, these vectors τz ω are all linearly dependent on
+the ﬁnal set B , i.e., τz (B) ⊆ span(B) for all z ∈ Σ. By linearity of τz this implies that also
+
+107
+
+Thon and Jaeger
+
+τz (span(B)) ⊆ span(B) for all z ∈ Σ. So span(B) contains ωε and is closed under the action
+of τz for all z ∈ Σ, which implies that {τxωε | x ∈ Σ∗
+} ⊆ span(B). But B ⊂ {τxωε | x ∈ Σ∗
+}
+by construction of B . Together, this implies span(B) = span({τxωε | x ∈ Σ∗
+}) = W .
+
+The above is a polynomial time algorithm for which we have explicitly stated the runtime
+complexity, since it is the workhorse for the operations of this section and dominates their
+runtimes. Note further that the computed bases are by construction of the form B =
+{τxj ωε | j ∈ J } and ˜B = {(στxi )(cid:62)
+| i ∈ I } for suitable index sets I , J and corresponding
+words xi and xj of length at most d, where d is the dimension of the SS. Also, the above
+procedure allows us to check whether a given SS is trimmed.
+The following proposition is the core technical result needed to establish the connection
+between a SS being trimmed, having full rank, and being minimal.
+Proposition 7 For a d-dimensional SS M, let {τxj ωε | j ∈ J } and {(στxi )(cid:62)
+| i ∈ I } be
+bases for W and ˜W respectively, and deﬁne F I ,J = [fM (xj xi )](i,j )∈I×J , then rank(M) =
+rank(F I ,J ) ≤ min{|I |, |J |} ≤ d. Furthermore, if |I | = d or |J | = d then rank(M) =
+min{|I |, |J |}.
+k∈N and Φ = (τxk ωε )k∈N , as well as ΠI = ((στxi )(cid:62) )(cid:62)
+i∈I ∈ K |I |×d
+Proof Deﬁne Π = ((στxk )(cid:62) )(cid:62)
+and ΦJ = (τxj ωε )j∈J ∈ K d×|J | . The rows of ΠI are a basis for the row space of Π and the
+columns of ΦJ are a basis for the column space of Φ. Now F = ΠΦ and F I ,J = ΠI ΦJ .
+Therefore rank(M) := rank(F ) = rank(ΠΦ) = rank(ΠI Φ) = rank(ΠI ΦJ ) = rank(F I ,J ).
+Moreover, rank(ΠI ) = |I | and rank(ΦJ ) = |J | imply that rank(ΠI ΦJ ) ≤ min{|I |, |J |} ≤ d
+as well as rank(ΠI ΦJ ) = |J | if |I | = d and rank(ΠI ΦJ ) = |I | if |J | = d.
+
+From this, we obtain the following result, which allows us to check a d-dimensional SS
+for minimality by checking whether the SS is trimmed, i.e., by constructing bases for the
+state and co-state space and checking if these have dimension d.
+
+Corollary 8 Let M be a d-dimensional SS. The fol lowing are equivalent:
+(i) M is trimmed
+(ii) rank(M) = d
+(iii) M is minimal
+Proof
+If M has full rank, i.e., rank(M) = d, then M must be minimal, as any lower-
+dimensional SS must have a lower rank and therefore cannot be equivalent. Conversely,
+if M is minimal, then we must have rank(M) = d, since by Proposition 2 there exists a
+rank(M)-dimensional equivalent SS. By Proposition 7 — and using the notation from the
+proposition — we see that rank(M) = d ⇔ |I | = |J | = d, i.e., if and only if M is trimmed.
+Next, we deﬁne the transformation of a SS by linear maps ρ and ρ(cid:48) . Such transformations
+will serve as the basic operation on SS for all conversion operations.
+
+108
+
+Links Between MA, OOMs and PSRs
+
+Deﬁnition 9 For a d-dimensional SS M = (σ, {τz }, ωε ) and any matrices ρ ∈ K n×d and
+ρ(cid:48)
+∈ K d×n , we deﬁne the n-dimensional SS ρMρ(cid:48) := (σρ(cid:48) , {ρτz ρ(cid:48)
+}, ρωε ).
+If ρ is non-singular, and ρ(cid:48) = ρ−1 , then this transformation will yield an equivalent
+conjugated SS. If the SS is minimal, then this corresponds to a change of basis for the
+underlying function space F .
+Lemma 10 Let M = (σ, {τz }, ωε ) be a d-dimensional SS, and ρ ∈ Rd×d be non-singular.
+Then M ∼= ρMρ−1 . We wil l cal l ρMρ−1 a conjugate of M.
+Proof ∀x ∈ Σ∗ : fρMρ−1 (x) = (σρ−1 )(ρτxn ρ−1 ) · · · (ρτx1 ρ−1 )(ρωε ) = στxωε = fM (x).
+
+We already know how to check for minimality. We now show how to convert a given SS
+to an equivalent minimal SS using the introduced transformations on SSs.
+Proposition 11 For a given SS M, the fol lowing procedure constructs an equivalent min-
+(cid:48)(cid:48) :
+imal SS M
+Algorithm 2: Minimization of a SS M
+1 Construct a basis {τxj ωε | j ∈ J } for the state space W of M
+Set Φ = (τxj ωε )j∈J .
+MΦ, where Φ† denotes the Moore-Penrose pseudoinverse of Φ.
+(cid:48) = Φ†
+Set M
+2 Construct a basis {(σ (cid:48) τ (cid:48)
+xi )(cid:62)
+| i ∈ I (cid:48)
+} for the co-state space ˜W (cid:48) of M
+(cid:48) .
+xi )(cid:62) )(cid:62)
+Set Π(cid:48) = ((σ (cid:48) τ (cid:48)
+i∈I (cid:48) .
+(cid:48)(cid:48) = Π(cid:48)
+(cid:48)Π(cid:48)† .
+Set M
+M
+Proof Note that by construction the columns of Φ and Π(cid:48)(cid:62) form bases for the spaces W
+and ˜W (cid:48) respectively. Therefore, Φ†Φ = id and ΦΦ†
+|W = id, as well as (Π(cid:48)(cid:62) )†Π(cid:48)(cid:62) = id and
+| ˜W (cid:48) = id. We can simply check equivalence, i.e., that for any x ∈ Σ∗ ,
+Π(cid:48)(cid:62) (Π(cid:48)(cid:62) )†
+fM(cid:48)(cid:48) (x) = σ (cid:48)(cid:48) τ (cid:48)(cid:48)
+xn · · · τ (cid:48)(cid:48)
+x1 ω (cid:48)(cid:48)
+ε
+(cid:48) τ (cid:48)
+(cid:48)†
+= σ (cid:48)
+(cid:48) τ (cid:48)
+(cid:48)†
+(cid:48)ω (cid:48)
+(cid:48)†
+· · · Π
+xn Π
+Π
+Π
+Π
+x1 Π
+ε
+= ω (cid:48)(cid:62)
+(cid:48)(cid:62)
+(cid:48)(cid:62)
+† τ (cid:48)(cid:62)
+† τ (cid:48)(cid:62)
+(cid:48)(cid:62)
+(cid:48)(cid:62)
+· · · (Π
+ε Π
+(Π
+)
+)
+x1 Π
+xn Π
+= σ (cid:48) τ (cid:48)
+xn · · · τ (cid:48)
+x1 ω (cid:48)
+ε
+†ωε
+† τx1 ΦΦ
+† τxn Φ · · · Φ
+= σΦΦ
+= στxωε = fM (x).
+ε )j∈J = (Φ† τxj ωε )j∈J = Φ†Φ = id. This implies that M
+Next, consider (τ (cid:48)
+ω (cid:48)
+(cid:48) has full state
+xj
+(cid:48) is |J | by
+ε | j ∈ J } is a basis for W (cid:48) , since the dimension d(cid:48) of M
+space W (cid:48) and that {τ (cid:48)
+ω (cid:48)
+xj
+construction. By Proposition 7, |J | = d(cid:48) implies rank(M
+(cid:48) ) = min(|I (cid:48)
+|, |J |) = |I (cid:48)
+|. By con-
+struction |I (cid:48)
+| = d(cid:48)(cid:48) where d(cid:48)(cid:48) is the dimension of M
+(cid:48)(cid:48) . Furthermore, rank(M
+(cid:48) ) = rank(M
+(cid:48)(cid:48) )
+(cid:48)(cid:48) is minimal.
+(cid:48)(cid:48) so by Corollary 8 M
+(cid:48) ∼= M
+since M
+
+†σ (cid:48)(cid:62)
+
+(Π
+
+(cid:48)(cid:62)
+
+(cid:48)(cid:62)
+
+)
+
+As we can convert any SS to an equivalent minimal SS using the above Algorithm 2,
+it will be suﬃcient to characterize equivalence only for minimal SS. This is done by the
+following result.
+
+109
+
+Thon and Jaeger
+
+z }, ω (cid:48)
+(cid:48) = (σ (cid:48) , {τ (cid:48)
+ε ) be minimal d-dimensional
+
+Proposition 12 Let M = (σ, {τz }, ωε ) and M
+SS. The fol lowing are equivalent:
+(cid:48)
+(i) M ∼= M
+(cid:48) = ρMρ−1 for some non-singular ρ ∈ K d×d
+(ii) M
+z Φ(cid:48) , where {τxj ωε | j ∈
+ε , σΦ = σ (cid:48)Φ(cid:48) and ∀z ∈ Σ : Πτz Φ = Π(cid:48) τ (cid:48)
+(iii) ΠΦ = Π(cid:48)Φ(cid:48) , Πωε = Π(cid:48)ω (cid:48)
+J } and {(στxi )(cid:62)
+| i ∈ I } are bases for the state and co-state spaces W and ˜W of M
+respectively, and Π = ((στxi )(cid:62) )(cid:62)
+i∈I , Φ = (τxj ωε )j∈J , Π(cid:48) = ((σ (cid:48) τ (cid:48)
+xi )(cid:62) )(cid:62)
+i∈I , and Φ(cid:48) =
+ω (cid:48)
+(τ (cid:48)
+ε )j∈J .
+xj
+
+Proof Lemma 10 establishes (ii) ⇒ (i). For (i) ⇒ (iii) note that fM = fM(cid:48) implies that
+Πτ ¯z Φ = [f (xj ¯zxi )]i,j∈I×J = Π(cid:48) τ (cid:48)
+¯z Φ(cid:48) for all ¯z ∈ Σ∗ , as well as Πωε = (f (xi ))(cid:62)
+i∈I = Π(cid:48)ω (cid:48)
+ε and
+σΦ = (f (xj ))j∈J = σ (cid:48)Φ(cid:48) . Finally, to see (iii) ⇒ (ii), note that Π and Φ have full rank,
+since M is minimal, so Π(cid:48) and Φ(cid:48) must also have full rank. Let ρ = Π(cid:48)−1Π = Φ(cid:48)Φ−1 , then
+ρ−1 = ΦΦ(cid:48)−1 . We can now easily check that M
+(cid:48) = ρMρ−1 .
+
+(cid:48) by ﬁrst
+Note that this allows us to decide equivalence for any given SS M and M
+(cid:48) respectively using Algorithm 2, and
+converting them to equivalent minimal SS ˜M and ˜M
+then checking for equivalence by criteria (iii) from the above Proposition 12. The required
+(cid:48) can be computed by Algorithm 1.
+bases for the state and co-state spaces of ˜M and ˜M
+The following proposition shows that any SS can be transformed into an equivalent SS
+where σ and ωε can be essentially any desired vectors. This implies that it is no restriction
+to assume some ﬁxed form for σ , as is sometimes done. For instance, in the case of OOMs
+often σ = (1, . . . , 1) is used, while for MA often σ = (1, 0, . . . , 0) is assumed.
+Proposition 13 Let M = (σ, {τz }, ωε ) be a d-dimensional SS, and let σ (cid:48)(cid:62) , ω (cid:48)
+ε ∈ K d such
+that σ (cid:48)ω (cid:48)
+ε = σωε . Then there exists a non-singular linear map ρ such that ρMρ−1 =
+(σ (cid:48) , {τ (cid:48)
+z }, ω (cid:48)
+ε ).
+} to an orthogonal basis {σ(cid:62) , v2 , . . . , vd} of K d , and {σ (cid:48)(cid:62)
+Proof Extend {σ(cid:62)
+} to an or-
+thogonal basis {σ (cid:48)(cid:62) , v (cid:48)
+2 , . . . , v (cid:48)
+d} of K d . We distinguish two cases:
+If c := σωε = σ (cid:48)ω (cid:48)
+ε (cid:54)= 0, then ρ1 = (ωε , v2 , . . . , vd )−1 and ρ2 = (ω (cid:48)
+2 , . . . , v (cid:48)
+ε , v (cid:48)
+d ) are non-
+ε and σρ−1 = σρ−1
+1 ρ−1
+singular. Let ρ = ρ2ρ1 . We can easily see that ρ2ρ1ωε = ρ2e1 = ω (cid:48)
+2 =
+1 ρ−1
+c · e(cid:62)
+2 = σ (cid:48) , since σ (cid:48)ρ2 = c · e(cid:62)
+1 .
+i ) ρ1 = ( σ(cid:62)
+If σωε = σ (cid:48)ω (cid:48)
+ε = 0, then (perhaps after reordering vi and v (cid:48)
+σσ(cid:62) , ωε , v3 , . . . , vd )−1
+and ρ2 = ( σ (cid:48)(cid:62)
+σ (cid:48) σ (cid:48)(cid:62) , ω (cid:48)
+3 , . . . , v (cid:48)
+ε , v (cid:48)
+d ) are non-singular. Let ρ = ρ2ρ1 . We can again check that
+ε and σρ−1 = σρ−1
+1 ρ−1
+2 = e1ρ−1
+2 = σ (cid:48) , since σ (cid:48)ρ2 = e1 .
+ρ2ρ1ωε = ρ2e2 = ω (cid:48)
+
+Finally, we introduce a special property called interpretability that a SS can have. This
+concept has led to some confusion in the past — especially regarding the relationship be-
+tween OOMs and PSRs. This is due to the fact that it has been deﬁned diﬀerently for
+OOMs, IO-OOMs and PSRs, as will be discussed later. Another source of confusion is that
+interpretability has been regarded as a crucial property for learning, which is however only
+
+110
+
+Links Between MA, OOMs and PSRs
+
+true for the the very early learning algorithms. Here we give a deﬁnition of interpretability
+that works for all models, and we will defer the discussion of the diﬀerent uses to the later
+sections.
+fM (xY ) = (cid:80)
+Deﬁnition 14 A d-dimensional SS M is said to be interpretable w.r.t. the sets Y1 , . . . , Yd ⊂
+Σ∗ if the states ωx take the form ωx = [fM (xY1 ), . . . , fM (xYd )](cid:62) for al l x ∈ Σ∗ , where
+y∈Y fM (xy).
+The following proposition and algorithm show how to make a SS interpretable, i.e., how
+to convert any given SS into an equivalent interpretable form.
+If ρ = [(στY1 )(cid:62) , . . . , (στYd )(cid:62) ](cid:62) is non-singular, where τY = (cid:80)
+Proposition 15 Let M = (σ, {τz }, ωε ) be a d-dimensional minimal SS, and Y1 , . . . , Yd ⊂
+Σ∗ .
+(cid:48) :=
+y∈Y τy , then M
+(cid:48) is interpretable w.r.t. Y1 , . . . , Yd .
+ρMρ−1 ∼= M and M
+x = ρωx = [στY1 τxωε , . . . , στYd τxωε ](cid:62) = [fM (xY1 ), . . . , fM (xYd )](cid:62) .
+Proof ∀x ∈ Σ∗ : ω (cid:48)
+
+Corollary 16 For a SS M, the fol lowing algorithm returns an equivalent interpretable SS.
+Algorithm 3: Make a SS M of rank d interpretable
+(cid:48) using Algorithm 2.
+1 Minimize M, i.e., ﬁnd an equivalent minimal SS M
+2 Construct a basis {(σ (cid:48) τ (cid:48)
+xi )(cid:62)
+| i ∈ I } of the co-state space ˜W (cid:48) of M
+(cid:48) using Algorithm 1
+Select sets Yk = {xik } where {i1 , . . . , id} = I .
+Set ρ = [(σ (cid:48) τ (cid:48)
+Y1 )(cid:62) , . . . , (σ (cid:48) τ (cid:48)
+)(cid:62) ](cid:62) .
+Yd
+(cid:48)ρ−1 .
+3 Return ρM
+
+Proof The above algorithm indeed returns an equivalent SS that is interpretable w.r.t. the
+(cid:48) is minimal and therefore ρ is non-singular by construction.
+selected sets Yk , since M
+
+3. Versions of Sequential Systems
+
+In this section we ﬁrst show that SS are an algebraic characterization of multiplicity au-
+tomata (MA), and we mention the relationship to the more general class of weighted ﬁnite
+automata (WFA) and its extension to weighted ﬁnite-state transducers (WFST). We then
+deﬁne stochastic multiplicity automata (SMA), observable operator models (OOMs) and
+predictive state representations (PSRs), which are known to generalize probabilistic ﬁnite
+automata (PFA), hidden Markov models (HMMs) and partially observable Markov decision
+processes (POMDPs), respectively. We show that these are all instances of SSs that are
+used to model diﬀerent kinds of ob jects. Furthermore, we examine the relations between
+these models. An overview is given in Figure 1.
+
+111
+
+Thon and Jaeger
+
+Figure 1: SMA, OOMs and PSRs are versions of SSs that model probabilistic languages,
+stochastic processes and controlled processes respectively, and strictly generalize
+PFA, HMMs and POMDPs respectively.
+
+3.1 Multiplicity Automata and Weighted Automata
+
+The above deﬁnition of linear ﬁnite dimensional SS is an equivalent algebraic way of looking
+at a type of automata that were introduced by Sch¨utzenberger (1961) and are most com-
+monly known as multiplicity automata (Salomaa and Soittola, 1978; Berstel and Reutenauer,
+1988). We will give a very brief introduction.
+
+Deﬁnition 17 A K -multiplicity automaton (MA) is a structure (cid:104)Σ, Q, ϕ, ι, τ (cid:105), where Σ
+is an alphabet, Q is a ﬁnite set of states, ϕ : Q × Σ × Q → K is the state transition
+ϕ(q , xz , q (cid:48) ) = (cid:80)
+function, ι : Q → K is the initialization function, and τ : Q → K is the termination
+function. The state transition function is extended to words by setting ∀x ∈ Σ∗ , z ∈ Σ :
+s∈Q ϕ(q , x, s)ϕ(s, z , q (cid:48) ), and ϕ(q , ε, q (cid:48) ) = 1 if q = q (cid:48) and 0 otherwise. A
+(cid:88)
+multiplicity automaton M then deﬁnes a function
+∗
+ι(q)ϕ(q , x, q (cid:48)
+fM : Σ
+fM (x) =
+→ K,
+q ,q (cid:48)∈Q
+j . Then we have τxz = [ϕ(qj , xz , qi )]i,j = [(cid:80)
+The formal equivalence of MA to linear ﬁnite-dimensional SS is easily seen by rewriting
+the deﬁnition of MA in terms of matrix multiplication: Set ωε = [ι(qi )]i , τz = [ϕ(qj , z , qi )]i,j ,
+and σ = [τ (qj )](cid:62)
+qk ∈Q ϕ(qj , x, qk )ϕ(qk , z , qi )]i,j =
+[ϕ(qk , z , qi )]i,k [ϕ(qj , x, qk )]k,j = τz τx and similarly fM (x) = στxωε . However, the above
+deﬁnition of MA makes it apparent how MA are an extension of non-deterministic ﬁnite
+
+)τ (q (cid:48)
+
+).
+
+112
+
+stochasticmultiplicityautomata(SMA)predictivestaterepresentations(PSRs)≡input-outputOOMs(IO-OOMs)observableoperatormodels(OOMs)probabilisticﬁniteautomata(PFA)hiddenMarkovmodels(HMMs)partiallyobservableMarkovdecisionprocesses(POMDPs)stochasticprocessescontrolledprocessesprobabilisticlanguagesmultiplicityautomata(MA)≡(linear)sequentialsystems(SS)Links Between MA, OOMs and PSRs
+
+automata (NFA) to WFA that add weights to the initial and terminal states as well as the
+state transitions. The weight of a path from an initial state to a termination state is then
+given by the product of the corresponding weights (hence the name multiplicity automata),
+while the value fM (x) is computed by summing the weights of all paths compatible with x.
+At this point we should mention that MA as deﬁned here are merely a special case of
+WFA. The diﬀerence is that for MA we consider weights from a ﬁeld K (here K = R or
+K = C), while for WFA the weights are only required to come from an algebraic structure K
+called a semiring. There exists a large body of theory for WFA that generalizes the theory
+of SS that we have presented in Section 2, which can be found in the recent textbook by
+Droste et al. (2009). Note that while MA and WFA are formally closely related, there is
+a diﬀerence in the way they are viewed and used. For instance, WFA are often considered
+over the semiring R+ with weights given the interpretation of transition probabilities, which
+are then called probabilistic ﬁnite automata (PFA). Such PFA are graphical models, and
+the states Q are latent states. For R-MA, however, the weights are allowed to be negative,
+and the weights as well as the states Q become abstract notions.
+In other words, PFA
+(and WFA in general) are typically used when the states and transition structure carry
+some meaning, while MA are typically used as an abstract tool to characterize functions
+f : Σ∗
+→ K . This diﬀerence in perspective is reﬂected in the relationship of PFA to SMA,
+HMM to OOM and POMDP to PSR described in the remainder of this Section 3. Note
+that PFA are a special case of MA, as R+ ⊂ R. In fact, there exist functions f : Σ∗
+→ R+
+that can be described by a MA, but not by a PFA, i.e., MA are strictly more general than
+PFA. This sequence of increasing generalization starting with ﬁnite automata (FA) can be
+summarized as follows:
+
+FA ⊂ NFA ⊂ PFA ⊂ MA ≡ SS ⊂ WFA.
+
+Furthermore, there exists a natural extension of WFA to input-output systems that
+are called weighted ﬁnite-state transducers (WFST). Here, the alphabet Σ is split as Σ =
+ΣI × ΣO , where ΣI is regarded as input alphabet and ΣO as output alphabet. The function
+fM : Σ∗
+I × Σ∗
+O → K is then viewed as describing a relation between ΣI and ΣO . Again,
+K is in general only required to be a semiring, but a typical choice is K = R+ with
+the interpretation of state transition probabilities, yielding a latent variable model called
+probabilistic ﬁnite-state transducers (PFST). WFST are a ﬂexible class of models that have
+been shown to unify several common approaches used in the the context of language and
+speech processing; a survey is given by Mohri et al. (2002). Furthermore, IO-OOMs and
+thereby PSRs (cf. Section 3.2 and Section 3.3) are in fact WFST with weights in K = R,
+although they are not usually viewed this way, as WFST are typically seen as latent variable
+models, while IO-OOMs and PSRs are not. However, since PFST are MA, as long as the
+desired application merely requires the characterization of the function fM : Σ∗
+I ×Σ∗
+O → R+ ,
+the SS learning algorithms described in Section 4 can be applied to the case of WFST as
+well, as has been done recently by Balle et al. (2011).
+Note that in the context of MA one is usually interested in characterizing functions
+f : Σ∗
+→ K , which are also called formal series in general and recognizable series if they
+are computed by a MA. However, a MA M can also be used to recognize a language L ⊆ Σ∗
+by setting LM = {x ∈ Σ∗
+| fM (x) ⊆ J } for some subset J ⊆ K , e.g., J = {k ∈ K : k > κ}
+
+113
+
+Thon and Jaeger
+
+for some threshold parameter κ ≥ 0. The class of languages recognizable by MA is known
+to be strictly more general than the class of regular languages (Cortes and Mohri, 2000).
+MA have received a lot of attention in the context of learning theory following the
+discovery of eﬃcient learning algorithms (Bergadano and Varricchio, 1994; Ohnishi et al.,
+1994) in an extended version of the exact learning model of Angluin (1987). This led to
+further results on the learnability of several classes of DNF formulae (Bergadano et al.,
+1996), the class of polynomials over ﬁnite ﬁelds, decision trees and others (Beimel et al.,
+1996, 2000).
+
+3.1.1 Stochastic Multiplicity Automata and Stochastic Languages
+Additionally, MA have been applied in the context of probabilistic grammatical infer-
+ence (Denis et al., 2006; Bailly et al., 2009), which is of particular interest to us because of
+→ R that satisﬁes 0 ≤ f ≤ 1 and f (Σ∗ ) = (cid:80)
+the close relationship of these approaches to OOMs and PSRs — as we shall see.
+Deﬁnition 18 A function f : Σ∗
+x∈Σ∗ f (x) =
+1 is cal led a stochastic language, probabilistic language or just distribution over Σ∗ . A dis-
+tribution fM on Σ∗ that is deﬁned by some MA M is cal led a rational stochastic language,
+and a MA that deﬁnes such a distribution is cal led a stochastic MA (SMA).
+
+Denis and Esposito (2008) give a comprehensive overview of rational stochastic languages
+over various ﬁelds K , their relationships and relations to subclasses such as the important
+class of probabilistic regular languages.
+q∈Q ι(q) and ϕ(q , Σ, Q) = (cid:80)
+(cid:80)
+1, where ι(Q) = (cid:80)
+Deﬁnition 19 A probabilistic (ﬁnite) automaton (PFA) is a SMA with the fol lowing re-
+strictions: (i) ι, τ , ϕ have values in [0, 1], and (ii) ι(Q) = 1 and ∀q ∈ Q : τ (q) + ϕ(q , Σ, Q) =
+q (cid:48)∈Q ϕ(q , x, q (cid:48) ). The stochastic lan-
+x∈Σ
+guages that can be represented by PFA are cal led probabilistic regular languages.
+PFA are closely related to hidden Markov models (HMMs), and the relationship has
+been detailed out by Dupont et al. (2005). It is however less well known that SMA are
+closely related to observable operator models — a class of models for stochastic processes
+that generalize HMM in a similar way that SMA generalize PFA.
+We point out two results that are relevant in the context of modeling probabilistic lan-
+guages by MA. First of all, it is known that it is an NP-hard problem to compute the
+maximum likelihood estimate of parameters of a PFA with known structure from a given
+training set of words (Abe and Warmuth, 1992). In practice, algorithms based on expec-
+tation maximization (EM) (Dempster et al., 1977) are used which compute locally optimal
+models instead. In contrast to this, the algebraic theory for SSs allows for powerful learning
+algorithms (see Section 4) that often outperform EM-trained PFA or HMMs (Rosencrantz
+et al., 2004; Jaeger et al., 2006a). However, these learning algorithms may return MA
+that are arbitrarily close to SMA but fail to represent stochastic languages. It is in fact
+undecidable whether a MA represents a stochastic language (Denis and Esposito, 2004).
+
+3.2 Observable Operator Models and Stochastic Processes
+
+Observable operator models were introduced by Jaeger (1997) as a concise algebraic charac-
+terization of stochastic processes (see also Jaeger, 1998, 2000b; Jaeger et al., 2006b). These
+
+114
+
+Links Between MA, OOMs and PSRs
+
+models are closely related to other algebraic characterizations of stochastic processes (Heller,
+1965; Ito, 1992; Upper, 1997) that were studied in the context of deciding the equivalence
+for HMMs (Gilbert, 1959), which came to a successful conclusion by framing HMMs in the
+more general class of linearly dependent processes by Ito et al. (1992).
+satisﬁes (i) f (ε) = 1 and (ii) ∀x ∈ Σ∗ : f (x) = (cid:80)
+Deﬁnition 20 A (discrete-valued) stochastic process is a function f : Σ∗
+→ [0, 1] that
+x∈Σ f (xx). Such a function f deﬁnes the
+probabilities of initial observation sequences. An observable operator model (OOM) is a
+linear SS M such that fM is a stochastic process. A stochastic process that can be modeled
+by a ﬁnite dimensional OOM is cal led a linearly dependent process.
+
+One of the interesting features of OOMs is their notion of “state” of a (stochastic)
+process. The idea that goes back to Zadeh (1969) is that a system state is really nothing
+more than the information that is required to predict the future. In the case of OOMs, the
+states ωx not only carry enough information to predict the future, they are (in a certain
+sense) just future predictions.
+To see this, recall that the states ωx of a SS are coordinate representations of the
+functions fx w.r.t. some unknown basis B of the function space F . In the case of OOMs,
+these functions take on the meaning that fx (y) = P (xy), i.e., they give the probability of
+observing the sequence x followed by y . These functions are therefore called future prediction
+functions in the context of OOMs. The operators {τz } are then state update operators
+that update a state ωx (corresponding to the future prediction function fx after an initial
+observation of x) according to the new observation z to the new state ωxz (corresponding
+to the future prediction function fxz after an initial observation of xz ) — hence the name
+“observable operators” (Jaeger, 1998).
+For convenience, these functions fx , as well as the corresponding states ωx , are often
+normalized to fx/f (x) and ωx/σωx respectively, since fx (y)/f (x) = στy ωx/σωx = P (y |x),
+the probability of observing y given that x has been observed. Therefore, an OOM started
+SMA, which is obtained by starting a SMA in the (normalized) state ωx/ (cid:80)
+in the normalized state ωx/σωx represents a stochastic process started after an initial ob-
+servation of x. This corresponds to the notion of a residual automaton in the context of
+z∈Σ∗ στz ωx and
+then represents a residual language (Denis and Esposito, 2004).
+
+3.2.1 Relation to Hidden Markov Models
+
+Any HMM can be trivially converted into an OOM. A hidden Markov model (HMM)
+consists of an unobserved Markov process Xt that takes values in a ﬁnite set of states
+Q = {s1 , . . . , sn}, and is governed by a stochastic state transition matrix T = [P (Xt+1 =
+sj | Xt = si )]i,j . At each time step an observation Yt from Σ is made according to the emis-
+sion vector Ez = [P (Yt = z | Xt = si )]i . Finally, an initial state vector π = [P (X0 = si )]i is
+needed to fully specify the distribution of the stochastic process Yt (Rabiner, 1989).
+
+Proposition 21 (Jaeger, 2000b) A given HMM (T , {Ez }z∈Σ , π) with N states is equivalent
+to the OOM (σ, {τz }, ωε ) deﬁned by σ = (1, . . . , 1), τz = T (cid:62)diag(Ez ) and ωε = π . The rank
+of the OOM is less than or equal to N .
+
+115
+
+Thon and Jaeger
+
+Moreover, there are examples of OOMs of ﬁnite rank that cannot be modeled by any
+HMM with a ﬁnite number of states. A prototypical example is the so-called “probability
+clock” (Jaeger, 1998). It is an open question how to ﬁnd a “close” HMM for a given OOM.
+While OOMs can be seen as a generalization of HMMs, one should keep in mind that there
+is a fundamental diﬀerence in the notion of the state of the process. The state vector
+in the case of a HMM is a stochastic vector that expresses the belief about the underlying
+hidden state, while for an OOM it is a coordinate representation of the corresponding future
+prediction function. However, under certain conditions it is possible to recover HMM-like
+hidden states from an OOM (Hsu et al., 2009; Anandkumar et al., 2012).
+
+3.2.2 Relationship to Stochastic Multiplicity Automata
+
+The main diﬀerence between OOMs and SMA is that OOMs model stochastic processes,
+while SMA model distributions on words. However, we can use a stochastic process to
+model a distribution on words if we introduce a termination symbol $.
+(cid:80)
+Deﬁnition 22 An OOM M over the alphabet Σ$ = Σ ∪ {$} is terminating if fM (Σ∗$) :=
+x∈Σ∗ στ$ τxωε = 1.
+$ = pτΣ for some ﬁxed termination probability p ∈ (0, 1), where τΣ = (cid:80)
+Proposition 23 An OOM M = (σ, {τz }, ωε ) over the alphabet Σ can be extended to a
+z }, ωε ) over the alphabet Σ$ = Σ∪{$} by setting τ (cid:48)
+(cid:48) = (σ, {τ (cid:48)
+terminating OOM M
+z = (1−p)τz
+and τ (cid:48)
+z∈Σ τz .
+(cid:48) describes a stochastic process. Clearly, fM(cid:48) ≥ 0 and
+x ωε = (cid:80)
+Proof We ﬁrst show that M
+fM(cid:48) (ε) = σωε = 1. To show property (ii), take any x ∈ Σ∗
+$ by p (cid:80)
+z∈Σ τz ). Then (cid:80)
+fM(cid:48) (xz ) = σ((cid:80)
+$ and note that by linearity
+τ (cid:48)
+k λk τxk ωε for suitable λk ∈ R and sequences xk ∈ Σ∗ (this is obtained by re-
+x ωε = (cid:80)
+k λk στΣ τxk ωε = (cid:80)
+placing all occurrences of τ (cid:48)
+τ (cid:48)
+z )τ (cid:48)
+xωε = (cid:80)∞
+(cid:80)
+x∈Σl σpτΣ (1 − p)l τxωε = (cid:80)∞
+(cid:80)
+z∈Σ$
+z∈Σ$
+x ωε =
+στΣ τ (cid:48)
+x ωε = fM(cid:48) (x ). Furthermore, fM(cid:48) (Σ∗$) =
+k λk στxk ωε = στ (cid:48)
+x∈Σ∗ στ (cid:48)
+$ τ (cid:48)
+l=0 p(1 − p)l = 1.
+l=0
+Deﬁnition 24 A terminating OOM M over the alphabet Σ ∪ {$} and a SMA A over the
+Lemma 25 If A = (σ, {τz }, ωε ) is a minimal d-dimensional SMA, then τΣ∗ = (cid:80)∞
+alphabet Σ are related, if fM (x$) = fA (x) for al l x ∈ Σ∗ .
+exists and is equal to (Id − τΣ )−1 , where τΣ = (cid:80)
+k=0 τ k
+Σ
+z∈Σ τz .
+Proof We will show that the spectral radius1 ρ(τΣ ) satisﬁes ρ(τΣ ) < 1, which implies
+i.e., there exists some λ ∈ C, |λ| ≥ 1 and v ∈ Cd
+the lemma. Assume ρ(τΣ ) ≥ 1,
+such that τΣv = λv . As A is minimal, we may ﬁnd sequences xj , xi ∈ Σ∗ such that
+Π = ((στxi )(cid:62) )(cid:62)
+SMA property fA (Σ∗ ) = (cid:80)∞
+i∈I and Φ = (τxj ωε )j∈J with |I | = |J | = d are non-singular using Algo-
+rithm 1. Then v = Φa for some a ∈ Cd , and Πτ k
+ΣΦa = λkΠΦa for any k ∈ N. Now the
+k=0 στ k
+Σωε = 1 implies that Πτ k
+ΣΦ → 0 as k → ∞, while the
+right hand side λkΠΦa does not (note ΠΦa (cid:54)= 0), which is a contradiction.
+
+1. For A ∈ Cn×n with eigenvalues λ1 , . . . , λk , the spectral radius is deﬁned as ρ(A) := max
+i
+
+|λi |.
+
+116
+
+Links Between MA, OOMs and PSRs
+
+Proposition 26 Let A = (σ, {τz }, ωε ) be a minimal d-dimensional SMA. Then M =
+(σ (cid:48) , {τ (cid:48)
+z }, ω (cid:48)
+ε ) is a related (d + 1)-dimensional terminating OOM over the alphabet Σ$ =
+• σ (cid:48) = [σ (cid:80)∞
+Σ ∪ {$}, if
+z = (cid:2) τz 0
+(cid:3) ,
+Σ , 1] = [σ(Id − τΣ )−1 , 1],
+k=0 τ k
+• τ (cid:48)
+τ (cid:48)
+$ = [ 0 0
+σ 1 ], and
+0 0
+• ω (cid:48)
+ε = [ ωε
+0 ].
+σ((cid:80)∞
+Proof We can simply check that for all z ∈ Σ∗
+$
+if z ∈ Σ∗ ,
+k=0 τ k
+Σ )τz ωε
+fM (z ) = σ (cid:48) τ (cid:48)
+z ω (cid:48)
+if z = x$ . . . $ for some x ∈ Σ∗ ,
+στxωε
+ε =
+otherwise.
+0
+This implies fM ≥ 0, fM (x$) = fA (x) for all x ∈ Σ∗ (M and A are related), as well as
+= [σ (cid:80)∞
+fM (Σ∗$) = fA (Σ∗ ) = 1 (M is terminating if it is an OOM). Furthermore, σ (cid:48)ω (cid:48)
+ε = fA (Σ∗ ) =
+Σ τΣ + σ, 1] = σ (cid:48) , which imply property (i) and (ii) for a stochastic
+1 and σ (cid:48) τ (cid:48)
+k=0 τ k
+Σ$
+process respectively.
+
+Proposition 27 Conversely, let M = (σ, {τz }, ωε ) be a d-dimensional terminating OOM
+over the alphabet Σ ∪ {$}. Then A = (στ$ , {τz }, ωε ) is a related d-dimensional SMA over
+the alphabet Σ.
+Proof Clearly, fA (x) = fM (x$) ≥ 0 for all x ∈ Σ∗ and fA (Σ∗ ) = fM (Σ∗$) = 1.
+
+3.2.3 Historical Remarks
+
+Note that our deﬁnition of OOMs given in Deﬁnition 20 diﬀers slightly from the deﬁnition
+typically found in the literature.
+First of all, the property (ii) for a stochastic process means that an OOM must satisfy
+στΣωx = σωx for all x ∈ Σ∗ , which implies (ii)’ στ = σ if the OOM is minimal, but not in
+general. The property (ii)’ is however often stated as part of the deﬁnition for OOMs. Our
+above Deﬁnition 20 is therefore slightly more relaxed than the standard deﬁnition in the
+case of non-minimal models, but this has no practical consequences.
+Furthermore, for purely historical reasons, OOMs are sometimes required to satisfy
+σ = (1, . . . , 1), which is mainly an issue of normalization (cf. Proposition 13). However,
+(cid:80)
+i = (cid:80)
+this in turn has led to a more restrictive deﬁnition of interpretability for OOMs, since due
+to property (i) of stochastic processes, an OOM that satisﬁes σ = (1, . . . , 1) can only be
+interpretable with respect to sets Yk , if 1 = σωε = (1, . . . , 1) · [fM (Yi )](cid:62)
+y∈Yk
+P (y).
+k
+This is typically assured by requiring the sets Yk to partition Σl for some l. One can relax
+this restriction on the sets Yk for the deﬁnition of interpretability — as we have done in
+Deﬁnition 14 — if one is willing to drop the normalization requirement σ = (1, . . . , 1) as
+well.
+
+117
+
+Thon and Jaeger
+
+Nevertheless, even though the normalization requirement σ = (1, . . . , 1) is superﬂuous,
+several of the OOM learning algorithms have been designed to yield OOMs normalized
+such that σ = (1, . . . , 1) — oftentimes unnecessarily complicating the algorithms — and
+some proofs have made use of this normalization as well. Later in Section 4 we present
+simpliﬁed and generalized versions of the EC and ES learning algorithms by removing this
+normalization restriction from the algorithms and proofs.
+
+3.3 Predictive State Representations and Controlled Processes
+
+Following the development of OOMs for stochastic processes, extensions to the case of
+controlled processes — stochastic processes that depend on an external input at each time
+step — were proposed by Jaeger (1998) as input-output OOMs, by Littman et al. (2001) as
+predictive state representations and as a further variant as transformed PSRs by Rosencrantz
+et al. (2004). All approaches are (in the linear case) equivalent and can be easily understood
+in the framework of linear SSs.
+p(x) = (cid:80)
+Deﬁnition 28 A (discrete-valued) controlled (stochastic) process with input from ΣI and
+output in ΣO is a function p : Σ∗
+→ [0, 1] that satisﬁes (i) p(ε) = 1 and (ii) ∀x ∈ Σ∗ , a ∈ ΣI :
+o∈ΣO
+p(xao), where Σ = (ΣI ×ΣO ) and ao = (a, o). We deﬁne p(y |x) = p(xy)/p(x)
+for p(x) (cid:54)= 0 and zero otherwise. An input-output OOM (IO-OOM) is just a SS that models
+a control led process.
+
+Note that the values of p are not probabilities. One may interpret p(a1o1 . . . anon ) as
+P (o1 . . . on |a1 . . . an ), i.e., as the conditional probability of observing the outputs o1 . . . on
+given the inputs a1 . . . an . However, one must take care, as the sequence of inputs may
+depend on the observed outputs as well. This is explained in more detail in Section 4.1.
+
+Deﬁnition 29 Let p be a control led process with predictive states ˙ωh deﬁned as ˙ωh =
+[p(q1 |h), . . . , p(qd |h)](cid:62)
+∈ Rd for h ∈ Σ∗ and some ﬁxed set of sequences q i ∈ Σ∗ . If ˙ωh is a
+suﬃcient statistic for any history h ∈ Σ∗ , i.e., for every x ∈ Σ∗ there is a function mx :
+Rd → [0, 1] such that p(x|h) = mx ( ˙ωh ) for al l h ∈ Σ∗ , then the sequences {q1 , . . . , qd} are
+cal led core tests, which together with the initial state ˙ωε and pro jection functions mx form
+a d-dimensional predictive state representation (PSR) for p. If the projection functions are
+linear functionals (i.e., just row vectors in Rd ), then the PSR is cal led linear.
+
+Note that PSRs share the notion of “state” with OOMs in that the state consists of the
+information required to predict the future, but PSRs additionally require the entries of the
+state vectors ˙ωh to be “predictions” p(q i |h) for the core tests q i . Such states are therefore
+called predictive states.
+We will only consider linear PSRs for controlled processes here, and show that these are
+essentially SS for controlled processes (i.e., IO-OOMs) that are additionally interpretable
+with respect to singleton sets (core tests). Note that there has been some confusion about
+the precise relationship between PSRs and IO-OOMs, which we address in Sections 3.3.2
+and 3.3.3 below.
+
+118
+
+Links Between MA, OOMs and PSRs
+
+(cid:62)
+
+(cid:62)
+
+σ =
+
+mao for any a ∈ ΣI .
+
+Proposition 30 Let a d-dimensional linear PSR consisting of core tests q i , projection func-
+tions mx and an initial state ˙ωε for a control led process p be given. Then an equivalent SS
+(cid:88)
+M = (σ, {τz }, ωε ) is obtained by setting
+(cid:62) , . . . , (mzqd )
+ωε = ˙ωε ,
+τz = [(mzq1 )
+and
+]
+o∈ΣO
+Proof First note that σ ˙ωx = (cid:80)
+mao ˙ωx = (cid:80)
+Furthermore, M wil l be interpretable w.r.t. the sets {q i}.
+p(ao|x) = 1 for all x ∈ Σ∗ such that
+o∈ΣO
+o∈ΣO
+p(x) (cid:54)= 0 because p is a controlled process. Next, we prove that (*) ωx = p(x) ˙ωx and (**)
+fM (x) = p(x) by induction on the length l of x:
+• For l = 0 we have ωε = p(ε) ˙ωε and fM (ε) = σωε = σ ˙ωε = 1 = p(ε).
+• Assume (*) and (**) are true for all x ∈ Σl . Let xz ∈ Σl+1 . Then (*) ωxz =
+τz ωx = τz ˙ωxp(x) = [p(zq i |x)](cid:62)
+i p(x) = [p(q i |xz )](cid:62)
+i p(z |x)p(x) = ˙ωxz p(xz ) and (**)
+fM (xz ) = σωxz = σ ˙ωxz p(xz ) = p(xz ).
+Note that property (*) says that ωx = p(x) ˙ωx = [p(xq1 ), . . . , p(xqd )](cid:62) for all x, i.e., that M
+is interpretable w.r.t. the sets {q i}.
+
+Proposition 31 Conversely, let M = (σ, {τz }, ωε ) be a SS for a control led process p. Then
+an equivalent PSR is obtained by making the SS interpretable with respect to singleton sets
+{y i} for appropriate sequences y i ∈ Σ∗ (e.g., using Algorithm 3). We can then use these as
+core tests for the PSR, and set mx = στx for al l x ∈ Σ∗ .
+Proof We assume that the SS has been made interpretable w.r.t. the sequences y1 , . . . , yd .
+Then the normalized states ˙ωh = ωh/σωh have the form ˙ωh = [p(y1 |h), . . . , p(yd |h)](cid:62) . Fur-
+thermore, for all h ∈ Σ∗ : mx ˙ωh = στx ˙ωh = στx τhωε/στhωε = p(x|h), as desired.
+
+Corollary 32 A linear PSR can be speciﬁed by the parameters ({mao}, {Mao}, ω(cid:62)
+ε ) for
+ao ∈ ΣI × ΣO , where Mao = τ (cid:62)
+ao and mao = (στao )(cid:62) , and deﬁnes a control led process via
+p(a1o1 · · · anon ) = ω(cid:62)
+ε Ma1 o1 · · · Man−1 on−1 man on .
+This is the usual way of specifying a PSR.
+
+Note that transformed PSRs (TPSRs) are just PSRs that model controlled processes in
+σ = ((cid:80)
+the form of Corollary 32 without any further requirements (i.e., without the requirement
+that the states need to be interpretable). These are readily converted to SSs by setting
+mao )(cid:62) for any a ∈ ΣI and using the equations from the Corollary 32 otherwise.
+o∈ΣO
+Note that this may not give equivalent models if the PSR does not model a controlled
+process.
+
+119
+
+Thon and Jaeger
+
+3.3.1 Relation to Partially Observable Markov Decision Processes
+
+Finally, we note how to convert POMDPs into SSs (which can then be further converted
+to PSRs by making the SS interpretable, as described above). A POMDP with d states
+Q = {s1 , . . . , sd} for a controlled process with input alphabet ΣI and output alphabet ΣO
+consists of an initial belief state b ∈ Rd whose i-th element is the probability of the model
+starting in state si , a state transition matrix Ta ∈ Rd×d for each action a ∈ A such that the
+i, j -th entry of Ta is the probability of transitioning to state si from state sj if action a is
+taken, and a vector Oao ∈ Rd for each action-observation pair ao ∈ (ΣI × ΣO ) whose i-th
+entry is the probability of observing o after arriving in state si by taking action a (Kaelbling
+et al., 1998).
+Setting O (cid:48)
+ao = diag (Oao ) we can summarize the belief-state update procedure for the
+POMDP concisely by stating that a POMDP models a controlled stochastic process p via
+the equation
+p(a1o1 · · · anon ) = (1, . . . , 1)(O (cid:48)
+an on Tan ) · · · (O (cid:48)
+a1 o1 Ta1 )b.
+Clearly, setting σ = (1, . . . , 1), τao = O (cid:48)
+aoTa and ωε = b yields an equivalent SS.
+
+3.3.2 IO-OOMs, Interpretable IO-OOMs, PSRs and TPSRs
+
+We have shown above that IO-OOMs, PSRs and TPSRs are equivalent models in the sense
+that they model the same class of controlled processes and that they can be readily converted
+into one another. Furthermore, TPSRs are essentially IO-OOMs (except that the evaluation
+functional σ is replaced by the set {mao} of evaluation functionals), while PSRs are TPSRs
+(and therefore essentially IO-OOMs) with predictive states, which corresponds to IO-OOMs
+being interpretable w.r.t. singleton sets (core tests). This is summarized in Table 1.
+
+SSs for controlled
+processes with. . .
+
+single evaluation functional
+σ
+
+abstract,
+uninterpretable states
+
+predictive states
+
+IO-OOMs
+
+IO-OOMs that are
+interpretable w.r.t.
+singleton sets
+
+set of evaluation functionals
+{mao}
+TPSRs
+
+PSRs
+
+Table 1: The diﬀerences between IO-OOMs, PSRs and TPSRs
+
+Note that we have written “IO-OOMs that are interpretable w.r.t. singleton sets” in-
+stead of simply “interpretable IO-OOMs” for a reason. This is because interpretability was
+originally deﬁned for IO-OOMs in a more restrictive way (cf. Section 3.3.3). It has been
+shown that not every IO-OOM has an equivalent “interpretable IO-OOM” (in the original
+sense) (Singh et al., 2004), i.e., that “interpretable IO-OOMs” are less general than IO-
+OOMs and PSRs. At the same time it was believed that some notion of interpretability
+would be crucial for the learnability of such models, which is however not the case, as we
+shall see in Section 4. Together, this has led to the false impression that PSRs are more
+general than IO-OOMs.
+
+120
+
+Links Between MA, OOMs and PSRs
+
+As the original notion of interpretability for IO-OOMs has turned out to be overly
+restrictive, we propose to employ the notion of interpretability that we have introduced
+here for SSs as the “correct” notion for IO-OOMs, and consider the original notion as
+deprecated.
+3.3.3 Historical Remarks
+OOMs. Namely, IO-OOMs were originally required to satisfy (ii)’: ∀a ∈ ΣI : σ (cid:80)
+The same remarks that we have made above in Section 3.2.3 for OOMs also apply to IO-
+o∈ΣO
+τao =
+σ instead of the the property (ii) for a controlled process. This is equivalent for minimal
+models, but slightly more restrictive in general. However, as every SS can be minimized,
+this has no practical consequences.
+Furthermore, IO-OOMs were originally typically required to satisfy σ = (1, . . . , 1), which
+(cid:80)
+(cid:80)
+is again merely a matter of normalization. However, an IO-OOM that satisﬁes σ = (1, . . . , 1)
+can only be interpretable with respect to the sets Yk , if 1 = σωε = (1, . . . , 1) · [fM (Yi )](cid:62)
+i =
+y∈Yk
+p(y). It turns out that this can be assured by requiring the sets Yk to partition
+k
+Σl
+O × {a1} × · · · × {al } for some l and a ﬁxed sequence a1 . . . al of inputs called a characteri-
+zation frame. This restriction on the choice of sets Yk therefore became part of the original
+deﬁnition of interpretability for IO-OOMs.
+Unfortunately, unlike the case for OOMs, the resulting original notion of interpretability
+for IO-OOMs has turned out to be a severe limitation (Singh et al., 2004).
+However, one may use the more general notion of interpretability given in Deﬁnition 14
+for IO-OOMs instead, if one is willing to drop the (unnecessary) normalization requirement
+σ = (1, . . . 1).
+
+3.4 Extensions
+
+In this section we have presented SMAs, OOMs and PSRs as versions of linear sequen-
+tial systems — or more generally weighted ﬁnite automata — that model probabilistic
+languages, stochastic processes and controlled processes respectively, as is summarized in
+Figure 1. For completeness, we wish to brieﬂy mention some extensions of these basic model
+types that have been studied, but which are beyond the scope of this paper.
+First of all, various non-linear SSs exists. For instance, several versions of quantum
+ﬁnite automata have been studied (Kondacs and Watrous, 1997; Moore and Crutchﬁeld,
+2000). One form are SSs (σ, {τx}, ωε ∈ CP d ) where the operators τx are unitary and
+SSs (σ, {τx}, ωε ∈ Rd ) such that (cid:80)
+σ(τxωε ) = ||πτxωε ||2 for some pro jection π and the Fubini-Study metric || · || (Moore and
+Crutchﬁeld, 2000). A similar type of OOMs exist which are called norm-OOMs. These are
+x∈Σ τ (cid:62)
+x τx = I and σ(τxωε ) = ||τxωε ||2 . Such norm-OOMs
+describe stochastic processes and can always be converted into an equivalent OOM (Zhao
+and Jaeger, 2010). Recently, quadratic weighted automata have been proposed by Bailly
+(2011), where a SS M is learnt for √f and a product SS M ⊗ M is constructed that
+satisﬁes fM⊗M = f 2M ≈ f . All of these approaches avoid the “negative probabilities
+problem”, where the estimated model fM may violate the requirement fM ≥ 0. Non-linear
+versions of PSRs have also been investigated, which have been shown to in some cases yield
+representations for deterministic dynamical systems that are exponentially smaller than a
+minimal OOM representation (Rudary and Singh, 2003).
+
+121
+
+Thon and Jaeger
+
+Furthermore, OOMs and PSRs are models for discrete-valued stochastic (controlled)
+processes. Many real-world processes of interest are, however, continuous-valued. A con-
+tinuous version of OOMs exists that extends semi-continuous HMMs (Jaeger, 2000a), and
+WFST have been similarly extended to allow for continuous inputs (Recasens and Quattoni,
+2013). Multivariate continuous inputs and outputs are handled using features of observa-
+tions by reduced-rank HMMs (Siddiqi et al., 2010). So called predictive linear Gaussian
+models (PLGs), which are based on PSRs, closely resemble linear dynamical system mod-
+els (Rudary et al., 2005; Wingate and Singh, 2006a,b; Rudary and Singh, 2006, 2008) and
+are further generalized by exponential family PSRs (Wingate and Singh, 2008b,a). A gen-
+eralization of OOMs using Hilbert space embeddings was introduced by Song et al. (2010).
+This has been further reﬁned and extended to include features and can now be employed
+— among other things — for controlled processes and to planning in reinforcement learning
+tasks (Boots and Gordon, 2010; Boots et al., 2010, 2013).
+
+4. Learning
+
+In this section we present a general approach to learning SSs from data. We show how
+several of the learning algorithms that have been proposed for SMA, OOMs and PSRs can
+be understood in this framework, and that in fact many of the proposed learning algorithms
+are closely related.
+We begin by establishing a result that lies at the heart of the learning algorithms, which
+was formulated by Kretzschmar (2001) for the case of OOMs. Assuming a function fM can
+(cid:48) from
+be described by some minimal SS M, it allows us to reconstruct an equivalent SS M
+data given in the form of ﬁnitely many function values of fM — as long as these are given
+exactly and we know the rank d of the underlying model M. We will therefore refer to the
+Equations (2) as the learning equations.
+
+Proposition 33 For a minimal d-dimensional SS M = (σ, {τz }, ωε ), let {τxj ωε | j ∈ J }
+and {(στ (cid:62)
+xi )(cid:62)
+| i ∈ I } be ﬁnite sets that span the state space W and the co-state space ˜W
+respectively. Deﬁne F I ,J = [fM (xj xi )](i,j )∈I×J and F I ,J
+z = [fM (xj zxi )](i,j )∈I×J . Further-
+j∈J . Let C ∈ Rd×|I | and Q ∈ R|J |×d
+more, deﬁne F I ,0 = [fM (xi )]i∈I and F 0,J = [fM (xj )](cid:62)
+(cid:48) = (σ (cid:48) , {τ (cid:48)
+z }, ω (cid:48)
+be rank d matrices such that C F I ,J Q is invertible. Then the SS M
+ε ) deﬁned
+as fol lows is equivalent to M:
+−1 ,
+σ (cid:48)
+= F 0,J Q(C F I ,J Q)
+τ (cid:48)
+−1 ,
+z = C F I ,J
+z Q(C F I ,J Q)
+ω (cid:48)
+ε = C F I ,0 .
+xω (cid:48)
+x = τ (cid:48)
+xj z )j∈J , where ω (cid:48)
+z = (ω (cid:48)
+Furthermore, C F I ,J = (ω (cid:48)
+xj )j∈J and C F I ,J
+ε are states of the
+(cid:48) .
+SS M
+Proof Let Π = ((στxi )(cid:62) )(cid:62)
+i∈I , Φ = (τxj ωε )j∈J . Then F I ,J = ΠΦ, F I ,J
+z = Πτz Φ, F I ,0 = Πωε
+and F 0,J = σΦ. We can then simply calculate τ (cid:48)
+z = CΠτz ΦQ(CΠΦQ)−1 = CΠτz (CΠ)−1 ,
+as well as ω (cid:48)
+ε = CΠωε and σ (cid:48) = σΦQ(CΠΦQ)−1 = σ(CΠ)−1 . That is, we have shown that
+(cid:48) = ρMρ−1 for the non-singular transformation ρ = CΠ. Furthermore, C F I ,J = CΠΦ =
+M
+122
+
+(2)
+
+Links Between MA, OOMs and PSRs
+
+ρΦ = (ρτxj ωε )j∈J = (τ (cid:48)
+xj
+
+ω (cid:48)
+ε )j∈J , and analogously for C F I ,J
+z
+
+.
+
+The matrices C and Q that appear in the learning Equations (2) are indeed arbitrary
+(provided that C F I ,J Q has the correct dimension d and full rank), as long as the function
+values fM (x) are given exactly. However, if one only has access to estimates ˆf (x), then
+the selection of C and Q plays a crucial role in obtaining good model estimates, as will be
+further discussed in Section 4.4.
+Furthermore, note that we generally do not know a priori which sets of words to consider
+such that {τxj ωε | j ∈ J } and {(στ (cid:62)
+xi )(cid:62)
+| i ∈ I } span the state and co-state spaces W and ˜W
+of M. Proposition 6 guarantees that it suﬃces to consider all words of length at most d,
+but the rank d of M is generally unknown as well. Selecting appropriate sets of words xi
+and xj and an appropriate model dimension d are therefore crucial and non-trivial steps in
+learning models from data.
+We can turn the above Proposition 33 into a generic learning procedure for SSs:
+
+Algorithm 4: General procedure for learning a SS from data
+1 Obtain estimates ˆf (x) of the function values f (x) for words x ∈ Σ∗ .
+2 Choose ﬁnite sets {xj | j ∈ J }, {xi | i ∈ I } ⊂ Σ∗ , which we call sets of indicative and
+characteristic words respectively. Then assemble the estimates ˆf (x) into estimates of
+the matrices ˆF I ,J , ˆF I ,J
+, ˆF I ,0 and ˆF 0,J .
+z
+
+3 Find a reasonable target dimension d for the model to be learnt.
+4 Choose C ∈ Rd×|I | and Q ∈ R|J |×d called the characterizer and indicator, such that
+C ˆF I ,J Q is invertible.
+5 Apply the learning Equations (2) to obtain a model estimate ˆM.
+At this point we should clarify what is meant here by learning a model from data. For
+general MA the goal is often to reconstruct an automaton from as few membership queries
+— obtaining the value f (x) for some x ∈ Σ∗ — and equivalence queries — proposing a
+function h and receiving a counterexample x such that h(x) (cid:54)= f (x) if h (cid:54)= f — as possible.
+This is an extended version of the exact learning model of Angluin (1987). However, in the
+case of SMA, OOMs and PSRs, the external function represents a distribution. Therefore,
+in these cases it is usual to assume that we observe samples from this distribution and wish
+to estimate model parameters from the given samples such that the estimated model best
+describes the underlying distribution — “best” in a sense that depends on the context and
+the approach taken by a speciﬁc learning algorithm.
+We should also mention one common problem when learning SMAs, OOMs and PSRs
+from data. Namely, even if the function fM in question can be described by a SMA, OOM
+or PSR model M, the learnt model ˆM will only be an approximation to M and will describe
+a function f ˆM that may not satisfy the properties of a probabilistic language, stochastic
+process or controlled process, respectively, i.e., the learnt model ˆM may not be a SMA,
+OOM or PSR. What typically happens is that the learnt model ˆM will predict “negative
+probabilities” for certain sequences x. Moreover, it is an undecidable problem whether a
+
+123
+
+Thon and Jaeger
+
+given SS ˆM satisﬁes f ˆM ≥ 0, and therefore, whether it is a SMA — a result that carries over
+to OOMs and PSRs as well (Wiewiora, 2008). In practice, there are three basic ways to deal
+with this “negative probabilities problem”: First of all, one can resort to alternative models
+as described in Section 3.4 that preclude the problem by design. For the particular case
+of quadratic weighted automata the learning procedure presented here still applies (Bailly,
+2011), but in general one will need alternative learning algorithms. Secondly, one may
+attempt to learn a restricted class of SS such as PFA, HMMs or POMDPs by enforcing
+additional constraints on the parameters of the SS. This can be achieved either by adding a
+set of convex constraints to a generalized version of the spectral learning method presented
+in Section 4.4.2 (Balle et al., 2012), or by an additional conversion step (Anandkumar et al.,
+2012), which however may fail. Finally, one may work with such an “invalid” SS model by
+employing a simple and eﬀective heuristic as described by Jaeger et al. (2006b, Appendix
+J) to normalize all model predictions to fall into the desired range.
+Finally, we will brieﬂy remark on the runtime characteristics of the above learning
+procedure. Steps 1 and 2 can be accomplished in time O(N ), where N is the size of
+the training data, for most strategies mentioned in Section 4.2 by employing a suﬃx tree
+or similar representation of the training data. For a given target dimension d, Step 4,
+when solved via the EC (Section 4.4.3) or spectral algorithms (Section 4.4.3), requires the
+O(d|I ||J |) computation of a d-truncated singular value decomposition (SVD) of ˆF I ,J , while
+the ES algorithm (Section 4.4.4) requires O(d2 l max{|I |, |J |}) operations to compute C ,
+where l is the (generally very small) average length of characteristic and indicative words,
+and O(d|I ||J |) operations to compute Q — per iteration (but one typically uses a constant
+number of iterations), which therefore amounts to a run-time of O(d|I ||J |) as well. Solving
+the learning Equations (2) for Step 5 essentially requires the computation of the operators
+ˆτz , which costs O(d|I ||J ||Σ|) operations. So for a known target dimension d, the above
+learning procedure typically requires O(N + d|I ||J ||Σ|) operations. Step 3 can be solved
+by computing a dmax -truncated SVD of ˆF I ,J for some upper bound dmax < min{|I |, |J |}
+on the target dimension, which incurs a runtime costs of O(dmax |I ||J |), or by using cross-
+validation, which requires repeatedly performing, for various choices of d, Steps 4 and 5
+as well as evaluations on test data of size T , which we assume to be constant, incurring a
+runtime cost of O(d log(d)|I ||J ||Σ|), where d is the ﬁnally selected model dimension.
+In the following, we will discuss the steps of the learning procedure in more detail.
+
+4.1 Obtaining Estimates ˆf (x)
+
+This step clearly depends on the context we are dealing with. Recall that in the context
+of SMA, the functions we are considering are distributions on words, while in the context
+of OOMs and PSRs they represent stochastic processes and controlled processes respec-
+tively. The following Remarks 34 to 36 summarize how to obtain these estimates in the
+diﬀerent scenarios of probabilistic languages, stochastic processes and controlled processes,
+respectively.
+
+Remark 34 Let f : Σ∗
+→ [0, 1] be a distribution on Σ∗ , and let S = (s1 , s2 , . . . , sN ) be
+a col lection of N samples from f . Then ˆf (x) = #(x)
+N , where #(x) denotes the number of
+occurrences of x in the sample S , is a consistent estimator for f (x).
+
+124
+
+Links Between MA, OOMs and PSRs
+
+In the case of stochastic processes, one typically observes few (or even just one) long
+initial realization of the process. In this case it is still possible to obtain the desired estimates
+if the stochastic process is stationary and ergodic2 by invoking the ergodic theorem and
+using time-averages as estimates. The same idea is commonly used in the case of controlled
+processes as well and called suﬃx-history method in the PSR community.
+Remark 35 Let f : Σ∗
+→ [0, 1] be a stationary and ergodic stochastic process, and let
+¯s = s1s2 . . . sN be a ﬁnite initial realization of length N from this process. Then
+
+#(x)
+N − |x| + 1
+where #(x) denotes the number of occurrences of x in the sequence ¯s is a consistent esti-
+mator for f (x).
+
+ˆf (x) =
+
+,
+
+In the case of controlled processes the situation is more complicated. It is important
+to have a good understanding of the meaning of the value f (x) when f is a controlled
+process and x = a1o1 . . . anon ∈ (ΣI × ΣO )n is some input-output sequence. Intuitively, this
+is the probability of the system output o1 . . . on conditioned on the system input a1 . . . an .
+This is sometimes written as f (a1o1 . . . anon ) = P (o1 . . . on | a1 . . . an ) even though this
+notation is misleading, as it suggests that P (o1 . . . on | a1 . . . an ) = P (a1 o1 ...an on )
+P (a1ΣO ...anΣO ) , which is
+false (Bowling et al., 2006). To clarify this, consider the stochastic process that is speciﬁed
+by the controlled process f together with some system input speciﬁcation. This stochastic
+n(cid:89)
+n(cid:89)
+process is governed by probabilities of the form
+k=1
+k=1
+
+P (ak | a1o1 . . . ak−1ok−1 ).
+
+P (ok | a1o1 . . . ak ) ·
+
+P (a1o1 . . . anon ) =
+
+The second factor in the equation models the system input and is sometimes called the
+input policy π , while the ﬁrst factor models the system output and is just the controlled
+n(cid:89)
+process f . Therefore, for x = a1o1 . . . anon ,
+k=1
+
+f (x) = P (o1 . . . on | a1 . . . an ) =
+
+P (ok | a1o1 . . . ak ) =
+
+P (x)
+π(x)
+
+(3)
+
+.
+
+Note that for the special case of a blind input policy π — one that does not depend on
+the observed output, i.e., that satisﬁes P (ak | a1o1 . . . ak−1ok−1 ) = P (ak | a1 . . . ak−1 ) for all
+x — we in fact do have π(x) = P (a1ΣO . . . anΣO ).
+From the above Equation (3), the following estimates are derived (Bowling et al., 2006):
+Remark 36 Let f : Σ∗
+→ [0, 1] be a control led process, and let ¯s = a1o1 . . . aN oN be a ﬁnite
+initial sample from f according to some input policy π , such that the resulting stochastic
+n(cid:89)
+process is stationary and ergodic. Then
+k=1
+
+#(a1o1 . . . ak ok )
+#(a1o1 . . . ak )
+
+ˆf (x) =
+
+2. A stationary ergodic process is a stochastic process where the statistical properties do not change with
+time (stationarity) and where these can be estimated as time-averages from a single long sample (ergod-
+icity). For details, see for example the textbook by Gray (1988)
+
+125
+
+Thon and Jaeger
+
+is a consistent estimator for f (x). If the input policy π is known, then
+
+#(x)
+N − |x| + 1 ·
+is also a consistent estimator which may be used instead. Again, #(x) denotes the number
+of occurrences of x in the sequence ¯s.
+
+1
+π(x)
+
+ˆf (x) =
+
+None of the above estimates exploits the rich structure of the matrix F . If required,
+some of the convex constraints that the matrix F must satisfy can be ensured by applying
+an additional normalization step to the estimated matrix ˆF , as done by McCracken and
+Bowling (2006). These convex constraints — including a convex relaxation of the rank
+constraint — may also be used to infer missing values if some entries ˆf (x) cannot be
+obtained directly, which becomes relevant in the context of learning more general (e.g.,
+non-stochastic) weighted automata (Balle and Mohri, 2012), or to infer sequence alignment
+when learning WFST from unaligned input-output sequences (Bailly et al., 2013).
+
+4.2 Choosing Indicative and Characteristic Words
+Choosing indicative and characteristic words {xj | j ∈ J }, {xi | i ∈ I } ⊂ Σ∗ is equivalent
+to selecting which columns J and rows I of the system matrix F to estimate. Clearly,
+it is only possible to obtain a correct estimate for f if I and J are selected such that
+rank(F ) = d = rank(F I ,J ). It is however unclear how to satisfy this if the true rank is
+unknown or even impossible if rank(F ) = ∞ — as may often be the case for real-world
+examples. Determining an appropriate rank for the model will be discussed in the following
+section.
+One approach is, however, to attempt to select minimal sets of indicative and charac-
+teristic words such that rank(F ) = rank(F I ,J ). Such minimal sets are called sets of core
+histories and core tests in the context of PSRs, and their selection is called the discovery
+problem. This problem is easily solved by Algorithm 1 once a (minimal) SS model for f is
+known. For the case where only function values of f are available, an iterative procedure has
+been proposed (James and Singh, 2004) that, starting with the empty words, adds in each
+iteration all length-one extensions of previously found core histories and tests, but retains
+only a minimal set needed to span ˆF I ,J . Since any noisy matrix is typically non-singular,
+some notion of numerical linear independence is used to decide which words to retain in
+each step. It is important to note that there exist simple examples of ﬁnite rank where this
+iterative procedure fails to deliver sets of core histories and tests (James and Singh, 2004),
+i.e., it does not in general solve the discovery problem. A similar algorithm called DEES
+has been proposed in the context of learning SMA (Denis et al., 2006). The algorithms for
+learning MA in the exact learning framework also work by ﬁnding a minimal set of indica-
+tive and characteristic words, but there it is assumed that the function f may be queried
+exactly, and furthermore equivalence queries are employed to ﬁnd additional core tests and
+histories (Ohnishi et al., 1994; Bergadano and Varricchio, 1994; Beimel et al., 2000).
+It is important to note that there is no requirement to ﬁnd minimal or even small sets of
+indicative and characteristic words, i.e., one does not need to solve the discovery problem
+when learning SS models from data (and once a SS model has been learnt, the problem is
+easily solved by Algorithm 1). In fact, using small such sets means that less of the available
+
+126
+
+Links Between MA, OOMs and PSRs
+
+training data will enter the model estimation, i.e., the available data will be under-exploited.
+It is therefore desirable to use (much) larger sets of indicative and characteristic words than
+strictly needed.
+An approach which is in some sense complementary is to use all sequences of a given
+length l. By Proposition 6 one can ensure rank(F I ,J ) = d by choosing l ≥ d. However,
+this is highly impractical, since the size of ˆF I ,J grows exponentially with l. Also, many of
+the estimates in ˆF I ,J will be based on very few — if any — occurrences in the available
+training data. Nevertheless, choosing a length l (cid:28) d and utilizing as indicative as well as
+characteristic words all words of length l that occur at least once in the training data often
+gives good results (Zhao et al., 2009a).
+A further approach is to select as indicative and characteristic words all those that
+actually occur in the data and therefore allow data-based estimates (Bailly et al., 2009).
+However, it is reasonable to disallow indicative (resp. characteristic) words that are suﬃxes
+(resp. preﬁxes) of some other indicative (resp. characteristic) word if they always occur
+at the same positions in the training data, as these would just lead to identical columns
+(resp. rows) in the estimated matrices that are based on the same parts of the training
+data (Jaeger et al., 2006b). Moreover, one may select only the words that occur most
+frequently in the data (Balle et al., 2014). These approaches yield a choice of indicative and
+characteristic words that is matched to the available training data and can be computed
+in time O(N ) where N is the size of the training data by using a suﬃx tree or similar
+representation of the training data.
+Finally, it is also possible to group words into sets of words (as is also done in Deﬁni-
+tion 14) that we call events, and to use indicative and characteristic events in place of words.
+This corresponds to adding the respective columns and rows in the matrices ˆF I ,J , ˆF I ,J
+, etc.
+z
+and can be formally accomplished by a special selection of the indicator and character-
+izer matrices Q and C . Finding good indicative and characteristic events was the strategy
+adopted by early OOM learning algorithms (Jaeger, 2000b). A further generalization of
+data can be performed more eﬃciently or accurately than computing ˆf (Y ) = (cid:80)
+this idea of considering events in place of words is proposed by Wingate et al. (2007). Using
+such events may carry an additional advantage if the estimation of ˆf (Y ) from the available
+ˆf (x).
+x∈Y
+4.3 Determining the Model Rank
+
+We should note that the goal of this step may be stated in two diﬀerent ways. First of all, we
+may be interested in estimating the true rank of the external function f and use this as the
+model rank. On the other hand, we may rather be interested in choosing any model rank
+that allows for a good approximation of the external function f from the available data.
+These goals are related, as one can only hope to estimate an exact model if the model rank
+is at least rank(f ). However, they are not the same, and it depends on the context which
+approach is most appropriate. For instance, if it is known that the external function f must
+have a small ﬁnite rank, which may even carry some meaning, it may be desirable (and
+well-deﬁned) to estimate this true rank from the data. On the other hand, when dealing
+with real-world systems of possibly inﬁnite rank, and faced with generally limited training
+data, it may not even make sense to speak of the correct model rank. In such cases one will
+typically use the second approach, which is really an instance of the bias-variance dilemma.
+
+127
+
+Thon and Jaeger
+
+4.3.1 Estimating the True Rank
+
+For suitably chosen indicative and characteristic words, one can expect to have rank(f ) =
+rank(F I ,J ). However, since one only has access to an estimate ˆF I ,J of this matrix, a
+typical approach is to determine what is known as the numerical rank (or eﬀective rank or
+pseudorank ). We give a brief description following Hansen (1998).
+The numerical ε-rank rε of a matrix A may be deﬁned as the smallest rank of any matrix
+that can be obtained from A by a small perturbation E of size at most ε:
+
+rε (A) = min
+rank(A + E ).
+||E ||≤ε
+alternatively that rε is the smallest k such that (cid:80)K
+In terms of the singular values σ1 ≥ · · · ≥ σK of A this means that rε satisﬁes σrε >
+ε ≥ σrε+1 if the size of the perturbation E is measured by the spectral norm || · ||2 , or
+i=k+1 σ2
+i ≤ ε2 if the Frobenius norm || · ||F
+is used instead. Both criteria can be used to determine rε .
+Assuming that A is only an estimate of an underlying matrix ˜A, it makes sense to
+choose ε to be of the same order as the expected size of the error, i.e., ε ≈ E [||A − ˜A||]. The
+numerical rank of A is then rε (A) for some reasonable choice of ε. Note that the notion of
+numerical rank makes sense if the errors on matrix entries of A are of comparable magnitudes
+and can be reasonably quantiﬁed, and if there is a signiﬁcant gap between σrε and σrε+1 .
+Otherwise, the numerical rank is somewhat arbitrary. It is furthermore important to note
+that the numerical rank measures how many dimensions can be signiﬁcantly distinguished
+from noise. It is therefore only a lower bound for the true rank of the underlying matrix.
+The main diﬃculty in determining the numerical rank of the matrix ˆF I ,J therefore lies
+in ﬁnding a suitable ε. This may be approached by obtaining estimates for or bounds on the
+variances of the individual matrix entries (Jaeger, 1998; James and Singh, 2004), which may,
+however, diﬀer widely across ˆF I ,J . These approaches will therefore lead to very conservative
+estimates of the rank. Still, these estimates will be consistent, i.e., will converge to the true
+rank in the limit of inﬁnite training data.
+Independent of such error estimates it may be reasonable to assume that there will be a
+relative “gap” between σd+1 and σd in the singular value spectrum of ˆF I ,J around the true
+rank d = rank(F I ,J ). A recently proposed method searches for such a gap starting from
+σrε , where the numerical rank rε of ˆF I ,J is used as a lower bound for the true rank (Bailly
+et al., 2009).
+
+4.3.2 Finding a Suitable Model Rank
+
+Intuitively speaking, the model rank should be chosen suﬃciently large to be able to repre-
+sent the complexity of the data, but not too large, as otherwise overﬁtting results.
+One standard approach is to use cross-validation. For this, one needs to split the avail-
+able data into training and test data. One then estimates models of various ranks from the
+training data and evaluates these on the test data, for instance by calculating the log likeli-
+hood of the test data under the models. Finally, one chooses the model rank that gives the
+best performance. Care must be taken when estimating models for controlled or stochastic
+processes from one long training sequence ¯s, as this sequence cannot be partitioned arbi-
+trarily into training and test sets, and the distribution over future observations given a
+
+128
+
+Links Between MA, OOMs and PSRs
+
+history of observations at some time t may diﬀer from the initial distribution. Additionally,
+performing cross-validation is computationally intense.
+In comparison, the above methods based on calculating the numerical rank of ˆF I ,J are
+elegant algebraic approaches to the problem. Recall that the numerical rank will reﬂect the
+number of dimensions present in the training data that can be distinguished from noise. It
+is therefore reasonable to postulate that the numerical rank of ˆF I ,J might be a well-suited
+choice for the model dimension.
+Interestingly, though, there is some evidence that at least the EC and spectral learning
+procedures described in the following section do not seem to suﬀer much from overﬁt-
+ting (Zhao et al., 2009a).
+In practical applications it may therefore be viable to simply
+pre-select a high model dimension.
+Deeper insight into this crucial part of the learning procedure is unfortunately lacking.
+Further research into this question is therefore needed.
+
+4.4 Selecting the Characterizer and Indicator
+The eﬀect of the characterizer C and indicator Q is to reduce the available data in ˆF I ,J , ˆF I ,J
+,
+z
+ˆF I ,0 and ˆF 0,J to a d-dimensional representation, where d is the chosen target dimension for
+the model to be learnt.
+Assuming that d = rank(F ) = rank(C F I ,J Q), the matrices C F I ,J Q, C F I ,J
+z Q, C F I ,0 ,
+and F 0,J Q together contain the same information as F and are suﬃcient to reconstruct a
+SS model for f via the learning Equations (2). The requirement that C F I ,J Q must have
+full rank d therefore ensures that no information is lost.
+In fact — provided that C F I ,J Q has full rank d — really any choice of characterizer and
+indicator may be used and will lead to a consistent model estimation, i.e., a correct model
+will be obtained in the limit of inﬁnite training data. Hamilton et al. (2013) show that for
+certain dynamical systems a random choice of characterizer C does indeed work well.
+However, in general the choice of characterizer C and indicator Q is central to achieving
+statistical eﬃciency, i.e., making eﬃcient use of the available training data. This step lies
+at the heart of the learning procedure, and in fact much research — even if not explicitly
+stated — can be seen as optimizing this step of the learning algorithm.
+
+4.4.1 By Selection / Grouping of Rows and Columns of ˆF
+
+It is important to note that the choice of indicative and characteristic words discussed in
+Section 4.2 can be viewed equivalently as a special choice of characterizer and indicator. To
+see this, assume one could estimate the entire matrix ˆF from data. Then any selection of
+rows I and columns J from ˆF can be achieved by characterizer and indicator matrices C, Q
+of the form C = C (cid:48)C I and Q = QJ Q(cid:48) , where C I and QI are appropriate binary matrices
+with a single one entry in the corresponding columns or rows, and zeros otherwise, such
+that C I ˆF QJ = ˆF I ,J . This can easily be extended to account for groupings of words into
+events by allowing several one entries per column / row of C I , QJ respectively.
+One advantage of this point of view is that this immediately justiﬁes grouping of words
+into events, as suggested in Section 4.2. But more importantly, this highlights that choosing
+indicative and characteristic words as described in Section 4.2 is in fact a restricted approach
+to the more general problem of ﬁnding appropriate characterizer and indicator matrices. We
+
+129
+
+Thon and Jaeger
+
+argue that a good choice of characterizer and indicator is the key to achieving high statistical
+eﬃciency of the learning procedure and that therefore the (pre-)selection of indicative and
+characteristic words should be guided by trying to retain as much information from the
+available training data as possible.
+In other words, the (pre-)selection of indicative and
+characteristic words in Section 4.2 is primarily a practical necessity that should rather be
+seen as discarding rows and columns from ˆF that carry only little or no information.
+
+4.4.2 Spectral Methods
+
+Recall that the j -th columns of the matrices F and Fz correspond to the functions fxj
+and fxj z , and that the operator τz of any minimal model M for f — regarded as a linear
+operator ˜τz on the space F — satisﬁes ˜τz (fxj ) = fxj z (cf. Proposition 1). The matrix τz
+is just a representation of this operator with respect to some basis of F . We can therefore
+regard the columns of F and Fz as argument-value pairs for the operator ˜τz , from which
+we can recover ˜τz . To obtain a matrix representation τz , we need to ﬁx some basis for the
+column space F , which corresponds to mapping the columns of F and Fz to Rd — this is
+accomplished by the characterizer C .
+We are only given estimates ˆF I ,J and ˆF I ,J
+. The idea of the spectral methods is to
+z
+ﬁnd an estimate of the column space ˆF by pro jecting the columns of ˆF I ,J and ˆF I ,J
+to a
+z
+best rank d representation (best in the least squares sense). This is accomplished by the
+d-truncated SVD. We then estimate the matrices ˆτz via least squares linear regression from
+the so obtained argument-value pairs. Note that the column space F is already spanned by
+the columns of F I ,J — if I and J are chosen appropriately — and we may therefore base
+the estimate of the principal subspace ˆF on the estimate ˆF I ,J only. Formally, this means:
+Algorithm 5: Spectral method for computing characterizer C and indicator Q
+1 Compute UdSdV (cid:62)
+d , the d-truncated SVD of ˆF I ,J .
+†
+d and Q = (C ˆF I ,J )† = VdS
+2 Set C = U (cid:62)
+d .
+Note that UdSdV (cid:62)
+indeed gives the best rank d approximation to ˆF I ,J with respect
+d
+the Frobenius norm by the Eckart-Young theorem (Eckart and Young, 1936). However, the
+matrix F I ,J
+ˆM reconstructed via the so learnt model ˆM — which will clearly have rank at
+most d — will in general not be a best rank d approximation to ˆF I ,J . This is due to the
+fact that constructing F I ,J
+from the model ˆM enforces additional structure. Interestingly,
+ˆM
+we have observed that the reconstructed matrix F I ,J
+ˆM is often a better approximation to the
+true matrix F I ,J than either of ˆF I ,J and its best rank d approximation.
+This spectral approach is often referred to as principal component analysis (PCA).
+However, PCA typically involves mean-centering the data ﬁrst. PCA pro jects the data
+onto a d-dimensional aﬃne subspace that contains the data mean, while here we know that
+the data ˆF I ,J lie approximately on a true subspace (even though they do not have zero
+mean). Mean-centering the data is therefore inappropriate in this context — nevertheless,
+it it sometimes done anyway (Bailly et al., 2009). To avoid confusion, we refer to learning
+algorithms based on this idea simply as spectral learning algorithms (Rosencrantz et al.,
+2004; Hsu et al., 2009; Bailly et al., 2009; Siddiqi et al., 2010; Boots and Gordon, 2010;
+Bailly, 2011; Balle et al., 2011, 2014). Furthermore, an online version of this spectral
+
+130
+
+Links Between MA, OOMs and PSRs
+
+learning algorithm has been developed by Boots and Gordon (2011), whereas a modiﬁcation
+that combines the subspace estimation step (determining the characterizer C ) and linear
+regression step (solving the learning Equations 2) into a single optimization problem is given
+by Balle et al. (2012).
+Clearly, these methods are motivated by trying to ﬁnd a model ˆM of rank d such that
+its external function f ˆM best approximates the estimated external function ˆf . To make
+this precise, one needs to deﬁne a distance measure on functions in R(cid:104)(cid:104)Σ(cid:105)(cid:105). In the case of
+stochastic languages the functions all lie in the Hilbert space l2 (Σ∗ ) and the metric of this
+function space may be used. For stochastic processes, a natural choice may be the cross-
+entropy. This will be related to ﬁnding a maximum-likelihood estimate of model parameters
+from data. So far, none of these questions has been resolved. However, sample complexity
+results that fall into the probably approximately correct (PAC) learning framework (Valiant,
+1984) are available for several spectral learning algorithms (Hsu et al., 2009; Bailly et al.,
+2009; Siddiqi et al., 2010; Bailly, 2011). These give bounds on the number or size N of
+samples that are required to obtain a model estimate M that is approximately correct (i.e.,
+such that |fM − f | < ε for a given ε and a speciﬁed distance measure) with probability at
+least 1 − δ for a given δ . Typically, the required size N is shown to be polynomial in the
+PAC parameters 1/ and 1/δ , as well as other parameters that depend on f such as the
+alphabet size |Σ| and the rank of f .
+Finally, we mention a shortcoming of the spectral methods as they are commonly used.
+They implicitly assume that the variances of the estimates ˆf (xj xi ) are all of the same order.
+This, however, is clearly not the case, which suggests that replacing the SVD computation by
+a weighted low-rank matrix approximation (Markovsky and Huﬀel, 2007a) and the linear
+regression of the learning Equations (2) by weighted total least squares (Markovsky and
+Huﬀel, 2007b) may give better results, as long as weights that reﬂect the precision of the
+estimates ˆf (x) can be estimated reliably from the available data. In fact, if the variances
+Var( ˆf (xj xi )) can be estimated and — even approximately — factored as Var( ˆf (xj xi )) =
+vj wi > 0, then this leads to a simple row and column weighted spectral learning method:
+
+Algorithm 6: Row and column weighted spectral learning
+− 1
+− 1
+1 Let DI = [diag(wi )i∈I ]
+2 and DJ = [diag(vj )j∈J ]
+2 be suitable row and column
+weight matrices
+2 Let ˜F I ,J = DI ˆF I ,J DJ and ˜F I ,J
+z = DI ˆF I ,J
+z DJ
+3 Let ˜Ud ˜Sd ˜V (cid:62)
+d be the d-truncated SVD of ˜F I ,J
+†
+d DI and Q = DJ (C ˜F I ,J DJ )† = DJ ˜Vd ˜S
+4 Let C = ˜U (cid:62)
+d .
+We mention this particular row and column weighted approach here, as it is simple,
+eﬀective, and we will show that it is closely related to the ES approach described in Sec-
+tion 4.4.4.
+
+4.4.3 The EC Algorithm
+
+The error controlling (EC) approach selects characterizer and indicator matrices C and Q
+that minimize an error bound for the relative approximation error of the estimated model
+parameters (Zhao et al., 2009a). This algorithm was originally formulated for OOMs only,
+and made use of the normalization σ = (1, . . . , 1) that is often used in the context of OOMs.
+
+131
+
+Thon and Jaeger
+
+This in turn imposed additional restrictions on the admissible selections of indicative and
+characteristic words. Here, we present a more general and yet simpliﬁed EC approach that
+eliminates these restrictions and applies to learning SMA, OOMs, IO-OOMs and PSRs
+alike.
+To formalize this, ﬁrst assume we have ﬁxed C and Q, and derived estimated operators
+ˆτz and correct operators τz from the estimates ˆF I ,J , ˆF I ,J
+and the correct matrices F I ,J ,
+z
+F I ,J
+respectively using the learning Equations (2). Note that these depend on the choice
+z
+of C and Q. To write things more concisely, denote the matrix obtained by stacking the
+τz operators by τ∗ = [τz1 ; . . . ; τzl ] (using MATLAB notation), where Σ = {z1 , . . . , zl }, and
+ˆτ∗ = [ ˆτz1 ; . . . ; ˆτzl ]. Similarly, construct the matrices F I ,J∗
+and ˆF I ,J∗
+by stacking the F I ,J
+and
+z
+ˆF I ,J
+respectively.
+z
+
+≤ κ
+
+Proposition 37 For a given choice of C and Q, and using the above deﬁnitions, the esti-
+(cid:33)
+(cid:32)
+mate ˆτ∗ has a relative approximation error
+(cid:107)F I ,J − ˆF I ,J (cid:107)F +
+
+(cid:107)τ∗ − ˆτ∗(cid:107)F
+(cid:107)τ∗(cid:107)F
+where ρ(τΣ ) is the spectral radius of the matrix τΣ , which is independent of the choice of C
+and Q, and κ = (cid:107)C (cid:107)F (cid:107)Q(C ˆF I ,J Q)−1(cid:107)F .
+This is a slightly improved and more general version of the central Proposition 3 pre-
+sented in (Zhao et al., 2009a). For completeness, the proof is given in the appendix.
+The EC algorithm then selects C, Q in such a way that the quantity κ is minimized,
+which is equivalent to the optimization problem
+
+√l
+ρ(τΣ ) (cid:107)F I ,J∗ − ˆF I ,J∗ (cid:107)F
+
+,
+
+(4)
+
+(C,Q) {(cid:107)C (cid:107)F (cid:107)Q(cid:107)F : C ˆF I ,J Q = Id},
+(C, Q) = argmin
+since every (C, Q) that minimizes κ gives a solution (C, Q(cid:48) ) to Equation (4) by substituting
+Q(cid:48) = Q(C ˆF I ,J Q)−1 and noting (C ˆF I ,J Q(cid:48) ) = Id . This optimization problem can be solved
+eﬃciently by the following iterative procedure (Zhao et al., 2009a):
+Algorithm 7: The C , Q optimization resulting from the EC approach
+initialize C ∈ Rd×|I | randomly
+repeat
+Q = (C ˆF I ,J )† , C = ( ˆF I ,J Q)†
+until convergence of (cid:107)C (cid:107)F (cid:107)Q(cid:107)F
+Although not previously realized, this turns out to be related to a well-known EM-based
+algorithm for principal component analysis for which it is known that the rows of C (upon
+convergence) will span the space of the ﬁrst d principle components of ˆF I ,J (Roweis, 1998).
+We can use this relationship to gain the following insight.
+
+Proposition 38 Assuming the model rank d is chosen such that the singular values σi
+of ˆF I ,J satisfy σd > σd+1 , the EC algorithm as presented here and the spectral method
+presented in the previous section wil l lead to equivalent models.
+
+132
+
+Links Between MA, OOMs and PSRs
+
+Proof Note that the condition σd > σd+1 merely says that rank( ˆF I ,J ) ≥ d and that the
+d-dimensional principal subspace of ˆF I ,J is unique. Let C and Q = (C ˆF I ,J )† be the char-
+acterizer and indicator obtained by the spectral method, and let C (cid:48) and Q(cid:48) = (C (cid:48) ˆF I ,J )† be
+the result of the above iterative procedure after convergence. Then the rows of C and C (cid:48)
+will each span the same d-dimensional space (Roweis, 1998). This means that C = ρC (cid:48) for
+some non-singular ρ ∈ Rd×d , and therefore Q = (ρC (cid:48) ˆF I ,J )† = (C (cid:48) ˆF I ,J )†ρ−1 = Q(cid:48)ρ−1 . By
+Proposition 12 the learning Equations (2) will result in equivalent models.
+
+In fact, the above optimization problem can also be solved non-iteratively by a d-
+truncated SVD. This is a new result for which we give the full proof in the appendix:
+− 1
+d ≈ ˆF I ,J be the d-truncated SVD of ˆF I ,J . Then C ∗ = S
+Proposition 39 Let UdSdV (cid:62)
+d U (cid:62)
+2
+d
+− 1
+and Q∗ = (C ∗ ˆF I ,J )† = VdS
+are a solution to the optimization problem in Equation (4)
+2
+d
+— provided a solution exists at al l, i.e., rank( ˆF I ,J ) ≥ d.
+Clearly, this solution (C ∗ , Q∗ ) will again yield an equivalent model. Finally, we note that
+other versions of bounds on the relative approximation error than given in Proposition 37
+may be considered instead, which can lead to choices of C and Q that give non-equivalent
+models. The performance of these seems to be comparable, though (Zhao et al., 2009b).
+
+4.4.4 Efficiency Sharpening
+
+The ES algorithm has previously been worked out only for the case of stationary stochastic
+processes and “traditional” OOMs where σ = (1, . . . , 1). Here we give an account of the ES
+principle that is more general than in the original work, and we establish connections to
+the spectral algorithms. The basic ES principle as we present it here may also be applied
+to learning SMA, IO-OOMs and PSRs from data. However, the concrete ES algorithm
+presented in Algorithm 8 makes use of several variance approximations and resulting sim-
+pliﬁcations that are only valid for the estimators from Remark 35 for the case of stationary
+stochastic processes.
+The idea of the eﬃciency sharpening (ES) (Jaeger et al., 2006b) learning algorithm
+is to view the learning Equations (2) as a model estimator parameterized by C (and Q),
+and to select C such that the resulting estimator has minimum variance while still being
+consistent. Furthermore, this optimal choice of C is derived from knowledge of a model M
+for f , or in practice from a previous estimate thereof. To make this approach tractable,
+some simplifying assumptions are made.
+First, a simpliﬁed version of the learning Equations (2) is used, where the indicator is
+taken to be Q = (C F I ,J )† . This leads to operator estimates
+† .
+(C ˆF I ,J )
+
+ˆτz = C ˆF I ,J
+z
+
+Jaeger et al. (2006b) now argue that due to the (pseudo)inversion, the variance of ˆτz
+is dominated by the variance of the factor C ˆF I ,J . The variance of a matrix is here taken
+w.r.t. the Frobenius norm. The ES algorithm therefore strives to ﬁnd an admissible C
+such that the variance of C ˆF I ,J is minimized — assuming knowledge of a model M for
+
+133
+
+Thon and Jaeger
+
+f . A characterizer C is admissible if C F I ,J Q is invertible. This is solved by the following
+proposition, which we state here in a more general form than in the original work (Jaeger
+et al., 2006b):
+
+Proposition 40 Let M = (σ, {τz }, ωε ) be a d-dimensional minimal SS for a function f :
+Σ∗
+→ R, and assume that ˆf (x) are unbiased and uncorrelated estimators for al l x ∈ Σ∗ .
+(cid:88)
+Deﬁne
+(cid:62)
+(cid:62)D2
+C ∗
+† .
+(cid:62)
+)i∈I , and D2
+= ((στxi )
+I ,
+= Π
+I = [diag(
+j∈J
+Then Var[C ˆF I ,J ] is minimized by the characterizer C ∗ + 0 among al l characterizers of the
+form C ∗ + G that satisfy GΠ = 0.
+
+Var[ ˆf (xj xi )])i∈I ]
+
+where Π
+
+The proof is given in the appendix, however, some explanatory remarks are in order.
+First of all, the assumptions that the estimates ˆf (x) are unbiased and uncorrelated are
+reasonable, yet not strictly correct, meaning that the characterizer C ∗ will only approximate
+the theoretically optimal characterizer.
+Next, we need a technical lemma to understand why it suﬃces to consider only charac-
+terizers of the form (C ∗ + G) for some G satisfying GΠ = 0:
+Lemma 41 If C ∗ has ful l row rank, then any admissible characterizer C can be written as
+ρ(C ∗ + G) for some non-singular ρ ∈ Rd×d and G such that GΠ = 0.
+Proof Let C be some admissible characterizer. Then CΠ ∈ Rd×d must be invertible. Also,
+C ∗Π = (DI Π)(cid:62) (DI Π) will be invertible if C ∗ has full row rank. Choosing ρ = (CΠ)(C ∗Π)−1
+and G = ρ−1 (C − ρC ∗ ) we can easily verify that C = ρ(C ∗ + G) and GΠ = 0.
+Note that the characterizers C ∗ + G and ρ(C ∗ + G) will lead to equivalent models via
+the learning Equations (2). Therefore, if the characterizer C ∗ is best among the class of
+characterizers C ∗ + G where GΠ = 0 then it is also the overall best choice.
+Furthermore, the condition that C ∗ must have full row rank can be assured by (i)
+choosing indicative and characteristic sequences and the modeling dimension d accordingly,
+so that d = rank(M) = rank(F I ,J ) = rank(Π) and (ii) assuming that the variance of the
+estimators ˆf (x) is non-zero, ensuring that DI is invertible — which will typically be the
+case in practice.
+Finally, to compute C ∗ via Proposition 40, we need to know the variances of the esti-
+mators ˆf (x) occurring in DI . Instead, we will replace DI by an approximation that can
+be computed directly from the model M. The approximation we present here is only valid
+for the case of stationary stochastic processes, but may be modiﬁed to cover the case of
+probabilistic languages as well.
+Consider the estimators ˆf (x) as in Remarks 34 and 35. It is reasonable to assume that
+the counts #(x) follow a binomial distribution, i.e., #(x) ∼ bN ,p , where N is the length
+of the training sequence ¯s and p = f (x). This gives Var[ ˆf (x)] = f (x)(1 − f (x))/N , which
+we may further approximate by f (x)/N , as in practice the values of f (x) will typically be
+
+134
+
+Links Between MA, OOMs and PSRs
+
+small for most sequences x. Also, the division by N is superﬂuous, as it cancels via the
+(cid:88)
+learning Equations (2). Using the approximation Var[ ˆf (x)] ≈ f (x), one can approximate
+†
+† ,
+I ≈ ˜D2
+D2
+f (xj xi ))i∈I ]
+= [diag(ΠτxJ ωε )]
+where τxJ = (cid:80)
+I := [diag(
+j∈J
+
+j∈J τxj . The approximation
+(cid:62) ˜D2
+C ∗
+≈ C r := Π
+I
+is the characterizer that is actually used in the ES algorithm.
+In the case of a stationary stochastic process and a choice of indicative words that
+partition Σl or Σ≤l for some l one will have τxJ ωε = ωε , and therefore ˜D2
+I = [diag(Πωε )]† .
+In this case, the columns ci = (στxi )(cid:62)/στxi ωε of C r can be seen as the normalized states
+(cid:62) = (ω(cid:62)
+ε , {τ (cid:62)
+z }, σ(cid:62) ),
+r /ω(cid:62)
+r under the reversed model M
+ω r
+ε ω r
+r for the reversed words xi
+xi
+xi
+(xi )1 · · · τ (cid:62)
+r = τ (cid:62)
+σ(cid:62) . This is essentially the original version given by Jaeger et al.
+where ω r
+xi
+(xi )k
+(2006b), and the reason why this characterizer was called the reverse characterizer. This
+make-up of C r from states of the reversed process is also instrumental for the practical
+algorithms given by Jaeger et al. (2006b).
+Additionally, the ES algorithm further exploits the interpretation of columns of C F I ,J
+and C F I ,J
+as model states ωxj and ωxj z as given in Proposition 33. These columns give
+z
+be weighted by ((cid:80)
+argument-value pairs from which the operators τz can be deduced — as we have seen before.
+However, it is argued that in the face of estimates ˆF I ,J and ˆF I ,J
+the j -th columns should
+z
+− 1
+ˆf (xj xi ))
+i∈I
+2 prior to performing linear regression to better reﬂect the
+weight of evidence that each column estimate is based on.
+In practice a true model M is unknown. Therefore, the ES algorithm employs the
+following iterative procedure (again, our treatment here is more general than the original
+account by Jaeger et al. (2006b)):
+
+2
+
+Algorithm 8: The ES algorithm (for the case of stochastic processes)
+1 Select some initial model estimate ˆM (e.g., via the learning Equations 2 using a
+random choice of C and Q).
+I = [diag( ˆΠ (cid:80)
+repeat
+Using the current model estimate ˆM, compute C = ˆΠ(cid:62)D2
+Let Q = DJ (C ˆF I ,J DJ )† , where DJ = [diag((cid:80)
+I ,
+j∈J ˆτxj ˆωε )i∈I ]† .
+where ˆΠ(cid:62) = (( ˆσ ˆτxi )(cid:62) )i∈I and D2
+† 1
+ˆf (xj xi ))j∈J ]
+i∈I
+2 .
+Obtain a new model estimate ˆM via the learning Equations (2).
+until some ﬁxed number of iterations, or some performance criteria of the estimated
+models stops increasing.
+
+3
+
+4
+
+Note that this procedure constructs a sequence of estimators along with a sequence of
+model estimates. The rationale of such ES algorithms is that the sequence of estimators
+increases in statistical eﬃciency, hence the name eﬃciency sharpening algorithms. The
+ES iterations come with no convergence guarantees. Nevertheless, this procedure has been
+found in practice to converge in very few iterations (3 – 5 typically suﬃce), and the results
+are of a similar quality as obtained by spectral algorithms (comparisons in Zhao et al.,
+2009a,b).
+
+135
+
+Thon and Jaeger
+
+The ES algorithm is closely related to the row and column weighted spectral algorithm
+presented in Section 4.4.2. Precisely:
+z }, σ(cid:62) ) of rank d and let Π(cid:62) = ((στxi )(cid:62) )i∈I , DI = [diag((cid:80)
+and DJ = [diag((cid:80)
+Proposition 42 Assume F I ,J of rank d is determined by some underlying minimal model
+† 1
+M = (ω(cid:62)
+ε , {τ (cid:62)
+j∈J f (xj xi ))i∈I ]
+2
+† 1
+2 . Let C r = Π(cid:62)D2
+i∈I f (xj xi ))j∈J ]
+I be the reverse characterizer, and let
+C (cid:48) = ˜U (cid:62)
+d DI be the characterizer obtained by the weighted spectral method, where ˜Ud ˜Sd ˜V (cid:62)
+d is
+the d-truncated SVD of DI F I ,J DJ . Then C r = ρC (cid:48) for some non-singular transformation
+ρ.
+Proof First, ˜Ud ˜Sd ˜V (cid:62)
+d = DI F I ,J DJ , since F I ,J is assumed to have rank d. Now observe
+that ˜Ud ˜Sd ˜V (cid:62)
+d = DI F I ,J DJ = DI ΠΦDJ , where Φ = (τxj ωε )j∈J , and therefore the columns
+of DI F I ,J , ˜Ud and DI Π all span im(DI F I ,J ). So C (cid:48) = ˜U (cid:62)
+d DI and C r = (DI Π)(cid:62)DI = Π(cid:62)D2
+I
+have the same row space, and we can therefore ﬁnd such a transformation ρ.
+
+This means that the reverse characterizer C r also gives a representation of the principal
+subspace of the weighted matrix DI F I ,J . The main diﬀerence to the weighted spectral
+method described in Section 4.4.2 is that C r is derived algebraically from an underlying
+the data, e.g., ˆDI = [diag((cid:80)
+model estimate, while the weighted spectral method estimates the principle subspace from
+the weighted data matrix ˆDI ˆF I ,J with weights ˆDI that also need to be determined from
+† 1
+ˆf (xj xi ))i∈I ]
+j∈J
+2 .
+5. Conclusion
+
+We have shown that OOMs, PSRs and SMA are closely related instances of MA, and we
+have presented a uniﬁed learning framework for estimating such models from data that
+subsumes many of the existing learning algorithms. In presenting the learning framework,
+we have isolated the key design choices that need to be made to obtain a concrete learning
+algorithm. For each design choice we have surveyed the approaches that have been taken
+in the past and have tried to give some guidance.
+We brieﬂy summarize the choices that need to be made to obtain a concrete learning
+algorithm. First of all, estimates of the system matrices ˆF I ,J and ˆF I ,J
+z must be obtained
+from the available training data. Individual entries may be estimated by the formulas given
+in Section 4.1. However, it is of much greater importance to decide which entries need to
+be estimated, that is, which rows I and columns J should be selected. This is discussed
+in Section 4.2. While many of the existing algorithms attempt to choose as few rows and
+columns to estimate as possible, we argue that this leads to poor statistical eﬃciency, and
+that the selection should ideally be matched to the available training data. Next, one
+must select a suitable model dimension d. This may be achieved by an algebraic criterion,
+as described in Section 4.3.1, or by cross-validation. It is also possible to treat this as a
+learning parameter that can be hand-tuned by the modeler. We note that it is generally
+neither necessary nor advisable to set the target dimension to the correct rank of the
+underlying system, as the optimal choice depends on the available training data. Finally,
+the estimated system matrices ˆF I ,J and ˆF I ,J
+need to be “compressed” to d × d matrices by
+z
+suitable characterizer and indicator matrices C and Q. A good selection of C and Q is vital
+
+136
+
+Links Between MA, OOMs and PSRs
+
+to obtaining high statistical eﬃciency, and this is treated in detail in Section 4.4. We show
+that several of the proposed approaches to selecting C and Q can be seen as variations of
+a spectral learning algorithm presented in Section 4.4.2.
+We conclude with a remark on implementing such a learning algorithm in practice.
+Clearly, the main limiting factor is the size of the matrices ˆF I ,J and ˆF I ,J
+, as these may
+z
+become very large. However, it is possible to obtain an eﬃcient sparse representation of
+these matrices by employing a suﬃx tree representation of the training data (Zhao et al.,
+2009b,a; Jaeger et al., 2006b). Furthermore, if one uses the method described in Section 4.4.4
+one can avoid evaluating these matrices explicitly and instead calculate C ˆF I ,J and C ˆF I ,J
+z
+directly (Jaeger et al., 2006b).
+
+Acknowledgements
+
+We gratefully acknowledge the funding by the German Research Foundation (DFG) under
+the pro ject JA 1210/5-1. We would also like to thank the anonymous reviewers for their
+constructive and very helpful comments.
+
+Appendix
+
+=
+
+τ∗ =
+
+Proof [of Proposition 37](adapted from Zhao et al., 2009a) Let C∗ = diag(C, . . . , C ) (l
+copies of C ). Using the introduced notation the learning Equations (2) can be written
+(cid:16)
+(cid:17) (cid:16)
+(cid:17)−1
+concisely to obtain:
+−1(cid:17)−1
+−1 (cid:16)
+(cid:17)
+(cid:16)
+C ˆF I ,J Q + C (F I ,J − ˆF I ,J )Q
+C∗ ˆF I ,J∗ Q + C∗ (F I ,J∗ − ˆF I ,J∗
+)Q
+−1(cid:17)−1
+−1(cid:17) (cid:16)
+(cid:16)
+(cid:16)
+(cid:17)
+Id + C (F I ,J − ˆF I ,J )Q(C ˆF I ,J Q)
+C∗ ˆF I ,J∗ Q + C∗ (F I ,J∗ − ˆF I ,J∗
+(C ˆF I ,J Q)
+)Q
+Id + C (F I ,J − ˆF I ,J )Q(C ˆF I ,J Q)
+(C ˆF I ,J Q)
+C∗ (F I ,J∗ − ˆF I ,J∗
+ˆτ∗ +
+,
+)Q
+=
+)Q)(C ˆF I ,J Q)−1 .
+which implies τ∗ + τ∗C (F I ,J − ˆF I ,J )Q(C ˆF I ,J Q)−1 = ˆτ∗ + (C∗ (F I ,J∗ − ˆF I ,J∗
+By rearranging, taking Frobenius norms and using the triangle inequality and submulti-
+(cid:18)
+(cid:19)
+plicativity, we obtain
+(cid:107)τ∗(cid:107)F (cid:107)F I ,J − ˆF I ,J (cid:107)F + (cid:107)C∗(cid:107)F
+−1(cid:107)F
+(cid:107)τ∗ − ˆτ∗(cid:107)F ≤ (cid:107)C (cid:107)F (cid:107)Q(C ˆF I ,J Q)
+(cid:107)C (cid:107)F (cid:107)F I ,J∗ − ˆF I ,J∗ (cid:107)F
+F = (cid:80)
+F ≥ ρ(τΣ )2 , where τΣ = (cid:80)
+= √l, and (cid:107)τ∗(cid:107)2
+(cid:107)C∗ (cid:107)F
+z∈Σ (cid:107)τz (cid:107)2
+F ≥ (cid:107)τΣ(cid:107)2
+z∈Σ τz , and
+(cid:107)C (cid:107)F
+Now
+the result follows.
+Note that in the original paper the inequality (cid:107)τ∗(cid:107)F ≥ 1√
+was used instead, which depended
+l
+on the columns of τ∗ summing to 1. This was in turn insured by adding additional restric-
+tions on the choice of characteristic words and characterizer C . These are now no longer
+needed.
+
+.
+
+Lemma 43 Let D = diag(d1 , . . . , dn ) and S = diag(s1 , . . . , sn ) satisfying d1 ≥ · · · ≥ dn ≥ 0
+and 0 ≤ s1 ≤ · · · ≤ sn , and let U be an orthogonal n × n matrix, i.e., U (cid:62)U = U U (cid:62) = I .
+Then (cid:107)DU S (cid:107)F ≥ (cid:107)DS (cid:107)F .
+
+137
+
+Thon and Jaeger
+
+F = (cid:80)n
+(cid:80)n
+i,j = 1 for all j and (cid:80)n
+i,j=1 (diuij sj )2 . Furthermore, U (cid:62)U = U U (cid:62) = In implies that (∗)
+Proof (cid:107)DU S (cid:107)2
+i=1 u2
+j=1 u2
+i,j = 1 for all i. We will show the slightly stronger claim
+that (cid:107)DU S (cid:107)2
+F ≥ (cid:107)DS (cid:107)2
+F for any matrix U satisfying (∗), which allows us to assume w.l.o.g.
+that ui,j ≥ 0 for all entries in U , since only the squared entries u2
+i,j appear in the expressions
+First note that if U is lower triangular, then (∗) implies that U = In : (cid:80)n
+for (cid:107)DU S (cid:107)2
+F and (∗). So from now on we assume that U merely satisﬁes (∗) and that all
+i,n = 0 for i < n. Then (cid:80)n
+entries in U are non-negative.
+(cid:3), and the condition (∗) must therefore hold for
+n,n = 1. That is, U = (cid:2) Un−1 0
+i=1 u2
+i,n = 1
+implies that u2
+n,n = 1 and u2
+j=1 u2
+n,j = 1 implies that u2
+n,j = 0 for
+j < n, since u2
+0
+1
+Un−1 as well. By induction on n, U = In . In this case (cid:107)DU S (cid:107)2
+F = (cid:107)DS (cid:107)2
+F .
+So assume U is not lower triangular. Consider a row-wise ordering of matrix positions,
+i.e., deﬁne ord(i, j ) = (i − 1)n + j , and let (i(cid:48) , j (cid:48) ) = argmin
+(i,j ) {ord(i, j ) : j > i, ui,j (cid:54)= 0}, i.e., i(cid:48)
+is the ﬁrst row of U to contain a non-zero element above the diagonal, and j (cid:48) is the column
+index of the ﬁrst such entry within the i(cid:48) -th row. We call ord(i(cid:48) , j (cid:48) ) the order of U , and say
+Now consider the i(cid:48) -th column of U . By the choice of i(cid:48) we must have (cid:80)i(cid:48)−1
+i(cid:48) ,i(cid:48) = (cid:80)n
+therefore (cid:80)n
+that a lower triangular matrix has inﬁnite order.
+i,i(cid:48) as well as (cid:80)n
+i=1 u2
+i,i(cid:48) = 0, and
+i(cid:48) ,j − u2
+i(cid:48) ,i(cid:48) ≥ u2
+j=1 u2
+i,i(cid:48) = 1 − u2
+i=i(cid:48)+1 u2
+i(cid:48) ,j (cid:48) . We can therefore ﬁnd a vector
+v such that vi = 0 for i < i(cid:48) , vi(cid:48) = −u2
+i=i(cid:48)+1 vi = u2
+i(cid:48) ,j (cid:48) , and 0 ≤ vi ≤ u2
+i(cid:48) ,j (cid:48)
+for i = i(cid:48) + 1, . . . , n. Let U 2 = [u2
+i,j ]i,j=1...n be the matrix of element-wise squares of entries
+in U , and let ˜U 2 be obtained by subtracting the vector v from the i(cid:48) -th column of U 2 and
+adding v to the j (cid:48) -th column of U 2 . Let ˜U be the matrix of element-wise square roots of
+Also ˜U satisﬁes (∗), since (cid:80)n
+entries in ˜U 2 .
+We can easily check that all entries in ˜U 2 are non-negative, so that this is well-deﬁned.
+i=1 vi = 0 by construction, and adding such a vector to one
+column of ˜U 2 and subtracting from another does not change the row and column sums.
+n(cid:88)
+(cid:0)d2
+j (cid:48) (cid:1)
+Furthermore,
+i vis2
+i vis2
+i(cid:48) − d2
+n(cid:88)
+i=1
+(cid:33)
+(cid:32)
+= d2
+i(cid:48) − s2
+i(cid:48) vi(cid:48) (s2
+i(cid:48) − s2
+d2
+i vi (s2
+j (cid:48) ) +
+j (cid:48) )
+n(cid:88)
+i=i(cid:48)+1
+i(cid:48) − s2
+= (s2
+d2
+i(cid:48) (cid:80)n
+j (cid:48) ≤ 0 since j (cid:48) > i(cid:48) , and (cid:80)n
+i(cid:48) vi(cid:48) +
+j (cid:48) )
+i=i(cid:48)+1
+i(cid:48) vi(cid:48) + (cid:80)n
+i vi ≤ d2
+i(cid:48) ,j (cid:48) , while d2
+i=i(cid:48)+1 vi = d2
+Now s2
+i(cid:48) u2
+i=i(cid:48)+1 d2
+i(cid:48) − s2
+i(cid:48) vi(cid:48) =
+F ≥ (cid:107)D ˜U S (cid:107)2
+i vi ) ≤ 0. This shows that (cid:107)DU S (cid:107)2
+−d2
+i(cid:48) u2
+i(cid:48) ,j (cid:48) , so (d2
+i=i(cid:48)+1 d2
+F . And ﬁnally,
+the order of ˜U is larger than the order of U , as we have eliminated the non-zero element of
+lowest order above the diagonal in U , and in turn have introduced only non-zero elements
+above the diagonal of higher order (in rows below the i(cid:48) -th), or none at all.
+By iterating this construction we arrive at a lower triangular matrix U ∗ with non-
+F ≥ (cid:107)DU ∗S (cid:107)2
+F = (cid:107)DS (cid:107)2
+negative entries that satisﬁes (∗) and (cid:107)DU S (cid:107)2
+F .
+
+F − (cid:107)D ˜U S (cid:107)2
+(cid:107)DU S (cid:107)2
+F =
+
+d2
+i vi
+
+.
+
+138
+
+Links Between MA, OOMs and PSRs
+
+Proof [Proof of Proposition 39] Assume r = rank( ˆF I ,J ) ≥ d and let U SV (cid:62) = ˆF I ,J be
+− 1
+d U (cid:62)
+d U SV (cid:62) )† =
+the full SVD of ˆF I ,J . We can simply verify that indeed (C ∗ ˆF I ,J )† = (S
+2
+F = (cid:80)d
+− 1
+− 1
+d )† = VdS
+d V (cid:62)
+, which implies that C ∗ ˆF I ,J Q∗ = C ∗ ˆF I ,J (C ∗ ˆF I ,J )† = Id , as required.
+(S
+2
+2
+d
+− 1
+i=1 σ−1
+Furthermore, (cid:107)C ∗
+(cid:107)F (cid:107)Q∗
+d (cid:107)2
+, where the σi are the singular values
+(cid:107)F = (cid:107)S
+2
+i
+of ˆF I ,J , which are also the diagonal elements of S . We will show that this is indeed the
+minimum of (cid:107)C (cid:107)F (cid:107)Q(cid:107)F sub ject to C ˆF I ,J Q = Id .
+Using the substitution C = C (cid:48)U (cid:62) and Q = V Q(cid:48) , we can see that minimizing (cid:107)C (cid:107)F (cid:107)Q(cid:107)F
+sub ject to C ˆF I ,J Q = Id is equivalent to minimizing (cid:107)C (cid:48)
+(cid:107)F (cid:107)Q(cid:48)
+(cid:107)F sub ject to C (cid:48)SQ(cid:48) = Id and
+that this will have the same minimal value. Let C (cid:48)
+r , Q(cid:48)
+r and Sr be truncated versions of C (cid:48) ,
+Q(cid:48) and S that consist of the ﬁrst r columns, rows or rows and columns, respectively. Then
+minimizing (cid:107)C (cid:48)
+r (cid:107)F (cid:107)Q(cid:48)
+r (cid:107)F sub ject to C (cid:48)
+r SrQ(cid:48)
+r = Id is equivalent and has the same minimal
+value, because C (cid:48)SQ(cid:48) = C (cid:48)
+r SrQ(cid:48)
+r (since σi = 0 for i > r) and the additional columns in C (cid:48)
+and rows in Q(cid:48) are best set to zero.
+r (cid:107)F sub ject to C (cid:48)
+r (cid:107)F (cid:107)Q(cid:48)
+r Sr )† minimize (cid:107)C (cid:48)
+Assume now that C (cid:48)
+r SrQ(cid:48)
+r = (C (cid:48)
+r and Q(cid:48)
+(cid:107)F = (cid:80)d
+r = Id .
+r SrQ(cid:48)
+r (cid:107)F sub ject to C (cid:48)
+We can select Q(cid:48)
+r = (C (cid:48)
+r Sr )† , as this minimizes (cid:107)C (cid:48)
+r (cid:107)F (cid:107)Q(cid:48)
+r = Id for a
+i=1 σ−1
+given C (cid:48)
+r . It remains to show that (cid:107)C (cid:48)
+r (cid:107)F (cid:107)Q(cid:48)
+r (cid:107)F ≥ (cid:107)C ∗
+(cid:107)F (cid:107)Q∗
+.
+i
+r = LDR(cid:62)S−1
+, and Q(cid:48)
+r = (C (cid:48)
+r Sr )† =
+r Sr . Then C (cid:48)
+r Sr be the SVD of C (cid:48)
+Let LDR(cid:62) = C (cid:48)
+r
+RD†L(cid:62) . Let d1 , . . . , dd be the diagonal elements of D and let Dr be the r × r matrix
+d(cid:88)
+obtained by extending D with zero rows. Then
+i=1
+
+(cid:107)Dr S−1
+r (cid:107)2
+F =
+
+i σ−2
+d2
+i
+
+,
+
+Lemma 43
+≥
+
+F (cid:107)Q(cid:48)
+(cid:107)C (cid:48)
+r (cid:107)2
+r (cid:107)2
+F =
+
+F = (cid:107)DrR(cid:62)S−1
+F = (cid:107)LDR(cid:62)S−1
+(cid:107)C (cid:48)
+r (cid:107)2
+r (cid:107)2
+r (cid:107)2
+d(cid:88)
+F
+d−2
+F = (cid:107)D†
+(cid:107)Q(cid:48)
+F = (cid:107)RD†L(cid:62)
+(cid:107)2
+(cid:107)2
+r (cid:107)2
+.
+F =
+i
+i=1
+(cid:33) (cid:32) d(cid:88)
+(cid:32) d(cid:88)
+(cid:33)
+i = a2
+Multiplying these expressions and substituting d2
+i σi , we obtain
+i σ−1
+a−2
+i σ−1
+(cid:32)
+(cid:33)
+a2
+d(cid:88)
+d(cid:88)
+i
+i
+i=1
+i=1
+a2
+σ−2
+i σ−1
+σ−1
+i
+i +
++
+(cid:32)(cid:18) ai
+(cid:33)
+j
+(cid:19)2
+a2
+d(cid:88)
+d(cid:88)
+j
+i=1
+i,j=1
+i<j
+σ−2
+aj −
+i +
+(cid:33)2
+(cid:32) d(cid:88)
+i=1
+i,j=1
+i<j
+i=1
+
+σ−1
+i
+
+a2
+j
+a2
+i
+
+aj
+ai
+
++ 2
+
+=
+
+=
+
+≥
+
+i σ−1
+σ−1
+j
+
+(cid:80)d
+since this expression is clearly minimal when ai = 1 for all i. So we can conclude that
+i=1 σ−1
+(cid:107)C (cid:48)
+. Therefore, C ∗ and Q∗ are in fact a minimal solution to the
+r (cid:107)F (cid:107)Q(cid:48)
+r (cid:107)F ≥
+i
+optimization problem (4).
+
+,
+
+139
+
+Thon and Jaeger
+
+(cid:105)
+
+Var[C ˆF I ,J ]
+
+=
+
+(∗)
+=
+
+(cid:35)
+cki ˆf (xj xi ) −
+
+cki ˆf (xj xi )
+
+(cid:88)
+i∈I
+
+(cid:33)2
+ckif (xj xi )
+
+(cid:104)
+Proof [of Proposition 40] First, we calculate:
+(cid:32)(cid:88)
+(∗)
+(cid:88)
+d(cid:88)
+||C ˆF I ,J − C F I ,J ||2
+= E
+F
+(cid:34)(cid:88)
+E
+(cid:88)
+d(cid:88)
+j∈J
+i∈I
+k=1
+Var
+(cid:88)
+(cid:88)
+d(cid:88)
+j∈J
+i∈I
+k=1
+(∗∗)
+(cid:88)
+(cid:88)
+(cid:88)
+kiVar[ ˆf (xj xi )]
+c2
+=
+j∈J
+i∈I
+k=1
+Var[ ˆf (xj xi )] =
+(cid:107)(C )i(cid:107)2
+vi(cid:107)(C )i(cid:107)2
+F ,
+=
+where (C )i is the i-th column of C , and vi = (cid:80)
+F
+i∈I
+j∈J
+i∈I
+Our goal is now to minimize J (G) = Var[(C ∗ + G) ˆF I ,J ] = (cid:80)
+j∈J Var[ ˆf (xj xi )]. Note that we have used
+unbiasedness in (∗) and uncorrelatedness in (∗∗).
+i∈I vi ||(C ∗ + G)i ||2
+F sub ject
+to the constraints hk,l (G) = [GΠ]k,l = 0 for k , l = 1 . . . d. Note that if vi = 0 for some i, then
+the i-th column of G does not inﬂuence the value of J (G), and we may w.l.o.g. ﬁx (G)i = 0
+and replace the equality constraints by ˜hk,l (G) = [GDD†Π]k,l = 0, where D = diag[(vi )i∈I ].
+This is a convex quadratic programming problem, therefore G = 0 will be a solution if and
+d(cid:88)
+only if it satisﬁes the KKT conditions
+∂hk,l
+∂ J
+∂G
+∂G
+k,l=1
+∀k , l = 1 . . . d : ˜hk,l (G) = 0,
+isﬁed for all k , l by G = 0. We can calculate (cid:80)d
+for some Lagrange multipliers λk,l ∈ R. Clearly, the latter condition ˜hk,l (G) = 0 is sat-
+∂G (G) = λΠ(cid:62)D†D , where
+∂ ˜hk,l
+k,l=1 λk,l
+∂G (G) = 2(C ∗ + G)D = 2(Π(cid:62)D2
+λ ∈ Rd×d , [λ]k,l = λk,l , as well as ∂ J
+I + G)D . The ﬁrst
+condition is then satisﬁed by G = 0 with λ = −2I , since Π(cid:62)D2
+I D = Π(cid:62)D†D by deﬁnition
+of DI .
+
+(G) = 0, and
+
+(G) +
+
+λk,l
+
+References
+
+Naoki Abe and Manfred K. Warmuth. On the computational complexity of approximating
+distributions by probabilistic automata. Machine Learning, 9:205–260, 1992.
+
+Animashree Anandkumar, Daniel Hsu, and Sham M. Kakade. A method of moments
+for mixture models and hidden markov models. In Shie Mannor, Nathan Srebro, and
+Robert C. Williamson, editors, Proceedings of the 25th Annual Conference on Learning
+
+140
+
+Links Between MA, OOMs and PSRs
+
+Theory (COLT 2012), volume 23 of JMLR Workshop & Conference Proceedings, pages
+33.1–33.34, 2012.
+
+Dana Angluin. Queries and concept learning. Machine Learning, 2(4):319–342, 1987.
+
+Rapha¨el Bailly. Quadratic weighted automata: Spectral algorithm and likelihood maxi-
+In Chun-Nan Hsu and Wee Sun Lee, editors, Proceedings of the 3rd Asian
+mization.
+Conference on Machine Learning (ACML 2011), volume 20 of JMLR Workshop & Con-
+ference Proceedings, pages 147–163, 2011.
+
+Rapha¨el Bailly, Fran¸cois Denis, and Liva Ralivola. Grammatical inference as a princi-
+pal component analysis problem.
+In Andrea Pohoreckyj Danyluk, L´eon Bottou, and
+Michael L. Littman, editors, Proceedings of the 26th International Conference on Ma-
+chine Learning (ICML 2009), volume 382 of ACM Proceedings, pages 33–40, 2009.
+
+Raphael Bailly, Xavier Carreras, and Ariadna Quattoni. Unsupervised spectral learning of
+ﬁnite state transducers. In C.J.C. Burges, L. Bottou, M. Welling, Z. Ghahramani, and
+K.Q. Weinberger, editors, Advances in Neural Information Processing Systems 26 (NIPS
+2013), pages 800–808. Curran Associates, Inc., 2013.
+
+Borja Balle and Mehryar Mohri. Spectral learning of general weighted automata via con-
+strained matrix completion. In Peter L. Bartlett, Fernando C. N. Pereira, Christopher
+J. C. Burges, L´eon Bottou, and Kilian Q. Weinberger, editors, Advances in Neural Infor-
+mation Processing Systems 25 (NIPS 2012), pages 2168–2176, 2012.
+
+Borja Balle, Ariadna Quattoni, and Xavier Carreras. A spectral learning algorithm for
+ﬁnite state transducers. In Dimitrios Gunopulos, Thomas Hofmann, Donato Malerba, and
+Michalis Vazirgiannis, editors, Machine Learning and Know ledge Discovery in Databases
+- European Conference (ECML/PKDD 2011), Proceedings, Part I, volume 6911 of Lecture
+Notes in Computer Science, pages 156–171. Springer, 2011.
+
+Borja Balle, Ariadna Quattoni, and Xavier Carreras. Local loss optimization in operator
+models: A new insight into spectral learning. In Proceedings of the 29th International
+Conference on Machine Learning (ICML 2012). icml.cc / Omnipress, 2012.
+
+Borja Balle, Xavier Carreras, Franco M. Luque, and Ariadna Quattoni. Spectral learning of
+weighted automata – a forward-backward perspective. Machine Learning, 96(1-2):33–63,
+2014.
+
+Amos Beimel, Francesco Bergadano, Nader H. Bshouty, Eyal Kushilevitz, and Stefano Var-
+In Proceedings of
+ricchio. On the applications of multiplicity automata in learning.
+the 37th Annual Symposium on Foundations of Computer Science (FOCS 1996), pages
+349–358. IEEE Computer Society, 1996.
+
+Amos Beimel, Francesco Bergadano, Nader H. Bshouty, Eyal Kushilevitz, and Stefano Var-
+ricchio. Learning functions represented as multiplicity automata. Journal of the ACM,
+47(3):506–530, 2000.
+
+141
+
+Thon and Jaeger
+
+Francesco Bergadano and Stefano Varricchio. Learning behaviors of automata from mul-
+tiplicity and equivalence queries.
+In Maurizio A. Bonuccelli, Pierluigi Crescenzi, and
+Rossella Petreschi, editors, Proceedings of the 2nd Italian conference on Algorithms and
+Complexity (CIAC 1994), volume 778 of Lecture Notes in Computer Science, pages 54–62.
+Springer, 1994.
+
+Francesco Bergadano, Dario Catalano, and Stefano Varricchio. Learning sat-k-DNF formu-
+las from membership queries. In Proceedings of the 28th Annual ACM Symposium on
+Theory of Computing (STOC 1996), pages 126–130. ACM, 1996.
+
+Jean Berstel, Jr. and Christophe Reutenauer. Rational Series and Their Languages, vol-
+ume 12 of EATCS Monographs on Theoretical Computer Science. Springer, 1988.
+
+Byron Boots and Geoﬀrey J. Gordon. Predictive state temporal diﬀerence learning.
+In
+J. Laﬀerty, C. K. I. Williams, J. Shawe-Taylor, R.S. Zemel, and A. Culotta, editors,
+Advances in Neural Information Processing Systems 23 (NIPS 2010), pages 271–279.
+MIT Press, 2010.
+
+Byron Boots and Geoﬀrey J. Gordon. An online spectral learning algorithm for partially
+observable nonlinear dynamical systems. In Wolfram Burgard and Dan Roth, editors,
+Proceedings of the 25th AAAI Conference on Artiﬁcial Intel ligence (AAAI 2011). AAAI
+Press, 2011.
+
+Byron Boots, Sa jid M. Siddiqi, and Geoﬀrey J. Gordon. Closing the learning-planning loop
+In Proceedings of the 9th International Confer-
+with predictive state representations.
+ence on Autonomous Agents and Multiagent Systems (AAMAS 2010), pages 1369–1370.
+IFAAMAS, 2010.
+
+Byron Boots, Geoﬀrey J. Gordon, and Arthur Gretton. Hilbert space embeddings of pre-
+dictive state representations. In Proceedings of the 29th Conference on Uncertainty in
+Artiﬁcial Intel ligence (UAI 2013), pages 92–101. AUAI Press, 2013.
+
+Michael Bowling, Peter McCracken, Michael James, James Neufeld, and Dana F. Wilkinson.
+Learning predictive state representations using non-blind policies. In William W. Cohen
+and Andrew Moore, editors, Proceedings of the 23rd International Conference on Machine
+Learning (ICML 2006), volume 148 of ACM Proceedings, pages 129–136, 2006.
+
+Jack W. Carlyle and Azaria Paz. Realizations by stochastic ﬁnite automata. Journal of
+Computer and System Sciences, 5(1):26–40, 1971.
+
+Corinna Cortes and Mehryar Mohri. Context-free recognition with weighted automata.
+Grammars, 3(2/3):133–150, 2000.
+
+Arthur P. Dempster, Nan M. Laird, and Donald B. Rubin. Maximum likelihood estimation
+from incomplete data via the EM algorithm. Journal of the Royal Statistical Society, 39
+(1):1–38, 1977.
+
+Fran¸cois Denis and Yann Esposito. Learning classes of probabilistic automata. In Proceed-
+ings of the 17th Annual Conference on Learning Theory (COLT 2004), volume 3120 of
+Lecture Notes in Computer Science, pages 124–139. Springer, 2004.
+
+142
+
+Links Between MA, OOMs and PSRs
+
+Fran¸cois Denis and Yann Esposito. On rational stochastic languages. Fundamenta Infor-
+maticae, 86(1):41–77, 2008.
+
+Fran¸cois Denis, Yann Esposito, and Amaury Habrard. Learning rational stochastic lan-
+guages. In G´abor Lugosi and Hans-Ulrich Simon, editors, Proceedings of the 19th Annual
+Conference on Learning Theory (COLT 2006), volume 4005 of Lecture Notes in Computer
+Science, pages 274–288. Springer, 2006.
+
+Manfred Droste, Werner Kuich, and Heiko Vogler. Handbook of Weighted Automata.
+Springer, 2009.
+
+Pierre Dupont, Fran¸cois Denis, and Yann Esposito. Links between probabilistic automata
+and hidden Markov models: probability distributions, learning models and induction
+algorithms. Pattern Recognition, 38(9):1349–1371, 2005.
+
+Carl Eckart and Gale Young. The approximation of one matrix by another of lower rank.
+Psychometrika, 1(3):211–218, 1936.
+
+Michel Fliess. Matrices de Hankel. Journal de Math´ematiques Pures et Appliqu´ees, 53:
+197–222, 1974.
+
+Edgar J. Gilbert. On the identiﬁability problem for functions of ﬁnite Markov chains. The
+Annals of Mathematical Statistics, 30(3):688–697, 1959.
+
+Robert M. Gray. Probability, Random Processes, and Ergodic Properties. Springer, 1988.
+
+William L. Hamilton, Mahdi M. Fard, and Joelle Pineau. Modelling sparse dynamical sys-
+tems with compressed predictive state representations. In Sanjoy Dasgupta and David
+Mcallester, editors, Proceedings of the 30th International Conference on Machine Learn-
+ing (ICML 2013), volume 28 of JMLR Workshop & Conference Proceedings, pages 178–
+186, 2013.
+
+Per Christian Hansen. Rank-Deﬁcient and Discrete Il l-Posed Problems: Numerical Aspects
+of Linear Inversion. Society for Industrial and Applied Mathematics, Philadelphia, PA,
+USA, 1998.
+
+Alex Heller. On stochastic processes derived from Markov chains. The Annals of Mathe-
+matical Statistics, 36(4):1286–1291, 1965.
+
+Daniel Hsu, Sham M. Kakade, and Tong Zhang. A spectral algorithm for learning hidden
+In Proceedings of the 22nd Annual Conference on Learning Theory
+Markov models.
+(COLT 2009), 2009.
+
+Hisashi Ito. An Algebraic Study of Discrete Stochastic Systems. Unpublished doctoral
+dissertation, University of Tokyo, Bunkyo-ku, Tokyo, 1992.
+
+Hisashi Ito, Shun ichi Amari, and Kingo Kobayashi. Identiﬁability of hidden Markov infor-
+mation sources and their minimum degrees of freedom. IEEE Transactions on Informa-
+tion Theory, 38(2):324–333, 1992.
+
+143
+
+Thon and Jaeger
+
+Herbert Jaeger. Observable operator models and conditioned continuation representations.
+Arbeitspapiere der GMD 1043, GMD Forschungszentrum Informationstechnik, Sankt Au-
+gustin, Germany, 1997.
+
+Herbert Jaeger. Discrete-time, discrete-valued observable operator models: a tutorial. Tech-
+nical Report 42, GMD Forschungszentrum Informationstechnik, Sankt Augustin, Ger-
+many, 1998.
+
+Herbert Jaeger. Modeling and learning continuous-valued stochastic processes with OOMs.
+GMD Report 102, GMD Forschungszentrum Informationstechnik, Sankt Augustin, Ger-
+many, 2000a.
+
+Herbert Jaeger. Observable operator models for discrete stochastic time series. Neural
+Computation, 12(6):1371–1398, 2000b.
+
+Herbert Jaeger, MingJie Zhao, and Andreas Kolling. Eﬃcient estimation of ooms.
+In
+Y. Weiss, B. Sch¨olkopf, and J. Platt, editors, Advances in Neural Information Processing
+Systems 18 (NIPS 2005), pages 555–562. MIT Press, 2006a.
+
+Herbert Jaeger, MingJie Zhao, Klaus Kretzschmar, Tobias Oberstein, Dan Popovici, and
+Andreas Kolling. Learning observable operator models via the ES algorithm. In Simon
+Haykin, Jos´e C. Pr´ıncipe, Terrence J. Sejnowski, and John McWhirter, editors, New
+Directions in Statistical Signal Processing: From Systems to Brains, Neural Information
+Processing, chapter 14, pages 417–464. MIT Press, Cambridge, MA, USA, 2006b.
+
+Michael R. James and Satinder P. Singh. Learning and discovery of predictive state rep-
+resentations in dynamical systems with reset. In Carla E. Brodley, editor, Proceedings
+of the 21st International Conference on Machine Learning (ICML 2004), volume 69 of
+ACM Proceedings, pages 53–60, 2004.
+
+Michael R. James and Satinder P. Singh. Planning in models that combine memory with
+predictive representations of state. In Manuela M. Veloso and Subbarao Kambhampati,
+editors, Proceedings of the 20th National Conference on Artiﬁcial Intel ligence (AAAI
+2005), pages 987–992. AAAI Press, 2005.
+
+Michael R. James, Satinder Singh, and Michael L. Littman. Planning with predictive state
+representations. In Proceedings of the 3rd International Conference on Machine Learning
+and Applications (ICMLA 2004), pages 304–311. IEEE Computer Society, 2004.
+
+Leslie Pack Kaelbling, Michael L. Littman, and Anthony R. Cassandra. Planning and acting
+in partially observable stochastic domains. Artiﬁcial Intel ligence, 101(1-2):99–134, 1998.
+
+Attila Kondacs and John Watrous. On the power of quantum ﬁnite state automata. In
+Proceedings of the 37th Annual Symposium on Foundations of Computer Science (FOCS
+1996), pages 66–75. IEEE Computer Society, 1997.
+
+Klaus Kretzschmar. Learning symbol sequences with observable operator models. GMD
+Report 161, GMD Forschungszentrum Informationstechnik, Sankt Augustin, Germany,
+2001.
+
+144
+
+Links Between MA, OOMs and PSRs
+
+Michael L. Littman, Richard S. Sutton, and Satinder P. Singh. Predictive representations
+of state. In Thomas G. Dietterich, Suzanna Becker, and Zoubin Ghahramani, editors,
+Advances in Neural Information Processing Systems 14 (NIPS 2001), pages 1555–1561.
+MIT Press, 2001.
+
+Ivan Markovsky and Sabine Van Huﬀel. Left vs right representations for solving weighted
+low-rank approximation problems. Linear Algebra and its Applications, 422(2-3):540–552,
+2007a.
+
+Ivan Markovsky and Sabine Van Huﬀel. Overview of total least-squares methods. Signal
+Processing, 87(10):2283–2302, 2007b.
+
+Peter McCracken and Michael H. Bowling. Online discovery and learning of predictive
+In Y. Weiss, B. Sch¨olkopf, and J. Platt, editors, Advances in
+state representations.
+Neural Information Processing Systems 18 (NIPS 2005). MIT Press, 2006.
+
+Mehryar Mohri, Fernando Pereira, and Michael Riley. Weighted ﬁnite-state transducers in
+speech recognition. Computer Speech & Language, 16(1):69–88, 2002.
+
+Cristopher Moore and James P. Crutchﬁeld. Quantum automata and quantum grammars.
+Theoretical Computer Science, 237(1-2):275–306, 2000.
+
+Hiroyuki Ohnishi, Hiroyuki Seki, and Tadao Kasami. A polynomial time learning algorithm
+IEICE Transactions on Information and Systems, E77-D(10):
+for recognizable series.
+1077–1085, 1994.
+
+Lawrence R. Rabiner. A tutorial on hidden Markov models and selected applications in
+speech recognition. Proceedings of the IEEE, 77(2):257–286, 1989.
+
+Adri`a Recasens and Ariadna Quattoni. Spectral learning of sequence taggers over continuous
+sequences. In Hendrik Blockeel, Kristian Kersting, Siegfried Nijssen, and Filip Zelezn´y,
+editors, Machine Learning and Know ledge Discovery in Databases - European Conference
+(ECML/PKDD 2013), Proceedings, Part I, volume 8188 of Lecture Notes in Computer
+Science, pages 289–304. Springer, 2013.
+
+Matthew Rosencrantz, Geoﬀrey J. Gordon, and Sebastian Thrun. Learning low dimensional
+predictive representations. In Carla E. Brodley, editor, Proceedings of the 21st Interna-
+tional Conference on Machine Learning (ICML 2004), volume 69 of ACM Proceedings,
+pages 695–702, 2004.
+
+Sam Roweis. EM algorithms for PCA and SPCA. In Michael I. Jordan, Michael J. Kearns,
+and Sara A. Solla, editors, Advances in Neural Information Processing Systems 10 (NIPS
+1997), pages 626–632. MIT Press, 1998.
+
+Matthew Rudary and Satinder P. Singh. Predictive linear-Gaussian models of controlled
+stochastic dynamical systems. In William W. Cohen and Andrew Moore, editors, Pro-
+ceedings of the 23rd International Conference on Machine Learning (ICML 2006), volume
+148 of ACM Proceedings, pages 777–784, 2006.
+
+145
+
+Thon and Jaeger
+
+Matthew Rudary and Satinder P. Singh. Predictive linear-Gaussian models of stochastic
+dynamical systems with vector-value actions and observations. In Proceedings of the 10th
+International Symposium on Artiﬁcial Intel ligence and Mathematics (ISAIM 2008), 2008.
+
+Matthew Rudary, Satinder P. Singh, and David Wingate. Predictive linear-Gaussian mod-
+els of stochastic dynamical systems. In Fahiem Bacchus and Tommi Jaakkola, editors,
+Proceedings of the 21st Conference in Uncertainty in Artiﬁcial Intel ligence (UAI 2005),
+pages 501–508. AUAI Press, 2005.
+
+Matthew R. Rudary and Satinder Singh. A nonlinear predictive state representation. In
+S. Thrun S. Becker and K. Obermayer, editors, Advances in Neural Information Process-
+ing Systems 15 (NIPS 2002), pages 855–862. MIT Press, 2003.
+
+Arto Salomaa and Matti Soittola. Automata-Theoretic Aspects of Formal Power Series.
+Texts and Monographs in Computer Science. Springer, 1978.
+
+Marcel Paul Sch¨utzenberger. On the deﬁnition of a family of automata. Information and
+Control, 4(2-3):245–270, 1961.
+
+Sa jid M. Siddiqi, Byron Boots, and Geoﬀrey J. Gordon. Reduced-rank hidden markov
+In Yee Whye Teh and D. Mike Titterington, editors, Proceedings of the 13th
+models.
+International Conference on Artiﬁcial Intel ligence and Statistics (AISTATS 2010), vol-
+ume 9 of JMLR Workshop & Conference Proceedings, pages 741–748, 2010.
+
+Satinder Singh, Michael R. James, and Matthew R. Rudary. Predictive state representa-
+tions: A new theory for modeling dynamical systems. In Joseph Halpern, editor, Proceed-
+ings of the 20th Conference on Uncertainty in Artiﬁcial Intel ligence (UAI 2004), pages
+512–519. AUAI Press, 2004.
+
+Le Song, Byron Boots, Sa jid M. Siddiqi, Geoﬀrey J. Gordon, and Alex J. Smola. Hilbert
+space embeddings of hidden Markov models.
+In Johannes F¨urnkranz and Thorsten
+Joachims, editors, Proceedings of the 27th International Conference on Machine Learning
+(ICML 2010), pages 991–998. Omnipress, 2010.
+
+Daniel R. Upper. Theory and Algorithms for Hidden Markov Models and Generalized Hidden
+Markov Models. PhD thesis, University of California at Berkeley, 1997.
+
+Leslie G. Valiant. A theory of the learnable. Communications of the ACM, 27(11):1134–
+1142, 1984.
+
+Eric W. Wiewiora. Modeling Probability Distributions with Predictive State Representations.
+PhD thesis, University of California, San Diego, 2008.
+
+David Wingate and Satinder P. Singh. Kernel predictive linear Gaussian models for non-
+linear stochastic dynamical systems. In William W. Cohen and Andrew Moore, editors,
+Proceedings of the 23rd International Conference on Machine Learning (ICML 2006),
+volume 148 of ACM Proceedings, pages 1017–1024, 2006a.
+
+146
+
+Links Between MA, OOMs and PSRs
+
+David Wingate and Satinder P. Singh. Mixtures of predictive linear Gaussian models for
+nonlinear, stochastic dynamical systems. In Anthony Cohn, editor, Proceedings of the
+21st National Conference on Artiﬁcial Intel ligence (AAAI 2006). AAAI Press, 2006b.
+
+David Wingate and Satinder P. Singh. Exponential family predictive representations of
+state. In J.C. Platt, D. Koller, Y. Singer, and S. Roweis, editors, Advances in Neural
+Information Processing Systems 20 (NIPS 2007), pages 1617–1624. MIT Press, 2008a.
+
+David Wingate and Satinder P. Singh. Eﬃciently learning linear-linear exponential family
+predictive representations of state. In William W. Cohen, Andrew McCallum, and Sam T.
+Roweis, editors, Proceedings of the 25th International Conference on Machine Learning
+(ICML 2008), volume 307 of ACM Proceedings, pages 1176–1183, 2008b.
+
+David Wingate, Vishal Soni, Britton Wolfe, and Satinder P. Singh. Relational knowledge
+with predictive state representations. In Manuela M. Veloso, editor, Proceedings of the
+20th International Joint Conference on Artiﬁcial Intel ligence (IJCAI 2007), pages 2035–
+2040. AAAI Press, 2007.
+
+In
+Britton Wolfe and Satinder P. Singh. Predictive state representations with options.
+William W. Cohen and Andrew Moore, editors, Proceedings of the 23rd International
+Conference on Machine Learning (ICML 2006), volume 148 of ACM Proceedings, pages
+1025–1032, 2006.
+
+Lotﬁ Asker Zadeh. The concept of system, aggregate, and state in system theory.
+In
+Lotﬁ Asker Zadeh and Elijah Polak, editors, System Theory, volume 8 of Inter-University
+Electronics Series, pages 3–42. McGraw-Hill, New York, 1969.
+
+MingJie Zhao and Herbert Jaeger. Norm observable operator models. Neural Computation,
+22(7):1927–1959, 2010.
+
+MingJie Zhao, Herbert Jaeger, and Michael Thon. A bound on modeling error in observable
+operator models and an associated learning algorithm. Neural Computation, 21(9):2687–
+2712, 2009a.
+
+MingJie Zhao, Herbert Jaeger, and Michael Thon. Making the error-controlling algorithm of
+observable operator models constructive. Neural Computation, 21(12):3460–3486, 2009b.
+
+147
+
+

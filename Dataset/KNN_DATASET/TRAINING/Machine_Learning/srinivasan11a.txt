@@ -1,0 +1,3145 @@
+Journal of Machine Learning Research 12 (2011) 627-662
+
+Submitted 12/08; Revised 7/10; Published 2/11
+
+Parameter Screening and Optimisation for
+ILP using Designed Experiments
+
+Ashwin Srinivasan
+School of Mathematical Sciences & ICT
+South Asian University
+New Delhi 110067, India ∗
+Ganesh Ramakrishnan
+Dept. of Computer Science and Engineering
+Indian Institute of Technology Bombay
+Mumbai, India
+
+Editor: Luc De Raedt
+
+A SHW IN . SR IN IVA SAN@WO L F SON .OXON .ORG
+
+GAN E SH@C S E . I I TB .AC . IN
+
+Abstract
+
+Reports of experiments conducted with an Inductive Logic Programming system rarely describe
+how speci ﬁc values of parameters of the system are arrived at when constructing models. Usu-
+ally, no attempt is made to identify sensitive parameters, and those that are used are often given
+“factory-supplied” default values, or values obtained fro m some non-systematic exploratory anal-
+ysis. The immediate consequence of this is, of course, that it is not clear if better models could
+have been obtained if some form of parameter selection and optimisation had been performed.
+Questions follow inevitably on the experiments themselves: speci ﬁcally, are all algorithms being
+treated fairly, and is the exploratory phase sufﬁciently we ll-deﬁned to allow the experiments to be
+replicated? In this paper, we investigate the use of parameter selection and optimisation techniques
+grouped under the study of experimental design. Screening and response surface methods deter-
+mine, in turn, sensitive parameters and good values for these parameters. Screening is done here
+by constructing a stepwise regression model relating the utility of an ILP system’s hypothesis to its
+input parameters, using systematic combinations of values of input parameters (technically speak-
+ing, we use a two-level fractional factorial design of the input parameters). The parameters used
+by the regression model are taken to be the sensitive parameters for the system for that application.
+We then seek an assignment of values to these sensitive parameters that maximise the utility of
+the ILP model. This is done using the technique of constructing a local “response surface”. The
+parameters are then changed following the path of steepest ascent until a locally optimal value is
+reached. This combined use of parameter selection and response surface-driven optimisation has
+a long history of application in industrial engineering, and its role in ILP is demonstrated using
+well-known benchmarks. The results suggest that computational overheads from this preliminary
+phase are not substantial, and that much can be gained, both on improving system performance and
+on enabling controlled experimentation, by adopting well-established procedures such as the ones
+proposed here.
+
+Keywords:
+design
+
+inductive logic programming, parameter screening and optimisation, experimental
+
+∗. A.S. also holds an adjunct position at the School of CSE, University of New South Wales, Sydney; and visiting
+position at the Oxford University Computing Laboratory, Oxford.
+
+c(cid:13)2011 Ashwin Srinivasan and Ganesh Ramakrishnan.
+
+SR IN IVA SAN AND RAMAKR I SHNAN
+
+1. Introduction
+
+We are concerned in this paper with Inductive Logic Programming (ILP) primarily as a tool for
+constructing models. Speci ﬁcations of the appropriate use of a tool, its testing , and analysis of
+beneﬁts and drawbacks over others of a similar nature are matters for the e ngineer concerned with
+its routine day-to-day use. Much of the literature on the applications of ILP have, to date, been once-
+off demonstrations of either the model construction abilities of a speciﬁc syste m, or of the ability
+of ILP systems to represent and use complex domain-speciﬁc relationships ( Bratko and Muggleton,
+1995; Dzeroski, 2001). It is not surprising, therefore, that there has been little reported on practical
+issues that arise with the actual use of an ILP system.
+Assuming some reasonable solution has been found to difﬁcult practical pr oblems like the ap-
+propriateness of the representation, choice of relevant “backgroun d knowledge”, poor user-interfaces,
+and efﬁciency, 1 we are concerned here with a substantially simpler issue. Like all model-building
+methods, an ILP system’s performance is affected by values assigned to input parameters (the term
+is used here in the sense understood by the computer scientist, and not the statistician). For exam-
+ple, the model constructed by an ILP system may be affected by the maximal length of clauses, the
+minimum precision allowed for any clause in the theory, the maximum number of new variables
+that could appear in any clause, and so. The ILP practitioner is immediately confronted with two
+questions: (a) Which of these parameters are relevant for the particular application at hand?; and
+(b) What should their values be in order to get a good model? In an industrial setting, an engineer
+confronted with similar questions about a complex system—a chemical plant, for
+example—would
+try to perform some form of sensitivity analysis to determine an answer to (a), and follow it with an
+attempt to identify optimal values for the parameters identiﬁed. As it stands, exp erimental applica-
+tions of ILP usually have not used any such systematic approach. Typically, parameters are given
+”factory-supplied” default values, or values obtained from a limited inves
+tigation of performance
+across a few pre-speciﬁed values. The immediate consequence of this is th at it is not clear if better
+models could have been obtained if some form of parameter selection and optimisation had been
+performed. A measure of the unsatisfactory state of affairs is obtained by considering whether it
+would be acceptable for a chemical engineer to take a similar approach when attempting to identify
+optimal operating conditions to maximise the yield of his plant.
+Here take up the questions of screening and optimisation of parameters directly with the only
+restrictions being that parameter and goodness values are quantitative in nature. The methods we
+use have origins in optimising industrial processes (Box and Wilson, 1951) and been developed
+under the broad area concerned with the design and analysis of experiments. This area is concerned
+principally with discovering something about a black-box system by designing deliberate changes
+to the system’s input variables, and analysing changes in its output response. The representation of
+a system is usually as shown in Figure 1(a) (from Montgomery, 2005). The process being modelled
+transforms some input into an output that is characterised a measurable response y. The system
+has some controllable factors, and some uncontrollable ones and the goals of an experiment could
+be to answer questions like: which of the controllable factors are most inﬂue ntial on y; and what
+levels should these factors be for y to reach an optimal value. The relevance of the setting to the ILP
+problem we are considering here will be evident in Section 2.
+
+1. In Srinivasan (2001a), experience gained from applications of ILP to problems in biochemistry were used to extract
+some guiding principles of relevance to these problems for any ILP application.
+
+628
+
+SCR E EN ING AND O P T IM I SAT ION FOR ILP
+
+Controllable variables (factors)
+
+Inputs
+
+Process
+
+Output
+
+(Response y)
+
+Uncontrollable variables
+
+Figure 1: Model of a system used in experimental design (from Montgomery, 2005). The process
+can be a combination of systems, each modelled by some input-output behaviour.
+
+There are a wide variety of techniques developed within the area of experimental design: we
+will be concentrating here on some of the simplest, based around the use of regression models.
+Speciﬁcally, using designed variations of input variables, we will use a ste pwise linear regression
+strategy to identify variables most relevant to the ILP system’s output response. This resulting linear
+model, or response surface, is then used to change progressively the values of the relevant variables
+until a locally optimal value of the output is reached. We demonstrate this approach empirically on
+some ILP benchmarks.
+The rest of this paper is organised as follows. Section 2 describes a black-box view of ILP
+systems that we adopt in this paper. Section 3 describes work in ILP and the broader area of Machine
+Learning related to the goals of this paper. Section 4 describes details of techniques from the ﬁeld of
+experimental design that are relevant to the paper. Section 5 describes, ﬁrst, two empirical studies.
+The studies demonstrate how, for a given set of inputs, parameter screening and selection using
+designed experiments yields a better model than simply using default values, or performing an
+exhaustive combination of pre-determined values for parameters. They also demonstrate how, if
+inputs are changed, then both the set of relevant parameters and their values can change. These
+experiments are then followed up with others that use six other well-known benchmark data sets.
+The results conﬁrm the ﬁndings from the primary investigation; and also demo
+nstrate the relevance
+of this work to the controlled comparisons of ILP systems. Section 6 concludes the paper. The paper
+is accompanied by two appendices that provide standard material from the literature concerned with
+the construction of linear models, and with speciﬁc aspects of the optimisation meth od used here.
+
+2. An ILP System as a Black-Box
+
+Inductive Logic Programming (ILP) has been largely characterised by two classes of programs. The
+ﬁrst, predictive ILP, has been concerned with constructing discriminativ e models (sets of rules; or
+hing accurately amongst two
+ﬁrst-order variants of classiﬁcation or regression trees) for distinguis
+sets of examples ( “positive” and “negative”), or more generally, among
+st examples classiﬁed into
+one of several classes. The second category of ILP programs, descriptive ILP, has been concerned
+with generative models of relationships that hold amongst the background knowledge and examples.
+This latter category includes programs that identiﬁes logical constraints in a d atabase (DeRaedt and
+
+629
+
+SR IN IVA SAN AND RAMAKR I SHNAN
+
+Bruynooghe, 1992) and more recently, programs that capture complex probabilistic relationships
+amongst objects (the area of statistical relational learning: see Getoor and Taskar, 2007).
+
+While much effort has been invested in clarifying, in the form of a speciﬁca tion, what constitutes
+different kinds ILP systems (see, for example Muggleton and Raedt, 1994), in this paper, we take
+an engineer’s view. In this, an ILP implementation is simply a machine learning (ML) system that,
+given some inputs —in usual ILP terminology, background knowledge and
+examples —and settings
+for parameters, some of which are under the control of the engineer, produces an output model by
+performing some form of optimisation (see Figure 2). For example, many ILP systems that explore
+the space of alternatives imposed by the inverse entailment setting proposed in Muggleton (1995)
+could be seen as performing a form of discrete optimisation, using some approximation to a branch-
+and-bound search procedure. The task of the system engineer is then to tune the parameters under
+his or her control to enable the system to return the best performance.2 In Srinivasan (2001b), for
+example, it is demonstrated how widely varying performance can be obtained by varying a single
+parameter (the minimum accuracy of clauses found in a search).
+
+Relevant parameters
+
+Background
+
+Examples
+
+ILP System
+
+Model
+
+(Utility  y)
+
+Irrelevant parameters/
+Built−in settings
+
+Figure 2: An system engineer’s view of an ILP system. We are assuming here that “Background”
+includes syntactic and semantic constraints on acceptable models.
+“Built-in setting s ”
+are the result of decisions made in the design of the ILP system. An example is the
+optimisation function used by the system.
+
+The immediate difﬁculty is, of course, that it is usually impractical to examine the sy stem’s
+performance by enumerating every possible combination of values for the controllable parameters.
+With ILP systems there are two further difﬁculties. First, it may often not be kn own beforehand
+which parameters are actually relevant to system for the problem being solved. The system Aleph
+(Srinivasan, 1999) provides perhaps the most clear instance of this: see Figure 3. Second, mod-
+els constructed, and hence system performance, can vary even if all inputs and parameters have
+ﬁxed values: for example, the system may use a search strategy that employ some random choices
+(Zelezny et al., 2002 provides an example of such a strategy).
+
+2. This is different to improving the optimisation procedure performed by the system itself. Rather, it is concerned with
+enabling the existing optimisation procedure ﬁnd better results, usually by ch anging the space of alternatives in some
+principled manner. It is beyond the engineer’s remit to alter either the system’s inputs or its optimisation criterion as
+a means of improving system performance.
+
+630
+
+SCR E EN ING AND O P T IM I SAT ION FOR ILP
+
+1. The following parameters can affect the size of the search space:
+i, clauselength, nodes, minpos, minacc,
+noise, explore, best, openlist, splitvars.
+2. The following parameters affect the type of search:
+search, evalfn, refine, samplesize.
+3. The following parameters have an effect on the speed of execution:
+caching, lazy_negs, proof_strategy, depth,
+lazy_on_cost, lazy_on_contradiction, searchtime, prooftime.
+4. The following parameters alter the way things are presented to the user:
+print, record, portray_hypothesis, portray_search,
+portray_literals, verbosity,
+5. The following parameters are concerned with testing theories:
+test_pos, test_neg, train_pos, train_neg.
+
+Figure 3: A categorisation of some of the parameters of the ILP system Aleph (reproduced from
+Srinivasan, 1999). Not all of these are relevant to every problem being solved.
+
+3. Related Work on Parameter Screening and Optimisation
+
+Within ILP, no signiﬁcant attention has been paid to the problem of parameter s creening or optimi-
+sation. Reports in the literature rarely contain any discussion of sensitive parameters of the system
+or their values. Of 100 experimental studies reported in papers presented between 1998 and 2008
+to the principal conference in the area, none attempt any form of screening for relevant parameters.
+17 describe settings for some pre-selected parameters —usually one—fro
+m performance estimates
+obtained during an enumerative search over some small set of possible values (that is, effectively
+using the wrapper approach of Kohavi and John, 1995). 38 reports, however, mention values as-
+signed to some parameters, without elucidating how these values were reached (on occasions, these
+were just the default values provided by the system). The work in Srinivasan (2001b) can be seen as
+addressing the question of optimal values for several input parameters somewhat indirectly by ﬁrst
+constructing an “operating characteristic curve” that describes the per
+formance of an ILP system
+across a range of values for the relevant parameters. While no method is proposed for identifying
+the parameters themselves, the characteristic curve provides a way of optimally selecting amongst
+models, provided model goodness is restricted to a speciﬁc class (that of c ost functions that are
+linear in the error-rates). . Since each model is obtained from a particular combination of values for
+relevant parameters, we are able to identify the values that resulted in the best model for the task.
+The procedure is somewhat reminiscent of putting the cart before the horse though, requiring us to
+identify all models on the characteristic curve ﬁrst.
+Turning to the broader literature in ML, we have not been able to uncover any reports explic-
+itly concerned with screening for relevant parameters. There have, however, been some reports of
+techniques for optimal assignment for a set of relevant parameters. Bengio (2000) is most closely
+related to the optimisation goals of this paper, in that it presents a methodology to optimise several
+parameters (Bengio and the following papers call them hyperparameters, to avoid confusion with the
+statistical term), based on the computation of the gradient of a model selection criterion expressed in
+terms of the parameters. The main restriction is that this criterion must be a known, continuous and
+
+631
+
+SR IN IVA SAN AND RAMAKR I SHNAN
+
+differentiable function of the parameters (almost) everywhere. While Bengio assumes a training cri-
+terion that is quadratic in the parameters, Keerthi et al. (2006) present a fast method for computing
+the gradient of a validation function with respect to parameters for a range of SVM models. Their
+method only needs a single linear system of equations to be solved. Unfortunately, it is not possible
+to directly adapt these methods to ILP systems. In almost all ILP settings, the training criterion
+cannot be even expressed in closed form, let alone being a differentiable and continuous function
+of the parameters. That is, what can be done at best is to treat the ILP system is a black box (as we
+have done in the previous section) and empirically observe variations in its response to changes in
+the values of the parameters.
+Methods have been developed that use such empirically observed responses to direct the assign-
+ment of values to relevant parameters. The seminal work in Kohavi and John (1995) introduced the
+“wrapper ” approach to parameter optimisation, in which responses from a ML system are used to
+direct a heuristic search through combinations of possible values for the parameters. For tractabil-
+ity, these values are discretised a priori, and approach essentially performs a sub-optimal search
+through a ﬁnite space of what are called k-level full-factorial designs in this paper (the k refers to
+the number of discrete values: more on such designs in the next section). In this paper, we use a
+exhaustive search through such a space as a baseline for comparison against a gradient-based opti-
+misation method. The results from the exhaustive search clearly represent an upper-bound on the
+results achievable by any heuristic search through the same space.
+The work described in Baz et al. (2007) is concerned with determining parameter values that
+minimise the computation time of mixed integer linear programming (MILP) systems. As with the
+ILP systems we consider here, the MILP solvers have many parameters, with no clear relationships
+known amongst them; and the objective function cannot be expressed as a closed form function
+of these parameters. Their approach is to select an initial set of values for the hyperparameters
+using some sampling design. The response of the MILP solver is then obtained, from which a ML
+system is used to construct a model relating the response to parameter values. This model is then
+used to suggest new values for some subset of the parameters. For example, if the model used is a
+regression tree, then the parameters used in the top 2 levels of the tree (the choice of 2 is arbitrary,
+but no method is proposed for automating this choice) are selected and additional sets of values
+obtained for the parameters (the exact procedure of how this is done is not elaborated upon). The
+set that results in the best performance is returned. This work can be seen as a case of exhaustive
+enumeration of responses in a k-level full factorial design, followed by a single stage of ad hoc
+non-linear regression-based parameter screening and optimisation.
+The problem of screening and tuning of parameters to optimise a system’s performance has been
+studied extensively in areas of industrial engineering, using results obtained from the design and
+analysis of experiments. It is our intention in this paper to investigate the application of techniques
+developed in these areas to ILP, and we summarise some of the relevant ideas next.
+
+4. Design and Analysis of Experiments
+
+The area broadly concerned with the design of experiments (DOE) deals with devising deliberate
+variations in the values of input variables, or factors, and analysing the resulting variations in a set
+of one or more output, or response, variables. The objectives of conducting such experiments are
+usually: (a) Understand how variation or uncertainty in input values affects the output value. The
+goal here is the construction of robust systems in which a system’s output is affected minimally
+
+632
+
+SCR E EN ING AND O P T IM I SAT ION FOR ILP
+
+by external sources of variation; and (b) Maximise (or minimise) a system’s performance. In turn,
+these raise questions like the following: which factors are important for the response variables; what
+values should be given to these factors to maximise (or minimise) the values of the response vari-
+ables; what values should be give to the factors in order that variability in the response is minimal,
+and so on.
+In this paper, we will restrict ourselves to a single response variable and the analysis of ex-
+perimental designs by multiple regression. It follows, therefore, that we are restricted in turn to
+quantitative factors only. Further, by “experimental design” we will mean n othing more than a se-
+lection of points from the factor-space, in order that a statistically sound relationship between the
+factors and the response variable can be obtained. Each factor-level combination will constitute an
+experiment, and a design will therefore require us to specify the experiments and, if necessary, the
+number of replications of each experiment.
+
+4.1 Screening using Factorial Designs
+
+We ﬁrst consider designs appropriate for screening. By this, we mean d eciding which of a set of
+potentially relevant factors are really important, statistically speaking. The usual approach adopted
+is what is termed a 2-level factorial design. In this, each factor is taken to have just two levels
+3 and the effect observed on the response variable of changing the
+(encoded as “-1” and “+1”, say),
+levels of each factor. It is evident that with k factors, this will result in 2k experiments, each of which
+may need to be repeated in case there is some source of random variation in the response variable.
+For example, with two factors, conducting a 22 full factorial design will result in a table such as the
+one shown in Figure 4
+We are then able to construct a regression model relating the response variable to the factors:
+
+y = b0 + b1 x1 + b2 x2 + b3 x1 x2 .
+
+The model describes the effect of each factor x1,2 and interactive effect x1 x2 of the two factors on
+y.4 It is usual also to add “centre points ” to the design in the form of experiments
+that obtain values
+for y for x1 = 0 and x2 = 0. The results of these experiments will not contribute to estimation of the
+coefﬁcients b1,2,3 (since the xi are all 0s), but allows us to obtain a better estimate for the value of b0 .
+Further, it is also the case that with a 2-level full factorial design only linear effects can be estimated
+(that is, the effect of terms like x2
+i cannot be obtained: in general, a nt h order polynomial will require
+n + 1 levels for each factor). In this paper, we will use the coefﬁcients of the regression model to
+guide the screening of parameters: that is, parameters with coefﬁcients sig niﬁcantly different from
+0 will be taken to be relevant (more on this in Appendix A).
+Clearly, the number of experiments required in a full factorial design constitute a substantial
+computational burden, especially as the number of factors increase. Consider, however, the role
+these experiments play in the regression model. Some are necessary for estimating the effects of
+each factor (that is, the coefﬁcients of x1 , x2 , x3 , . . .: usually called the “main effects ”), others for
+estimating the coefﬁcients for two-way interactions (the coefﬁcients of
+x1 x2 , x1 x3 , . . . ) , others for
+three-way interactions (x1 x2 x3 , . . . ) and so on. However, in a screening stage, all that we wish to do
+is to identify the main effects. This can usually be done with fewer than the 2k experiments needed
+
+3. One way to achieve the coded value x of a factor X is as follows. Let X − and X + be the minimum and maximum
+X −(X ++X − )/2
+(X +−X − )/2 .
+values of X (these are pre-speci ﬁed). Then x =
+4. Interaction effects happen if the effect of a factor, say X1 on the response depends on the level of another factor X2 .
+
+633
+
+SR IN IVA SAN AND RAMAKR I SHNAN
+
+Expt. Factor Factor Response
+y
+x2
+x1
+-1
+-1
+. . .
+. . .
++1
+-1
+. . .
+-1
++1
++1
++1
+. . .
+
+E1
+E2
+E3
+E4
+
+(a)
+
+x
+
+2
+
++1
+
+−1
+
+(b)
+
+−1
+
++1
+
+x
+
+1
+
+Figure 4: (a) A 2-level full factorial design for two factors; and (b) a graphical representation of the
+design.
+
+for a full factorial design with k factors. The result is a 2-level “fractional” factorial design. Figure
+5 below illustrates a 2-level fractional factorial design for 3 factors that uses half the number of
+experiments to estimate the main effects (from Steppan et al., 1998).
+
+Expt.
+E1
+E2
+E3
+E4
+E5
+E6
+E7
+E8
+
+x3
+x2
+x1
+-1
+-1
+-1
++1
+-1
+-1
++1
+-1
+-1
++1 +1
+-1
+-1
+-1
++1
+-1
++1
++1
++1 +1
+-1
++1 +1 +1
+
+y
+. . .
+. . .
+. . .
+. . .
+. . .
+. . .
+. . .
+. . .
+
+Expt.
+E2
+E3
+E5
+E8
+
+x3
+x2
+x1
++1
+-1
+-1
+-1
++1
+-1
++1
+-1
+-1
++1 +1 +1
+
+y
+. . .
+. . .
+. . .
+. . .
+
+Figure 5: A full 2-level factorial design for 3 factors (left) and a “half
+
+fraction” design (right).
+
+The experiments in the fractional design have been selected so that x1 x2 x3 = +1. Closer ex-
+amination of the table on the right will make it clear that the following equalities also hold for this
+table: x1 = x2 x3 ; x2 = x1 x3 ; and x3 = x1 x2 . That is, main effects and interaction terms are con-
+
+634
+
+SCR E EN ING AND O P T IM I SAT ION FOR ILP
+
+founded with each other. This has some direct implications when constructing regression models
+using the fractional table. In effect, instead of the full regression model:
+
+y = b0 + b1 x1 + b2 x2 + b3 x3 + b4 x1 x2 + b5 x1 x3 + b6 x2 x3
+
+we are reduced to obtaining the following model:
+
+y = b0 + b′1 (x1 + x2 x3 ) + b′2 (x2 + x1 x3 ) + b′3 (x3 + x1 x2 ).
+
+In fact, a regression program will be unable, for example, to distinguish the regression model above
+from this one:
+
+or even this:
+
+y = b0 + b′′1 x1 + b′′2 x2 + b′′3 x3
+
+y = b0 + b′′′1 x1 + b′′′2 x2 + b′′′3 x1 x2 .
+
+The b′′i and b′′′i will differ from the b′i by a factor of 2, but this will not change the model’s ﬁt of the
+data, since the corresponding independent variables in the regression equation would be halved (x1
+instead of x1 + x2 x3 and so on). Thus, the price for fractional experiments is therefore, that we will
+in general, be unable to distinguish the effects of all the terms in the full regression model. However,
+if it is our intention—as it is in the screening stage—only to estimate the main effects (
+such models
+are also called “
+e Figure 6). Main effects
+ﬁrst-order ” models), then we can ignore interactions (se
+can be estimated with a table that is a fraction required by the full factorial design: for example, the
+half fraction in Figure 5 is sufﬁcient to obtain a regression equation with just
+the main effects x1 , x2
+and x3 .5
+
+y
+
+y
+
+x
+
+2
+
+x
+
+2
+
+x
+
+1
+
+x
+
+1
+
+Figure 6: A surface with a “twist” arising from interactions between the facto rs (left) and a planar
+approximation that ignores this twist (right). For the purpose of estimating the main
+effects, the surface on the right is adequate, as it shows that x2 has a much bigger effect
+than x1 on the response y (we are assuming here that x1 and x2 represent coded values on
+the same scale).
+
+5. This is apparent from the fact that n distinct data points are needed to ﬁt a regression model with n terms. Thus, when
+ﬁtting a model with just x1 , x2 , and x3 , we need 4 data points.
+
+635
+
+SR IN IVA SAN AND RAMAKR I SHNAN
+
+More details on fractional designs are provided in Appendix B. We use the techniques and
+results described there to direct the screening of factors by focusing on a linear model that contains
+the main effects only:
+
+y = b0 + b1 x1 + b2 x2 + · · · + bk xk .
+Depending on the number of factors, this can be done with a fractional designs of “Resolution III ” or
+above (see Appendix B). Standard tests of signiﬁcance can be perfor med on each of the coefﬁcients
+b1 , b2 , . . . , bk to screen factors for relevance (the null and alternative hypotheses in each case are
+H0 : bi = 0 and H1 : bi 6= 0). In fact, this test is the basis for inclusion or exclusion of factors by
+stepwise regression procedures (see Appendix A). Using such a procedure would naturally return a
+model with only the relevant factors (the use of stepwise regression is also the preferred method for
+sensitivity analysis suggested at the end of the extensive survey in Helton et al., 2006).
+
+4.2 Optimisation Using the Response Surface
+
+Suppose screening in the manner just described yields a set of k relevant factors from a original set
+of n factors (which we will denote here as x1 , x2 , . . . , xk for convenience). We are now in the position
+of describing the functional relationship between the expected value of the response variable and
+the relevant factors, by the “response surface”:
+
+E (y) = f (x1 , x2 , . . . , xk ).
+
+Usually, f is taken to be some low-order polynomial, either a ﬁrst-order model involving o nly the
+main effects x1 , x2 , . . . (recall that if stepwise regression procedure is used at the screening stage,
+then this is the model that would be obtained):
+
+y = b0 +
+
+k(cid:229)
+i=1
+
+bi xi
+
+or a second-order model involving quadratic terms like x2
+1 , x2
+2 , . . . and linear interaction terms like
+x1 x2 , x1x3 , . . .:
+
+y = b0 +
+
+k(cid:229)
+i=1
+
+bi xi +
+
+k(cid:229)
+i=1
+
+bii x2
+i +
+
+k(cid:229)
+i=1
+
+(cid:229)
+j>i
+
+bi j xi x j .
+
+Clearly, if ﬁrst-order models are adequate (this can be checked by an an alysis of how well the
+model ﬁts the data: see Appendix A) then much of the effort expended in the screening stage can
+be re-used (for example, we can use the model constructed by stepwise regression as the response
+surface model). A second-order model, on the other hand, will require experiments involving addi-
+tional levels for each factor, and some effort has been invested in the literature on determining these
+levels. Since ﬁrst-order models are all that are used in this paper, we do n ot pursue this further here,
+and refer the reader to a standard text like Montgomery (2005) for more details.
+The principal approach adopted in optimising using the response surface is a sequential one.
+First, a local approximation to the true response surface is constructed, using a ﬁrst-order model.
+Next, factors are varied along a path that improves the response the most (more on this in a moment).
+Experiments are conducted along this direction and the corresponding responses obtained until no
+
+636
+
+SCR E EN ING AND O P T IM I SAT ION FOR ILP
+
+further increase in the response is observed. At this point, a new ﬁrst-o rder response surface is
+constructed, and the process repeated until it is evident that a ﬁrst-ord er model is inadequate (or no
+more increases are possible). If the ﬁt of the ﬁrst-order model is poor,
+a more detailed model is
+then obtained—usually a second-order model, using additional levels for f
+actors —and its stationary
+point obtained. The basic idea is illustrated in Figure 7 (from Montgomery, 2005).
+
+x
+
+2
+
+Region of fitted
+first−order
+first−order
+response
+surface
+
+Path of steepest ascent
+
+Contour of first−order response surface
+
+x
+
+1
+
+Figure 7: Sequential optimisation of the response surface using the path of steepest ascent. A ﬁrst-
+order response surface is obtained in the shaded region. The factors are then changed to
+move along a direction that gives the maximum increase in the response variable.
+
+Now, we can view the response y to be given by a scalar ﬁeld f that at each point x1 , x2 , . . . , xk
+gives the response f (x1 , x2 , . . . , xk ). Then, from standard vector calculus, the gradient of f at the
+point gives the direction in which the response will change most quickly (that is, the direction of
+steepest ascent: see Appendix B). This gradient, usually denoted (cid:209) f , is given by (cid:16) ¶ f
+¶ f
+¶ f
+¶xk (cid:17).
+,
+, . . . ,
+¶x1
+¶x2
+The sequential optimisation of the response surface just described involves calculating the gradient
+of the ﬁrst-order model at the centre, or origin, of the experimental desig n (x1 = x2 = · · · = 0). For a
+model of the form f (x1 , . . . , xk ) = b0 + b1 x1 + · · · + bk xk , (cid:209) f is simply (b1 , . . . , bk ). For convenience,
+let us take b1 to have the largest absolute value. Then, along the direction of (cid:209) f , a unit change in
+x1 will result in a change of b2/b1 units of x2 , b3/b1 units of x3 and so on. Sequential response
+optimisation proceeds by starting at the origin and increasing the xi along (cid:209) f until increases in
+the response y is observed. Each such increase results in a new experiment to be performed (see
+Figure 8, for an example with 3 factors).
+
+4.3 Screening and Optimisation for ILP
+
+We are now in a position to put together the material in the previous sections to state more fully a
+procedure for screening and optimisation of parameters for an ILP system:
+
+SO: Screen quantitative parameters using a two-level fractional factorial design, and optimise val-
+ues using the response surface.
+
+ScreenFrac. Screen for relevant parameters using the following steps:
+S1. Decide on a set of n quantitative parameters of the ILP system that are of potential
+relevance. These are the factors xi in the sense just described. Take some quantita-
+tive summary of the model constructed by the system—for example, some estimate
+
+637
+
+SR IN IVA SAN AND RAMAKR I SHNAN
+
+Expt. Factor Factor Factor Response
+y
+x3
+x2
+x1
+0
+0
+0
+. . .
+d
+d
+d
+b3
+b2
+. . .
+b1
+b1
+d
+d
+2d
+2b3
+2b2
+. . .
+b1
+b1
+d
+d
+3d
+3b3
+3b2
+. . .
+b1
+b1
+. . .
+. . .
+. . .
+. . .
+
+E9
+E10
+E11
+E12
+. . .
+
+Figure 8: Sequential experiments that obtain new values for y by moving in the direction of the
+gradient to b0 + b1 x1 + b2 x2 + b3 x3 . Experiments E1–E8 are as in Figure 5.
+
+y (we will assume here that we
+
+of its predictive accuracy—as the response variable
+wish to maximise the response).
+S2. Decide on on two levels ( “low” and “high” values) for each of the facto
+are then coded as ±1.
+S3. Devise a two-level fractional factorial design of Resolution III or higher, and obtain
+values of y for each experiment (or replicates of values of y, if so required).
+S4. Construct a ﬁrst-order regression model to estimate the role of the main ef fects xi
+on y. Retain only those factors that are important, by examining the magnitude and
+signiﬁcance of the coefﬁcients of the
+xi in the regression model (alternatively, only
+those factors found by a stepwise regression procedure are retained: see Appendix
+A).
+
+rs. These
+
+O pt imiseRSM . Optimise values of relevant parameters using the following steps:
+
+O1. Construct a ﬁrst-order response surface using the relevant fac tors only (this is not
+needed if stepwise regression was used at the screening stage).
+If no adequate
+model is obtained, then return the combination of factor-values that gave the best
+response at the screening stage. Otherwise go to Step O2.
+O2. Progressively obtain new values for y by changing the relevant parameters along
+the gradient to the response surface. Stop when no increases in y are observed.6
+O3. If needed, construct a new ﬁrst-order response surface. If th is surface is adequate,
+then return to Step O2. Otherwise, go to Step O4.
+O4. If needed, construct a second-order response surface. Return the optimum values
+of the relevant factors using the second-order surface, or from the last set of values
+from Step O2.7
+
+6. In practice, this is taken to mean that no increases have been observed for some number of consecutive experimental
+runs: the so-called “k-in-a-row” stopping rule.
+7. We note that the use of gradient ascent in this manner is only capable of ﬁnding local maxima in y values. A
+question is raised about what is to be done if the local maximum found in this manner is lower than a response value
+known already—for example, from an experiment from the screening
+stage. A modiﬁcation would be return the
+combination of factor-values that give the best y value obtained over all experiments. This would be at variance with
+standard response-surface optimisation, and we do not consider it here.
+
+638
+
+SCR E EN ING AND O P T IM I SAT ION FOR ILP
+
+We contrast OptimiseRSM with the multi-level full factorial design below, which has been used
+on a few occasions within the ILP literature:
+
+O pt imiseFact . Optimise values of relevant parameters using the following steps:
+
+O1′ . Decide on on multiple levels for each of the relevant factors.
+O2′ . Devise a full factorial design by combing each of the levels of the factors against those
+of the others. For each such combination, obtain values of y for each experiment (or
+replicates of values of y, if so required).
+O3′ . Select the combination of values that yielded the highest value of y (including those
+obtained at the screening stage).
+
+This procedure, a multi-level full factorial design, is the basis of the wrapper-based optimisation
+method in Kohavi and John (1995), recast in the terminology of experimental design. A simpliﬁed
+analysis gives us some feel of the complexity of SO. SO conducts some fraction of 2n experiments in
+the ScreenFrac stage, followed by those conducted in OptimiseRSM. Suppose we always conduct
+a 2n− p -fractional design at the screening stage, and that this stage results in no more than r variables
+being selected as relevant. Further, let each round of sequential optimisation consist of s experiments
+in Step O2. Let there be m such rounds of sequential optimisation, each followed by a new ﬁrst-
+order model in Step O3 (since there are r variables, building this model will require an additional
+r + 1 experiments). Finally a second-order model is constructed (Step O4), using a central composite
+design. Then the total number of experiments conducted by SO is: 2n− p (screening) + ms (sequential
+optimisation) + (m − 1)(r + 1) (new ﬁrst-order models) + 2 r + 1 (second-order model). In the case
+that only one round of sequential experimentation is performed (that is, m = 1) and no additional
+ﬁrst- or second-order models are constructed, the number of experimen ts is simply 2n− p + s. It is
+evident that a procedure SO′ that employs ScreenFrac followed by O pt imiseFact would always
+perform 2n− p + l r experiments (assuming, for simplicity, that all relevant factors are taken to have l
+levels during the optimisation stage). This is no more than 2n− p + l n .
+Clariﬁcation is needed on the following additional questions:
+
+1. What is to be done if a ﬁrst-order model cannot be constructed in the sc reening stage? The
+usual approach in response-surface methodology is then to examine a second-order response
+surface. We take the position in this paper that none of the parameters are especially relevant,
+and simply assign them their default values.
+
+2. Is the value of the response variable obtained after optimisation a good estimate of the per-
+formance of the ILP system? We distinguish here between the following two performance
+estimates: (a) The estimate of the ILP system’s accuracy used during parameter optimisation;
+and (b) The estimate of the ILP systems’s accuracy after parameter optimisation. Clearly, if
+(a) and (b) are the same, we run the risk that the value obtained will be an optimistic estimate
+of the ILP system’s accuracy. We attempt to minimise this by ensuring that the estimate (b)
+is not, in any manner inﬂuenced by the estimate (a) (details are in Section 5.3 belo w). For
+clarity, we will call estimate (a) the experimental performance of the ILP system and esti-
+er experimental
+mate (b) it’s ﬁnal performance. Of course, overuse of an estimate—wheth
+or otherwise—can result in over ﬁtting: especially as the number of experime
+nts increase.
+y chance. By
+That is, we will sooner or later ﬁnd an experiment that “looks good” simply b
+
+639
+
+SR IN IVA SAN AND RAMAKR I SHNAN
+
+employing a gradient ascent method, we are clearly attempting to minimise the number of
+experiments by moving along the direction of maximum change. Experimental evidence of
+over ﬁtting usually also comes to light by increasing the number of data sets on w hich the
+procedure is tested (see Section 5.4).
+
+3. What is to be done if the local maximum reached, either by optimising the response-surface
+or in the multi-level factorial design is not unique? That is, a number of different parameter
+settings return a maximal value, and we take all of these as being equally likely. The ﬁnal
+performance values will thus be the average of the ﬁnal performance va lues from each of
+these settings.
+
+5. Empirical Evaluation
+
+We will ﬁrst brieﬂy state the aims of the experimental evaluation. Descriptions o
+f the materials and
+our experimental methodology will follow. We will ﬁnally present detailed expe rimental results.
+
+5.1 Aims
+
+Our aim here is to demonstrate the utility of the screening and optimisation procedure SO that we
+have described in Section 4.3 (that is, SO is ScreenFrac followed by O pt imiseRSM ). We assess
+this utility by comparing the ILP system when it employs SO against the performance of the sys-
+tem when it uses one of following alternatives: Default, in which no screening or optimisation
+is performed and default values provided for all parameters are used; and SO′ , in which screen-
+ing is performed as in SO, but a multi-level full factorial design is used for optimisation (that is,
+SO′ is ScreenFrac followed by O pt imiseFact ). Speciﬁcally, we intend to investigate the following
+conjectures:
+
+C1. Using SO is better than using Default; and
+
+C2. Using SO is better than using SO′ .
+
+In both cases, “better ” is short-form for stating that an ILP system that u ses SO has better ﬁnal
+performance; or in the case of ties, requires fewer experiments than the alternative.
+
+5.2 Materials
+
+In this section we explain (i) the two datasets, (ii) the systems for experimental design and ILP and
+(iii) the hardware employed in our experiments.
+
+5 .2 .1 DOMA IN S
+
+The investigation is conducted ﬁrst on the well-studied ILP biochemical prob lems concerned with
+identifying mutagenic and carcinogenic chemicals. Although we will extend it later to other data sets
+used in the literature, we have selected to focus on these problems ﬁrst sinc e they constitute perhaps
+the most commonly used inputs for demonstrating the performance of ILP systems. The data have
+been described extensively elsewhere (for example, see King et al., 1996 for mutagenesis; and King
+and Srinivasan, 1996 for carcinogenesis) and we refer the reader to these reports for details. For
+each application, the input to an ILP can vary depending on the background information used. We
+
+640
+
+SCR E EN ING AND O P T IM I SAT ION FOR ILP
+
+investigate the conjectures C1 and C2 with minimal and maximal amount of background knowledge
+contained in these benchmarks. That is:
+
+Mutagenesis. We consider background information in the sets M0 and M0–M4, description s of
+which are reproduced below from Srinivasan (2001b):
+
+M0. Molecular description at the atomic level. This includes the atom and bond structure, the
+partial charges on atoms, and arithmetic constraints (equalities and inequalities). There
+are 5 predicates in this group;
+M1. Structural properties identiﬁed by experts as being related to mutagenic activity. These
+are: the presence of three or more benzene rings, and membership in a class of com-
+pounds called acenthrylenes. There are 2 predicates in this group;
+M2. Chemical properties identiﬁed by experts as being related to mutagenic ac tivity, along
+with arithmetic constraints (equalities and inequalities) The chemical properties are: the
+energy level of the lowest unoccupied molecular orbital ( “LUMO”) in the c ompound,
+an artiﬁcial property related to this energy level (see Debnath et al., 1991 ), and the
+hydrophobicity of the compound. There are 6 predicates in this group;
+M3. Generic planar groups. These include generic structures like benzene rings, methyl
+groups, etc., and predicates to determine connectivity amongst such groups. There are
+14 predicates in this group; and
+M4. Three-dimensional structure. These include the positions of individual atoms, and con-
+straints on distances between atom-pairs. There are 2 predicates in this group.
+
+Carcinogenesis. We consider background information in the sets C0 and C0–C3, description s of
+which reproduced below, once again from Srinivasan (2001b):
+
+C0. Molecular description at the atomic level. This is similar to M0 above and is comprised
+of 5 predicates;
+C1. Toxicity properties identiﬁed by experts as being related to carcinogen ic activity, and
+arithmetic constraints. These are an interpretation of the descriptions in Ashby and
+Tennant (1991), and are contained within the deﬁnitions of 5 predicates;
+C2. Short-term assays for genetic risks. These include the Salmonella assay, in-vivo tests
+for the induction of micro-nuclei in rat and mouse bone marrow etc. The test results are
+simply “positive” or “negative” depending on the response and are enc
+oded by a single
+predicate deﬁnition; and
+C3. Generic planar groups. These are similar to M3 above, extended to 30 predicate deﬁni-
+tions.
+
+We will henceforth refer to background knowledge with the deﬁnitions in M0 (respectively, C0)
+as Bmin and with the deﬁnitions in M0–M4 (respectively, C0–C3) as
+Bmax .
+
+5 .2 .2 A LGOR I THM S AND MACH IN E S
+
+Experimental design and regression models for screening and the response surface are constructed
+by the procedures made available by the authors of Steppan et al. (1998). The ILP system used in
+all experiments will be Aleph (Srinivasan, 1999). The programs are executed on a IBM Thinkpad
+(T43p), equipped with an Intel 2 GHz Pentium processor with 1 gigabyte of random access memory.
+
+641
+
+SR IN IVA SAN AND RAMAKR I SHNAN
+
+5.3 Method
+
+Our method for the preliminary experiments is straightforward:
+
+For each problem (Mutagenesis and Carcinogenesis) and each level of background knowledge
+(Bmin and Bmax ):
+
+1. Construct a model with the ILP system using default values for all parameters of the
+ILP system. Call this model ILP+Default.
+2. Select a set of n quantitative parameters of the ILP system as being potentially relevant.
+Use the procedure ScreenFrac described in Section 4.3 to screen this set using a frac-
+tional factorial design of Resolution III or higher. Let this result in a set of relevant
+variables R.
+3. Use the procedure O pt imiseRSM in Section 4.3 to obtain values for variables in R. All
+other parameters of the ILP system are left at their default values. Construct a model
+using the ILP system with this set of values. Call this model ILP+SO.
+4. Decide on l levels for each variable in R and use the procedure O pt imiseFact in Section
+4.3 to obtain values for the variables in R. All other parameters of the ILP system are left
+at their default values. Construct a model using the ILP system with this set of values.
+Call this model ILP+SO′ .
+5. Compare the performance of the ILP system when it produces as output each of
+ILP+Default, ILP+SO, and ILP+SO′ (see the details below).
+
+We follow the preliminary experiments with experiments on additional data sets and with an
+additional ILP system. The following details concerning the preliminary experiments are relevant:
+
+1. Since the tasks considered here are binary classiﬁcation tasks, the pe rformance of the ILP sys-
+tem in all experiments will be taken to be the classiﬁcation accuracy of the model produced
+by the system. By this we mean the usual measure computed from a 2 × 2 cross-tabulation
+of actual and predicted classes of instances. We would like the ﬁnal perf ormance measure
+to be as unbiased as possible by the experimental estimates obtained during optimisation.
+One way is to use a technique of “double” or nested cross-validation. Tha t is, the ﬁnal per-
+formance value is obtained using k-fold cross-validation (the “outer ” cross-validation) and
+experimental performance values during optimisation is the average of a further ( “inner ”)
+k-
+fold cross-validation using each of the training data sets from the outer cross-validation. This
+procedure is computationally expensive. We adopt a simpler alternative: we use a 10-fold
+cross-validation estimate for the ﬁnal estimate; and for the experimental estimate s we use
+the average of holdout ( “validation” set) estimates on each of the training da
+ta sets from the
+outer cross-validation. Thus, the test data in each of the outer cross-validation folds are not
+available to the ILP system when performing parameter optimisation.
+
+2. We have no general prescription for the selection of the initial set of n parameters (Step 2).
+We postpone a discussion of this limitation to Section 5.4. For our experiments we have
+selected four parameters: C, the maximum number of literals in any acceptable clause con-
+structed by the ILP system; N od es, the maximum number of nodes explored in any single
+
+642
+
+SCR E EN ING AND O P T IM I SAT ION FOR ILP
+
+search conducted by the ILP system; M inacc, the minimum accuracy required of any accept-
+able clause; and M in pos, the minimum number of positive examples to be entailed by any
+acceptable clause. C and N od es are directly concerned with the search space explored by
+the ILP system. M inacc and M in pos are concerned with the quality of results returned (they
+are equivalent to “precision” and “support” used in the data mining literatur
+e). We propose
+to examine a two-level fractional factorial design, using the levels shown below (the column
+“Default” refers to the default values for the factors assigned by the Ale ph system, and ±1
+refers to the coded values of the factors):
+
+Factor
+
+C
+N od es
+M inacc
+M in pos
+
+Levels
+Default Low (−1) High (+1)
+8
+4
+4
+10000
+5000
+5000
++1
+0.75
+0.90
+10
+5
+1
+
+3. We use a Resolution IV design, that comprises of a randomised presentation of the following
+8 experiments (recall the full factorial design will require 24 = 16 experiments):
+
+Expt.
+E1
+E2
+E3
+E4
+E5
+E6
+E7
+E8
+
+C
+−1
+−1
+−1
+−1
++1
++1
++1
++1
+
+N od es M inacc M in pos Accuracy
+−1
+−1
+−1
+. . .
+. . .
++1
++1
+−1
+. . .
++1
+−1
++1
+. . .
++1
++1
+−1
+−1
+−1
++1
+. . .
+. . .
+−1
+−1
++1
+. . .
+−1
+−1
++1
++1
++1
++1
+. . .
+
+This design was obtained using the software tools for experimental design provided with Step-
+pan et al. (1998). The “Accuracy” column is the experimental performanc e obtained for each
+task, and for each of the two sets of background knowledge in order to screen the four vari-
+ables for relevance. Additional experiments, and corresponding experimental performance
+values, will be needed in Step 3 to obtain values of the relevant parameters using the response
+surface. We restrict ourselves to constructing just one ﬁrst-order re gression model for screen-
+ing, using the stepwise regression procedure provided by the authors of Steppan et al. (1998).
+This model is taken to approximate the local response surface: we then proceed to change
+levels of factors along the normal to this surface in the manner described in Figure 8. Ex-
+periments are stopped once a maximal value for the response variable is followed by three
+consecutive runs that yield responses that are no higher.
+
+4. In the event that all four parameters chosen are relevant, the step of obtaining parameter values
+using a multi-level full factorial design (Step 5) would require conducting l 4 experiments. We
+will take l = 5, which means that, in the worst case, no more than 625 experiments will be
+conducted to obtain model ILP+SO′ . Inspired by the choices made for a so-called “Central
+
+643
+
+SR IN IVA SAN AND RAMAKR I SHNAN
+
+Composite” (or CC) design (Montgomery, 2005), we will take the (coded) le vels to be 0, ±1,
+and ±√2.
+5. Comparisons of models will be done on the basis of their ﬁnal performanc e estimates (see
+(1) above) (parameter values are obtained from the experimental estimates). In the event of
+ties, then the model requiring fewer experiments will be preferred. That is, a model is repre-
+sented by the pair (A, E ) (denoting estimated accuracy and number of experiments required
+to identify the model). Comparisons are then based on the usual deﬁnition of a lexicographic
+ordering on such tuples.
+
+Further, since it is of particular relevance to ILP practitioners, we also test for statistical dif-
+ferences between the accuracies of ILP+SO and ILP+ Default using results on six additional data
+sets used in the ILP literature, and separately, by using two different ILP systems. The relevant
+statistical test is the Wilcoxon signed-rank test (Siegel, 1956). This is a non-parametric test of the
+null hypothesis that there is no signiﬁcant difference between the median p erformance of a pair
+of algorithms. The test works by ranking the absolute value of the differences observed in perfor-
+mance of the pair of algorithms. Ties are discarded and the ranks are then given signs depending
+on whether the performance of the ﬁrst algorithm is higher or lower than tha t of the second. If the
+null hypothesis holds, the sum of the signed ranks should be approximately 0. The probabilities
+of observing the actual signed rank sum can be obtained by an exact calculation (if the number of
+entries is less than 10), or by using a normal approximation. We note that the comparing a pair of
+algorithms using the Wilcoxon test is equivalent to determining if the area under the ROC curves of
+the algorithms differ signiﬁcantly (Hand, 1997).
+
+5.4 Results and Discussion
+
+We present ﬁrst the results concerned with screening for relevant fa ctors. Figure 9 show responses
+from the ILP system for the preliminary experiments conducted for screening using the fractional
+design described under “Methods ”. The sequence of experiments follo wing this stage for optimising
+relevant parameter values using: (a) the response surface; and (b) a multi-level full factorial design
+are in Figures 10 and 11. Finally, a comparison of the three procedures ILP+Default, ILP+SO, and
+ILP+SO′ is in Figure 12. It is this last tabulation that is of direct relevance to the experimental aims
+of this paper, and we note the following: (1) Although no experimentation is needed for the use of
+default values, the model obtained with ILP+Default usually has the lowest predictive accuracies
+(the exception is Carcinogenesis, with Bmin );8 (2) The classiﬁcation accuracy of
+ILP+SO is never
+lower than that of any of the other methods; (3) When the classiﬁcation accu racies of ILP+SO and
+ILP+SO′ are comparable, the number of experiments needed by the former is lower.
+Taken together, these observations provide prima facie evidence for the conjectures made at the
+outset of this section, namely:
+
+C1. Using SO is better than using Default; and
+
+C2. Using SO is better than using SO′ .
+
+8. We recall that no adequate ﬁrst-order regression model was obtain ed for Carcinogenesis (Bmin ), resulting in default
+values for all parameters. Both ILP+SO and ILP+SO′ suffer because of the experiments needed for the screening
+stage.
+
+644
+
+SCR E EN ING AND O P T IM I SAT ION FOR ILP
+
+Expt.
+E1
+E2
+E3
+E4
+E5
+E6
+E7
+E8
+
+C
+−1
+−1
+−1
+−1
++1
++1
++1
++1
+
+N od es M inacc M in pos
+−1
+−1
+−1
+−1
++1
++1
+−1
++1
++1
+−1
++1
++1
+−1
+−1
++1
+−1
+−1
++1
+−1
++1
+−1
++1
++1
++1
+
+Acc
+0.793
+0.644
+0.763
+0.669
+0.757
+0.728
+0.787
+0.669
+
+Expt.
+E1
+E2
+E3
+E4
+E5
+E6
+E7
+E8
+
+C
+−1
+−1
+−1
+−1
++1
++1
++1
++1
+
+N od es M inacc M in pos
+−1
+−1
+−1
+−1
++1
++1
+−1
++1
++1
+−1
++1
++1
+−1
+−1
++1
+−1
+−1
++1
+−1
++1
+−1
++1
++1
++1
+
+Acc
+0.911
+0.870
+0.899
+0.899
+0.899
+0.905
+0.905
+0.876
+
+(a) Mutagenesis (Bmin )
+Acc = 0.726 − 0.049 M inacc − 0.018 M in pos
+
+(b) Mutagenesis (Bmax )
+Acc = 0.896 − 0.009 M in pos − 0.008 M inacc
+
+Expt.
+E1
+E2
+E3
+E4
+E5
+E6
+E7
+E8
+
+C
+−1
+−1
+−1
+−1
++1
++1
++1
++1
+
+N od es M inacc M in pos
+−1
+−1
+−1
+−1
++1
++1
+−1
++1
++1
+−1
++1
++1
+−1
+−1
++1
+−1
+−1
++1
++1
+−1
+−1
++1
++1
++1
+
+Acc
+0.464
+0.461
+0.444
+0.447
+0.457
+0.451
+0.467
+0.461
+
+(c) Carcinogenesis (Bmin )
+N o ad equat e mod el
+
+Expt.
+E1
+E2
+E3
+E4
+E5
+E6
+E7
+E8
+
+C
+−1
+−1
+−1
+−1
++1
++1
++1
++1
+
+N od es M inacc M in pos
+−1
+−1
+−1
+−1
++1
++1
+−1
++1
++1
+−1
++1
++1
+−1
+−1
++1
+−1
+−1
++1
++1
+−1
+−1
++1
++1
++1
+
+Acc
+0.572
+0.595
+0.507
+0.576
+0.585
+0.526
+0.523
+0.546
+
+(d) Carcinogenesis (Bmax )
+Acc = 0.554 − 0.028 M inacc
+
+Figure 9: Screening results (procedure ScreenFrac in Section 4.3). Acc refers to the estimated
+accuracy of the model. The regression model is built using the “Autoﬁt” optio
+n provided
+in Steppan et al. (1998). This essentially implements the stepwise regression procedure
+described in Appendix A. Acc refers to the experimental (validation-set) performance
+of the ILP system. Note that no adequate model is obtained in (c), meaning that the
+coefﬁcients of all variables have values that are statistically insigniﬁcant. I
+n this case, no
+further optimisation is performed, and all parameters are left at their default values.
+
+We now turn to some broader implications of these results, enumerated in order of seriousness
+to current ILP practice:
+
+1. The results suggest that default levels for factors need not yield optimal models for all prob-
+lems, or even when the same problem is given different inputs (here, different background
+knowledge). This means that using ILP systems just based on default values for parameters —
+the accepted practice at present—can give misleading estimates of the best r
+esponse possible
+from the system. This is illustrated in Figure 13, which shows estimated accuracies on other
+data sets reported in the literature that also use the Aleph system with default values for all
+parameters (these data sets have been used widely: see, for example, Landwehr et al., 2006
+and Muggleton et al., 2008). Taken with our previous results for the mutagenesis and carcino-
+genesis data (we will only use the Bmax results, as these are the results used in the literature),
+we are now able to make some statements of statistical signiﬁcance. Figure 14 sh ows, across
+the 8 data sets, differences between the optimised and default models. The probability of
+
+645
+
+SR IN IVA SAN AND RAMAKR I SHNAN
+
+Expt.
+
+E9
+E10
+E11
+E12
+E13
+
+Coded Values
+Natural Values
+M inacc M in pos M inacc M in pos
+8
+0.83
+0
+0
+7
+0.79
+−0.50
+−0.18
+−0.36
+−1
+0.75
+7
+6
+0.71
+−1.50
+−0.54
+−2.00
+−0.72
+0.67
+6
+
+Acc
+
+0.769
+0.793
+0.781
+0.781
+0.692
+
+(a) Mutagenesis (Bmin )
+
+Expt.
+
+E9
+E10
+E11
+E12
+E13
+E14
+
+Coded Values
+Natural Values
+M in pos M inacc M in pos M inacc
+0.83
+8
+0
+0
+0.79
+7
+−0.50
+−0.42
+−0.84
+−1.0
+5
+0.76
+−1.26
+−1.50
+0.73
+4
+0.70
+3
+−2.00
+−1.68
+−2.10
+−2.50
+2
+0.67
+(b) Mutagenesis (Bmax )
+
+Acc
+
+0.899
+0.899
+0.911
+0.899
+0.893
+0.751
+
+Expt.
+
+E9
+E10
+E11
+E12
+E13
+E14
+E15
+E16
+E17
+E18
+E19
+
+Natural Value
+M inacc
+0.83
+0.79
+0.75
+0.71
+0.67
+0.63
+0.60
+0.56
+0.52
+0.49
+0.45
+
+Coded Value
+M inacc
+0
+−0.50
+−1
+−1.50
+−2.00
+−2.50
+−3.00
+−3.50
+−4.00
+−4.50
+−3.50
+(c) Carcinogenesis (Bmax )
+
+Acc
+
+0.553
+0.572
+0.595
+0.582
+0.592
+0.598
+0.605
+0.609
+0.539
+0.539
+0.539
+
+Figure 10: Optimisation using the response surface (procedure O pt imiseRSM in Section 4.3). In
+each case, the response surface used is the ﬁrst-order regression model found by step-
+wise regression at the screening stage (shown in Figure 9). Parameters are varied along
+the path of steepest ascent of experimental performance values for the response variable.
+Experiments are stopped once a maximal value for the response variable is followed by
+three consecutive runs that yield responses that are no higher. No optimisation is per-
+formed for Carcinogenesis (Bmin ) since no adequate ﬁrst-order response surface was
+found.
+
+obtaining these results, under the hypothesis that the optimised and default procedures have
+equivalent performance (correctly, that the median difference between their accuracies is 0)
+is 0.02. In fact, since our research hypothesis is evidently directional (that accuracy of op-
+timised models is higher than that of “default models ”), the one-tailed probability
+of 0.01
+is more appropriate. Some readers would perhaps prefer only to rank those instances where
+the optimised model was substantially higher. If we take “substantially higher ” to mean “2
+standard errors or more”, then the optimised model is substantially higher than the default
+model in 6 out of the 8 cases (the two mutagenesis data sets are eliminated). The correspond-
+ing Wilcoxon probabilities are now 0.05 (two-tailed) and 0.025 (one-tailed). The statistical
+evidence in favour of the optimised models therefore appears to be signiﬁca nt, perhaps even
+highly so.
+
+646
+
+SCR E EN ING AND O P T IM I SAT ION FOR ILP
+
+Expt.
+
+E9
+E10
+E11
+E12
+E13
+E14
+E15
+E16
+E17
+E18
+E19
+E20
+E21
+E22
+E23
+E24
+E25
+E26
+E27
+E28
+E29
+E30
+E31
+E32
+E33
+
+Coded Values
+Natural Values
+M inacc M in pos M inacc M in pos
+4
+0.72
+−1.41
+−1.41
+−1
+−1.41
+0.72
+5
+−1.41
+8
+0.72
+0
+−1.41
+10
+0.72
++1
+12
+0.72
++1.41
+−1.41
+4
+0.75
+−1
+−1.41
+−1
+−1
+0.75
+5
+−1
+8
+0.75
+0
+−1
+10
+0.75
++1
+−1
+12
+0.75
++1.41
+4
+0.82
+0
+−1.41
+0
+−1
+0.82
+5
+8
+0.82
+0
+0
+10
+0.82
++1
+0
+12
+0.82
++1.41
+0
+4
+0.90
+−1.41
++1
+5
+0.90
++1
+−1
+0
++1
+0.90
+8
+10
+0.90
++1
++1
+12
+0.90
++1.41
++1
+4
+0.93
+−1.41
++1.41
+5
+0.93
++1.41
+−1
+0
++1.41
+0.93
+8
+10
+0.93
++1
++1.41
++1.41
++1.41
+0.93
+12
+
+Acc
+
+0.793
+0.793
+0.769
+0.763
+0.769
+0.793
+0.793
+0.763
+0.763
+0.769
+0.799
+0.793
+0.769
+0.775
+0.787
+0.746
+0.669
+0.645
+0.645
+0.662
+0.698
+0.639
+0.592
+0.598
+0.598
+
+Expt.
+
+E9
+E10
+E11
+E12
+E13
+E14
+E15
+E16
+E17
+E18
+E19
+E20
+E21
+E22
+E23
+E24
+E25
+E26
+E27
+E28
+E29
+E30
+E31
+E32
+E33
+
+Coded Values
+Natural Values
+M inacc M in pos M inacc M in pos
+4
+0.72
+−1.41
+−1.41
+−1
+−1.41
+0.72
+5
+−1.41
+8
+0.72
+0
+−1.41
+10
+0.72
++1
+12
+0.72
++1.41
+−1.41
+4
+0.75
+−1
+−1.41
+−1
+−1
+0.75
+5
+−1
+8
+0.75
+0
+−1
+10
+0.75
++1
+−1
+12
+0.75
++1.41
+4
+0.82
+0
+−1.41
+0
+−1
+0.82
+5
+8
+0.82
+0
+0
+10
+0.82
++1
+0
+12
+0.82
++1.41
+0
+4
+0.90
+−1.41
++1
+5
+0.90
++1
+−1
+0
++1
+0.90
+8
+10
+0.90
++1
++1
+12
+0.90
++1.41
++1
+4
+0.93
+−1.41
++1.41
+5
+0.93
++1.41
+−1
+0
++1.41
+0.93
+8
+10
+0.93
++1
++1.41
++1.41
++1.41
+0.93
+12
+
+Acc
+
+0.883
+0.911
+0.905
+0.899
+0.864
+0.899
+0.911
+0.905
+0.899
+0.864
+0.911
+0.911
+0.899
+0.899
+0.864
+0.905
+0.899
+0.882
+0.870
+0.858
+0.899
+0.888
+0.864
+0.858
+0.858
+
+(a) Mutagenesis (Bmin )
+
+(b) Mutagenesis (Bmax )
+
+Expt.
+
+E9
+E10
+E11
+E12
+E13
+
+Coded Value
+M inacc
+−1.41
+−1
+0
++1
++1.41
+
+Natural Value
+M inacc
+0.72
+0.75
+0.83
+0.90
+0.93
+
+Acc
+
+0.586
+0.595
+0.553
+0.516
+0.526
+
+(c) Carcinogenesis (Bmax )
+
+Figure 11: Optimisation by using a multi-level full factorial design (procedure O pt imiseFact in
+Section 4.3). In each case, relevant factors are those obtained by screening (Figure 9).
+A 5-level full factorial design is then used to ﬁnd the best values for thes e factors, using
+experimental performance values for the response variable.
+
+647
+
+SR IN IVA SAN AND RAMAKR I SHNAN
+
+Procedure
+
+ILP+Default
+ILP+SO
+ILP+SO′
+
+(Accuracy,Expts.)
+
+Mutagenesis
+
+Carcinogenesis
+
+Bmin
+(0.755 ± 0.031, 0)
+(0.803 ± 0.029, 13)
+(0.787 ± 0.030, 33)
+
+Bmax
+(0.846 ± 0.026, 0)
+(0.883 ± 0.023, 14)
+(0.883 ± 0.023, 33)
+
+Bmin
+(0.510 ± 0.028, 0)
+(0.510 ± 0.028, 8)
+(0.510 ± 0.028, 8)
+
+Bmax
+(0.504 ± 0.028, 0)
+(0.591 ± 0.027, 19)
+(0.579 ± 0.027, 13)
+
+Figure 12: Comparison of procedures, based on their ﬁnal performan ce, using the parameter val-
+ues obtained from optimising experimental performance. The entries shown are 10-fold
+cross-validation estimates and the number of experiments needed to obtain the opti-
+mised value. There is no unbiased estimator of variance for the cross-validation esti-
+mates (Bengio and Grandvalet, 2004): the standard error reported is computed using the
+approximation in Breiman et al. (1984).
+
+2. The screening results suggest that as inputs change, so can the relevance of factors (for exam-
+ple, when the background changes from Bmin to Bmax in Carcinogenesis, M inacc becomes a a
+relevant factor). Further evidence for this comes from the “DSSTox” d ata set (see Figure 15).
+This means that a once-off choice of relevant factors across all possible inputs can lead to
+sub-optimal performances from the system for some inputs.
+
+3. Screening, as proposed here, still requires identiﬁcation of an initial s et of variables as factors
+to be varied (here, these were C, N od es, M inacc and M in pos). While the set can have any
+number of elements (all quantitative of course, for the techniques here to be applicable), the
+choice of these elements remains in the hands of the practitioner using the ILP system. Some
+element of human expertise of this kind appears unavoidable (and indeed, is even desirable,
+to prevent pointless experimentation). Additional assistance in the form of including, with
+each ILP system, a set of potentially sensitive parameters, could be a great help.
+
+4. Optimisation, as proposed here, requires the selection of an appropriate step-size and spec-
+iﬁcation of a stopping criterion for a sequential search conducted along th e gradient to the
+response surface. We have followed the prevalent practice in the ﬁeld, namely, obtaining the
+step-size by a process of a binary search over the interval [0, 1]; and using a “ k-in-a-row”
+stopping rule (that is, stopping the search if k steps yield no improvement in response). Other
+techniques exist, and are described in Appendix B.
+
+5. Even if a set of relevant factors are available for a given input, a multi-level full factorial
+design can be an expensive method to determine appropriate levels. Once done, performance
+may still be sub-optimal. The results here suggests that experimental studies that ad hoc
+discretisation followed by exhaustive combinations of the different discrete levels of relevant
+parameters may not yield the best results.
+
+Finally, a controlled comparison of Default, SO and SO′ has required us to enforce that the
+ILP system used is the same in all experiments. In practice, we are often interested in controlled
+comparisons of a different kind, namely, the performances of different ILP systems. The results
+here suggest equipping each ILP system with the procedure SO could enable a controlled com-
+parison of best-case performances: a practice which has hitherto not been adopted by empirical
+
+648
+
+SCR E EN ING AND O P T IM I SAT ION FOR ILP
+
+Data
+Mut(42)
+Alz (Amine)
+Alz (Tox)
+Alz (Acetyl)
+Alz (Memory)
+DSSTox
+
+ILP+Default
+0.857 ± 0.054
+0.714 ± 0.017
+0.792 ± 0.014
+0.527 ± 0.014
+0.551 ± 0.020
+0.647 ± 0.020
+
+ILP+SO
+0.857 ± 0.054
+0.802 ± 0.015
+0.872 ± 0.011
+0.774 ± 0.011
+0.674 ± 0.019
+0.731 ± 0.018
+
+Figure 13: Estimated accuracies for the Aleph system from some additional data sets used in the
+literature (Muggleton et al., 2008; Landwehr et al., 2006). The data sets are used in
+comparative experiments ( “System X versus Aleph”) that use default se ttings for all
+parameters of Aleph. Accuracy estimates for such models are in the column headed
+“ILP+Default” (although these exact values do not concern us here, we note that dif-
+ferences, if any, to accuracies reported in the literature can be attributed to differences
+in the cross-validation splits used). The column headed “ILP+SO” are ﬁna
+l perfor-
+mance estimates obtained using Aleph with the SO procedure described in the paper,
+and the method used in the preliminary experiments. Standard errors are calculated as
+before. The DSSTox background information differ slightly in Muggleton et al. (2008)
+and Landwehr et al. (2006) and the models here use the variant from Muggleton et al.
+(2008).
+
+Data
+Carcin
+Mut (188)
+Mut(42)
+Alz (Amine)
+Alz (Tox)
+Alz (Acetyl)
+Alz (Memory)
+DSSTox
+
+ILP+Default
+0.504
+0.846
+0.857
+0.714
+0.792
+0.527
+0.551
+0.647
+
+ILP+SO
+0.591
+0.883
+0.857
+0.802
+0.872
+0.774
+0.674
+0.731
+
+D
+0.089
+0.037
+0
+0.088
+0.080
+0.247
+0.123
+0.084
+
+Signed Rank
++4
++1
+
++5
++2
++7
++6
++3
+
+Figure 14: Absolute differences in accuracy D between the procedures ILP+SO and ILP+Default,
+and their signed ranks (eliminating ties). The Wilcoxon probability of obtserving the
+signed ranks under the null hypothesis that median differences are 0, is 0.02 (0.01 for a
+directional test).
+
+Data
+
+DSSTox (Muggleton et al., 2008)
+
+DSSTox (Landwehr et al., 2006)
+
+ILP+Default
+0.647 ± 0.020
+0.631 ± 0.020
+
+ILP + SO
+0.731 ± 0.018
+0.631 ± 0.020
+
+Figure 15: Estimated accuracies for the Aleph system for two variants of the “DSSTox” problem.
+The data sets in the two variants use slightly different background information, resulting
+in different accuracies for both default and optimised models. Screening results are also
+different in the two cases: M inacc and C are relevant in DSSTox (Muggleton et al.,
+2008); but none of the parameters are relevant in DSSTox (Landwehr et al., 2006).
+
+649
+
+–
+SR IN IVA SAN AND RAMAKR I SHNAN
+
+Data
+
+Toplog+Default
+
+Toplog+SO
+
+Carcin
+
+Mut (188)
+
+Mut(42)
+
+Alz (Amine)
+
+Alz (Tox)
+
+Alz (Acetyl)
+
+Alz (Memory)
+
+DSSTox
+
+0.641
+
+0.840
+
+0.881
+
+0.704
+
+0.672
+
+0.640
+
+0.526
+
+0.618
+
+0.623
+
+0.867
+
+0.881
+
+0.704
+
+0.699
+
+0.635
+
+0.653
+
+0.618
+
+Signed Rank
+−2
++3.5
+
++3.5
+−1
++5
+
+D
+
+0.018
+
+0.027
+
+0
+
+0
+
+0.027
+
+0.005
+
+0.127
+
+0
+
+Figure 16: Absolute differences in accuracy D between the procedures Toplog+SO and
+Toplog+Default, and their signed ranks (eliminating ties). Once again, we differences,
+if any, to accuracies reported in the literature can be attributed to differences in the
+cross-validation splits used. Although the sum of the signed ranks (+9) is in favour of
+Toplog+SO, the evidence is not statistically signiﬁcant (that is p > 0.05)
+
+ILP studies, but whose value is self-evident. Of course, screening and optimisation experiments
+would have to be conducted for each system in turn, since the factors relevant to one system (and
+its levels) would typically have no relation to those of any of the others. We illustrate this in
+Figures 16–17. The former shows results of applying the procedure SO to a recently proposed
+ILP system (Toplog) on the data sets we have considered thus far. Parameter screening and op-
+timisation proceeds for a different set of parameters to those used for Aleph: we have used the
+parameters Max l it eral s in hy pot hesis (equivalent to the parameter C in the Aleph experiments),
+Max singl et ons in hy pot hesis, E xam pl e in f l at ion, and M in pos (which has the same meaning as
+M in pos in the Aleph experiments). The choice of these parameters was based on their use in data
+ﬁles provided with the Toplog program.
+It is evident from Figure 16 that the re is an improve-
+ment in performance after using SO (the overall sum of signed ranks is in favour of Toplog+SO)
+although the differences are not statistically signiﬁcant. This statistical cave at notwithstanding, Fig-
+ure 17 shows the perils of not comparing like-with-like. Figure 17(a) shows that having subject both
+Toplog and Aleph to the same procedure for screening and optimisation (that is, SO), we ﬁnd no
+signiﬁcant difference in their performance. On the other hand, Figure 1 7(b) shows that performing
+screening and optimisation on one (Aleph), but not the other (Toplog), can lead to misleading results
+(that the performance of Aleph is signiﬁcantly better than Toplog).
+
+6. Concluding Remarks
+
+As an ILP system moves from being a prototype for demonstrating a proof-of-concept to being a
+tool for regular data analysis, it moves into the province of engineering. The requirements of a
+system in this latter world are signiﬁcantly more stringent than in the former: rob ustness is needed,
+of course, as are mechanisms that facilitate ease of use, recovery from failures, and so on. It also
+becomes no longer adequate simply to demonstrate that a model can be constructed in some novel
+manner, requiring instead that the model constructed is as good as possible for a given set of inputs
+(by this we mean primarily the background knowledge and examples). Besides the obvious beneﬁt
+
+650
+
+–
+–
+–
+SCR E EN ING AND O P T IM I SAT ION FOR ILP
+
+Data
+
+Toplog+SO Aleph+SO
+
+Carcin
+
+Mut (188)
+
+Mut(42)
+
+Alz (Amine)
+
+Alz (Tox)
+
+Alz (Acetyl)
+
+Alz (Memory)
+
+DSSTox
+
+0.623
+
+0.867
+
+0.881
+
+0.704
+
+0.699
+
+0.635
+
+0.653
+
+0.618
+
+0.591
+
+0.883
+
+0.857
+
+0.802
+
+0.872
+
+0.774
+
+0.674
+
+0.731
+
+(a)
+
+Data
+
+Toplog+Default
+
+Aleph+SO
+
+Carcin
+
+Mut (188)
+
+Mut(42)
+
+Alz (Amine)
+
+Alz (Tox)
+
+Alz (Acetyl)
+
+Alz (Memory)
+
+DSSTox
+
+0.641
+
+0.840
+
+0.881
+
+0.704
+
+0.672
+
+0.640
+
+0.526
+
+0.618
+
+0.591
+
+0.883
+
+0.857
+
+0.802
+
+0.872
+
+0.774
+
+0.674
+
+0.731
+
+(b)
+
+D
+
+0.032
+
+0.016
+
+0.024
+
+0.070
+
+0.173
+
+0.139
+
+0.021
+
+0.113
+
+Signed Rank
+−4
++1
+−3
++5
+
++8
+
++7
+
++2
+
++6
+
+D
+
+0.050
+
+0.043
+
+0.024
+
+0.098
+
+0.200
+
+0.134
+
+0.148
+
+0.113
+
+Signed Rank
+−3
++2
+−1
++4
+
++8
+
++6
+
++7
+
++5
+
+Figure 17: (a) Absolute differences in accuracy D between the procedures Aleph+SO and
+Toplog+SO, and their signed ranks (eliminating ties). Although the sum of the signed
+ranks is in favour of Aleph+SO (+22), the evidence is not statistically signiﬁcant (that
+is p > 0.05). (b) Absolute differences in accuracy D between the procedures Aleph+SO
+and Toplog+Default, and their signed ranks (eliminating ties). The sum of the signed
+ranks is in favour of Aleph+SO (+28), is now statistically signiﬁcant ( p = 0.05 for a
+non-directional test, p = 0.025 for a directional test). Performing the comparison (b)
+instead of (a) can result in the misleading conclusion that the Aleph system performs
+signiﬁcantly better than Toplog on these data sets.
+
+to the modelling problem being addressed, it ensures that the performance of ILP systems can
+be assessed in a meaningful manner. Here, we have taken a system engineer’s approach to this
+problem by identifying a set of critical parameters of the system, and then varying these to improve
+performance. The principal tools we have used are those developed under the umbrella of design
+and analysis of experiments. Our principal contribution here is to show how these tools can be used
+
+651
+
+SR IN IVA SAN AND RAMAKR I SHNAN
+
+to develop better models with ILP systems. To the best of our knowledge, this is the ﬁrst time 9 any
+such formal framework has been employed for this purpose in ILP.
+There are a number of ways in which the work here can be extended further. On the conceptual
+front, we have concentrated on the simplest forms of designed experiments (sometimes called “clas-
+sical” DOE). Substantial effort has been expended in developing desig ns other than the fractional
+factorial designs used here. Response surface optimisation could also involve more complex mod-
+els than the simple ﬁrst-order models used here. Both options could yield better
+results than those
+obtained here. On the experimental front, our emphasis has been on a controlled study of fractional-
+factorial screening and response-surface optimisation, using well-studied ILP benchmarks. There
+are clearly many other data sets studied within ILP that could beneﬁt from utilis ing the techniques
+proposed. We have also modelled system performance by its estimated accuracy: clearly other
+measures may be of interest (for example, some combination of the accuracy and complexity of
+models, in the MDL sense). Finally, it is evident from our results in Figure 17 that there are wider
+implications of the results here to the work on the comparative study of ILP systems, and to the
+development of ILP systems as tools for data analysis. Indeed, nothing restricts the procedures
+here just to ILP, and the same comments apply to many other machine learning systems. Although
+outside the scope of this paper, these directions are clearly of some importance, and worth pursuing.
+
+Acknowledgments
+
+r initiating interest in
+The authors would like to thank Ravi Kothari of IBM Research—India, fo
+the area of design and analysis of experiments. For much of this work, A.S. was supported by
+a Ramanujan Fellowship, Dept. of Science and Technology, Government of India; and was at the
+Dept. of Biotechnology’s Centre of Excellence at the School of Information Technology, Jawaharlal
+Nehru University, New Delhi.
+
+Appendix A. A Note on Linear Regression Models
+
+In this section we provide details of regression models that are of relevance to this paper. All these
+details can be obtained in any textbook on statistical modelling: we reproduce them here simply for
+completeness.
+Given a response variable y and variables x1 , x2 , . . . , xk , a regression model expresses a relation-
+ship between y and the xi as follows:
+
+y = f (x1 , x2 , . . . , xk ) + e
+where f denotes a systematic functional relationship between y and the xi , and e denotes random
+variation in y that is unrelated to the xi (usually called the error). Usually f is speciﬁed as some
+mathematical function (for example, a polynomial in the xi ) and e by a probability density function
+(PDF). The PDF for e is taken to have mean 0 and standard deviation s: normally the distribution
+is also taken to be Gaussian. Thus, in a slightly lop-sided way, for a given set of values for the
+xi , it is easier to think of a random value being chosen for e and then constant f (x1 , . . . , xk ) being
+9. At the time of going to press, we have become aware of a recent paper by Janssen and F ¨urnkranz (2010) with a
+motivation very similar to this paper (although not applied to ILP). The connection between the work reported there
+and that in this paper, especially in the context of ILP, would be worth investigating further.
+
+652
+
+SCR E EN ING AND O P T IM I SAT ION FOR ILP
+
+added to give the ﬁnal value of y. From this is evident that y will have a PDF with mean given by
+E (y) = E ( f (x1 , . . . , xk ) + e) = f (x1 , . . . , xk ) + E (e) = f (x1 , . . . , xk )); and standard deviation s. Thus,
+the regression function effectively speciﬁes the expected, or mean valu e, of y, given the xi . “Linear
+regression” refers to the case when the functional relationship is a linear equation of the form:
+f (x1 , . . . , xk ) = b0 + b1 x1 + · · · + bk xk .
+bi . So, the following is also a case of linear
+Here, “linear ” refers to being linear in the coefﬁcients
+regression:
+f (x1 , . . . , xk ) = b0 + b1 x1 + · · · + bk xk + bk+1 x2
+1 + · · · + b2k x2
+k + b2k+1 x1 x2 + · · · .
+To differentiate between these kinds of equation, we denote the former kind which only contain
+terms x1 , x2 , . . . as ﬁrst-order function; and equations of the latter kind which contain quad ratic and
+interaction terms as a second-order function.
+In general, assuming we knew the form of f (for example, that it was a ﬁrst-order function,
+with errors following a Gaussian distribution with zero mean and variance s2 ), and which of the
+xi were functionally related to y, we still need to be able to obtain values of the bi from a set of
+observations, or data points, giving values for the relevant xi and the corresponding values of y.
+Actually, the best we are able to do is obtain estimates of bi , which we will denote here as bi , along
+with some statistical statement on these estimates. The result is a regression model:
+
+ˆy = b0 + b1 x1 + b2 x2 + · · · .
+Thus, with each data point k, we have an associated “residual” given by difference between the va
+lue
+yk for that data point, and the value ˆyk obtained from the regression model. The usual approach for
+obtaining the estimates bi is the method of least squares, that attempts to minimise the sum of
+squares of the residuals. The details can be found in any standard statistical textbook (for example,
+Walpole and Myers, 1978).
+We now turn to the ﬁrst of our assumptions, namely, that of the form of the fu nction. The validity
+of this assumption can be tested by examining how well the model ﬁts the observe d data; and, if
+used for prediction, estimating how well it will predict response values on new data. The degree
+of model ﬁt is obtained by examining the residuals and calculating ﬁrst the statis
+tical signiﬁcance
+of model. This tests the null hypothesis H0 : b0 = b1 = · · · = bk = 0 (that is, there is no linear
+relationship between y and any of the xi ). Speciﬁcally, the quantity:
+
+F =
+
+SSR/k
+SSE /(N − 1 − k)
+is calculated, where where SSE refers to the sum of squared residuals ((cid:229)N
+k=1 (yk − ˆyk ))2 , N being
+the number of data points); and SSR is the sum of squares of deviations of the model’s response
+from the mean response ((cid:229)N
+k=1 ( ˆy − y))2 ). F is known to follow the F-distribution with k, N − 1 − k
+degrees of freedom (Walpole and Myers, 1978). So, the hypothesis H0 can be rejected at some level
+of signiﬁcance a, if the F-value obtained is greater than the value tabulated for Fa,k,N−1−k .
+Assuming the null hypothesis is rejected, a quantity that is often used to quantify the degree of
+ﬁt is the the coefﬁcient of determination :
+
+653
+
+SR IN IVA SAN AND RAMAKR I SHNAN
+
+R2 = 1 −
+where SST is similar to SSR, being the sum of squares of deviations of the observed response from
+the mean response ((cid:229)N
+k=1 (yk − y))2 ). A little arithmetical manipulation will show SSR + SSE =
+SST , and therefore:
+
+SSE
+SST
+
+R2 =
+
+SSR
+SST
+
+.
+
+Thus, R2 is the proportion of the variation in y “explained” by the model. Clearly,
+SSR ≤ SST and
+therefore 0 ≤ R2 ≤ 1. In general, adding more terms to the regression model will only increase R2
+as the model tends to over ﬁt the data. A quantity that takes over ﬁtting into acco
+unt is the “adjusted”
+coefﬁcient of determination:
+
+(1 − R2 ).
+
+N − 1
+R2
+ad j = 1 −
+N − k − 1
+If there is a substantial difference between R2 and R2
+ad j , then the model is taken to be over ﬁtting the
+data.
+While R2 or R2
+ad j denote how well the regression model ﬁts the observed data, it does not h ave
+anything to say on the model’s performance on new data. An estimate of the predictive power of
+the model is obtained by performing a resampling exercise by leaving out each of the N data points,
+and obtaining the corresponding residual based on the model constructed with the remaining N − 1
+points. This is used to calculate a coefﬁcient of determination for prediction R2
+pred . Since we will
+not be using regression models for prediction in this paper, we will not pursue this further here.
+Assumptions about the form of the regression model tacitly include assumptions about the er-
+rors, namely that they are independent, identically distributed Gaussian variables with zero mean
+and variance s2 . The validity of these assumptions are normally checked by visual tests. Graphs
+of the residual against the predicted response should show no speciﬁc pattern; and normal quantile-
+quantile plots of the residuals should be a straight line (Jain, 1991).
+We turn now to the second major assumption, namely that the factors of relevance are known
+before obtaining the model. This requirement can now be relaxed, since we are able to also test the
+hypothesis that each of the coefﬁcients bi are individually equal to zero (the earlier test of signiﬁ-
+cance simply tested that all of the bi were zero: rejection of that hypothesis could still mean some of
+the bi were zero). This test allows us to eliminate as irrelevant all those factors whose coefﬁcients
+are not signiﬁcantly different from zero. In fact, the test forms the bas is for a “greedy” procedure
+that examines the stepwise addition and removal of factors. We reproduce the implementation de-
+scribed in Srinivasan (2001b) of this procedure in Figure 18. It is normal to start procedure with
+I = /0. Although it is not guaranteed to ﬁnd the most relevant subset of factors , and in the worst case,
+the number of subsets examined can be exponential in |V | the method has been found to work well
+in practice. Restricted variants of the method are also popular: forward selection starts with I = /0
+and dispenses with the exclusion steps (Steps 6–7 in Figure 18); backward elimination starts with
+I = V and dispenses with the inclusion steps (Steps 4–5 in in Figure 18). Both varia nts examine no
+more than O(|V |2 ) subsets.
+
+654
+
+SCR E EN ING AND O P T IM I SAT ION FOR ILP
+
+st e pr(V, I , Fin , Fout ) : Given a set of potential regressor variables V (factors in this paper); an initial
+subset of variables I ⊆ V ; and minimum values of the F statistic that a variable must achieve
+to enter (Fin ) or remain (Fout ) in the regression equation, returns a subset S ⊆ V identiﬁed by
+a stepwise variable selection procedure.
+
+1. i = 0
+2. Si = I , Vi = V \ I
+3. Increment i
+4. Let vin be the single best variable in Vi−1 that can be included (that is, on inclusion, gives
+the greatest increase in the coefﬁcient of determination)
+5. If f (vin |Si−1 ) ≥ Fin then S = Si−1 ∪ {vin}; otherwise S = Si−1
+6. Let vout be the single best variable in S that can be excluded (that is, on exclusion, gives
+the greatest increase in the coefﬁcient of determination)
+7. If f (vout |S \ {vout }) ≤ Fout then Si = S \ {vout }; otherwise Si = S
+8. If Si = Si−1 then return Si ; otherwise continue
+9. Vi = V \ Si
+10. Go to Step 3
+
+Figure 18: A stepwise variable selection procedure for multiple linear regression (reproduced from
+Srinivasan, 2001b). The coefﬁcient of determination (often denoted b y R2 ) denotes the
+proportion of total variation in the dependent variable that is explained by the ﬁtted
+model. Given a model formed with the set of variables X , it is possible to compute the
+observed change in R2 due to the addition of some variable v. The probability that the
+true value of this change is 0 can be obtained from a use of the F statistic (Walpole
+and Myers, 1978). The function f (v|X ) returns the value of the F distribution under
+the null hypothesis that there is no change in R2 by adding variable v to those in X .
+The thresholds Fin and Fout thus specify acceptable probability levels for the inclusion
+(and exclusion) of variables.
+It is evident that Fin > Fout in order to avoid the same
+variable from repeatedly being included and excluded. A correct implementation of
+svs(. . .) also requires sample data and the appropriate regression function to be provided
+as parameters. We have ignored these here for simplicity.
+
+Appendix B. A Note on Constructing and Optimising Response Surfaces
+
+In this section we describe some issues that are relevant to constructing and optimising response sur-
+faces. Speciﬁcally, we are concerned with: (1) A procedure for obta ining a fractional experimental
+design that is suitable for estimating the main effects using the regression procedure described just
+previously; (2) The search procedure along the gradient to the response surface.
+
+655
+
+SR IN IVA SAN AND RAMAKR I SHNAN
+
+B.1 Fractional Factorial Designs
+
+We begin by assuming that we have k main effects and that the response surface is approximated by
+a ﬁrst-order model with main effects only. That is, we are required to estimate k + 1 coefﬁcients in
+a linear model. This requires at least k + 1 data points, and we simply reproduce a recipe described
+in Jain (1991) that produces a suitable two-level fractional factorial design:
+
+1. Two-level fractional designs are obtained by dividing the full factorial design of k factors
+by some number 2 p (1 ≤ p < k). It is common to refer to such a design as a 2k− p design.
+Thus, we want to reduce the number of experiments from 2k to some number 2k− p such that
+2k− p ≥ (k + 1). That is, p = ⌊k − log(k + 1)⌋. Select any k − p factors and construct a two-
+level full factorial design with these factors. Clearly, this will contain k − p columns (one for
+each factor). Next, extend this table with columns containing all products of factors. Thus,
+suppose we initially had k = 4 factors (A, B,C, D say), and wanted to construct a 24−1 factorial
+design (that is p = 1). We commence by selecting k − p = 3 factors (A, B,C) say, and ﬁrst
+construct the following table (this example is from Jain, 1991):
+
+Expt.
+
+E1
+
+E2
+
+E3
+
+E4
+
+E5
+
+E6
+
+E7
+
+E8
+
+A
+B
+C
+AB AC BC ABC
+−1 −1 −1 +1 +1 +1 −1
+−1 −1 +1 +1 −1 −1 +1
+−1 +1 −1 −1 +1 −1 +1
+−1 +1 +1 −1 −1 +1 −1
++1 −1 −1 −1 −1 +1 +1
++1 −1 +1 −1 +1 −1 −1
++1 +1 −1 +1 −1 −1 −1
++1 +1 +1 +1 +1 +1 +1
+
+It should be evident that the resulting table will contain 2k− p − 1 columns.
+
+2. From the 2k− p − 1 − (k − p) “product” columns on the right of this table, select
+p columns
+and rename them with the p factors not selected in the step above. For example, if we select
+the ABC column and replace it with D:
+
+656
+
+SCR E EN ING AND O P T IM I SAT ION FOR ILP
+
+Expt.
+
+E1
+
+E2
+
+E3
+
+E4
+
+E5
+
+E6
+
+E7
+
+E8
+
+A
+B
+C
+AB AC BC D
+−1 −1 −1 +1 +1 +1 −1
+−1 −1 +1 +1 −1 −1 +1
+−1 +1 −1 −1 +1 −1 +1
+−1 +1 +1 −1 −1 +1 −1
++1 −1 −1 −1 −1 +1 +1
++1 −1 +1 −1 +1 −1 −1
++1 +1 −1 +1 −1 −1 −1
++1 +1 +1 +1 +1 +1 +1
+
+This design will allow us to estimate the main effects A, B,C, D, as well as the interactions
+AB, AC and BC. However (by construction) it will be impossible to distinguish between the
+effect of D and that of ABC: the two effects are said to be confounded and the terms said to
+be aliased . These are not the only effects that are confounded, and it can be veriﬁed that each
+main effect is confounded with a three-way interaction (A = BCD and so on), and that each
+two-way interaction is confounded with other two-way interactions (AC = BD and so on). If
+we are only interested in estimating main effects, then, provided we can assume that three-
+way interaction effects are negligible, then a table containing just the four A, B,C, D columns
+above would be adequate. That is, the fractional design is:
+
+Expt.
+
+E1
+
+E2
+
+E3
+
+E4
+
+E5
+
+E6
+
+E7
+
+E8
+
+A
+B
+C
+D
+−1 −1 −1 −1
+−1 −1 +1 +1
+−1 +1 −1 +1
+−1 +1 +1 −1
++1 −1 −1 +1
++1 −1 +1 −1
++1 +1 −1 −1
++1 +1 +1 +1
+
+The reader will recognise this as the design used to estimate main effects in the paper. It is
+clear that the choice of replacing the ABC column with D was an arbitrary one (as indeed,
+was the choice of A, B,C in the ﬁrst place): we could, for example, have elected to replace
+the AB column with D. Thus, there are several 24−1 fractional factorial designs that could
+have been devised. The difference lies in the assumptions that need to made when estimating
+
+657
+
+SR IN IVA SAN AND RAMAKR I SHNAN
+
+main effects: in general, it is considered better to confound main effects with higher order
+interactions, as these are assumed to be smaller. That is, a design that confounds D with AB
+will probably yield poorer estimates of the effect of D than one that confounds D with ABC.
+
+Some additional points are in order:
+
+1. The column vectors in the two-level full and fractional factorial designs satisfy some proper-
+ties: (a) The sum of each column is zero; (b) The sum of products of each column is zero;
+and (c) The sum of squares of each column is equal to the number of experiments. These
+properties result in some advantages in computing the main effects: see Jain (1991).
+
+2. In a fractional design some factor combination, usually called identity and denoted by I ,
+contains 1 in all rows. Such a combination is called the generator for the design. For example,
+I = ABCD is the generator for the design above.
+
+3. Two-level fractional factorial designs are categorised by their resolution. The resolution R
+of a fractional factorial design can be computed as the smallest number of factors that are
+confounded with the generator I . In the 24−1 design above terms with I is confounded with
+just one factor combination (ABCD). Thus the resolution of the design is 4. Resolutions are
+normally denoted by Roman numeral subscripts. Thus, the fractional design in Figure 5 is
+a 24−1
+IV design (Montgomery, 2005). In Resolution II designs, main effects are aliased with
+other main effects. In Resolution III designs, main effects are aliased with with two-factor
+interactions, and two-factor interactions may be aliased with each other. In Resolution IV
+designs, main effects are not aliased with each other or with two-factor interactions, but two-
+factor interactions may be aliased with each other. In Resolution V designs, the only aliasing
+that occurs is between two- and three-factor interactions, and so on.
+
+4. Two desirable properties relating resolution and linear models with two-level factors (±1) are
+those of orthogonality and rotatability. Orthogonal designs result in minimal variance when
+estimating coefﬁcients, and both full factorial designs and fractional des igns in which main
+effects are not aliased with each other (that is, Resolution III or more) are known to be orthog-
+onal for ﬁrst-order models (Montgomery, 2005). Rotatability concerns v ariance in prediction
+across the factor space. Designs that yield predictions whose variance changes symmetrically
+from the centre of the factor space are said to be rotatable. That is, the variance of prediction
+at points equidistant from the centre of the factor space should be the same. Once again,
+full factorial designs and fractional designs of Resolution III or more are rotatable designs
+(x2
+1 , x2
+for ﬁrst-order models. Rotatable designs for models with higher order terms
+2 , . . .) will
+require additional experiments (we will describe these in the following section).
+
+5. In general, if there is a variation in response y even for ﬁxed values of the factors, then
+we will need to perform several replicates of each experiment, and attempt to model the
+average response y. Also, to ensure that there is no dependency in the response variable
+across experiments, we may need to run the experiments in a randomised order. We will
+ignore this aspect here, and assume a single replicate for each experiment. One consequence
+of the latter assumption is that factor levels need to be spread out widely (that is, in two-level
+experiments, the difference between values corresponding to −1 and +1 should be as large
+as possible), so that effect estimates are reliable (see Montgomery, 2005).
+
+658
+
+SCR E EN ING AND O P T IM I SAT ION FOR ILP
+
+It is evident from from these points that increasing the resolution will allow the construction
+of models that contain more terms from the full factorial model. Thus, with Resolution III and IV
+designs, it will only be possible to obtain models that contain the main effects ( ﬁr st-order mod-
+els). With a Resolution V model, a model with both main effects and two-way interactions can
+be obtained. Rotatable designs also provide some theoretical guarantees on the estimates, both of
+coefﬁcients and the response, on these models.
+
+B.2 Gradient Ascent
+
+The primary device used in the paper is to seek local improvements in the response y by making
+small movements in the direction of the gradient to a response surface. The rationale for gradient
+ascent can be found in any text on optimization: we present a version here (from Bronson and
+Naadimuthu, 1982) for completeness. Let us suppose that the response surface is given by a scalar
+ﬁeld f deﬁned on points that are some subset of ´k , and whose values f (x1 , x2 , . . . , xk ) we denote
+using a vector notation as f (X). We wish to determine a point x∗ for which f (x∗) is a (local)
+maximum.
+From the vector calculus, it is known that for any ﬁxed point x and a unit vector U, the rate of
+change of f (X) at x in the direction of U is given by (cid:209) f |X=x · U, where (cid:209) f is a k-dimensional vector
+¶ f
+¶ f
+of partial derivatives given by (cid:16) ¶ f
+¶xk (cid:17) and · denotes the inner, or scalar product of a pair
+, . . . ,
+,
+¶x2
+¶x1
+of vectors. For vectors a and b the inner product a · b is given by |a||b|cosq, where q is the angle
+between the vectors a and b. With some slight abuse of notation, the rate of change of f (X) at x in
+the direction of U is:
+
+(cid:209) f |X=x · U = |(cid:209) f ||U|cosq = |(cid:209) f |cosq.
+The rate of change is therefore greatest when cosq = 1, or q = 0. That is, U is in the same direction
+of (cid:209) f . Thus, of all non-unit vector displacements of size d from the point x, the rate of change of
+f (x) will be greatest for the vector d(cid:209) f |x (since this vector is clearly along the direction of (cid:209) f ).
+Further, the best value of d will be the one that maximises f (x + d(cid:209) f |x ).
+B .2 .1 S EARCH A LONG TH E GRAD I EN T
+In order to use the differential calculus to obtain a value of d that maximises f (x + d(cid:209) f |x ) in any
+interval, the function has to be known analytically and the resulting equation for stationary points
+f ′ (x + d(cid:209) f |x ) = 0 should be solvable algebraicly. In our case, we do not know the functional form of
+f : the ﬁrst-order response surface is simply a local approximation to f that ceases to be appropriate
+after some value of d. We therefore have to adopt some form of search for an appropriate value of d.
+The simplest of these—and widely used in response surface methods (Ned
+dermeijer et al., 2000) —
+is the enumerative search we have used in the paper, along with a “k-in-a- row” stopping rule (that is,
+the search terminates when k steps yield no improvement). Improved versions have been suggested
+in the literature. The enumerative search could be improved by using better sequential search tech-
+niques (for example, a three-point interval search, or a Fibonacci search). In fact, this search itself
+can be posed as an optimisation problem. In Fu (1994) data from experiments performed along the
+gradient are used to construct a higher order polynomial function of response values in terms of
+d. For example, with 3 data points along (cid:209) f obtained from step sizes of d = d1 , d2 , d3 , and corre-
+sponding response values y = y1 , y2 , y3 it will be possible to obtain least-squares estimates for the
+
+659
+
+SR IN IVA SAN AND RAMAKR I SHNAN
+
+Expt.
+
+E9
+
+E10
+
+E12
+
+E13
+
+d
+
+0.0
+−0.5
+−1.5
+−2.0
+
+Acc
+
+0.769
+
+0.793
+
+0.781
+
+0.692
+
+Acc = 0.763 − 0.117 d − 0.075 d2
+d∗ = −0.78
+
+Figure 19: Data from steps of the gradient ascent used to estimate a polynomial regression model
+relating response (Acc) to step-size (d). The data shown here are from Figure 10(a). The
+d∗ is obtained using standard techniques from the differential calculus
+“optimal” value
+applied to this model.
+
+ai in y = a0 + a1d + a2d2 . The optimal value for d can then be easily estimated from this function,
+as d∗ = −a1
+(where a1 and a2 are the least-squares estimates of a1 and a2 ). We illustrate this in
+2a2
+Figure 19 below, that uses data points from the gradient ascent steps in Figure 10. The procedure,
+although not perfect, is reasonably good: the step size estimate (−0.78) results in an actual response
+value of 0.787 (the regression model predicts 0.809).
+Other techniques have been proposed as improvements on gradient search, which we do not
+elaborate further here. We refer the reader to Saﬁzadeh and Signorile (1994) for descriptions and
+pointers to these.
+
+References
+
+J. Ashby and R.W. Tennant. Deﬁnitive relationships among chemical structu re, carcinogenicity and
+mutagenicity for 301 chemicals tested by the U.S. NTP. Mutation Research, 257:229–306, 1991.
+
+M. Baz, B. Hunsaker, J.P. Brooks, and A. Gosavi. Automatic tuning of optimization software
+parameters. Technical Report 2007-7, University of Pittsburgh, Dept. of Industrial Engineering,
+2007.
+
+Y. Bengio. Gradient based optimisation of hyperparameters. Neural Computation, 12(8):1889–
+1900, 2000.
+
+Y. Bengio and Y. Grandvalet. No unbiased estimator of the variance of k-fold cross-validation.
+Journal of Machine Learning Research, 5:1089–1105, 2004.
+
+G.E.P. Box and K.B. Wilson. On the experimental attainment of optimum conditions. Journal of
+the Royal Statistical Society, Series B (Methodological), 13(1):1–45, 1951.
+
+I. Bratko and S.H. Muggleton. Applications of inductive logic programming. Communications of
+the ACM, 38(11):65–70, 1995.
+
+660
+
+SCR E EN ING AND O P T IM I SAT ION FOR ILP
+
+L. Breiman, J.H. Friedman, R.A. Olshen, and C.J. Stone. Classiﬁcation and Regression Trees .
+Wadsworth, Belmont, 1984.
+
+R. Bronson and G. Naadimuthu, editors. Schaum’s Outline of Theory and Problems of Operations
+Research. McGraw Hill, New York, 1982. (2nd Edition).
+
+A.K. Debnath, R.L Lopez de Compadre, G. Debnath, A.J. Schusterman, and C. Hansch. Structure-
+activity relationship of mutagenic aromatic and heteroaromatic nitro compounds. Correlation
+with molecular orbital energies and hydrophobicity. Journal of Medicinal Chemistry, 34(2):786
+– 797, 1991.
+
+L. DeRaedt and M. Bruynooghe. Interactive concept-learning and constructive induction by anal-
+ogy. Machine Learning, 8(2):107–150, 1992.
+
+S. Dzeroski. Relational data mining applications: An overview.
+In S. Dzeroski and N. Lavrac,
+editors, Relational Data Mining, pages 339–360. Springer, Berlin, 2001.
+
+M.C. Fu. Optimization via simulation. Annals of Operations Research, 53:199–248, 1994.
+
+L. Getoor and B. Taskar, editors. Introduction to Statistical Relational Learning. MIT Press, Cam-
+bridge, 2007.
+
+D. J. Hand. Construction and Assessment of Classiﬁcation Rules . Wiley, Chichester, 1997.
+
+J.C. Helton, J.D. Johnson, C.J. Sallaberry, and C.B. Storlie. Survey of sampling-based methods
+for uncertainty and sensitivity analysis. Reliability Engineering & System Safety, 91(10–11):
+1175–1209, 2006.
+
+R. Jain. The Art of Computer Systems Performance Analysis. John Wiley, New York, 1991.
+
+Frederik Janssen and Johannes F ¨urnkranz. On the quest for optimal rule learning heuristics. Mach.
+Learn., 78:343–379, March 2010. ISSN 0885-6125.
+
+S.S. Keerthi, V. Sindhwani, and O. Chapelle. An efﬁcient method for grad ient-based adaptation of
+hyperparameters in svm models. In NIPS, pages 673–680, 2006.
+
+R.D. King and A. Srinivasan. Prediction of rodent carcinogenicity bioassays from molecular struc-
+ture using inductive logic programming. Environmental Health Perspectives, 104(5):1031–1040,
+1996.
+
+R.D. King, S.H. Muggleton, A. Srinivasan, and M.J.E. Sternberg. Structure-activity relationships
+derived by machine learning: The use of atoms and their bond connectivities to predict mu-
+tagenicity by inductive logic programming. Proc. of the National Academy of Sciences, 93:
+438–442, 1996.
+
+R. Kohavi and G.H. John. Automatic parameter selection by minimizing estimated error.
+In
+A. Prieditis and S. Russell, editors, Proceedings of the Twelfth International Conference on Ma-
+chine Learning, pages 204–212, San Francisco, CA, 1995. Morgan Kaufmann.
+
+N. Landwehr, A. Passerini, L. De Raedt, and P. Frasconi. kfoil: Learning simple relational kernels.
+In AAAI, pages 389–396, 2006.
+
+661
+
+SR IN IVA SAN AND RAMAKR I SHNAN
+
+D.C. Montgomery. Design and Analysis of Experiments (5th Ed.). John Wiley, New York, 2005.
+
+S. Muggleton. Inverse Entailment and Progol. New Gen. Comput., 13:245–286, 1995.
+
+S. Muggleton and L. De Raedt. Inductive logic programming: Theory and methods. Journal of
+Logic Programming, 19,20:629–679, 1994.
+
+S.H. Muggleton, J.C. Almeida Santos, and A. Tamaddoni-Nezhad. Toplog: Ilp using a logic pro-
+gram declarative bias. In ICLP, pages 687–692, 2008.
+
+H.G. Neddermeijer, G.J. van Oortmarssen, N. Piersma, and R.Dekker. A framework for response
+surface methodology for simulation optimization. In Winter Simulation Conference, pages 129–
+136, 2000.
+
+M.H. Saﬁzadeh and R. Signorile. Optimization of simulation via quasi-newton metho ds. ORSA
+Journal on Computing, 6(4):388–408, 1994.
+
+S. Siegel. Nonparametric Statistics for the Behavioural Sciences. McGraw-Hill, New York, 1956.
+
+A. Srinivasan. The aleph manual. 1999. URL http://www.comlab.ox.ac.uk/oucl/research/
+areas/machlearn/Aleph/.
+
+A. Srinivasan. Four suggestions and a rule concerning the application of ilp. In Nada Lavrac and
+Saso Dzeroski, editors, Relational Data Mining, pages 365–374. Springer-Verlag, Berlin, 2001a.
+URL ftp://ftp.comlab.ox.ac.uk/pub/Packages/ILP/Papers/AS/ilpkdd.ps.gz.
+
+A. Srinivasan. Extracting context-sensitive models in inductive logic programming. Machine Learn-
+ing, 44:301–324, 2001b. URL ftp://ftp.comlab.ox.ac.uk/pub/Packages/ILP/Papers/
+AS/relev.ps.gz.
+
+D.D. Steppan, J. Werner, and R.P. Yeater. Essential Regression and Experimental Design for
+Chemists and Engineers.
+1998. URL http://www.jowerner.homepage.t-online.de/
+download.htm.
+
+R.E. Walpole and R.H. Myers. Probability and Statistics for Engineers and Scientists. Collier
+Macmillan, New York, 1978. 2nd Edition.
+
+F. Zelezny, A. Srinivasan, and C.D. Page. Lattice-search runtime distributions may be heavy-
+tailed.
+In Proceedings of the Twelfth International Conference on Inductive Logic Program-
+ming (ILP2002), LNAI, Berlin, 2002. Springer. URL ftp://ftp.comlab.ox.ac.uk/pub/
+Packages/ILP/Papers/AS/rrr.ps.gz.
+
+662
+
+

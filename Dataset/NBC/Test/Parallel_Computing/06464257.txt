@@ -1,0 +1,1529 @@
+750
+
+IEEE TRANSACTIONS ON PARALLEL AND DISTRIBUTED SYSTEMS, VOL. 25, NO. 3, MARCH 2014
+
+Secure and Efficient Data Transmission
+for Cluster-Based Wireless Sensor Networks
+
+Huang Lu, Student Member, IEEE, J ie L i, Sen ior Member, IEEE, and Mohsen Gu izan i, Fe l low, IEEE
+
+Abstract—Secure data transmission is a critical issue for wireless sensor networks (WSNs). Clustering is an effective and practical way
+to enhance the system performance of WSNs. In this paper, we study a secure data transmission for cluster-based WSNs (CWSNs),
+where the clusters are formed dynamically and periodically. We propose two secure and efficient data transmission (SET) protocols for
+CWSNs, called SET-IBS and SET-IBOOS, by using the identity-based digital signature (IBS) scheme and the identity-based online/
+offline digital signature (IBOOS) scheme, respectively. In SET-IBS, security relies on the hardness of the Diffie-Hellman problem in the
+pairing domain. SET-IBOOS further reduces the computational overhead for protocol security, which is crucial for WSNs, while its
+security relies on the hardness of the discrete logarithm problem. We show the feasibility of the SET-IBS and SET-IBOOS protocols with
+respect to the security requirements and security analysis against various attacks. The calculations and simulations are provided to
+illustrate the efficiency of the proposed protocols. The results show that the proposed protocols have better performance than the
+existing secure protocols for CWSNs, in terms of security overhead and energy consumption.
+
+Index Terms—Cluster-based WSNs, ID-based digital signature, ID-based online/offline digital signature, secure data transmission
+protocol
+
+Ç
+
+1 INTRODUCTION
+A WIRELESS sensor network (WSN) is a network system
+comprised of spatially distributed devices using
+wireless sensor nodes to monitor physical or environmental
+conditions, such as sound, temperature, and motion. The
+individual nodes are capable of sensing their environments,
+processing the information data locally, and sending data to
+one or more collection points in a WSN [1]. Efficient data
+transmission is one of the most important issues for WSNs.
+Meanwhile, many WSNs are deployed in harsh, neglected,
+and often adversarial physical environments for certain
+applications, such as military domains and sensing tasks
+with trustless surroundings [2]. Secure and efficient data
+transmission (SET) is, thus, especially necessary and is
+demanded in many such practical WSNs.
+
+1.1 Background and Motivations
+Cluster-based data transmission in WSNs has been inves-
+tigated by researchers to achieve the network scalability and
+management, which maximizes node lifetime and reduce
+bandwidth consumption by using local collaboration
+among sensor nodes [3]. In a cluster-based WSN (CWSN),
+every cluster has a leader sensor node, regarded as cluster-
+head (CH). A CH aggregates the data collected by the leaf
+nodes (non-CH sensor nodes) in its cluster, and sends the
+
+. H. Lu is with the Department of Computer Science, University of Tsukuba,
+Tsukuba 3058573, Japan. E-mail: lu.huang.jp@ieee.org.
+. J. Li
+is with the Faculty of Engineering, Information and Systems,
+University of Tsukuba, Tsukuba 3058573, Japan.
+E-mail: lijie@cs.tsukuba.ac.jp.
+. M. Guizani is with Qatar University, Doha, Qatar.
+E-mail: mguizani@ieee.org.
+
+Manuscript received 4 July 2012; revised 9 Jan. 2013; accepted 31 Jan. 2013;
+published online 15 Feb. 2013.
+Recommended for acceptance by K. Li.
+For information on obtaining reprints of this article, please send e-mail to:
+tpds@computer.org, and reference IEEECS Log Number TPDS-2012-07-0617.
+Digital Object Identifier no. 10.1109/TPDS.2013.43.
+
+aggregation to the base station (BS). The low-energy
+adaptive clustering hierarchy (LEACH) protocol presented
+by Heinzelman et al. [4] is a widely known and effective one
+to reduce and balance the total energy consumption for
+CWSNs. To prevent quick energy consumption of the set of
+CHs, LEACH randomly rotates CHs among all sensor
+nodes in the network ,
+in rounds . LEACH ach ieves
+improvements in terms of network lifetime. Following the
+idea of LEACH, a number of protocols have been presented
+such as APTEEN [5] and PEACH [6], which use similar
+concepts of LEACH. In this paper, for convenience, we call
+this sort of cluster-based protocols as LEACH-like proto-
+cols. Researchers have been widely studying CWSNs in the
+last decade in the literature. However, the implementation
+of the cluster-based architecture in the real world is rather
+complicated [7].
+Adding security to LEACH-like protocols is challenging
+because they dynamically, randomly, and periodically
+rearrange the network ’s c lusters and da ta l inks [8] .
+Therefore, providing steady long-lasting node-to-node trust
+relationships and common key distributions are inadequate
+for LEACH-like protocols (most existing solutions are
+provided for distributed WSNs, but not for CWSNs). There
+are some secure data transmission protocols based on
+LEACH-like protocols, such as SecLEACH [8], GS-LEACH
+[9], and RLEACH [10]. Most of them, however, apply the
+symmetric key management for security, which suffers from
+a so-called orphan node problem [11]. This problem occurs
+when a node does not share a pairwise key with others in its
+preloaded key ring. To mitigate the storage cost of symmetric
+keys, the key ring in a node is not sufficient for it to share
+pairwise symmetric keys with all of the nodes in a network.
+In such a case, it cannot participate in any cluster, and
+therefore, has to elect itself as a CH. Furthermore, the orphan
+node problem reduces the possibility of a node joining with a
+CH, when the number of alive nodes owning pairwise keys
+
+1045-9219/14/$31.00 ß 2014 IEEE
+
+Published by the IEEE Computer Society
+
+LU ET AL.: SECURE AND EFFICIENT DATA TRANSMISSION FOR CLUSTER-BASED WIRELESS SENSOR NETWORKS
+
+751
+
+decreases after a long-term operation of the network. Since
+the more CHs elected by themselves, the more overall energy
+consumed of the network [4], the orphan node problem
+increases the overhead of transmission and system energy
+consumption by raising the number of CHs. Even in the case
+that a sensor node does share a pairwise key with a distant
+CH but not a nearby CH, it requires comparatively high
+energy to transmit data to the distant CH.
+The feasibility of the asymmetric key management has
+been shown in WSNs recently, which compensates the
+shortage from applying the symmetric key management for
+security [12]. Digital signature is one of the most critical
+security services offered by cryptography in asymmetric
+key management systems, where the binding between the
+public key and the identification of the signer is obtained
+via a digital certificate [13]. The identity-based digital
+signature (IBS) scheme [14], based on the difficulty of
+factoring integers from identity-based cryptography (IBC),
+is to derive an entity’s public key from its identity
+information, for example, from its name or ID number.
+Recently, the concept of IBS has been developed as a key
+management
+in WSNs for security. Carman [15]
+first
+combined the benefits of IBS and key predistribution set
+into WSNs, and some papers appeared in recent years [16],
+[17], [18]. The IBOOS scheme has been proposed to reduce
+the computation and storage costs of signature processing.
+A general method for constructing online/offline signature
+schemes was introduced by Even et al. [19]. The IBOOS
+scheme could be effective for the key management in
+WSNs. Specifically, the offline phase can be executed on a
+sensor node or at the BS prior to communication, while the
+online phase is to be executed during communication. Some
+IBOOS schemes are designed for WSNs afterwards, such as
+[20] and [21]. The offline signature in these schemes,
+however,
+is precomputed by a third party and lacks
+reusability, thus they are not suitable for CWSNs.
+
+1.2 Contributions and Organization
+Recently, we have applied and evaluated the key manage-
+ment of IBS to routing in CWSNs [17]. In this paper, we
+extend our previous work and focus on providing an
+efficient secure data communication for CWSNs. The
+contributions of this work are as follows:
+
+. W e p r o p o s e tw o Se c u r e a n d E f f i c i e n t d a t a
+T ransmission protocols for CWSNs, called SET-IBS
+and SET-IBOOS, by using the IBS scheme and the
+IBOOS scheme, respectively. The key idea of both
+SET-IBS and SET-IBOOS is to authenticate the
+encrypted sensed data, by applying digital signatures
+to message packets, which are efficient in commu-
+nication and applying the key management for
+security. In the proposed protocols, secret keys and
+pairing parameters are distributed and preloaded in
+all sensor nodes by the BS initially, which overcomes
+the key escrow problem described in ID-based
+cryptosystems [22].
+Secure communication in SET-IBS relies on the ID-
+based cryptography,
+in which, user public keys
+are their ID information. Thus, users can obtain the
+corresponding private keys without auxiliary data
+
+.
+
+.
+
+transmission, which is efficient in communication
+and saves energy.
+SET-IBOOS is proposed to further reduce the compu-
+tational overhead for security using the IBOOS
+scheme, in which security relies on the hardness of
+the discrete logarithmic problem. Both SET-IBS and
+SET-IBOOS solve the orphan node problem in the
+secure data transmission with a symmetric key
+management.
+. We show the feasibility of the proposed protocols
+with respect
+to the security requirements and
+analysis against three attack models. Moreover, we
+compare the proposed protocols with the existing
+secure protocols for efficiency by calculations and
+simulations, respectively, with respect
+to both
+computation and communication.
+The remainder of this paper is organized as follows:
+Section 2 describes the network architecture, security
+vulnerabilities, and objectives. Section 3 introduces the IBS
+and IBOOS schemes for CWSNs. Sections 4 and 5 present
+the details of
+the proposed SET-IBS and SET-IBOOS,
+respectively, and Section 6 presents the protocol features
+and characteristics. Section 7 analyzes and evaluates the
+proposed SET-IBS and SET-IBOOS. The last section con-
+cludes this work.
+
+2 SYSTEM DESCRIPTION AND PROTOCOL
+OBJECTIVES
+
+This section presents the network architecture, security
+vulnerabilities, and protocol objectives.
+
+2.1 Network Architecture
+Consider a CWSN consisting of a fixed BS and a large
+number of wireless sensor nodes, which are homogeneous
+in functionalities and capabilities. We assume that the BS is
+always reliable, i.e., the BS is a trusted authority (TA).
+Meanwhile, the sensor nodes may be compromised by
+attackers, and the data transmission may be interrupted
+from attacks on wireless channel. In a CWSN, sensor nodes
+are grouped into clusters, and each cluster has a CH sensor
+node, which is elected autonomously. Leaf (non-CH) sensor
+nodes join a cluster depending on the receiving signal
+strength and transmit the sensed data to the BS via CHs to
+save energy. The CHs perform data fusion, and transmit
+data to the BS directly with comparatively high energy. In
+addition, we assume that all sensor nodes and the BS are
+time synchronized with symmetric radio channels, nodes
+are distributed randomly, and their energy is constrained.
+In CWSNs, data sensing, processing, and transmission
+consume energy of sensor nodes . The cost of data
+transmission is much more expensive than that of data
+processing. Thus, the method that the intermediate node
+(e.g., a CH) aggregates data and sends it to the BS is
+preferred than the method that each sensor node directly
+sends data to the BS [1], [3]. A sensor node switches into
+sleep mode for energy saving when it does not sense or
+transmit data, depending on the time-division multiple
+access (TDMA) control used for data transmission. In this
+paper, the proposed SET-IBS and SET-IBOOS are both
+designed for the same scenarios of CWSNs above.
+
+752
+
+IEEE TRANSACTIONS ON PARALLEL AND DISTRIBUTED SYSTEMS, VOL. 25, NO. 3, MARCH 2014
+
+2.2 Security Vulnerabilities and Protocol Objectives
+The data transmission protocols for WSNs,
+including
+cluster-based protocols (LEACH-like protocols), are vulner-
+able to a number of security attacks [2], [23]. Especially,
+attacks to CHs in CWSNs could result in serious damage to
+the network because data transmission and data aggrega-
+tion depend on the CHs fundamentally. If an attacker
+manages to compromise or pretend to be a CH, it can
+provoke attacks such as sinkhole and selective forwarding
+attacks, hence disrupting the network. On the other hand,
+an attacker may intend to inject bogus sensing data into the
+WSN, for example, pretend as a leaf node sending bogus
+information toward the CHs. Nevertheless, LEACH-like
+protocols are more robust against insider attacks than other
+types of protocols in WSNs [23]. It is because CHs are
+rotating from nodes to nodes in the network by rounds,
+which makes it harder for intruders to identify the routing
+elements as the intermediary nodes and attack them. The
+characteristics of LEACH-like protocols reduce the risks of
+being attacked on intermediary nodes, and make it harder
+for an adversary to identify and compromise important
+nodes (i.e., CH nodes).
+The goal of the proposed secure data transmission for
+CWSNs is to guarantee the secure and efficient data
+transmissions between leaf nodes and CHs, as well as
+transmission between CHs and the BS. Meanwhile, most of
+existing secure transmission protocols for CWSNs in the
+literature [8], [9], [10], however, apply the symmetric key
+management for security, which suffers from the orphan
+node problem that is introduced in Section 1. In this paper,
+we aim to solve this orphan node problem by using the ID-
+based cryptosystem that guarantees security requirements,
+and propose SET-IBS by using the IBS scheme. Furthermore,
+SET-IBOOS is proposed to reduce the computational over-
+head in SET-IBS with the IBOOS scheme.
+
+3 IBS AND IBOOS FOR CWSNS
+
+In this section, we introduce the IBS scheme and IBOOS
+scheme used in the paper. Note that the conventional
+schemes are not specifically designed for CWSNs. We adapt
+the conventional IBS scheme for CWSNs by distributing
+functions to different kinds of sensor nodes, based on [24] at
+first. To further reduce the computational overhead in the
+signing and verification process of the IBS scheme, we adapt
+the conventional IBOOS scheme for CWSNs, based on [21].
+In a finite cyclic group GG of prime order q, there exists an
+element g as the generator and elements gx 2 GG, such that
+GG ¼ hgi ¼ fgx j x 2 ZZ
+q ¼ f1; 2; . . . ; q   1gg, where ZZ
+q is a
+multiplicative group consisting of q   1 integers, in which the
+multiplication operation in the group ends in the remainder
+on the division by q (mod q) [25]. The discrete logarithm
+problem (DLP) [26] in the cyclic group GG is to compute x, in
+which the computational complexity is believed to be hard,
+where the security in the IBOOS scheme is based on the DLP
+in this work.
+
+3.1 Pairing for IBS
+For self-contained, we briefly review the characteristics of
+pairing. Boneh and Franklin [22]
+introduced the first
+functional and efficient ID-based encryption scheme based
+on bilinear pairings on elliptic curves . Specifically ,
+
+randomly select two large primes p and q, and let E=Fp
+indicate an elliptic curve y2 ¼ x3 þ ax þ b (4a3 þ 27b2 6¼ 0)
+over a finite field Fp . We denote by GG1 a q-order
+subgroup of the additive group of points in E=Fp , and
+GG2 a q-order subgroup of the multiplicative group in the
+p . The pairing is a mapping e : GG1  GG1 !
+finite field F
+GG2 , which is a bilinear map with the following properties:
+1. B i l inear . 8 P ; Q; R; S 2 GG1 , eðP þ Q; R þ S Þ ¼ eðP ;
+RÞeðP ; SÞeðQ; RÞeðQ; S Þ. In the same way, 8 c; d 2
+q ; eðcP ; dQÞ ¼ eðP ; dQÞc ¼ eðcP ; QÞd ¼ eðP ; QÞcd , etc.
+ZZ
+2. Nondegeneracy. If P is a generator of GG1 , then eðP ; P Þ
+is a generator of GG2 .
+3. Computability. There is an efficient algorithm to
+compute eðP ; QÞ in GG2 , 8 P ; Q 2 GG1 .
+The security in the IBS scheme is based on the bilinear
+Diffie-Hellman Problem (DHP) in the pairing domain [13],
+and the hardness of DHP is defined in [22]. A bilinear map e
+is secure if, given g; G; H 2 GG1 , it is hard to find h 2 GG1
+such that eðh; H Þ ¼ eðg; GÞ [27]. Weil pairing [22] and Tate
+pairing [28] are the examples of such bilinear mapping,
+which present comprehensive descriptions of how pairing
+parameters can be selected for security.
+
+3.2 IBS Scheme for CWSNs
+An IBS scheme implemented for CWSNs consists of the
+following operations, specifically, setup at
+the BS, key
+extraction and signature signing at the data sending nodes,
+and verification at the data receiving nodes:
+
+.
+
+.
+
+.
+
+Setup. The BS (as a trust authority) generates a
+master key msk and public parameters param for the
+private key generator (PKG), and gives them to all
+sensor nodes.
+Extraction. Given an ID string, a sensor node
+generates a private key sekID associated with the
+ID using msk.
+Signature signing. Given a message M , time stamp t
+and a signing key , the sending node generates a
+signature SIG.
+. Verification. Given the ID, M , and SIG, the receiving
+node outputs “accept” if SIG is valid, and outputs
+“reject” otherwise.
+The detailed description of the original IBS scheme in
+[24] is given in Appendix A.1
+
+3.3 IBOOS Scheme for CWSNs
+An IBOOS scheme implemented for CWSNs consists of
+following four operations, specifically, setup at the BS, key
+extraction and offline signing at the CHs, online signing at the
+data sending nodes, and verification at the receiving nodes:
+
+.
+Setup. Same as that in the IBS scheme.
+.
+Extraction. Same as that in the IBS scheme.
+. Offline signing. Given public parameters and time
+stamp t, the CH sensor node generates an offline
+signature SIGoffline , and transmit it to the leaf nodes
+in its cluster.
+
+1. The appendices of this paper are separated, which are available online:
+http://doi.ieeecomputersociety.org/10.1109/TPDS.2013.43.
+
+LU ET AL.: SECURE AND EFFICIENT DATA TRANSMISSION FOR CLUSTER-BASED WIRELESS SENSOR NETWORKS
+Pick a random integer  2 ZZ
+q as the master key msk,
+set Ppub ¼  P as network public key.
+Preload each sensor node with the system parameters
+param ¼ ðk; m; p; q; E=Fp ; GG1 ; GG2 ; e; H ; h; P ;  Þ.
+
+753
+
+. Online signing. From the private key sekID , SIGoffline
+and message M , a send ing node ( leaf node)
+generates an online signature SIGonline .
+. Verification. Given ID, M , and SIGonline , the receiving
+node (CH node) outputs “accept” if SIGonline
+is
+valid, and outputs “reject” otherwise.
+The detailed description of the original IBOOS scheme in
+[21] is given in Appendix B.1
+
+4 THE PROPOSED SET-IBS PROTOCOL
+
+In this paper, we propose two novel SET protocols for
+CWSNs, called SET-IBS and SET-IBOOS, by using the IBS
+scheme and the IBOOS scheme, respectively. We first
+present SET-IBS in this section.
+The proposed SET-IBS has a protocol initialization prior
+to the network deployment and operates in rounds during
+communication, which consists of a setup phase and a
+steady-state phase in each round. We introduce the
+protocol
+initialization, describe the key management of
+the protocol by using the IBS scheme, and the protocol
+operations afterwards.
+
+4.1 Protocol Initialization
+In SET-IBS, time is divided into successive time intervals as
+other LEACH-like protocols. We denote time stamps by Ts
+for BS-to-node communication and by tj for leaf-to-CH
+communication. Note that key predistribution is an efficient
+method to improve communication security, which has
+been adapted in WSNs in the literature [8], [9], [10], [15],
+[16], [17], [18]. In this paper, we adopt IDkt as user’s public
+key under an IBS scheme [24], and propose a novel secure
+data transmission protocol by using IBS specifically for
+CWSNs (SET-IBS). The corresponding private pairing
+parameters are preloaded in the sensor nodes during the
+protocol initialization. In this way, when a sensor node
+wants to authenticate itself to another node, it does not have
+to obtain its private key at the beginning of a new round.
+Upon node revocation, the BS broadcasts the compromised
+node IDs to all sensor nodes, each node then stores the
+the
+revoked IDs within the current round. We adopt
+additively homomorphic encryption scheme in [29]
+to
+encrypt the plaintext of sensed data, in which a specific
+operation performed on the plaintext is equivalent to the
+operation performed on the ciphertext. Using this scheme
+allows efficient aggregation of encrypted data at the CHs
+and the BS, which also guarantees data confidentiality. In
+the protocol initialization, the BS performs the following
+operations of key predistribution to all the sensor nodes:
+
+. Generate an encryption key k for the homomorphic
+encryption scheme to encrypt data messages, where
+k 2 ½m   1, m is a large integer.
+. Generate the pairing parameters ðp; q; E=Fp ; GG1 ;
+GG2 ; eÞ, as described in Section 3. Select a generator
+P of GG1 stochastically.
+. Choose two cryptographic hash functions: H , for the
+point mapping hash function which maps strings to
+elements in GG1 , and h, for mapping arbitrary inputs
+to fixed-length outputs.
+
+.
+
+.
+
+4.2 Key Management for Security
+Assume that a leaf sensor node j transmits a message M to
+its CH i, and encrypts the data using the encryption key k
+from the additively homomorphic encryption scheme [29].
+We denote the ciphertext of the encrypted message as C .
+We adapt the algorithms of the IBS scheme from [24] to
+CWSNs practically and provide the full algorithm in the
+signature verification, where security is based on the DHP
+in the multiplicative group. The IBS scheme in the proposed
+SET-IBS consists of following three operations: extraction,
+signing, and verification.
+Extraction. Node j first obtains its private key as sekj ¼
+ H ðIDj ktj Þ from msk and IDj , where IDj is its ID, and tj is
+the time stamp of node j’s time interval in the current round
+that is generated by its CH i from the TDMA control.
+Signature signing. The sensor node j picks a random
+number j 2 ZZ
+q and computes j ¼ eðP ; P Þj . The sensor
+node further computes
+cj ¼ hðCj ktj kj Þ:
+
+ð1Þ
+
+Let
+
+ð3Þ
+
+j ¼ cj sekj þ jP ;
+ð2Þ
+where hj ; cj i is the digital signature of node j on the
+encrypted message Cj . The broadcast message is now
+concatenated in the form of hIDj ; tj ; Cj ; j ; cj i.
+Verification. Upon receiving the message, each sensor
+node verifies the authenticity in the following way. It checks
+the time stamp of current time interval tj and determines
+whether the received message is fresh. Then, if the time
+stamp is correct, the sensor node further computes
+j ¼ eðj ; P ÞeðH ðIDj ktj Þ;  Ppub Þcj ;
+0
+using the time stamp of current time interval tj . We will
+have the formula below if the received message is authentic:
+j ¼ eðj ; P ÞeðH ðIDj ktj Þ;  Ppub Þcj
+0
+¼ eðj ; P ÞeðH ðIDj ktj Þ;   P Þcj
+¼ eðcj sekj þ jP ; P ÞeðH ðIDj ktj Þ;  P Þ cj
+¼ eðcj sekj þ jP ; P Þeð H ðIDj ktj Þ; P Þ cj
+¼ ðeðsekj ; P Þcj eðP ; P Þj Þeð H ðIDj ktj Þ; P Þ cj
+¼ eðsekj ; P Þcj eðP ; P Þj eðsekj ; P Þ cj
+¼ eðP ; P Þj ¼ j :
+j Þ ¼ hðCj ktj kj Þ ¼ cj , which is equal to that in
+If hðCj ktj k0
+the received message,
+the sensor node considers the
+received message authentic, and propagates the message
+to the next hop or user. If the verification above fails, the
+sensor node considers the message as either bogus or a
+replaced one, even a mistaken one, and ignores it.
+
+ð4Þ
+
+4.3 Protocol Operation
+After the protocol initialization, SET-IBS operates in rounds
+during communication. Each round consists of a setup
+
+754
+
+IEEE TRANSACTIONS ON PARALLEL AND DISTRIBUTED SYSTEMS, VOL. 25, NO. 3, MARCH 2014
+
+Fig. 1. Operation in the proposed secure data transmission.
+
+phase and a steady-state phase. We suppose that all sensor
+nodes know the starting and ending time of each round
+because of the time synchronization.
+The operation of SET-IBS is divided by rounds as shown
+in Fig. 1, which is similar to other LEACH-like protocols.
+Each round includes a setup phase for constructing clusters
+from CHs, and a steady-state phase for transmitting data
+from sensor nodes to the BS. In each round, the timeline is
+divided into consecutive time slots by the TDMA control
+[4]. Sensor nodes transmit the sensed data to the CHs in
+each frame of
+the steady-state phase. For fair energy
+consumption, nodes are randomly elected as CHs in each
+round, and other non-CH sensor nodes join clusters using
+one-hop transmission, depending on the highest received
+signal strength of CHs. To elect CHs in a new round, each
+sensor node determines a random number and compares it
+with a threshold. If the value is less than the threshold, the
+sensor node becomes a CH for the current round. In this
+way, the new CHs are self-elected based by the sensor
+nodes themselves only on their local decisions; therefore,
+SET-IBS functions without data transmission with each
+other in the CH rotations.
+Table 1 shows the full steps in one round of SET-IBS.
+The setup phase consists of four steps, from Steps 1 to 4,
+and the steady-state phase consists of the latter two steps.
+In the setup phase, the time stamp Ts and node IDs are
+used for the signature generation. Whereas in the steady-
+state phase, the time stamp tj is used for the signature
+generation securing the inner cluster communications, and
+
+T nð Þ ¼
+
+ð5Þ
+
+8n 2 Gn ;
+
+Ts is used for the signature generation securing the CHs-
+to-BS data transmission.
+In Step 1, at the beginning of the setup phase of a new
+round, the BS first broadcasts its ID, a nonce (number used
+once), and the denotation of the starting time Ts of the
+current round to all sensor nodes, which is used for the
+signature signing and verification in the setup phase.
+In Step 2, a sensor node decides whether to become a CH
+for the current round, based on the threshold T ðnÞ
+compared with numbers from 0 to 1, which is set as follows:
+
+j k
+
+ Ecur nð Þ
+
+Einit nð Þ
+1     r mod 1
+
+T nð Þ ¼ 0
+8n 62 Gn :
+Equation (5) of computing the threshold T ðnÞ in node n
+is based on the LEACH protocol [4]. Note that we improve
+the dynamic clustering algorithm preferably with multi-
+plying the ratio of residual energy of the current sensor
+node (i.e., Ecur ðnÞ
+Einit ðnÞ ) to increase the energy efficiency in the
+clustering, where Ecur ðnÞ is the current energy, and Einit ðnÞ
+is the initial energy of the sensor node.  is a priori
+determined value which stands for the desired percentage
+of CHs during one round (e.g.,  ¼ 10%), r is the current
+round number, and Gn is the set of sensor nodes that have
+not been CHs in the last b1=c rounds. If the value of
+determined number is less than the threshold, the sensor
+node elects itself as a CH. The sensor node who decides to
+become a CH broadcasts the advertisement message (adv) to
+the neighboring nodes in the network, which is concate-
+nated with the signature hi ; ci i.
+In Step 3, the sensor node, which decides to be a leaf
+node, picks a CH to join based on the largest received signal
+strength of adv messages. Then, it communicates with CH i
+by sending a join_request (join) message, which is con-
+catenated with the destination CH’s ID IDi , its own ID IDj ,
+time stamp Ts , and the digital signature hj ; cj i.
+
+TABLE 1
+Operations in SET-IBS
+
+LU ET AL.: SECURE AND EFFICIENT DATA TRANSMISSION FOR CLUSTER-BASED WIRELESS SENSOR NETWORKS
+
+755
+
+In Step 4, a CH i broadcasts an allocation message to its
+cluster members for communication during the steady-state
+phase, yet to be concatenated with the signature. The
+allocation message include a time schedule hschedð. . . ;
+IDj =tj ; . . .Þi from the TDMA control, which allocates a time
+stamp IDj =tj for a leaf node j.
+Once the setup phase is over, the network system turns
+in which sensed data are
+into the steady-state phase,
+transmitted from sensor nodes to the BS.
+In Step 5,
+according to the TDMA schedule from Step 4, each leaf
+sensor node j transmits the encrypted data Cj in a packet
+hIDj ; tj ; Cj ; j ; cj i to its CH, which is concatenated with a
+digital signature in a time slot tj , where the sender ID IDj
+with tj is the destination identifier for the receiver CH. In
+this way, each CH collects messages from all members in its
+cluster, aggregates and fuses data.
+In Step 6, CHs send the aggregated data F to the BS,
+yet to be concatenated with the digital signature. The
+steady-state phase consists of multiple reporting cycles of
+data transmissions from leaf nodes to the CHs, and is
+exceedingly long compared to the setup phase.
+
+5 THE PROPOSED SET-IBOOS PROTOCOL
+
+We present the SET protocol for CWSNs by using IBOOS
+(SET-IBOOS)
+in this section. The SET-IBOOS protocol
+is designed with the same purpose and scenarios for
+CWSNs with higher efficiency. The proposed SET-IBOOS
+operates similarly to the previous SET-IBS, which has a
+protocol initialization prior to the network deployment and
+operates in rounds during communication . We first
+introduce the protocol initialization, then describe the key
+management of the protocol by using the IBOOS scheme,
+and the protocol operations afterwards.
+
+5.1 Protocol Initialization
+To reduce the computation and storage costs of signature
+signing processing in the IBS scheme, we improve SET-IBS
+by introducing IBOOS for security in SET-IBOOS. The
+operation of the protocol initialization in SET-IBOOS is
+similar to that of SET-IBS; however, the operations of key
+predistribution are revised for IBOOS. The BS does the
+following operations of key predistribution in the network:
+
+.
+
+. Generate an encryption key k for the homomorphic
+encryption scheme to encrypt data messages, where
+k 2 ½m   1, m is a large integer.
+Let GG be a multiplicative finite cyclic group with
+order q. The PKG selects a random generator g of
+group GG generation, and chooses  2 ZZ
+q at random
+as the master key msk.
+For each node j, randomly select rj 2 ZZ
+for its
+q
+private key generation, and let H be a hash function.
+Preload each sensor node j with the public para-
+meters, given by paramj ¼ ðk; m; GG; q; g;  ; rj ; H Þ.
+
+.
+
+.
+
+5.2 Key Management for Security
+Assume that a leaf sensor node j transmits a message M to
+its CH i, and we denote the ciphertext of the encrypted
+message as Cj , which is encrypted by the same encryption
+scheme in SET-IBS. We adapt the algorithms from [21] to
+
+construct an IBOOS scheme for CWSNs, where security is
+based on the DLP in the multiplicative group. The
+corresponding private pairing parameters are preloaded
+in the sensor nodes during the protocol initialization. The
+IBOOS scheme in the proposed SET-IBOOS consists of
+following four operations: extraction, offline signing, online
+signing, and verification.
+Extraction. Before the signature process, node j first
+extracts the private key from the msk  and its identity ID,
+as sekj ¼ ðRj ; sj Þ, where
+Rj ¼ grj ;
+sj ¼ rj þ H ðRj ; IDj Þ modq:
+
+ð6Þ
+
+b
+Offline signing. At the offline stage, node j generates the
+offline value h
+j i with the time stamp of its time slot tj for
+transmission, and store the knowledge for signing online
+signature when it sends the message. Notice that, this
+offline signature can be done by the sensor node itself or by
+the trustful third party, for example, the CH sensor node.
+Let X ¼ g , then
+b
+gsj ¼ grj gH ðRj ;IDj Þ modq ¼ RjXH ðRj ;IDj Þ modq :
+j ¼ g tj :
+Online signing. At this stage, node j computes the online
+b
+signature hj ; zj i based on the encrypted data Cj and the
+j :
+offline signature
+
+ð7Þ
+
+b
+hj ¼ H ðCj ; IDj Þ;
+b
+zj ¼
+j þ hj sj modq;
+j ¼ g
+j :
+
+ð8Þ
+
+ð9Þ
+
+Then, node j sends the message to its destination with tj ,
+Rj , and the online signature, in the form of hIDj ; tj ; Rj ;
+j ; zj ; Cj i.
+Verification. Upon receiving the message, each sensor
+node verifies the authenticity in the following way. It checks
+the current time stamp tj for freshness. Then, if the time
+stamp is correct, the sensor node further computes the
+j XhjH ðRj ;IDj Þ modq , then check if
+values of gzj and jRhj
+gzj ¼? jRhj
+j XhjH ðRj ;IDj Þ modq :
+For correctness, we will have the formula below if the
+received message is authentic:
+b
+jRhj XhjH ðRj ;IDj Þ modq
+b
+¼ g
+j grj hj g hiH ðRj ;IDj Þ modq
+b
+¼ g
+j þhj ðrj þðH ðRj ;IDj Þ modqÞÞ
+¼ g
+j þhj sj modq ¼ gzj :
+i XhiH ðRi ;IDi Þ modq are equal
+If the values of gzj and jRhi
+the node i considers the
+from the received message,
+received message authentic, accepts it, and propagates
+the message to the next hop or user. If the verification
+above fails, the sensor node considers the message as
+either bogus or a replaced one, even a mistaken one, then
+rejects or ignores it.
+
+ð10Þ
+
+756
+
+IEEE TRANSACTIONS ON PARALLEL AND DISTRIBUTED SYSTEMS, VOL. 25, NO. 3, MARCH 2014
+
+TABLE 2
+Operations in SET-IBOOS
+
+.
+
+Comparing the SET-IBS, SET-IBOOS requires less
+energy for computation and storage. Moreover, the
+SET-IBOOS is more suitable for node-to-node com-
+munications in CWSNs, since the computation is
+lighter to be executed.
+In SET-IBOOS, the offline signature is executed by
+the CH sensor nodes; thus, sensor nodes do not
+have to execute the offline algorithm before it
+wants to sign on a new message. Furthermore, the
+offline sign phase does not use any sensed data or
+secret information for signing. This is particularly
+useful for CWSNs because leaf sensor nodes do not
+need auxiliary communication for renewing the
+offline signature.
+
+6.1 Protocol Characteristics
+In this part, we summarize the characteristics of
+the
+proposed SET-IBS and SET-IBOOS protocols. Table 3 shows
+a general summary of comparison of the characteristics of
+
+TABLE 3
+Comparison of Characteristics of the Proposed Protocols with
+Other Secure Data Transmission Protocols
+
+5.3 Protocol Operation
+The proposed SET-IBOOS operates similarly to that of SET-
+IBS. SET-IBOOS works in rounds during communication,
+and the self-elected CHs are decided based on their local
+decisions, thus it functions without data transmission in the
+CH rotations. Table 2 shows the full steps of SET-IBOOS in
+one round, in which the setup phase is from Steps 1 to 4,
+and the steady-state phase consists of Steps 5 and 6.
+Step 1 in Table 2 is similar to that in Table 1. However,
+the differences in Steps 2, 3, and 4 are the digital signatures
+that are changed from the ID-based signatures to the online
+signatures hi ; zi i of the IBOOS scheme.
+Once the setup phase is over, the network system turns
+into the steady-state phase, in which data are transmitted to
+the BS. The steady-state operates similarly to that in Steps 5
+and 6 of Table 1, where the ID-based signatures are changed
+into the online signatures of the IBOOS scheme.
+For convenience, we show a flowchart of the proposed
+secure data transmission protocols in Appendix C.2
+
+6 PROTOCOL FEATURES
+
+The protocol characteristics and hierarchical clustering
+solutions are presented in this section. We first summarize
+the features of
+the proposed SET-IBS and SET-IBOOS
+protocols as follows:
+
+.
+
+.
+
+Both the proposed SET-IBS and SET-IBOOS proto-
+cols provide secure data transmission for CWSNs
+with concrete ID-based settings, which use ID
+information and digital signature for authentication.
+Thus, both SET-IBS and SET-IBOOS fully solve the
+orphan-node problem from using the symmetric key
+management for CWSNs.
+The proposed secure data transmission protocols
+are with concrete ID-based settings, which use ID
+information and digital signature for verification.
+
+2. The appendices of this paper are separated, which are available online:
+http://doi.ieeecomputersociety.org/10.1109/TPDS.2013.43.
+
+LU ET AL.: SECURE AND EFFICIENT DATA TRANSMISSION FOR CLUSTER-BASED WIRELESS SENSOR NETWORKS
+
+757
+
+SET-IBS and SET-IBOOS with prior ones, in which metrics
+are used to evaluate whether a security protocol
+is
+appropriate for CWSNs. We explain each metric as follows:
+
+.
+
+.
+
+.
+
+.
+
+Key management. the key cryptographies used in
+the protocol to achieve secure data transmission,
+which consist of symmetric and asymmetric key-
+based security.
+. Neighborhood authentication. used for secure access
+and data transmission to nearby sensor nodes, by
+authenticating with each other. Here, “limited”
+means the probability of neighborhood authentica-
+tion, where only the nodes with the shared pairwise
+key can authenticate each other.
+Storage cost. represents the requirement of
+security keys stored in sensor node’s memory.
+. Network scalability.
+indicates whether a security
+protocol is able to scale without compromising the
+security requirements. Here, “comparatively low”
+means that, compared with SET-IBS and SET-IBOOS,
+in the secure data transmission with a symmetric
+key management, the larger network scale increases,
+the more orphan nodes appear in the network, and
+vice versa [2].
+Communication overhead. the security overhead in the
+data packets during communication.
+Computational overhead. the energy cost and compu-
+tation efficiency on the generation and verification of
+the certificates or signatures for security.
+. Attack resilience. the types of attacks that security
+protocol can protect against.
+
+the
+
+6.2 Secure Data Transmission with Hierarchical
+Clustering
+In large-scale CWSNs, multihop data transmission is used
+for transmission between the CHs to the BS, where the
+direct communication is not possible due to the distance
+or obstacles between them. The version of the proposed
+SET-IBS and SET-IBOOS protocols for CWSNs can be
+extended using multihop routing algorithms,
+to form
+secure data transmission protocols for hierarchical clusters.
+The solutions to this extension could be achieved by
+applying the following two routing models:
+
+1. The multihop planar model. A CH node transmits data
+to the BS by forwarding its data to its neighbor
+nodes, in turn the data are sent to the BS. We have
+proposed an energy-efficient routing algorithm for
+hierarchically clustered WSNs in [30], and it
+is
+suitable for the proposed secure data transmission
+protocols.
+2. The cluster-based hierarchical method. The network is
+broken into clustered layers, and the data packages
+travel from a lower cluster head to a higher one, in
+turn to the BS, for example, [31].
+
+7 PROTOCOL EVALUATION
+
+In this section, we first introduce the three attack models of
+the adversaries, and provide the security analysis of the
+proposed protocols against these attacks. We then present
+results obtained from calculations and simulations. For the
+
+network simulat ions, we use the network simulator
+OMNeT++ 3.0 [32] to simulate SET-IBS and SET-IBOOS,
+and we focus on the energy consumption spent on message
+propagation and computation.
+
+7.1 Security Analysis
+To evaluate the security of the proposed protocols, we have
+to investigate the attack models in WSNs that threaten the
+proposed protocols, and the cases when an adversary
+(attacker) exists in the network. Afterwards, we detail the
+solutions and countermeasures of the proposed protocols,
+against various adversaries and attacks.
+
+7.1.1 Attack Models
+In this paper, we group attack models into three categories
+according to their attacking means as follows, and study how
+these attacks may be applied to affect the proposed protocols:
+
+.
+
+Passive attack on wireless channel. Passive attackers are
+able to perform eavesdropping at any point of the
+network, or even the whole communication of the
+network. Thus, they can undertake traffic analysis or
+statistical analysis based on the monitored or
+eavesdropped messages.
+. Active attack on wireless channel. Active attackers have
+greater ability than passive adversaries, which can
+tamper with the wireless channels. Therefore, the
+attackers can forge, reply, and modify messages.
+Especially in WSNs, various types of active attacks
+can be triggered by attackers, such as bogus and
+rep layed rou t ing in forma t ion a t tack , s inkho le
+and wormhole attack, selective forwarding attack,
+HELLO flood attack, and Sybil attack [2], [23].
+. Node compromising attack. Node compromising at-
+tackers are the most powerful adversaries against
+the proposed protocols as we considered. The
+attackers can physically compromise sensor nodes,
+by which they can access the secret information
+stored in the compromised nodes, for example, the
+security keys. The attackers also can change the
+inner state and behavior of the compromised sensor
+node, whose actions may be varied from the premier
+protocol specifications.
+
+7.1.2 Solutions to Attacks and Adversaries
+The proposed SET-IBS and SET-IBOOS provide different
+types of security services to the communication for CWSNs,
+in both setup phase and steady-state phase. Both in SET-IBS
+and SET-IBOOS, the encryption of the message provides
+confidentiality, the hash function provides integrity, the
+nonce and time stamps provide freshness, and the digital
+signature provides authenticity and nonrepudiation:
+
+.
+
+Solutions to passive attacks on wireless channel. In the
+proposed SET-IBS and SET-IBOOS, the sensed data
+are encrypted by the homomorphic encryption
+scheme from [29], which deals with eavesdropping.
+Thus, the passive adversaries cannot decrypt the
+eavesdropped message without the decryption key.
+Furthermore, both SET-IBS and SET-IBOOS use the
+key management of concrete ID-based encryption.
+Based on the DHP assumpt ion ment ioned in
+
+758
+
+IEEE TRANSACTIONS ON PARALLEL AND DISTRIBUTED SYSTEMS, VOL. 25, NO. 3, MARCH 2014
+
+.
+
+.
+
+Section 3, the ID-based key management in the
+proposed protocols is IND-ID-CCA secure (semantic
+secure against an adaptive ID-based chosen cipher-
+text attack) and IND-ID-CPA secure (semantic
+secure against an adaptive ID-based chosen plaintext
+attack). As a result, properties of the proposed
+secure data transmission for CWSNs settle the
+countermeasures to passive attacks.
+Solutions to active attacks on wireless channel. Focusing
+on the resilience against certain attacks to CWSNs
+mentioned in attack models, SET-IBS and SET-
+IBOOS works well against active attacks. Most kinds
+of attacks are pointed to CHs of acting as inter-
+mediary nodes because of the limited functions by
+the leaf nodes in a cluster-based architecture. Since
+attackers do not have valid digital signature to
+concatenate with broadcast messages for authentica-
+tion, attackers cannot pretend as the BS or CHs to
+trigger attacks. Therefore, SET-IBS and SET-IBOOS
+are resilient, and robust to the sinkhole and selective
+forwarding attacks because the CHs being attacked
+are capable to ignore all the communication packets
+with bogus node IDs or bogus digital signatures.
+Together with round-rotating mechanism and digi-
+tal signature schemes, SET-IBS and SET-IBOOS are
+resilient to the HELLO flood attacks involving CHs.
+Solutions to node compromising attacks. In case of
+attacks from a node compromising attacker, the
+compromised sensor node cannot be trusted any-
+more to fulfill the security requirements by key
+managements. In the case that the node has been
+compromised but works normally, the WSN system
+needs an intrusion detection mechanism to detect
+the compromised node [33], and has to replace the
+compromised node manually or abandon using it. In
+this part , we invest igate the influence of
+the
+remaining sensor nodes, and evaluate the properties
+only to that part of the network.
+Since each round in the protocol operations terminates in
+a predefined time, SET-IBS and SET-IBOOS satisfy the
+property of protocol execution termination, depending on
+the local timer of the sensor nodes. The CH nodes are
+elected based only on their local decisions; therefore, both
+SET-IBS and SET-IBOOS operate if there exists an active or
+compromising attacker. To eliminate the compromised
+sensor node in the network, all
+the revoked IDs of
+compromised nodes will be broadcast by the BS at the
+beginning of the current round. In this way, the compro-
+mised nodes can be prevented from either electing as CHs
+or joining clusters in this round. Furthermore, using either
+the IBS scheme or the IBOOS scheme has at least two
+advantages. First, it eliminates the utilization of certificates
+and auxiliary authentication information. Therefore, the
+message overhead for security can be reduced, especially
+with IBOOS. Also, because only the compromised node IDs
+have to be stored, it requires very small storage space for
+the node revocation. Since the length of a user’s ID is
+usually only 12 bytes, the storage of compromised user’s
+IDs do not require much storage space.
+
+7.2 Message Size of Data Transmission
+In this part, we do the quantitative calculation of the
+message packet size on data transmission in the steady state
+(main phase) of the different protocols for comparison. In
+the proposed SET-IBS, the message packet size on transmis-
+sion for node j is described in Section 4, which equals to
+jIDi j þ jIDj j þ jtj j þ jCj j þ jj j þ jcj j:
+cj ¼ jhðCj ktj kj Þj is a hash value, which is 20 bytes when
+SHA-1 [34] is used. Although most of existing WSNs
+constructed in real-world use no more than 200 nodes [1], a
+large scale WSN could consist of hundreds of nodes or
+more in the future. Thus in this paper, we set the length of
+node IDs as 2 bytes. In addition, the time stamp jtj j is very
+small like 1 byte, and jCj j is assumed as 20 bytes. The total
+message size of a transmission packet is 44 þ jj j bytes,
+whereas jj j
+is variable. For example, when using the
+Tate pairing [28] for elliptic curve cryptography (ECC),
+the order q of GG1 and GG2 could be a 160-bit prime, if the
+required security level of ECC is equivalent to RSA with
+1,024-bit keys (RSA-1,024) [35], which provides the cur-
+rently accepted security level.
+In this way,
+the total
+message size of a data packet is 64 bytes in SET-IBS.
+Moreover, p could be a 512-bit prime to achieve higher
+level of security, where GG is a q-order multiplicative
+subgroup of the finite field F
+p2 [22].
+In SET-IBOOS, the message packet size on transmission
+for node j is described in Section 5, which equals to
+jIDi j þ jIDj j þ jtj j þ jCj j þ jRj j þ jj j þ jzj j;
+the length of ID and t are same to that of SET-IBS, and jCj j is
+b
+assumed as 20 bytes. In the online signature hRj ; j ; zj i, the
+length of jzj ¼ j
+j þ ðhs modqÞj depends on the size of q,
+b
+which is set to 160 bits long to achieve a similar security
+j
+level of SET-IBS, because the offline signature
+is a
+the cyclic group GG’s
+negative exponential value of
+generator g (in (7)) that is very small. For the other parts
+b
+of the signature hj ; zj i, jj j is the exponentiation to the
+j , from the negative exponential function ( tj , in
+power
+(8)) of the generator g, thus its value is very small, which is
+assumed as 2 bytes at most in this paper. Similarly, the
+length of Rj is assumed as 2 bytes. Therefore, the total
+message size of a data packet is 48 bytes in SET-IBOOS.
+We compare the proposed SET-IBS and SET-IBOOS with
+other secure protocols that use a symmetric key manage-
+ment, SecLEACH protocol [8] and multilevel Tesla-based
+protocol [36]. We calculate the packet size in these protocols
+in the same way, which equals to
+jIDj j þ jIDCH j þ jnoncej þ jCj j þ jmack ðIDj jIDCH jnoncejCj Þj;
+in SecLEACH protocol, where mac is the message authen-
+
+	
+tication code. And it equals to
+j þ jP K j þ jAIj j;
+jIDj j þ jtj j þ jCj j þ jS igSK hðIDj jtj jCj Þ
+
+in multilevel Tesla-based protocol, where S ig is the
+signature based on the secret key, SK=P K is the public/
+private key pair for signing and verification, and AI is
+the auxiliary information for security referred to the
+sensor node.
+
+LU ET AL.: SECURE AND EFFICIENT DATA TRANSMISSION FOR CLUSTER-BASED WIRELESS SENSOR NETWORKS
+
+759
+
+TABLE 4
+Parameter Settings for the Energy Consumption in Simulations
+
+Fig. 2. Message size for transmission compared to the number of nodes.
+
+Fig. 2 shows the total message sizes in different protocols
+for data transmission, which achieve a similar security level
+to RSA-1024, by concerning the number of sensor nodes. We
+can see that the proposed SET-IBS has smaller message size
+than multilevel Tesla-based protocol. At the same time, it
+generates larger message size as compared to SecLEACH.
+However, the orphan node problem is fully solved in SET-
+IBS. We can also see that the proposed SET-IBOOS has the
+smallest message size than all the other protocols. We
+further do network simulations on energy consumption and
+computation cost in the next section.
+
+7.3 Simulation Results
+Comprehending the extra energy consumption by the
+auxiliary security overhead and prolonging the network
+lifetime are essential in the proposed SET-IBS and SET-
+IBOOS . To evaluate the energy consumption of
+the
+computational overhead for security in communication,
+we consider three metrics for the performance evaluation:
+Network lifetime, system energy consumption, and the number of
+alive nodes. For the performance evaluation, we compare the
+proposed SET-IBS and SET-IBOOS with LEACH protocol
+[4] and SecLEACH protocol [8]:
+
+.
+
+. Network lifetime (the time of FND)—We use the most
+general metric in this paper, the time of first node
+dies (FND), which indicates the duration that the
+sensor network is fully functional [1]. Therefore,
+maximizing the time of FND in a WSN means to
+prolong the network lifetime.
+The number of alive nodes—The ability of sensing and
+collecting information in a WSN depends on the set of
+alive nodes (nodes that have not failed). Therefore,
+we evaluate the functionality of the WSN depending
+on counting the number of alive nodes in the network.
+Total system energy consumption—It refers to the
+amount of energy consumed in a WSN. We evaluate
+the variation of energy consumption in secure data
+transmission protocols.
+In the network simulation experiments, 100 nodes are
+randomly distributed in a 100 m  100 m area, with a fixed
+BS located near part of the area, as shown in the figure in
+the Appendix. All the sensor nodes periodically sense
+events and transmit the data packet to the BS. We assume
+
+.
+
+that the sensor CPU is a low-power high-performance Intel
+PXA255 processer of 400 MHz, which has been widely used
+in many sensor products, for example, Crossbow Stargate
+[37].
+Table 4 lists up the parameter settings for the energy
+consumption in the network simulations. In the simulations,
+we use the same radio energy model in [4], and the other
+parameters are from [8], [21], [22], [24]. We assume that the
+BS has unlimited energy. For clustering, we properly set
+the desired percentage of CH nodes  ¼ 10% during one
+round. In addition, on simulating the SecLEACH protocol,
+we choose a security level sl ¼ 0:98 for a fixed length of a key
+ring m ¼ 100. Thus, the probability that two nodes will share
+a key is Ps ¼ 0:87, which is also referred to as the expected
+orphan rate of the orphan node problem.
+Fig. 3 illustrates the time of FND using different
+protocols. We apply confidence intervals to the simulation
+results, and a certain percentage (confidence level) is set to
+90 percent. Fig. 5 shows the comparison of system lifetime
+using SET-IBS and SET-IBOOS versus LEACH protocol and
+SecLEACH protocol. The simulation results demonstrate
+that the system lifetime of SET-IBOOS is longer than that of
+SET-IBS and SecLEACH protocol. The time of FND in both
+SET-IBS and SET-IBOOS is shorter than that of LEACH
+protocol due to the security overhead on computation cost
+of the IBS process.
+
+Fig. 3. Comparison of FND time in different protocols.
+
+760
+
+IEEE TRANSACTIONS ON PARALLEL AND DISTRIBUTED SYSTEMS, VOL. 25, NO. 3, MARCH 2014
+
+simulation results show that the proposed SET-IBS and
+SET-IBOOS protocols have better performance than existing
+secure protocols for CWSNs. With respect to both computa-
+tion and communication costs, we pointed out the merits
+that using SET-IBOOS with less auxiliary security overhead
+is preferred for secure data transmission in CWSNs.
+
+ACKNOWLEDGMENTS
+
+The authors would like to thank the associate editor and the
+anonymous reviewers, for their valuable suggestions and
+comments that
+improved this paper. This work was
+partially supported by Grant-in-Aid for Scientific Research
+Japan Society for Promotion of Science (JSPS) and
+of
+Collaboration Research Grant of National
+Institute of
+Informatics (NII), Japan. J. Li is the corresponding author.
+
+[6]
+
+REFERENCES
+[1] T. Hara, V.I. Zadorozhny, and E. Buchmann, Wireless Sensor
+Network Technologies for the Information Explosion Era, Studies in
+Computational Intelligence, vol. 278. Springer-Verlag, 2010.
+[2] Y. Wang, G. Attebury, and B. Ramamurthy, “A Survey of Security
+Issues in Wireless Sensor Networks,” IEEE Comm. Surveys &
+Tutorials, vol. 8, no. 2, pp. 2-23, Second Quarter 2006.
+[3] A.A. Abbasi and M. Younis, “A Survey on Clustering Algorithms
+for Wireless Sensor Networks,” Computer Comm., vol. 30, nos. 14/
+15, pp. 2826-2841, 2007.
+[4] W. Heinzelman, A. Chandrakasan, and H. Balakrishnan, “An
+Application-Specific Protocol Architecture for Wireless Microsen-
+sor Networks,” IEEE Trans. Wireless Comm., vol. 1, no. 4, pp. 660-
+670, Oct. 2002.
+[5] A. Manjeshwar, Q.-A. Zeng, and D.P. Agrawal, “An Analytical
+Model for Information Retrieval in Wireless Sensor Networks
+Using Enhanced APTEEN Protocol,” IEEE Trans. Parallel &
+Distributed Systems, vol. 13, no. 12, pp. 1290-1302, Dec. 2002.
+S. Yi et al., “PEACH: Power-Efficient and Adaptive Clustering
+Hierarchy Protocol for Wireless Sensor Networks,” Computer
+Comm., vol. 30, nos. 14/15, pp. 2842-2852, 2007.
+[7] K. Pradeepa, W.R. Anne, and S. Duraisamy, “Design and
+Implementation Issues of Clustering in Wireless Sensor Net-
+works,” Int’l J. Computer Applications, vol. 47, no. 11, pp. 23-28,
+2012.
+[8] L.B. Oliveira et al., “SecLEACH-On the Security of Clustered
+Sensor Networks,” Signal Processing, vol. 87, pp. 2882-2895,
+2007.
+[9] P. Banerjee, D. Jacobson, and S. Lahiri, “Security and Performance
+Analysis of a Secure Clustering Protocol for Sensor Networks,”
+Proc. IEEE Sixth Int’l Symp. Network Computing and Applications
+(NCA), pp. 145-152, 2007.
+[10] K. Zhang, C. Wang, and C. Wang, “A Secure Routing Protocol for
+Cluster-Based Wireless Sensor Networks Using Group Key
+Management,” Proc. Fourth Int’l Conf. Wireless Comm., Networking
+and Mobile Computing (WiCOM), pp. 1-5, 2008.
+[11] S. Sharma and S.K. Jena, “A Survey on Secure Hierarchical
+Routing Protocols in Wireless Sensor Networks,” Proc. Int’l Conf.
+Comm., Computing & Security (ICCCS), pp. 146-151, 2011.
+[12] G. Gaubatz et al., “State of the Art in Ultra-Low Power Public Key
+Cryptography for Wireless Sensor Networks,” Proc. IEEE Third
+Int’l Conf. Pervasive Computing and Comm. Workshops (PerCom),
+pp. 146-150, 2005.
+[13] W. Diffie and M. Hellman, “New Directions in Cryptography,”
+IEEE Trans. Information Theory, vol. IT-22, no. 6, pp. 644-654, Nov.
+1976.
+[14] A. Shamir, “Identity-Based Cryptosystems and Signature
+Schemes,” Proc. Advances in Cryptology (CRYPTO), pp. 47-53,
+1985.
+[15] D.W. Carman, “New Directions in Sensor Network Key Manage-
+ment,” Int’l J. Distributed Sensor Networks, vol. 1, pp. 3-15, 2005.
+[16] R. Yasmin, E. Ritter, and G. Wang, “An Authentication Frame-
+work for Wireless Sensor Networks Using Identity-Based Signa-
+tures,” Proc. IEEE Int’l Conf. Computer and Information Technology
+(CIT), pp. 882-889, 2010.
+
+Fig. 4. Comparison of energy consumption in different protocols.
+
+Fig. 5. Comparison of the number of alive nodes in different protocols.
+
+F ig . 4 i l lus tra tes the energy of a l l sensor nodes
+disseminated in the network, which also indicates the
+balance of energy consumption in the network. Fig. 5 shows
+the comparison of alive nodes’ number,
+in which the
+proposed SET-IBS and SET-IBOOS protocols versus LEACH
+and SecLEACH protocols. The results demonstrate that the
+proposed SET-IBS and SET-IBOOS protocols consume
+energy faster than LEACH protocol because of the commu-
+nication and computational overhead for security of either
+IBS or IBOOS process. However, the proposed SET-IBOOS
+has a better balance of energy consumption than that of
+SecLEACH protocol.
+
+8 CONCLUSION
+
+In this paper, we first reviewed the data transmission issues
+and the security issues in CWSNs. The deficiency of the
+symmetric key management for secure data transmission
+has been discussed. We then presented two secure and
+efficient data transmission protocols, respectively,
+for
+CWSNs, SET-IBS, and SET-IBOOS.
+In the evaluation
+section, we provided feasibility of the proposed SET-IBS
+and SET-IBOOS with respect to the security requirements
+and analysis against routing attacks. SET-IBS and SET-
+IBOOS are efficient in communication and applying the ID-
+based cryptosystem, which achieves security requirements
+in CWSNs, as well as solved the orphan node problem in
+the secure transmission protocols with the symmetric key
+management. Lastly, the comparison in the calculation and
+
+LU ET AL.: SECURE AND EFFICIENT DATA TRANSMISSION FOR CLUSTER-BASED WIRELESS SENSOR NETWORKS
+
+761
+
+[18]
+
+[25]
+
+[21]
+
+[17] H. Lu, J. Li, and H. Kameda, “A Secure Routing Protocol for
+Cluster-Based Wireless Sensor Networks Using ID-Based Digital
+Signature,” Proc. IEEE GLOBECOM, pp. 1-5, 2010.
+J. Sun et al., “An Identity-Based Security System for User Privacy
+in Vehicular Ad Hoc Networks,” IEEE Trans. Parallel & Distributed
+Systems, vol. 21, no. 9, pp. 1227-1239, Sept. 2010.
+[19] S. Even, O. Goldreich, and S. Micali, “On-Line/Off-Line Digital
+Signatures,” Proc. Advances in Cryptology (CRYPTO), pp. 263-275,
+1990.
+[20] S. Xu, Y. Mu, and W. Susilo, “Online/Offline Signatures and
+Multisignatures for AODV and DSR Routing Security,” Proc. 11th
+Australasian Conf. Information Security and Privacy, pp. 99-110, 2006.
+J. Liu et al., “Efficient Online/Offline Identity-Based Signature for
+Wireless Sensor Network,” Int’l J. Information Security, vol. 9, no. 4,
+pp. 287-296, 2010.
+[22] D. Boneh and M. Franklin, “Identity-Based Encryption from the
+Weil Pairing,” Proc. 21st Ann. Int’l Cryptology Conf. Advances in
+Cryptology (CRYPTO ’01), pp. 213-229, 2001.
+[23] C. Karlof and D. Wagner, “Secure Routing in Wireless Sensor
+Networks: Attacks and Countermeasures,” Ad Hoc Networks,
+vol. 1, nos. 2/3, pp. 293-315, 2003.
+[24] F. Hess, “Efficient Identity Based Signature Schemes Based on
+Pairings,” Proc. Ninth Ann.
+Int’l Workshop Selected Areas in
+Cryptography (SAC), pp. 310-324, 2003.
+J.J. Rotman, An Introduction to the Theory of Groups, fourth ed.
+Springer-Verlag, 1994.
+[26] K.S. McCurley, “The Discrete Logarithm Problem,” Proc. Symp.
+Applied Math., Programming Computer Science, vol. 42, pp. 49-74,
+1990.
+[27] D. Boneh, I. Mironov, and V. Shoup, “A Secure Signature Scheme
+from Bilinear Maps,” Proc. RSA Conf. The Cryptographers’ Track
+(CT-RSA), pp. 98-110, 2003.
+[28] P. Barreto et al., “Efficient Algorithms for Pairing-Based Crypto-
+systems,” Proc. 22nd Ann.
+Int’l Cryptology Conf. Advances in
+Cryptology (CRYPTO), pp. 354-369, 2002.
+[29] C. Castelluccia, E. Mykletun, and G. Tsudik, “Efficient Aggrega-
+tion of Encrypted Data in Wireless Sensor Networks,” Proc. Second
+Ann. Int’l Conf. Mobile and Ubiquitous Systems: Networking and
+Services (MobiQuitous), pp. 109-117, 2005.
+[30] H. Lu, J. Li, and G. Wang, “A Novel Energy Efficient Routing
+Algorithm for Hierarchically Clustered Wireless Sensor Net-
+works,” Proc. Fourth Int’l Conf. Frontier of Computer Science and
+Technology (FCST), pp. 565-570, 2009.
+[31] Y. Jia, L. Zhao, and B. Ma, “A Hierarchical Clustering-Based
+Routing Protocol
+for Wireless Sensor Networks Supporting
+Multiple Data Aggregation Qualities,” IEEE Trans. Parallel &
+Distributed Systems, vol. 4, nos. 1/2, pp. 79-91, 2008.
+[32] “OMNeT++,” OMNeT++ Community, http://www.omnetpp.org/,
+2013.
+[33] B. Sun et al., “Intrusion Detection Techniques in Mobile Ad Hoc
+and Wireless Sensor Networks,” IEEE Wireless Comm. Magazine,
+vol. 14, no. 5, pp. 56-63, Oct. 2007.
+[34] Secure Hash Standard, Nat’l Inst. of Standards and Technology
+(NIST), Fed .
+Information Processing Standard Publ ication,
+vol. 180, no. 1, 1995.
+[35] D. Hankerson, S. Vanstone, and A. Menezes, Guide to Elliptic Curve
+Cryptography. Springer, 2004.
+[36] D. Liu and P. Ning, “Multilevel TESLA: Broadcast Authentica-
+tion for Distributed Sensor Networks,” ACM Trans. Embedded
+Computing Systems, vol. 3, pp. 800-836, 2004.
+[37] “Crossbow Stargate,” Crossbow Technology, http://bullseye.xbow.
+com:81/Products/productdetails.aspx?sid=229, 2013.
+
+Huang Lu (S’10) received the BS degree in
+information and network science from Chiba
+Institute of Technology, Chiba, Japan, and the
+MS degree in computer sc ience from the
+University of Tsukuba, Tsukuba, Japan,
+in
+2007 and 2009,
+respectively. He studied in
+Harbin Institute of Technology, Harbin, China,
+before he went to Japan for overseas exchange.
+He is currently working toward the PhD degree
+a t
+the Depa r tmen t o f Compu te r Sc ience ,
+Graduate School of Systems and Information Engineering, University
+of Tsukuba, Tsukuba, Japan. His research interests include wireless ad
+hoc and sensor networks, routing protocols, and network security. He is
+a student member of the IEEE.
+
+Jie Li (M’96-SM’04) received the BE degree
+in computer science from Zhejiang University,
+Hangzhou, China, the ME degree in electronic
+engineering and communication systems from
+China Academy of Posts and Telecommuni-
+cat ions, Be i j ing, Ch ina. He rece ived the
+DrEng degree from the University of Electro-
+Communications, Tokyo, Japan. He has been
+with the University of Tsukuba, Tsukuba,
+Japan, where he is a professor in the Faculty
+of Engineering, Information and Systems. His research interests are
+in mobile distributed multimedia computing and networking, OS,
+network security, modeling and performance evaluation of
+informa-
+tion systems. He received the Best Paper Award from IEEE
+NAECON’97. He has served as a secretary for Study Group on
+System Evaluation of IPSJ and on several editorial boards for IPSJ
+Journal and so on, and on Steering Committees of
+the SIG of
+System EVAluation (EVA) of
+IPSJ,
+the SIG of DataBase System
+(DBS) of
+IPSJ, and the SIG of MoBiLe computing and ubiquitous
+communications (MBL) of IPSJ. He has been a cochair of several
+international symposia and workshops. He has also served on the
+international conferences such as
+program committees for several
+IEEE GLOBECOM, and IEEE
+IEEE ICDCS,
+IEEE INFOCOM,
+MASS. He is a senior member of
+the IEEE and ACM, and a
+member of Information Processing Society of Japan (IPSJ).
+
+Mohsen Guizani
+re-
+(S’85-M’89-SM’99-F’09)
+ceived the BS (with distinction) and MS degrees
+in electrical engineering,
+the MS and PhD
+degrees in computer eng ineer ing in 1984,
+1986 , 1987 , and 1990,
+respec t ive ly,
+from
+Syracuse University, Syracuse, New York. He
+is currently a professor and the associate vice
+president for Graduate Studies at Qatar Uni-
+versity, Doha, Qatar. He was the chair of the
+Computer Sc ience Department at Western
+Michigan University from 2002 to 2006 and the chair of the Computer
+Science Department at University of West Florida from 1999 to 2002. He
+also served in academic positions at the University of Missouri-Kansas
+City, University of Colorado-Boulder, Syracuse University and Kuwait
+University. His research interests include computer networks, wireless
+communications and mobile computing, and optical networking. He
+currently serves on the editorial boards of six technical Journals and the
+founder and EIC of “Wireless Communications and Mobile Computing,”
+Journal published by John Wiley (http://www.interscience.wiley.com/
+jpages/1530-8669/). He is the author of eight books and more than 300
+publications in refereed journals and conferences. He guest edited a
+number of special
+issues in IEEE Journals and Magazines. He also
+served as a member, a chair, and a general chair of a number of
+conferences. He served as the chair of IEEE Communications Society
+Wireless Technical Committee (WTC) and Chair of Transmission,
+Access and Optical Systems (TAOS) Technical Committee. He was an
+IEEE Computer Society distinguished lecturer from 2003 to 2005. He is
+a fellow of the IEEE and a senior member of the ACM.
+
+. For more information on this or any other computing topic,
+please visit our Digital Library at www.computer.org/publications/dlib.
+
+

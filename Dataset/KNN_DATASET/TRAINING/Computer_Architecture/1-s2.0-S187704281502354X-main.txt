@@ -1,0 +1,439 @@
+Available online at www.sciencedirect.com
+ScienceDirect
+
+ Procedia - Social and Behavioral Sciences   186  ( 2015 )  388 – 394 
+
+5th World Conference on Learning, Teaching and Educational Leadership, WCLTA 2014  
+Educational Innovation in the Computer Architecture area 
+Jose Manuel Lopez-Guede a*, Ismael Sotob, Aitor Moreno Fdez. de Lecetac,  
+Jesus Maria Larrañagad 
+
+ 
+ 
+
+ 
+
+a Systems Engineering and Automatic Control Dept, University College of Engineering of Vitoria, Basque Country University (UPV/EHU), 
+C/Nieves Cano 12, 01006 Vitoria-Gasteiz, Spain 
+b Electric Enginering Dept.,  Santiago de Chile University, Av. Ecuador 3519, 9170124 Santiago, Chile  
+c Ibermática, Leonardo Da Vinci 9, 01510 Miñano , Spain 
+d Business Management Dept., University College of Engineering of Vitoria, Basque Country University (UPV/EHU ), C/Nieves Cano 12, 01006 
+Vitoria, Spain 
+ 
+ 
+
+ 
+Abstract 
+ 
+In  the  present work  authors  give  a  detailed  description  of  the  previously  performed  analysis  carried  out  to  formulate  a  concr ete 
+educational  innovation  project  proposal  in  the  area  of  the  Computer  Architecture,  more  specifically,  in  the  Computer  Structur e 
+and Architecture  sub-module. That  project was  submitted  to  the  competitive Educational  Innovation Projects Call  2013 -2015 of 
+the  Basque  Country  University  (UPV/EHU,  Spain),  and  fortunately,  it  was  elected  and  granted  by  the  Education  Advisory 
+Service of  the same university. This project follows  the  the way started by another similar project but  in other knowledge area of 
+Electronics  in  the  same University College.  In  this paper,  the  specific problems of  the Computer Structure and Architecture  s ub-
+module  in  the University College of Vitoria-Gasteiz  (that  is  the place where  it  is being  carried out) are analyzed,  the  framework 
+in  a  wide  sense  is  described  (University,  University  College  and  syllabus)  and  the  specificities  of  the  current  project  are 
+explained.  All  the  analysis  is  done  taking  into  account  the  competences  point  of  view  (both  specific  for  each  subject  and 
+transversal for the degree). 
+© 2015 The Authors. Published by Elsevier Ltd. 
+© 2015 The Authors. Published by Elsevier Ltd. This is an open access article under the CC BY-NC-ND license 
+(http://creativecommons.org/licenses/by-nc-nd/4.0/).
+Peer-review under responsibility of Academic World Education and Research Center. 
+Peer-review under responsibility of Academic World Education and Research Center
+Keywords: Active Learning, Cooperative Learning, Computer Engineering, Computer Architecture; 
+ 
+ 
+1.  Introduction 
+ 
+
+Active  Learning  is  a  wide  paradigm  that  groups  several  methods,  and  it  is  based  on  the  responsibility  and 
+involvement  of  the  students  in  its  own  learning  process  (Bonwell  &  Eison,  1991;  Felder  &  Brent,  1994).  One  of 
+ 
+
+* Jose Manuel Lopez-Guede. Tel.: +34-945-014-084 
+   E-mail address: jm.lopez@ehu.es 
+
+1877-0428 © 2015 The Authors. Published by Elsevier Ltd. This is an open access article under the CC BY-NC-ND license 
+(http://creativecommons.org/licenses/by-nc-nd/4.0/).
+Peer-review under responsibility of Academic World Education and Research Center
+doi: 10.1016/j.sbspro.2015.04.094 
+
+ Jose Manuel Lopez-Guede et al.  /  Procedia - Social and Behavioral Sciences   186  ( 2015 )  388 – 394 
+
+389
+
+these  methods  is  named  Cooperative  Learning,  that  is  a  paradigm  in  which  the  learning  activities  are  planned 
+looking  for  the  positive  interdependence  between  the  participants  of  such  learning  (Felder & Brent,  2001; Felder & 
+Brent, 2009) . 
+In  this  paper  authors  describe  an  Educational  Innovative  Project  based  on  both  active  and  cooperative  learning, 
+which  is being carried out  in  the  field of Computer Architecture.  Its  implementation  is being carried out  in  the  sub -
+module  named  Computer  Structure  and  Architecture  of  the  Bachelor  Degree  in  Computer  Management  and 
+Information  Systems  Engineering,  of  the  University  College  of  Engineering  of  Vitoria -Gasteiz,  University  of  the 
+Basque  Country  (UPV/EHU,  Spain).  With  this  implementation  we  are  trying  to  overcome  several  difficulties  that 
+have been detected in the subjects of that sub-module. 
+The  structure  of  the  paper  is  as  follows.  The  second  section  describes  the  specific  problems  of  the  Computer 
+Structure  and  Architecture  sub-module.  The  third  section  analyzes  the  framework  in  which  the  project  is  being 
+carried  out,  analyzing  the  support  given  by  the  University  of  the  Basque  Country,  the  University  College  and  the 
+syllabus. The detailed characteristics of  the project,  its background and  the expected  results are shown  in  the  fourth 
+section. Finally, our conclusions and future work are described in the fifth and last section.  
+ 
+2.  Specific problems of the Computer Structure and Architecture sub -module 
+ 
+
+In  this  section we are going  to describe  the  specific problems  that were  found  inside  the Computer Structure and  
+Architecture  sub-module.  As  it  will  be  explained  deeply  in  section  3,  this  sub -module  belongs  to  module  “M02  – 
+Module common to the Informatics branch”, and it is composed of “Computer Structure” (first course, 6 ECTS) and 
+“Computer  Architecture”  (second  course,  6  ECTS)  subjects.  Without  going  into  technical  details,  we  can  say 
+without fear of deception that it is par excellence the sub-module dedicated to the hardware area of the degree. 
+Apart from other minor circumstances, we can classify the following ones as problematic: 
+(cid:120)  The  students  of  Degree  in  Computer  Management  and  Information  Systems  Engineering  are  students  that 
+basically  seek  software  knowledge,  not  hardware,  so  their  predisposition  towards  these  subjects  is  not  exactly 
+optimal. 
+ 
+(cid:120)  Derived  from  this  idea,  they  tend  to  have  a  confused  view  of  the  subjects  that makes  them  believe  that  they  are 
+useless, at least immediately. 
+ 
+(cid:120)  When they start the engineering studies, students have some knowledge of mathematics, physics, chemistry, etc.; 
+however,  when  they  start  this  degree  they  do  not  have  any  hardware  knowledge,  so  they  have  to  start  from 
+absolute zero. 
+ 
+(cid:120)  The  first  subject  of  the  sub-module  is  in  the  first  course,  when  students  do  not  have  yet  a  habit  of  working 
+according to what engineering is. 
+ 
+(cid:120)  On the other hand, the second subject belongs to the second course, still far from finishing their studies without a 
+clear job position horizon, so they cannot see its utility.  
+ 
+(cid:120)  The courses are in sequence, and it is seemingly positive, but the reality is that  in the  first course there are a tiny 
+number of students who go to the second course passing all subjects, so between the two subjects is usually more 
+than one calendar year. 
+ 
+All  these  circumstances  make  it  appropriate  to  provide  a  more  dynamic  and  creati ve  subjects  that  compose  the 
+sub-module,  with  the  aim  of maximizing  the  classroom  attendance,  the  involvement  in  them  and  the  acquisition  of 
+competences (both specific and transversal) established for the two subjects.  
+ 
+ 
+ 
+
+ 
+
+390  
+
+ Jose Manuel Lopez-Guede et al.  /  Procedia - Social and Behavioral Sciences   186  ( 2015 )  388 – 394 
+
+3.  Global context 
+ 
+
+In order  to solve  the problems described above, we have  launched an educational  innovation project  in a context 
+and  under  some  specific  conditions.  This  framework  will  be  explained  in  this  section,  specifying  in  different 
+subsections  aspects  of  the  University  as  institution,  the  University  College  and  the  syllabus  where  it  is  being 
+implemented. 
+ 
+3.1.  Institutional framework: the University of the Basque Country  
+ 
+The  project  is  being  carried  out  at  the  University  of  the  Basque  Country,  (UPV/EHU,  Spain),  financially 
+supported  by  a  grant  obtained  in  the  competitive  Educational  Innovation  Project  call  2013 -2015  of  the  Education 
+Advisory  Service,  Vicerectorship  for  Teaching  Quality  and  Innovation.  This  vicerectorship  is  structured  in  four 
+main areas: 
+ 
+(cid:120)  Quality Cathedra: Contributes to  the knowledge, implementation and improvement of quality management in all 
+areas of the organization of the university, helping to achieve the highest standards of excellence.  
+ 
+Institutional  Evaluation  Service:  A  service  of  the  university  which  aims  to  guide  and  promote  the  process  of 
+evaluation, verification and accreditation as well as those related to improving the quality of higher education. It 
+also works with reference quality agencies in developing their programs in the university.  
+ 
+(cid:120)  Faculty  Evaluation  Service:  A  service  dedicated  to  promote,  design,  develop,  advise,  facilitate  and  train  faculty 
+evaluation process with the desire to contribute to the improvement of teaching quality.  
+ 
+(cid:120)  Educational  Advisory  Service:  It  is  a  service  which manages  courses  and  training  according  to  the  needs  of  the 
+faculty. It puts in place processes to gather information about which are the formation necessities.  
+
+(cid:120) 
+
+ 
+
+All  these  areas  converge  towards  a  methodology  named  IKD -Ikasketa  Kooperatibo  eta  Dinamikoa  in  Basque 
+(Dynamic and Cooperative Teaching-Learning in English), characterized by the following principles:  
+ 
+(cid:120)  Active  Education:  IKD  invites  students  to  become  the  architects  of  their  own  learning  and  an  active  element  in 
+the  governance  of  the  university.  To  get  this,  it  encourages  learning  through  active  methodologies,  ensures 
+continuous  and  formative  evaluation,  articulates  the  acknowledgement  of  its  previous  experience  (academic, 
+professional, vital and cultural), and promotes mobility programs (Erasmus,  SENECA) and cooperation. 
+ 
+(cid:120)  Territorial and social development: The IKD model development requires an ongoing process through which the 
+university  is committed  to  its social environment and community, with public vocation and economic and social 
+sustainability  criteria,  promoting  values  of  equality  and  inclusion.  It  also  takes  into  consideration  peculiar 
+characteristics of each of the three provinces where sits the university, to contribute to their empowerment and to 
+extract  from  them  their  formative  potential. A  curricula  development  responsible with  the  social  environment  is 
+done  through  internships,  collaboration  with  social  initiatives,  social  networks,  the  relationship  with  companies 
+and mobility programs that promote international experience and cooper ation of our students. 
+ 
+Institutional  Development:  IKD  curricula  development  drives  institutional  policies  that  promote  cooperation 
+between  the agents  involved  in  teaching,  in an environment of confidence and dynamism.  It promotes programs 
+that  encourage  institutional  structuring  through  the  figures  of  the  course  or  module  coordinator,  quality 
+commissions  and  promoting  teaching  teams,  which  are  key  elements  in  this  new  teaching  culture.  Other 
+institutional  actions  such  as  offering  different  types  of  education  (part-time  attendance,  semi-face,  non-face), 
+significant  and  sustainable  use  of  information  and  communication  technologies  (ICTs),  institutional  regulations 
+concerning  assessment,  infrastructure  design  of  educational  institutions  and  public  spaces  (IKDguneak-
+IKDplaces), the extension of hours of use of space, should be considered from a perspective that encourages IKD 
+culture. 
+
+(cid:120) 
+
+ Jose Manuel Lopez-Guede et al.  /  Procedia - Social and Behavioral Sciences   186  ( 2015 )  388 – 394 
+
+391
+
+ 
+(cid:120)  Professional development: First, the continuous training of the people involved in teaching activities (faculty and 
+support staff to teaching), in order to promote adequate professional development. Training programs (ERAGIN, 
+BEHATU,  FOPU)  project  to  support  educational  innovation  (PIE)  and  assessment  tools  for  teaching 
+(DOCENTIAZ), among others, are actions that support the construction of IKD.  
+ 
+3.2.  College framework: the University College of Engineering of Vitoria-Gasteiz 
+ 
+This  experience  is  being  developed  in  the  University  College  of  Engineering  of  Vitoria -Gasteiz  (University  of 
+Basque Country, Spain). This University College  has  a  long  teaching  career of over 50 years of  existence,  so  it has 
+known  various  curricula.  The  University  College  has  a  wide  range  of  studies,  and  currently  it  has  finished  the 
+Master  degree  in  Industrial  Engineering  Organization  and  the  following  bachelor  de grees:  Technical  Industrial 
+Engineering,  specialization  in  Industrial  Electronics; Technical  Industrial  Engineering,  specialization  in  Electricity; 
+Technical  Industrial  Engineering,  specialization  in  Mechanics;  Technical  Industrial  Engineering,  specializat ion  in 
+Industrial Chemistry; Technical Engineering in Topography and Technical Engineering in Computer Management.  
+At  this  time,  after  the  adaptation  to  the  European  Higher  Education  Area  (EHEA)  the  University  College  offers 
+the  Master  in  Production  Organization  and  Industrial  Management  and  the  following  bachelor  degrees:  Degree  in 
+Electrical  Engineering,  Degree  in  Industrial  Electronics  and  Automatics;  Degree  in  Geomatics  and  Topography, 
+Degree  in  Mechanical  Engineering,  Degree  in  Chemical  Engineering  and   Degree  in  Computer  Science  and 
+Information Systems. It is in this last degree where our work is being framed.  
+ 
+3.3.  Syllabus 
+ 
+The  syllabus  of  the  Degree  in  Computer  Science  and  Information  Systems  from  the  University  College  of 
+Engineering of Vitoria-Gasteiz is structured around five modules: 
+ 
+(cid:120)  M01 - Basic training module: The syllabus contains 60 ECTS of basic training materials related to the branch of 
+Engineering  and  Architecture,  which  are  divided  into  four  sub -modules  (Mathematics,  Physics, Computing  and 
+Business). The aim is to ensure the achievement of basic competences.  
+
+ 
+(cid:120)  M02  -  Common  module  to  the  Computing  branch:  They  are  subjects  that  cover  skills  that  are  nuclear  and  are 
+covered  by  subjects  which  do  not  form  part  of  the  core  cited  above,  but  provide  knowledge  and  general 
+competences in the field of Computer Engineering, providing students a versatile and multi -disciplinary training. 
+There  are  66  ECTS  for  11  subjects  taught  between  first  and  third  year,  organized  into  six  sub-modules.  This 
+module aims to ensure the achievement of the common competences to the computer branch.  
+
+ 
+(cid:120)  M03  -  Information  Systems  module:  The  subjects  comprising  the  module  Information  Systems  (54  ECTS) 
+provide training that, based on the competences acquired in basic and common modules to  the computer training 
+branch,  explores  aspects  related  to  the  organization, management  and  information  systems. The  nine  subjects  of 
+the module are grouped into three sub -modules between 12 and 24 credits. 
+
+ 
+(cid:120)  M04 - Final Project module: The Final Project has 12 ECTS, and is required  for graduation. The Final Project is 
+an original work to be done individually. The project must be presented and defended with a university tribunal, 
+and  consists  of  a  job  in  the  field  of  Information  Systems  (specific  Computer  Engineering  technology).  In  the 
+development  and  presentation  of  the  Final  Project  the  skills  acquired  during  the  whole  of  the  teachings  are 
+synthesized and integrated. 
+
+ 
+(cid:120)  M05  -  Optional  Module  Training:  Students  have  to  study  240  credits.  On  one  hand,  180  credits  correspond  to 
+compulsory  knowledge  (Basic  training  module,  Common  module  to  the  Computing  branch  and  Information 
+Systems module),  and  12  credits  to  the Final Project module. The  remaining  4 8  credits  are  the  result  of  the  free 
+choice of  the  students. When  choosing  these 48 ECTS  there are several options:  training  in companies  (up  to 24 
+
+392  
+
+ Jose Manuel Lopez-Guede et al.  /  Procedia - Social and Behavioral Sciences   186  ( 2015 )  388 – 394 
+
+ECTS);  the  development  of  cultural,  sporting,  charity  or university  activities  (up  to  6 ECTS);  or  take  cours es  in 
+the offer of optional titration.  
+
+ 
+4.  Project design 
+ 
+
+This  section  will  describe  the  specific  design  of  the  educational  innovation  project,  analyzing  in  different 
+subsections  the  previous  experiences  in  similar  projects,  the  specificities  of  this  project   and  finally,  the  expected 
+results. 
+ 
+4.1.  Previous project experiences 
+ 
+In  the  working  group  created  to  carry  out  the  project  which  is  being  described  in  this  paper,  there  are  faculties 
+who have participated in a similar project. For example, one of the authors  of this paper was the main investigator of 
+the  project  named  "Intra  and  Intergroup  Cooperative  Learning  in  Industrial  Informatics  Area".  That  project  was 
+selected  to  be  executed  in  the  biennium  2011-2013  in  a  competitive  call  of  the  Education  Advisory  Service  of  the 
+University  of  the  Basque  Country  (UPV/EHU).  Besides  the  good  results  obtained  from  the  academic  and  teaching 
+point of view, the involvement of students came to the point that it could generate even  two journal articles  (Lopez-
+Guede,  Fernandez-Gauna,  Graña,  Oterino  &  Larrañaga,  2012;  Lopez-Guede,    Fernandez-Gauna,  Graña  &  Oterino, 
+2013) . 
+ 
+4.2.  Specificities of the project 
+ 
+As  noted  above,  in  2013  the  Education  Advisory  Service  of  the  Vicerectorship   for  Teaching  Quality  and 
+Innovation  published  a  competitive  call  asking  for  proposals  related  to  active  learning.  Following  the  criterion  of 
+several faculties, this was a very interesting call for several reasons:  
+ 
+It  gave  us  the  chance  to  experiment  in  the  field  of  active  learning  with  support  of  the  university.  This  is  a  very 
+important  circumstance  because  if  the  results  are  not  as  good  as  is  desirable,  the  participating  faculties  will  not 
+be exposed to actions by the institution at the end of the projec t.  
+ 
+It  gave  us  the  opportunity  to  experience  between  faculties  from  different  areas  of  knowledge,  which  we  never 
+could have interacted in any other case.  
+ 
+(cid:120)  We  faced  the possibility of achieving  institutional  recognition. This  is an  important  factor because   to participate 
+in such kind of projects allows being included in other educational activities of the institution.  
+ 
+It  gave  us  the  chance  to  enjoy  a  few  hours  of  class  exemption  to  prepare  the  project  and  design  the  set  of 
+activities that led to active learning. 
+ 
+It gave us the opportunity to enjoy an endowment to renew  the teaching materials and to disseminate the project 
+itself in academic settings. 
+ 
+The  authors  of  this  paper,  along  with  other  teachers  submitted  a  project  proposal  entitled  "Intra  and  Inte rgroup 
+Cooperative  Learning  in  the  Computer  Structure    and  Architecture  Sub -module",  which  was  accepted  to  be 
+developed in the biennium 2013-2015, a proposal that we explain below.  
+This  proposal  is  developed  over  a  biennium,  which  covers  the  two  subjects  sub-module,  so  its  temporal 
+development  is  from  the  second  semester  (beginning  of  the  course  of Computer Structure)  of  the  course  2013/2014 
+through  December  2015  (administrative  finalization  of  the  project).  In  short,  this  is  a  cyclical  approach  that  is 
+exercised  twice  for  each  subject,  being  the  goal  promotion  (or  to  which  more  study  will  focus)  that  has  taken  the 
+course  of Computer Structure  during  2014-2015  and Computer Architecture  during  2015/2016. From  that  point  on, 
+all future promotions will use this methodology in the sub-module of Computer Structure and Architecture. 
+
+(cid:120) 
+
+(cid:120) 
+
+(cid:120) 
+
+(cid:120) 
+
+ Jose Manuel Lopez-Guede et al.  /  Procedia - Social and Behavioral Sciences   186  ( 2015 )  388 – 394 
+
+393
+
+The basic operating mechanism is the working group, because as shown in the title of the project it is the support 
+for  cooperative  learning,  both  within  each  working  group  and  among  dif ferent  workgroups.  The  basic  sequence  of 
+activities that are being carried out can be detailed as follows:  
+ 
+1.  The  first year of  implementation,  the educational  innovation specialist of  the  team will advise  the  remaining 
+faculties  for  each  subject  on  the  specific  techniques  to  use,  group  size  and  variety  of  activities  to  prefer  in 
+terms of size. The range is dictated by the specific competencies to achieve, as well as some transversal ones. 
+He will also advise on techniques to evaluate the performance of what has been launched. 
+ 
+2.  Faculties  directly  related  to  the  technical  content  of  the  subjects  pose  a  series  of  learning  activities  looking 
+for achieving specific and transversal competences.  
+
+3.  At  the  beginning  of  each  subject,  the  faculty  of  the  Department  of  Bus iness  Organization  member  of  the 
+team  will  provide  the  students  with  basic  techniques  for  maximum  utilization  of  resources.  He  also  will 
+emphasize the techniques for conflict resolution.  
+
+4.  Each  subject  will  be  developed  according  to  the  principles  of  cooperative  learning,  with  the  formation  of 
+groups  and  the  production  of  deliverables  by  them.  These  deliverables  will  be  written  works  with  their 
+corresponding oral presentations.  
+
+5.  After  the  implementation  in  each  subject,  it  will  be  subject  to  an  externa l  evaluation,  understood  as  that 
+carried out by another team member from another school, thereby obtaining valuable feedback.  
+
+6.  Finally,  note  that  throughout  the  whole  process  we  will  have  the  collaboration  of  two  very  young 
+researchers, who will monitor the whole process.  
+
+ 
+Thus, apart from the specific competencies to each of the subjects, they are working the following generic skills:  
+ 
+(cid:120)  Written communication: to be worked by means of written works that will be assessed by teachers.  
+ 
+(cid:120)  Oral communication: it will be worked by means of presentations in class.  
+ 
+(cid:120)  Teamwork: to be worked along the subjects because they will be the basic mode of operation . 
+ 
+(cid:120)  Capacity  for  innovation  and  creativity:  to  be  constantly  worked  at  the  time  of  designing  both  theoretical  and 
+practical works. 
+ 
+(cid:120)  Self study: it will also be worked steadily, at the same time that the previous two transversal competences.  
+ 
+4.3.  Expected results 
+  
+
+This subsection will describe the results that we expect to achieve based on our previous experiences, because  the 
+described project is still an ongoing work.  
+ 
+Increased  attendance  at  classes:  With  the  implementation  of  such  projects,  the  faculty  has  noted  on  previous 
+experiences  an  increase  in  student  attendance  at  classes.  This  usually  comes  motivated  because  the  classes  are 
+not  perceived  as  expositive  ones,  but  they  can  interact  because  necessarily  coincide  with  other  students  of  the 
+subject. 
+ 
+Increased involvement and participation: Faculties often perceived an increased involvement and participation of 
+students  in  the  development  of  classes.  Prior  to  implementation  they  used  to  show  passive  roles,  but  using  the 
+
+ 
+
+ 
+
+ 
+
+ 
+
+(cid:120) 
+
+(cid:120) 
+
+394  
+
+ Jose Manuel Lopez-Guede et al.  /  Procedia - Social and Behavioral Sciences   186  ( 2015 )  388 – 394 
+
+paradigm  of  active  learning,  faculty  goes  to  the  background  and  students  use  time  and  space  in  an  efficient 
+manner. 
+ 
+(cid:120)  Better monitoring,  tracking  and  evo lution  of  each  student:  It  has  been  shown  that  the  use  of  collaborative  tasks 
+with deliverables by each working group can include in the  schedule a number of evaluation points that evaluate 
+the  learning  achieved,  serving  as  breakpoints  if  a  poor  trend  is  detected.  This  implies  corrective  actions  if 
+necessary, including by the student.  
+ 
+(cid:120)  Better results in final tests: In the case of final tests, best results are expected due to ongoing work on the subject. 
+Moreover,  in  other  cases  these  final  exams  are  not  to   be  such  a  stressful  experience  because  they  have  followed 
+their own learning process.  
+
+ 
+5.  Conclusions 
+ 
+
+In this paper we have presented an educational innovation project in the Computer Architecture area, or rather, in 
+the  sub-module  of  Computer  Structure  and  Architecture,  using  the  terminology  of  the  syllabus  of  the  Degree  in 
+Computer Management  and  Information  Systems  Engineering  of  the University  College  of  Engineering  of Vitoria -
+Gasteiz, where  it  is being carrying out. First we explained  the specific problem of  the sub-module, emphasizing  the 
+subjects  that  compose  it.  Next,  we  analyzed  the  framework  (university,  University  College  and  syllabus)  and  the 
+constraints derived  for  the adoption of a solution. Later we presented  the educational  innovation project  as a  tool  to 
+solve  the  situation, analyzing  previous experiences and  results  to be achieved. As  future work,  it  is obvious  that  the 
+next  step  is  to  complete  the  implementation  that  is  still  being  carried  out,  verifying  the  improvements  that  we  are 
+trying to achieve. 
+ 
+Acknowledgements 
+ 
+
+This  research  project  on  educational  innovation  is  being  financially  supported  by  the  grant  6719  of  the 
+competitive call  for educational  innovation projects 2013 -2015 of  the Educational Advisory Service, Vicerectorship  
+for  Teaching  Quality  and  Innovation,  University  of  the  Basque  Country  (UPV/EHU),  support  that  is  greatly 
+acknowledged.  Authors  also  wish  to  thank  the  cooperative  work  done  by  students  who  kindly  participated  in  the 
+project  (referred  to  above  as  previous  experience)  with  the  grant  6397  of  the  competitive  Call  for  innovative 
+educational  projects  at  the  same  university  in  the  2011-2013  biennium  (which  was  also  supervised  by  the  authors), 
+as  previous  experience  using  cooperative  learning  techniques,  since  good   results  have  served  as  a  precursor  and 
+inspiration project whose design has been reported and is being implemented.   
+ 
+References 
+ 
+Bonwell,  C.  &  Eison,  J.  (1991).  Active  Learning:  Creating  Excitement  in  the  Classroom.  AEHE-ERIC  Higher  Education  Report  No.  1. 
+Washington, D.C.: Jossey-Bass.  
+Felder, R.M. & Brent, R.  (1994).  Cooperative  Learning  in  Technical Courses:  Procedures,  Pitfalls,  and  Payoffs.   ERIC Document Reproduction 
+Service 
+Felder, R.M. & Brent, R. (2001). Effective Strategies for Cooperative Learning. J. Cooperation & Collaboration  in College Teaching, 10 (2), 69-
+75  
+Felder, R.M. & Brent, R. (2009). Active Learning: An Introduction. ASQ Higher Education Brief, 2(4) 
+Lopez-Guede, J. M., Fernandez-Gauna, B., Graña, M. & Oterino, F.  (2013). On the influence of the prediction horizon in dynamic matrix control. 
+International Journal of Control Science and Engineering, 3 (1), 22-30. 
+Lopez-Guede,  J. M., Fernandez-Gauna, B., Graña, M., Oterino, F. & Larrañaga  J. M.  (2012).  Effect of  the  lambda parameter  in dynamix matrix 
+controllers performance. Journal of Computer and Information Technology, 2(2), 81-88. 
+
+ 
+
+ 
+
+

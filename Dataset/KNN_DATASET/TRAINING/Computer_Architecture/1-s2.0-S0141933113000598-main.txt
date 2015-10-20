@@ -1,0 +1,2870 @@
+Microprocessors and Microsystems 37 (2013) 772–791
+
+Contents lists available at SciVerse ScienceDirect
+
+Microprocessors and Microsystems
+
+j o u r n a l h o m e p a g e : w w w . e l s e v i e r . c o m / l o c a t e / m i c p r o
+
+An infrastructure for accurate characterization of single-event transients
+in digital circuits
+Varadan Savulimedu Veeravalli a,⇑
+, Thomas Polzer a, Ulrich Schmid a, Andreas Steininger a,
+Michael Hofbauer b, Kurt Schweiger b, Horst Dietrich b, Kerstin Schneider-Hornstein b,
+Horst Zimmermann b, Kay-Obbe Voss c, Bruno Merk c, Michael Hajek d,1
+a Institute of Computer Engineering, Vienna University of Technology, Treitlstrasse 1-3, A-1040 Vienna, Austria
+b Institute of Electrodynamics, Microwave and Circuit Engineering, Vienna University of Technology,Gusshausstrasse 25/354, A-1040 Vienna, Austria
+c Materials Research Group, Helmholtz Centre for Heavy Ion Research (GSI), Planckstrasse 1, D-64291 Darmstadt, Germany
+d Institute of Atomic and Subatomic Physics, Vienna University of Technology, Stadionallee 2, A-1020 Vienna, Austria
+
+a r t i c l e
+
+i n f o
+
+a b s t r a c t
+
+Article history:
+Available online 11 May 2013
+
+Keywords:
+Asynchronous digital design
+Radiation fault-tolerance
+Single-event transients
+Single-event upsets
+LFSR counters
+Elastic pipelines
+Muller C-elements
+TCAD models
+Spice models
+SET injection experiments
+Ion beam radiation
+
+We present the architecture and a detailed pre-fabrication analysis of a digital measurement ASIC facil-
+itating long-term irradiation experiments of basic asynchronous circuits, which also demonstrates the
+suitability of the general approach for obtaining accurate radiation failure models developed in our FATAL
+project. Our ASIC design combines radiation targets like Muller C-elements and elastic pipelines as well
+as standard combinational gates and ﬂip-ﬂops with an elaborate on-chip measurement infrastructure.
+Major architectural challenges result from the fact that the latter must operate reliably under the same
+radiation conditions the target circuits are exposed to, without wasting precious die area for a rad-hard
+design. A measurement architecture based on multiple non-rad-hard counters is used, which we show to
+be resilient against double faults, as well as many triple and even higher-multiplicity faults. The design
+evaluation is done by means of comprehensive fault injection experiments, which are based on detailed
+Spice models of the target circuits in conjunction with a standard double-exponential current injection
+model for single-event transients (SET). To be as accurate as possible, the parameters of this current
+model have been aligned with results obtained from 3D device simulation models, which have in turn
+been validated and calibrated using micro-beam radiation experiments at the GSI in Darmstadt, Ger-
+many. For the latter, target circuits instrumented with high-speed sense ampliﬁers have been used for
+analog SET recording. Together with a probabilistic analysis of the sustainable particle ﬂow rates, based
+on a detailed area analysis and experimental cross-section data, we can conclude that the proposed archi-
+tecture will indeed sustain signiﬁcant target hit rates, without exceeding the resilience bound of the mea-
+surement infrastructure.
+
+Ó 2013 The Authors. Published by Elsevier B.V.
+
+Open access under CC BY  license.
+
+1. Introduction
+
+TU Vienna’s FATAL project (Fault-tolerant Asynchronous Logic)2
+is devoted to the foundations of a framework for modeling and anal-
+ysis of fault-tolerant asynchronous digital circuits, using fault-toler-
+ant distributed algorithms knowledge. Besides handling circuit/
+
+⇑ Corresponding author. Tel.: +43 1 58801 18203.
+E-mail address: varadan@ecs.tuwien.ac.at (V. Savulimedu Veeravalli).
+1 Present address: Radiation Safety and Monitoring Section, International Atomic
+Energy Agency, P.O. Box 100, A-1400 Vienna, Austria.
+2 This work is supported by the Austrian Science Fund (FWF) under project
+numbers P21694 and P20529. For more information consult http://ti.tuwien.ac.at/
+ecs/research/projects/fatal/.
+
+environment speciﬁcations, composition and decomposition and
+hierarchical proofs [1–3], it also addresses adequate failure and
+metastability models for digital circuits. Overall, FATAL’s aim is to
+contribute to a ‘‘Theory of Dependable VLSI’’, which has been identi-
+ﬁed as a major challenge in [4].
+Unlike most research in this area, FATAL is primarily (albeit not
+exclusively) focusing on asynchronous circuits. This is backed-up
+by the fact that, ultimately, the operation of any combinational
+digital logic gate is inherently asynchronous. Moreover, asyn-
+chrony is also a quite natural phenomenon at higher system layers,
+as in Globally Asynchronous, Locally Synchronous (GALS) architec-
+tures [5], for example. Unfortunately, unlike for synchronous sys-
+tems, fault-tolerance is difﬁcult to guarantee in asynchronous
+systems [6], and has hence not received much attention in asyn-
+chronous digital circuits [7–10,1,11].
+
+0141-9331 Ó 2013 The Authors. Published by Elsevier B.V.
+http://dx.doi.org/10.1016/j.micpro.2013.04.011
+
+Open access under CC BY  license.
+
+V. Savulimedu Veeravalli et al. / Microprocessors and Microsystems 37 (2013) 772–791
+
+773
+
+In order to systematically reason about fault-tolerant VLSI cir-
+cuits, suitable failure models are mandatory. For ‘‘classic’’ sources
+of errors, like aging and electric wear-out [12], there is a huge body
+of work to rely upon. For radiation-induced errors, however, which
+are increasingly dominating the failure rate of deep submicron
+VLSI circuits [13,14], this is not the case. Radiation-induced errors,
+collectively termed single-event effects (SEEs) in literature, occur
+when the active area of a VLSI circuit is hit by ionizing particles
+(or even by neutrons, which typically result from heavy ion inter-
+actions with nitrogen or oxygen atoms in the atmosphere).
+As opposed to permanent SEEs such as latch-up, threshold volt-
+age shifts and even destructive burn-outs in power semiconductors
+[15–17], the primary concern in modern VLSI circuits are transient
+SEEs: An ionizing particle hitting a reverse-biased junction of a
+transistor deposits charge along its track, which in turn can cause
+a single-event transient (SET) pulse (0.1–1 ns range) at the output. If
+the affected transistor is part of a storage element (e.g., an SRAM
+cell or a latch), this may cause the element to ﬂip its state, leading
+to a single-event upset (SEU). Unfortunately, SEUs may also occur if
+the hit transistor is part of combinational logic, since a sufﬁciently
+strong SET may propagate until it reaches a storage element where
+it is latched. In any case, however, the errors resulting from SEUs
+are not permanent but rather transient (i.e., can be corrected),
+and are hence called soft-errors.
+This paper presents an overview and ﬁrst results of our ap-
+proach for developing suitable failure models for radiation-in-
+duced transient failures of digital VLSI circuits in FATAL. It is
+organized as follows.
+In Section 2, we survey the current state of the art, while in Sec-
+tion 3, we provide an overview of our general approach. As in [18–
+20], it primarily rests on two lower-level simulation models, the 3D
+model and the Spice model. The 3D model is a Synopsis 3D TCAD
+model of our elementary target circuits, which include (a chain
+of) inverters, Muller C-elements, etc. Particle hits are incorporated
+via the SRIM–TRIM nuclear code simulation software [21]. In order
+to calibrate the 3D model, which obviously also depends on tech-
+nology parameters like doping proﬁles, we manufactured our tar-
+get circuits in 90 nm UMC CMOS technology and performed
+elaborate analog SET recording experiments under carefully con-
+trolled microbeam irradiation at the GSI in Darmstadt [22].
+In Section 4, we describe the current version of the Spice model,
+which consists of the transistor schematic models of our target cir-
+cuits augmented by Spice models that mimic SET generation in all
+critical parts. For the latter, we use single-ended injection of a dou-
+ble-exponential current into the source of a transistor [23]. Since
+Spice model simulations are orders of magnitude faster than 3D
+model simulations, the Spice model is a suitable tool for the thor-
+ough (and reasonably fast) investigation of the SET behavior of any
+digital circuit made up of an arbitrary combination of our elemen-
+tary target circuits. This, in turn, is the appropriate basis for devis-
+ing and calibrating/validating suitable digital radiation failure
+models in FATAL.
+Still, in order to rule out unnoticed modeling errors in the 3D
+model and/or in the Spice model, and to validate the accuracy of
+the digital failure model w.r.t. technology-related parameters like
+transistor sizes and doping proﬁles, we are currently designing a
+special digital FRad Chip that will allow us to do long-term digital
+monitoring of radiation-induced failures in basic asynchronous cir-
+cuits. Its design and pre-fabrication analysis/evaluation, based on a
+detailed Spice model of the circuit according to the general FATAL
+approach outlined above, are the main focus of this paper: In Sec-
+tions 5 and 6, respectively, we describe and justify our selection of
+the elementary radiation targets and the measurement architec-
+ture to be incorporated in the FRad Chip. Section 7 is devoted to
+the analysis of the resulting size requirements and the fault-toler-
+ance properties of
+the measurement architecture, Section 8
+
+provides a simple probabilistic analysis based on cross-section
+data inferred from our radiation experiments. Backed up by these
+results, we conclude in Section 9 that we can indeed expect to
+get meaningful measurement data from experiments using the
+FRad Chip, which will be an important part of our future work in
+this area.
+
+2. Overview of SET-related research
+
+Dependability concerns have stimulated a large body of re-
+search work devoted to fault-tolerance in VLSI. Classically, faults
+resulting from excessive manufacturing variabilities, aging and
+wear-out are handled primarily by technological fault prevention
+methods [12] and/or via fault detection and recovery approaches
+[24]. Replication-based fault-tolerance methods like dual or triple
+modular redundancy (DMR, TMR) have also been implemented, al-
+beit only for very demanding applications.
+During the last decades, radiation-induced SEEs became an
+increasing concern in VLSI, see e.g. [13,20,14,25–28]. Besides per-
+manent SEEs such as latch-up, threshold voltage shifts and even
+destructive burn-outs in power semiconductors [15–17], this pri-
+marily concerns transient SEEs. Formerly, SEEs caused problems
+only in aerospace applications [16,15], where high-energy particles
+are abundant due to cosmic rays interacting with the atmosphere.
+However, the advent of nanometer-technology VLSI has dramati-
+cally raised both the circuit complexity and clock speeds and de-
+creased supply voltage and charges [26,13]. As a consequence,
+overall, modern VLSI circuits show considerably higher soft-error
+rates (SERs) nowadays, despite considerable improvements of pro-
+cess technology. It has hence been reported that, despite the strong
+decay of charged particles with atmospheric depth, the SERs of
+chips operated at sea-level are also likely to exceed acceptable lim-
+its [14,28].
+At sea level, neutrons are the primary source of SEEs in VLSI
+[29,14,30,31]. In addition, some a-induced SEEs are caused by
+impurities in chip packaging materials, solder balls, etc. [14,32].
+Various mitigation techniques, mostly using replication-based
+fault-tolerance techniques, have been invented to reduce the SER
+of modern VLSI chips.
+
+2.1. SER assessment
+
+Whereas SEUs and SERs in synchronous circuits have been/are
+heavily studied [14,13,26,28], considerably less research has been
+devoted to SETs. In particular, very little is known about SET gen-
+eration and propagation in asynchronous circuits like (chains of)
+Muller C-elements [33], which is the primary focus of FATAL.
+In order to assess the SER of a circuit, a number of different ef-
+fects must be considered jointly:
+SET generation: 2D or even 3D physical modeling is used to ob-
+tain the charge/current induced in a transistor in a certain technol-
+ogy on a certain particle hit. Several ﬁnite element-based
+simulation tools like DAVINCI
+[34,35,20], DESSIS [18,36–38],
+NanoTCAD [19,39], Synopsis SDevice [40,41] and Cadence Sentau-
+rus-Device [42] have been employed for this purpose, also in
+mixed-mode simulations with Spice models. Apart from ‘‘regular’’
+SET generation [27,19,20], physical simulations and experiments
+also revealed irregular phenomenons [43,44,41]. Note that 3D
+modeling usually suffers from the unavailability of technology-re-
+lated data like doping proﬁles, which are (at best) compensated by
+calibrating the models, by e.g. using transistor models from manu-
+facturer’s process design kits [38].
+Moreover, there are several papers in literature that deal with
+experimental SET measurements. Suitably designed radiation
+targets (usually long inverter chains) are exposed to accelerated
+
+774
+
+V. Savulimedu Veeravalli et al. / Microprocessors and Microsystems 37 (2013) 772–791
+
+radiation tests (using neutron [45] or heavy-ion [46–51,39,52,
+53,44,41,43] beams) and/or laser-based failure injection [46,54,
+55,49,56,51]. The resulting SETs are measured using several differ-
+ent approaches: Besides indirect approaches based on SER mea-
+surements [46,57–60], which use the correlation between SET
+pulsewidth and the linear energy transfer (LET) of speciﬁc heavy-
+ions, there are several different approaches for digital on-line
+measurement of SET pulsewidths using variable delay latches
+[48,47] or self-triggered inverter + latch chains [50,55,39,45,61].
+A few papers also report on analog measurements of SET pulse-
+widths by directly connecting a real-time oscilloscope [51,56,
+49,36]. Our on-chip analog sense ampliﬁers [22] seem to be the
+ﬁrst low-intrusive SET measurement attempt following the latter
+approach.
+Electrical masking: Analytic [62–64,37] or Spice models
+[65,34,46,18,66,19] are used to describe the actual generation of
+SETs, as well as SET propagation along a chain of gates, in particu-
+lar,
+in research on radiation-hardened circuit architectures.
+Obviously, Spice models can also account for the fact that transis-
+tors are not isolated, but rather employed within circuits. In fact,
+SET pulses depend very much on operating conditions like
+supply
+strength
+and driving
+load,
+temperature,
+voltage,
+[34,67,18,20,19,37,56,51].
+Logical masking: Even a strong SET can be masked out in combi-
+national logic, e.g., when arriving at an AND gate with some other
+input at low. An accurate analysis of logical masking requires an
+exhaustive classiﬁcation of all sensitive paths in a given combina-
+tional logic [20]. Such an explicit modeling is of course expensive
+(in [68], it is shown that computing the most reliability-critical
+path is NP-hard); alternative approaches rely on fault injection
+[69,18] and probabilistic modeling [66,70].
+Temporal masking: In synchronous circuits, SETs originating
+from combinational logic can only lead to SEUs if they propagate
+to the ﬂip-ﬂops and arrive there within their setup and hold time.
+Temporal masking is very effective if the latter are small relative to
+the clock cycle [13,26,66,70,20,28]. However, due to ever increas-
+ing clock frequencies, this assumption does no longer hold true,
+and the problem is further exacerbated by SETs hitting the clock
+drivers [71].
+In asynchronous circuits, temporal masking effects are very dif-
+ferent. Actually, temporal masking is tightly intertwined with log-
+ical masking here: The ability of an asynchronous circuit like a
+Muller C-element to memorize a (SET-)transition on some input
+depends on its other input(s). In reasonably regular structures, like
+bundled data or delay insensitive asynchronous pipelined architec-
+tures, there are ways to analyze temporal masking similar to syn-
+chronous circuits [54,10]. In general, however, an accurate analysis
+of temporal masking in asynchronous systems requires an exhaus-
+tive classiﬁcation of all paths involved in the completion detection
+process and hence explicit modeling.
+To combine all the above issues, hybrid modeling and simula-
+tion are quite common: 2D/3D physics + Spice modeling is used
+e.g. in [35,19,20], and an even more elaborate hierarchical frame-
+work based on fault dictionaries is introduced in [18]. To compute
+the SER of a given chip, simulation [72–74,14], probabilistic analy-
+sis [66,73,70,20,26,71] as well as validating measurements
+[31,58,18,59,66,75,13,61,72,76] have been used.
+Obviously, such SER results allow the assessment of technology
+scaling [72,13,56,75,26]. Essentially, the SER per gate resp. per bit
+stays constant or slightly increases/decreases (there is no common
+trend). The total SER per chip, however, has increased dramatically
+[72,14] due to increasing chip complexity. Although technology
+improvements (silicon on insulator (SOI), metal–insulator–metal
+(MIM) caps, etc.) [77,19] are very effective for mitigating SEEs, they
+are not sufﬁcient to maintain acceptable SERs. Moreover, they are
+considered too expensive [14] for replacing bulk technology in
+
+general, and there are also reports of unexpected effects like SET
+pulse broadening during propagation [51].
+
+2.2. SER mitigation techniques
+
+Techniques for SEE mitigation are sometimes mandatory for
+achieving acceptable SERs, even for devices operated at sea level.
+Besides design hardening techniques (transistor sizing, layout)
+[19], there is a broad spectrum of mitigation approaches [25]. Most
+of them are based on ‘‘ﬁne-grained’’ fault tolerance. Examples are
+the SEU-tolerant dual interlocked storage cell (DICE) [78], SET ﬁlter-
+ing approaches [79,80] in latches, dual-rail data encoding like null-
+convention logic (NCL) [10], or low-level replication [81]. Existing
+architectural solutions are primarily based on error detection and
+recovery/reconﬁguration: Examples are the popular EDAC-pro-
+tected memory (EDAC stands for error detection and correction)
+[25], deadlock detection in quasi delay insensitive (QDI) asynchro-
+nous circuits [82,9], or space-hardened FPGAs [83]. For non-tran-
+sient SEEs, mitigation techniques e.g. based on current sensors
+for latch-up detection are also known [25]. Architectural fault-tol-
+erance solutions based on DMR/TMR [7,8,84] or ingenious time
+redundancy techniques [85] also exist.
+One important effect that defeats most existing SET/SEU mitiga-
+tion techniques are multiple upsets (MUs) and charge sharing ef-
+fects [44].
+In addition to the obvious fact
+that billions of
+(vulnerable) deep submicron transistors on a single chip make
+multiple hits at different locations quite likely [86], there is also
+an increased probability that a single particle hit upsets multiple
+near-by transistors at the same time [72,59,76], or even generates
+multiple SETs [41]. Besides statistical techniques [87] for extract-
+ing MU statistics from SEU data in SRAMs, such data have also been
+obtained via direct measurements [72,74,59]. Interestingly, it has
+been observed that, unlike SEUs, MUs are very much directional-
+dependent in anisotropic radiation ﬁelds [88]. Although advanced
+VLSI
+technology like SOI decreases the sensitivity to MUs
+[76,13,19,77] as well, the problem cannot be mitigated by such
+technological means alone. However, we are not aware of alterna-
+tive mitigation technique for MUs (besides higher-redundancy
+EDAC in memory arrays).
+Particularly relevant in the FATAL context is the (relatively
+sparse) existing work on fault-tolerant asynchronous circuits.
+Asynchronous circuits have both advantages and disadvantages
+with respect to fault-tolerance: All existing asynchronous ap-
+proaches are inherently tolerant to (most) delay faults [54], but
+are susceptible to deadlocks [82] and, even worse, to superﬂuous
+transition generation [54]. Moreover, with respect to SETs, one
+may expect that general asynchronous circuits intrinsically have
+a higher SER since they may not beneﬁt much from temporal
+masking effects. Several papers deal with SET/SEU sensitivity anal-
+ysis of asynchronous circuits: QDI circuits and mitigation tech-
+niques are dealt with in [8,54,89,84,9], NCL-based approaches are
+considered in [10,90], and bounded delay solutions are dealt with
+in [7]. For QDI circuits, we note that [54] describes a tool-based ap-
+proach for sensitivity analysis. In addition, [9] investigates SET
+propagation over state-holding elements in asynchronous circuits,
+and introduces a design for fail-stop QDI asynchronous pipelines
+that can deal with both SEUs and standard stuck-at faults.
+Backed up by the above overview, we conclude that, despite the
+large body of work on radiation-induced errors in VLSI, the avail-
+able data is not sufﬁcient for deﬁning and validating failure models
+for fault-tolerant asynchronous digital circuits.
+
+3. FATAL general approach
+
+The ultimate goal of FATAL is not the faithful and detailed mod-
+eling of the generation and propagation of SETs/SEUs in a circuit
+
+V. Savulimedu Veeravalli et al. / Microprocessors and Microsystems 37 (2013) 772–791
+
+775
+
+(which is the traditional approach, see e.g. [66]), but rather the
+development of a digital failure model that focuses on the observable
+behavior of a digital circuit under radiation, at some chosen level of
+detail (see e.g. [65] for an early example of this approach). Never-
+theless, developing a meaningful digital failure model primarily re-
+quires means for validating and calibrating the failures predicted
+by the model for certain operating conditions (which of course also
+include radiation ﬁeld characteristics) w.r.t. the actual failures ob-
+served in a real chip under these conditions.
+As validating and calibrating candidate digital failure models
+cannot reasonably be done by means of experiments with real cir-
+cuits, due to lacking controllability and excessive measurement
+times and efforts, we use an accurate Spice model for this purpose.
+Spice models are in fact very convenient and hence widely used in
+practice for similar goals, cp. [18–20], as they combine excellent
+controllability with reasonably small simulation times. Our Spice
+model consists of the analog models of our target circuits, which
+include e.g. (a chain of) inverters and Muller C-elements (see
+Section 5), augmented by additional Spice models that mimic SET
+generation in critical transistors. For the latter, we use standard
+single-ended injection of a double-exponential current [23] into
+the transistor sources, see Section 4 for details. As witnessed by
+the pre-design analysis of our FRad Chip (see Section 7), the Spice
+model is indeed a suitable tool for the thorough (and reasonably
+fast) investigation of the SET behavior of any digital circuit made
+up of an arbitrary combination of our elementary target circuits.
+In order to provide meaningful results, however, it is absolutely
+instrumental for the Spice model to faithfully and accurately model
+SET generation in a real circuit under given operating conditions.
+For the same reasons as for the validation and calibration of digital
+failure models, however, namely, lacking controllability and exces-
+sive measurement times and efforts, we could not use experiments
+for calibrating the Spice model either. This problem is solved by
+using another model, the 3D model, which ﬁnally can be validated
+experimentally.
+
+microprobe facility allows a very accurate (sub-lm) deposition of
+single ions, with well-known energy, at any location on the chip.
+Our radiation experiments were performed with custom ASICs
+fabricated in 90 nm UMC CMOS technology. They integrate some
+of our target circuits (inverter chains and Muller C-elements) with
+very high-speed analog sense ampliﬁers, as shown in Fig. 2. The
+SET voltage pulses generated by the target circuits upon an ion
+hit (which is detected by a channeltron at the microprobe facility)
+are low-intrusively captured by the sense ampliﬁers and ﬁnally re-
+corded by an external real-time oscilloscope.
+For the inverter chain target circuit, we measured typical volt-
+age pulses as shown in Fig. 3 for different impact positions of the
+ions. It is important to mention that the resulting SETs do not only
+depend on the impact position of the ion but also on the state of
+the circuit: For the two different inverter input levels, quite differ-
+ent behavior could be observed [22]: full-width half-maximum
+(fwhm) pulse widths of up to 1.6 ns for a low (0) input level,
+and up to 800 ps for a high (1) input level were observed, with
+very small rise times.
+Finally, calibration of the technology-dependent model param-
+eters of the 3D model was done by means of ofﬂine comparison of
+the SET voltage pulses predicted by the 3D device simulations and
+the actual SET voltage pulses recorded in our experiments. Our ef-
+forts resulted in 3D model predictions that match the experimental
+data sufﬁciently well,3 such that we could use the predicted col-
+lected amount of charge in the source contacts of the transistors
+for calibrating the Spice model as described in Section 4.
+More speciﬁcally, we could infer from the 3D model that the
+amount of collected charge strongly depends on the impact posi-
+tion of the ion. Approximately 300–350 fC are collected by the
+source contact for worst case scenarios, resulting in SETs which
+are capable to propagate. The corresponding rise times of the SET
+voltage pulses at the output of the simulated inverter are in the
+range of 10–70 ps.
+
+3.1. The 3D model
+
+3.2. The FRad Chip
+
+Like in [18,19,38,20], we use 3D device simulations for calibrat-
+ing and validating the Spice model. Relying on 3D models of our
+elementary circuits, which are derived from the detailed ﬂoorplan
+of a circuit in a given technology, these simulations allowed us to
+accurately determine their behavior under heavy-ion radiation:
+More technically, the charge generation along the ion track in the
+silicon is modeled with the SRIM–TRIM nuclear code simulation
+software [21]. The resulting charge generation proﬁle is then used
+as an input for the Synopsis TCAD device simulator, which can
+compute accurate SET current and voltage pulses. As a typical
+example, Fig. 1 shows the 3D TCAD model of a single inverter
+structure. In order to reduce the necessary number of mesh points,
+the metal connections are not included in the 3D model but rather
+considered using proper boundary conditions. This does not ad-
+versely affect the quality of the simulations results, but saves a
+lot of simulation time.
+Unfortunately, accurate 3D device simulation also needs tech-
+nology-related information, like doping proﬁles and well depths:
+The SET generation process is very sensitive to those parameters.
+Since such information is usually only known to the manufacturer
+(and typically not disclosed to customers), the need arose to also
+calibrate and validate the 3D model. Rather than using transistor
+models provided in the manufacturer’s process design kits (PDK),
+as done in [38], which are of questionable use for accurately cali-
+brating the complex SET generation process, we conducted care-
+fully controlled SET measurements [22] at the microprobe facility
+at the GSI [91] in Darmstadt (Germany) for this purpose. A
+
+Recall that the ultimate goal of FATAL is a digital failure model,
+rather than the 3D model and the Spice model (which are—albeit
+being of considerable independent interest—only intermediate
+‘‘tools’’ here). In order to (i) spot possibly remaining modeling er-
+rors in the digital failure model, and (ii) validate the accuracy of
+the digital failure model w.r.t. technology parameters like transis-
+tor sizes and doping proﬁles, we designed a custom ASIC called
+FRad Chip, which combines a suitably rich target circuitry (made
+up of our elementary circuits) and an elaborate digital measure-
+ment unit. Rather than analog SET recording on a real-time oscillo-
+scope [49], as used for validating our 3D models, the FRad Chip
+incorporates only digital measurement circuitry that continuously
+observes and counts radiation-induced failures occurring in the
+target circuits. Unlike for SEUs, where bit-ﬂips in SRAM memory
+arrays are a convenient means for collecting SEU statistics, see
+e.g. [16], we are not aware of any comparable circuit in the litera-
+ture. Its description and pre-fabrication analysis/evaluation using
+the general FATAL approach outlined above are the primary focus
+of this paper.
+Ultimately, the FRad Chip will provide us with a means for the
+‘‘end-to-end validation’’ of the accuracy of digital failure model
+predictions by means of (long-term) radiation experiments.
+
+3 Due to the very long simulation times of the complex 3D device simulations and
+the huge amount of data recorded in our experiments, we are still reﬁning our
+calibration. In fact, to increase the conﬁdence in the 3D model, we will conduct
+additional measurement campaigns at the GSI microprobe facility, e.g., using heavy-
+ions with different energies.
+
+776
+
+V. Savulimedu Veeravalli et al. / Microprocessors and Microsystems 37 (2013) 772–791
+
+-3
+
+Fig. 1. TCAD 3D Structure of an inverter (cutting plane through NMOS).
+
+Fig. 2. Test chip schematics for calibration and validation of the 3D model and the spice model.
+Z
+
+1
+
+Q P ðtÞ ¼
+
+IP ðtÞdt ¼ I0 ðT a   T b Þ;
+0
+
+
+whereas the peak current of the SET (Ipeak) is given by
+T a logðT b =T a Þ
+T b logðT b =T a Þ
+Ipeak ¼ I0 e
+T a  T b   e
+T a  T b
+
+:
+
+4. The Spice model for SETs
+
+A number of Spice models have been proposed in literature
+over the years, which model radiation hits via current injection.
+Most proposed models agree in the qualitative deﬁnition, but dif-
+fer in essential quantitative aspects [92]. Roche et al. [93] only
+considered peak currents, which is not realistic for the time-vary-
+ing restoring current, and also overestimates the critical charge
+Qcrit. These issues have been addressed to some extent by Xu
+et al. [94], by deﬁning Qcrit with respect to the static tripping point
+of an SRAM cell; it fails to consider the corporate dynamics of
+voltage transients at the struck node, however. Zhang et al. [95]
+estimated Qcrit in terms of transistor parameters and injected cur-
+rents, characterized by magnitude and duration, but observed a
+discrepancy w.r.t. reality. One of the reasons is the use of a suit-
+ably matched rectangular current pulse, instead of an exponential
+one. Actually, so far the most agreed model to mimic the actual
+charge deposition mechanism of a particle strike uses double
+exponential currents [96,38,42], so we adopt it for our analysis
+as well.
+More speciﬁcally, for injecting SETs in a transistor of our target
+circuits, we use a current source connected to the source of the
+transistor that generates a double-exponential current pulse
+according to the following equation [97]:
+IP ðtÞ ¼ I0 ðe t=T a   e t=T b Þ:
+
+ð1Þ
+
+Herein, IP denotes the transient current pulse, I0 the peak current of
+the two exponential terms, Ta the decay time (fall time) of the cur-
+rent pulse, and Tb the time constant for initially establishing the ion
+track (rise time). Easy calculations reveal that the total charge QP of
+such a pulse is
+
+ð2Þ
+
+ð3Þ
+
+All our simulation experiments were conducted using HSPICE and
+Cadence Spectre simulators.
+We executed a number of initial simulations using an inverter
+chain as our target circuit for calibrating the parameters I0, Ta
+and Tb. Our goal is to determine a parameter setting which leads
+to SET voltage pulses (resp. critical charges Qcrit) that mimic the
+ones measured (resp. predicted by the 3D model) according to Sec-
+tion 3.1 as faithfully as possible. Recall that the measured SET volt-
+age pulse lengths ranged up to 800 ps (resp. 1.6 ns) for logic high
+inverter input (resp. low input), with Qcrit in the range of 300–
+350 fC. We varied the current model parameters I0, Ta and Tb until
+both (a) Qcrit = QP according to Eq. (2) and (b) the SET voltage pulse
+lengths predicted by Spice matched reasonably well.
+In order to get some basic understanding of the transformation
+of an analog current pulse in an inverter to a digital voltage pulse at
+the output, Fig. 4 plots the length of the SET voltage pulse observed
+at the buffered inverter output over I0, for ﬁxed4 Ta = 100 ps and
+Tb = 10 ps; this results in a peak current of Ipeak = 0.78I0 according
+to Eq. (3). There is already a digitally visible SET with a length of
+125 ps for I0 = 1 mA, while for I0 between 2 mA and 10 mA the length
+of the observed digital SET grows (approximately logarithmically)
+from 540 ps to 1.4 ns. For I0 = 3.33 mA, (a) Eq. (2) reveals an injected
+
+4 The simple dependence in Fig. 4 would not hold if the timing parameters Ta, Tb
+were also varied.
+
+V. Savulimedu Veeravalli et al. / Microprocessors and Microsystems 37 (2013) 772–791
+
+777
+
+(a)
+
+(b)
+
+Fig. 3. Measured SET voltage pulses (inverter) under heavy-ion (197Au, 946 MeV)
+irradiation [22]: SETs for (a) low (0), (b) high (1) inputs.
+
+Fig. 4. Length of SET vs. exponential peak current I0.
+
+charge of about QP = 300 fC, matching our Qcrit, and (b) Fig. 4 reveals
+an SET voltage pulse length of 800 ps that is also in the right order of
+magnitude.
+Indeed, ﬁne-tuning of the model parameters provided us with
+maximum SET voltage pulses of 800 ps for a high inverter input,
+which nicely matches our measurement results. For a low inverter
+input, the maximum SET duration we could generate with our
+
+choice of model parameters is 980 ps, which somewhat underesti-
+mates our longest measured SET durations. We conjecture that this
+is, in part, an artefact of the lack of parasitic capacitance in the
+Spice model of the target circuits taken from UMC’s PDK. It may
+also be a sign of the need of some structural improvement of the
+double exponential current model (cp. [66,19]), however.
+It must be noted here that there are inherent fundamental dif-
+ferences between 3D model and Spice model that render a perfect
+matching of the pulse shape ultimately impossible: The Spice mod-
+el shall represent the complex charge deposition (and collection)
+process, which is—apart from the characteristics of the particle
+impact as such—determined by various and highly non-linear
+‘‘current paths’’, by a single current source with a more or less
+pre-determined current shape, which provides only a few parame-
+ters for tuning. When applying such a substantially simpliﬁed
+model to (purposely) abstract away details, one cannot expect a
+perfect representation of reality. The 3D model, on the other hand,
+is much more powerful in this respect, but its high computational
+complexity makes it practically impossible to also incorporate the
+entire relevant ‘‘context’’ of the hit transistor in the circuitry
+(which, however, determines the transformation of the current
+pulse into a voltage pulse and its propagation).
+The single-source double exponential current model employed
+in our Spice model represents the current state-of-the-art, which
+has been considered a suitable tradeoff between tractable com-
+plexity and sufﬁcient accuracy in most of the related research
+work. For compatibility with this research, and also due to lacking
+alternatives, we simply had to accept the artefacts mentioned
+above. However, part of our envisioned future work in this area
+will be devoted to alternative Spice models, which provide better
+modeling accuracy with still acceptable complexity.
+
+5. Selection of radiation target circuits
+
+The speciﬁc purpose of the FRad Chip leads to the following de-
+sign requirements and constraints:
+
+ There is no need to capture analog effects.
+ The transformation of analog effects to the digital domain obvi-
+ously inﬂuences digital observations. In order to be as realistic
+as possible, this transformation shall solely be performed by
+the target circuits (implicitly).
+ In order to get relevant results, we need to select target circuits
+that are elementary and/or frequently used in practice.
+ To explore the behavior of target circuits both in dynamic and
+steady state, we need the option of exercising/stimulating the
+targets when exposed to radiation.
+ We want to apply sources of radiation whose characteristics is
+similar to what circuits are typically exposed to in practice.
+These sources have in common that (a) time and location of par-
+ticle hits are not controllable, (b) the particle hit rate is reason-
+ably low, and (c) the target has to be brought into some
+environment (e.g., a radiation chamber) that is spatially con-
+ﬁned. This substantially impacts the design of the overall mea-
+surement infrastructure.
+
+Considering these issues, we have decided for a set of target cir-
+cuits that will be detailed below.
+
+5.1. Inverter chain
+
+Inverters are the most basic and simple elements in CMOS and
+thus the preferred radiation targets in the existing literature. For a
+given transistor sizing, they are also the fastest CMOS circuits, thus
+potentially vulnerable to even very short SETs.
+Incorporating
+
+778
+
+V. Savulimedu Veeravalli et al. / Microprocessors and Microsystems 37 (2013) 772–791
+
+A
+
+Z
+
+(A)
+
+A
+
+Z
+
+A
+
+Z
+
+(B)
+
+(C)
+
+A
+
+CLK
+
+D Q
+
+D
+
+Q
+
+D
+
+Q
+
+D
+
+Q
+
+QD
+
+D Q
+
+A
+
+C
+
+(D)
+
+C
+
+C
+
+C
+
+C
+
+(E)
+
+Fig. 5. Gate level schematics of target circuits.
+
+Q
+
+B
+
+Z
+
+inverters in our study is hence not only relevant in practice, but
+also allows us to compare our results to literature. In order to have
+a reasonably large target area and a rich testbed for investigating
+propagation effects, we provide a chain of 17 inverters, as shown
+in Fig. 5A (in fact, multiple instances thereof).
+
+5.2. NAND–NOR tree
+
+NAND trees have always been a topic of interest in terms of
+testing and SETs. NAND and NOR implementations are slightly
+more complex than inverters and therefore exhibit different phe-
+nomena. One is the availability of two inputs, which allows us to
+form a tree structure. Another one is the possibility of logical mask-
+ing of errors.
+We have 64 NAND gates in the ﬁrst stage that are all driven by a
+single input signal, which allows us to jointly stimulate activity
+with minimal overhead. The outputs of the NAND gates fan-in as
+inputs for NOR gates and so on, yielding a tree with 127 gates in
+total, see Fig. 5B. The tree has seven levels, hence in the fault-free
+case the output will be the inverse of the input.
+
+5.3. XNOR tree
+
+The XNOR gate forms the equivalent of the logical OR for tran-
+sitions, another very basic functionality in asynchronous circuits
+and also fundamental for parity checking circuits. Compared to
+NAND/NOR gates, it has a very different internal structure. We em-
+ploy an XNOR gate implementation based on a CMOS transmission
+gate with inverter.
+We again use a seven level tree structure. It is apparent from
+Fig. 5C that two outputs of XNOR gates fan-in to an XNOR gate at
+the next level. The inputs of the 64 XNOR gates in the ﬁrst stage
+are again all connected to a single input. Due to the XNOR function
+all gates will therefore, independently from this input, present a lo-
+gic 1 at their outputs, and the tree output will transiently go to low
+only in case of an SET somewhere in the tree. As we will see, this
+behavior is very convenient for our purposes.
+
+5.4. Flip-ﬂop chain
+
+Flip-ﬂops are the fundamental building blocks of virtually every
+synchronous design. Like inverters, they have hence received much
+
+V. Savulimedu Veeravalli et al. / Microprocessors and Microsystems 37 (2013) 772–791
+
+779
+
+attention in radiation-related research in the past, which will allow
+us to compare our results against existing data. As shown in
+Fig. 5D, we provide a chain of 33 edge-triggered master–slave D-
+ﬂip-ﬂops, which are implemented using transmission gates and
+inverters.
+
+5.5. Elastic pipeline
+
+An elastic pipeline is built from Muller C-elements and inverters
+as shown in Fig. 5E. A Muller C-element is the fundamental build-
+ing block in the design of self-timed digital circuits [98]. Although
+it can be viewed as a (combinational) AND for transitions, it is a
+state-holding element much like an asynchronous set-reset latch.
+Three different CMOS implementations have become popular, all
+of which we will use as target circuits:
+
+(a) CMOS implementation introduced by Van Berkel [99], see
+Fig. 6a.
+(b) CMOS implementation using an inverter latch introduced by
+Martin [99], see Fig. 6b.
+(c) Conventional pull-up pull-down CMOS implementation
+introduced by Sutherland [99], see Fig. 6c.
+
+The elastic pipeline in Fig. 5E is essentially a FIFO buffer for
+signal transitions that is often used in handshake-based circuits.
+The C-elements in the pipeline propagate the signals in a carefully
+controlled way that maintains the integrity of each wave [99,100].
+The speed of signal propagation is determined by the actual delays
+of the circuit.
+The most interesting property of the circuit is that it is delay-
+insensitive, i.e., it works correctly regardless of wire and gate
+delays. Since many asynchronous designs are based on elastic
+pipelines, its behavior in the presence of radiation effects (SET gen-
+eration, propagation and latching) is of utmost relevance. As we
+will see later on, beyond being an attractive target, elastic pipelines
+are also useful as measurement circuits.
+
+6. Measurement architecture
+
+The measurement architecture of the FRad Chip must facilitate
+the continuous monitoring and recording of all occurring SETs, at
+the level of digital signals, in statistical long-term experiments.
+To get as much information as possible from an experiment, as
+many nodes in our target circuits (abbreviated DUT, for device
+
+under test in the sequel) as possible must be monitored simulta-
+neously. At the same time, the number of monitored nodes is lim-
+ited by the available die area and the number of pins of the FRad
+Chip.
+On-chip preprocessing is used to reconcile these requirements:
+(i) We extract SET occurrences out of the possibly superposed dy-
+namic operation of the DUTs as early as possible. (ii) Since we are
+not interested in the precise time of occurrence of SETs in statisti-
+cal analysis, it sufﬁces to just count the number of SETs in consec-
+utive measurement periods, at the end of which the counts will be
+transferred to some off-chip data recording unit and be reset. (iii)
+To save pins, the data transfer will be performed serially after par-
+allel/serial conversion (PISO). (iv) Since DUTs and on-chip prepro-
+cessing circuitry compete for the same die area, the latter must be
+as lean as possible.
+Fig. 7 shows the structure of the resulting FRad Chip architec-
+ture. Notice the strict separation between target circuits, measure-
+ment circuits and PISO that may turn out helpful in specialized
+ion-beam experiments, in which radiation hits can be restricted
+to a certain area.
+We want to investigate SET generation in our DUTs both in sta-
+tic and in dynamic mode. For the latter, we provide a common data
+signal that can be used to collectively stimulate switching activity.
+Recall that the XNOR tree has the beneﬁcial property of exhibiting
+activity at its output only in case of a particle hit. Therefore, it is
+sufﬁcient to use a simple incrementer for counting SETs here.
+Unfortunately, not all our other DUTs exhibit this nice behavior.
+Since the generation of the stimuli is under our control, however,
+we can easily provide a correct reference signal for comparison/
+subtraction purposes. This may be achieved by a simpliﬁed version
+of the DUT (even a simple wire or an inverter does the job, since all
+our DUTs except the XNOR tree exhibit a behavior equivalent to
+that of a wire or inverter) or by another instance of the same
+DUT. In principle, any mismatch between the DUT output and
+the reference signal can be extracted by an XOR, whose output
+feeds the SET counter, see Fig. 8a. The problem here is that the
+XOR tends to produce glitches in case of a non-zero skew between
+DUT and reference, thus potentially leading to spurious counts.
+Considering that we are not interested in the exact temporal
+matching of the behaviors of DUT and reference, but rather in
+matching their signal traces, a more appropriate solution is an
+up/down counter, with the DUT output feeding one input and
+the reference signal feeding the other one, see Fig. 8b. Obviously,
+we cannot use a synchronous up/down counter, since SETs would
+not
+adhere
+to
+setup/hold constraints
+and hence
+cause
+
+(a)
+
+(b)
+
+(c)
+
+Fig. 6. Transistor level schematics of: (a) Van Berkel, (b) weak-feedback, (c) conventional Muller C-elements.
+
+780
+
+V. Savulimedu Veeravalli et al. / Microprocessors and Microsystems 37 (2013) 772–791
+
+CLK
+
+S
+D
+A
+P
+ 
+ 
+ 
+O
+/
+I
+
+TES
+
+D
+D
+V
+
+t
+u
+O
+ 
+l
+a
+i
+r
+e
+S
+ 
+n
+I
+ 
+l
+e
+l
+l
+a
+r
+a
+P
+
+I/O   PADS
+
+D
+N
+G
+
+t
+u
+O
+ 
+l
+a
+i
+r
+e
+S
+ 
+n
+I
+ 
+l
+e
+l
+l
+a
+r
+a
+P
+
+Parallel In Serial Out
+
+Measurement
+Circuits
+
+Target
+Circuits
+
+Measurement
+Circuits
+
+Parallel In Serial Out
+
+A
+
+I/O   PADS
+
+2
+T
+S
+R
+
+Fig. 7. Structure of the chip.
+
+Z
+
+S
+D
+A
+P
+ 
+ 
+ 
+O
+/
+I
+
+TSR
+
+metastability. Moreover, in order to catch even short SETs, our
+counters should be as fast and sensitive as possible. Fortunately,
+there is a nice and area efﬁcient way of building an asynchronous
+up/down counter for transitions that is based on an elastic pipe-
+line. Fig. 11c illustrates its principle.
+Alternatively, we may use an incrementer as well to count the
+transitions performed by the DUT during a measurement period.
+However, in this case, we will see the sum of transitions due to
+the SETs in the DUT plus those due to the regular DUT switching
+activity. As the stimuli applied to the DUT are under our full con-
+trol, we can subtract the latter a posteriori; the incrementer must
+accommodate a much larger count value, though.
+Being on-chip, the measurement circuitry will be exposed to
+radiation just like the DUTs and hence has to operate properly in
+the presence of particle hits. Recall that the FRad Chip is not pri-
+marily designed for being used under microbeam irradiation, but
+rather with any radiation source. There are many options available
+for making a circuit tolerant against these single, uncorrelated par-
+ticle hits, such as TMR [101], coding [102], time redundancy [103],
+
+or radiation hardening [79]. However, all of those tend to cause
+high overheads (at least 200%), thus rendering a pretty large share
+of the die area unusable for additional DUTs. Considering that both
+proposed types of counters resemble interesting target structures
+by themselves (namely, a ﬂip-ﬂop chain as well as an elastic pipe-
+line), we decided not to mask particle hits in these circuits but
+rather to let them occur: This effectively turns the on-chip mea-
+surement infrastructure into an additional radiation target. The
+remaining challenge is, however, to ﬁnd a clever arrangement that
+allows us to distinguish between errors that occurred in the origi-
+nal target circuit and those in the counters. To this end, we use the
+following three strategies:
+
+ For our SET counters, we employ a Linear Feedback Shift Register
+(LFSR) instead of a simple incrementer. The important beneﬁt of
+doing so is that the counting sequence in a (carefully chosen)
+LFSR always involves multiple bit changes per count, hence a
+single bit ﬂip caused by an SEU will lead to a dramatic change
+in the count sequence that is easily recognizable by an a poste-
+riori analysis.
+ To make sure that we have a correct copy of the count available
+even in case of a counter hit, we use duplication. Since, thanks
+to using an LFSR counter, we can identify the corrupted value,
+there is no need to go for triplication.
+ For the difference counter, we cannot rely on recognizing erro-
+neous counts. Duplication just allows us error detection but not
+recovery. A viable alternative is using an up/down counter in
+combination with an LFSR counter (which must be quite wide
+then, of course). This will not only allow recovery of the correct
+count, but will also provide diversity that might turn out very
+beneﬁcial in a radiation environment.
+
+Fig. 9 shows the ﬁnally chosen architectures. For the XNOR tree,
+we simply use two LFSR counters in parallel, as shown in Fig. 9a.
+Although we expect only few hits per DUT in a measurement per-
+iod on average (see Section 8), we decided to go for a 16-bit LFSR
+(for details see below) in order to retain a sufﬁciently long counting
+sequence; this makes the recognition of incorrect counts more reli-
+able. By using two LFSR counters, we make sure that we have a cor-
+rect count available in case one LFSR has been hit.
+For all the other target circuits, we use the architecture shown
+in Fig. 9b. It comprises three DUTs of the same type, which we
+mutually use as a reference. For example, the behavior of DUT2 is
+observed by the two up/down counters UDC1 and UDC2. Note that
+these counters have different references (DUT1 and DUT3, respec-
+tively) and use different polarity (UDC1 counting down and UDC2
+counting up on output transitions of DUT2). In principle, this archi-
+tecture allows us to tolerate any of the two up/down counters
+becoming faulty. However, as we cannot be sure to safely recognize
+every SEU of an up/down counter, it may (in rare cases) happen
+
+A
+
+DEVICE
+UNDER
+TEST
+
+A
+
+DEVICE
+UNDER
+TEST
+
+LFSR
+COUNTER
+
+Z
+
+32Z−
+
+1
+
+UP
+DOWN
+COUNTER
+
++
+−
+
+9X−X
+1
+
+DEVICE
+UNDER
+TEST
+
+(a)
+
+DEVICE
+UNDER
+TEST
+
+(b)
+
+Fig. 8. Extracting SET occurrences from the observed activity by (a) XOR or (b) difference counter.
+
+V. Savulimedu Veeravalli et al. / Microprocessors and Microsystems 37 (2013) 772–791
+
+781
+
+A
+
+DUT 3
+
+O3
+
+LFSR 2
+
+W −W
+1 
+32
+
+A
+
+DUT
+
+O1
+
+(a)
+
+LFSR 1
+
+LFSR 2
+
+X −X
+1
+16
+
+DUT 1
+
+O1
+
+Y −Y
+1
+16
+
+DUT 2
+
+2O
+
+(b)
+
++
+−
+
++
+−
+
+UDC 2
+
+UDC 1
+
+LFSR 1
+
+X  −X
+1
+
+9
+
+1Y −Y9
+
+Z −Z
+1
+
+32
+
+Fig. 9. Proposed measurement architectures for (a) XNOR tree; (b) all other target circuits.
+
+that we end up with two counts indicating different numbers of
+SETs, which without additional information are both plausible.
+For DUT1, we use a different strategy: Its behavior is ob-
+served by both UDC1 (counting up) and an LFSR counter. The
+beneﬁt here is that, as motivated above, we can trust to recog-
+nize any faulty behavior of the latter. So in case the LFSR coun-
+ter indicates a plausible number of SET occurrences in the
+target, we can simply trust it, while otherwise we still have
+the result of UDC1 as a backup. Here we need a 32-bit LFSR
+for reasonably long measurement periods without wrap-around
+(42 s for a 100 MHz input data stimulus), which we consider
+necessary for a safe recognition of counter hits. Finally, we
+use the same strategy for DUT3.
+Given the relatively low hit rate (according to Section 8, we will
+tune measurement period and radiation intensity to experience
+only a few hits per period), our general strategy in interpreting
+an observed scenario is to assume the lowest possible number of
+hits that could have led to the given observation. Considering,
+e.g., that UDC1 counts up for failures in DUT1 while it counts down
+for those in DUT2, one might argue that SET observations may can-
+cel out each other. This is, however, not the case, since we have
+redundant information in UDC2 and the LFSR counter. With this
+combined information, it is possible to accurately identify every
+single hit, all double hits in both the target and the measurement
+circuits, and even many multiple hits correctly (for details see Sec-
+tion 7.5). Backed up by the probabilistic calculations in Section 8,
+we are convinced that our architecture represents an excellent
+choice with respect to the combined criteria of area efﬁciency, fault
+tolerance, diagnosability and diversity. Overall, it clearly surpasses
+the more evident solutions using three LFSR counters or three up/
+down counters.
+In the following we will present some details of our SET counter
+implementations.
+
+Compared to conventional binary counters [105], an LFSR reduces
+the amount of required logic and minimizes routing complexity.
+With feedbacks forming a ‘‘maximum length polynomial’’, an LFSR
+with n ﬂip-ﬂops can implement a 2n   1 state counter [104,106].
+Two circuit structures can be used to implement a given polyno-
+mial, namely, the many-to-one design and the one-to-many
+design.
+We selected the 32-degree polynomial x32 + x22 + x2 + x + 1
+shown in Fig. 10 and the 16-degree polynomial x16 + x14
++ x13 + x11 + 1 for our measurement architecture. We chose a one-
+to-many design based on XNOR gates for both, since the associated
+count sequence involves many bit changes per step, which is ben-
+eﬁcial for detecting a single bit fault.
+
+6.2. Up–down counters
+
+Our SET up/down counters will be implemented as 9-stage
+pipelines made up of Muller C-elements [107] with weak feedback
+inverters. Inputs A and B in Fig. 5E are used as up and down count
+inputs, connected to the DUTs; the output Z is not used. In order to
+enable the possibility of counting down, we preset the pipeline to a
+value of 5 upon reset. For this purpose, we need to add extra tran-
+sistors (with appropriate sizing) to the C-elements as shown in
+Fig. 11a and b.
+The up/down counter utilizing the two versions of the C-ele-
+ments (with set and rst) and inverters is shown in Fig. 11c. The
+outputs Z1–Z5 are preset to 1, while Z6–Z9 are preset to 0; all bot-
+tom-row C-elements are initialized to 0. A transition on UP will add
+to the transitions already present in the pipeline, while a transition
+at DOWN will remove one transition from the pipe, thus decreasing
+the count.
+
+6.1. Linear Feedback Shift Register (LFSR) based counters
+
+An LFSR is a synchronous shift register with XOR gates forming
+selected feedbacks [104], which produces a deterministic and peri-
+odic pseudo-random counting sequence. It is heavily used in prac-
+tice for generating CRC checksums and pseudo-random bit strings.
+
+The goal of this section is to provide an overview and some re-
+sults of our pre-fabrication analysis of the proposed measurement
+architecture of the FRad chip. Apart from area considerations, our
+primary concern is an evaluation of the resilience against particle
+hits.
+
+7. Evaluation and analysis
+
+782
+
+V. Savulimedu Veeravalli et al. / Microprocessors and Microsystems 37 (2013) 772–791
+
+QD
+
+D
+
+Q
+
+D
+
+Q
+
+QD
+
+QD
+
+QD
+
+CLK
+
+Q1
+
+Q2
+
+Q3
+
+Q22
+
+Q23
+
+Q32
+
+Fig. 10. 32-bit LFSR.
+
+A
+
+B
+
+B
+
+A
+
+Z
+
+VDD
+
+set
+
+(b)
+
+A
+
+B
+
+B
+
+A
+
+VDD
+
+rst
+
+Z
+
+(a)
+
+C
+
+S
+
+UP
+
+C
+
+S
+
+C
+
+R
+
+C
+
+R
+DOWN
+
+C
+
+S
+
+9Z
+
+Z8
+
+(c)
+
+C
+
+S
+
+2Z
+
+1Z
+
+Fig. 11. Schematic of (a) Muller C-element with reset (rst), (b) Muller C-element with set (set) and (c) up/down counter.
+
+Table 1
+Number of transistors for different architectures.
+
+Architecture
+
+Total no. of transistors
+
+17-Inverter chain
+33-Flip-ﬂop chain
+128-input NAND–NOR Tree
+128-input XNOR tree
+35 C-element Van-Berkel elastic pipeline
+35 C-element Weak-Feedback elastic pipeline
+35 C-element conventional elastic pipeline
+16-bit LFSR counter
+32-bit LFSR counter
+9-bit Up/down counter
+
+34
+594
+508
+1016
+490
+350
+490
+440
+856
+187
+
+measurement setup. The exception to this is the XNOR tree target,
+one instance of which is monitored by two 16-bit LFSR counters.
+The resulting area consumption and the overhead incurred by
+the measurement circuits over the target circuits are given in Ta-
+ble 2. Note that the only substantial overhead incurred by the mea-
+surement setup occurs for the inverter chains, which is due to the
+small size of the target. For the other target circuits, the measure-
+ment overhead is very reasonable. On average, the measurement
+circuitry consumes 19% more area (in fact fewer transistors) than
+the target circuits. Given that our SET counters can also be seen
+as additional target circuits in our architecture, the overhead is
+acceptable.
+
+7.1. Overhead analysis
+
+Table 1 lists the total number of transistors required by the dif-
+ferent target circuits described in Section 5 and the SET counters
+introduced in Section 6.
+The FRad Chip hosts three instances of each target circuit, two
+32-bit LFSR counters and two up/down counters for every
+
+The primary tool for the analysis of our measurement circuits’
+resilience against particle hits is simulation-based fault injection,
+using appropriate Spice models as described in Section 4. To get
+conﬁdence in our architecture, we injected faults in each and every
+gate of each SET counter and analyzed the resulting behavior of the
+circuit.
+
+7.2. Fault-tolerance analysis setup
+
+V. Savulimedu Veeravalli et al. / Microprocessors and Microsystems 37 (2013) 772–791
+
+783
+
+Table 2
+Hardware overhead analysis for measurement setup.
+
+Table 4
+LFSR counter – SETs in XNOR gates and ﬂip-ﬂops.
+
+Architecture
+
+No. of trans.
+for target circuits
+
+No. of trans.
+for measurement
+circuits
+
+Overhead factor
+(target circuit
+circuits as base)
+
+Inverter chain
+Flip-ﬂop chain
+NAND–NOR tree
+XNOR tree
+Elastic pipeline
+All
+
+102
+1782
+1524
+3048
+1330
+7786
+
+2086
+2086
+2086
+880
+2086
+9224
+
+20.451
+1.171
+1.369
+0.289
+1.568
+1.185
+
+We used release 5.10.41 of the Cadence Virtuoso Front-end to
+Back-end design environment to create the schematics of our cir-
+cuits. They were all designed using UMC 90 nm NMOS and PMOS
+device models. We chose custom W/L (width/length) ratios for
+the NMOS transistors, while the W/L ratios of the PMOS transistors
+were chosen based on the structure of the corresponding circuit.
+The Spice netlists were extracted from the respective Cadence
+schematics.
+We performed all our analog simulations using HSPICE Version
+D-2010, using the following setup: To generate switching activity
+in the circuits, we toggled the data input every 5 ns. After 10 ns,
+we triggered the set and reset signals of the counters for about
+40 ns, which initializes the LFSR counter to 0 and the up/down
+counters to 5. At speciﬁcally selected times during normal opera-
+tion, we triggered SETs by injecting a current pulse in the Spice
+netlist (refer to Section 4).
+
+7.3. LFSR counter evaluation
+
+The regular operation of the 32-bit LFSR is illustrated in Table 3:
+With each rising clock edge, the counting proceeds by one step; the
+32-bit LFSR will step through a sequence of about 4.2 billion differ-
+ent values. A low at the RST input resets the count value to 0.
+For our fault-tolerance analysis, we injected faults in each of the
+XNOR gates and ﬂip-ﬂops independently. Selected results are listed
+below (see also Table 4):
+
+ Injection of an SET causing a bit ﬂip from 1 to 0 in the XNOR
+gate tapped between Q1 and Q2 (please refer to Fig. 10) at
+75 ns: Here the beneﬁt of using an LFSR for counting becomes
+apparent. While only one bit of the output actually changes
+due to the SET, the related change in the counting sequence is
+drastic and hence easily recognizable: According to Table 3
+the value following 29,360,146 should be 62,914,594, but here
+it is 29,360,144, effectively causing a huge jump in the counter
+sequence (see rightmost column).
+ Injection of an SET causing a bit ﬂip from 0 to 1 in the ﬂip-ﬂop
+with output Q15 at 80 ns: This increased the LFSR count by 215
+and the actual count by 1.64 billion steps approximately. Again
+this is easy to detect.
+
+Overall, this conﬁrms that a single bit ﬂip in the LFSR counter is
+witnessed as billions of skipped transitions. Due to our careful
+
+Table 3
+Operation of the LFSR counter in no-fault scenario.
+
+Time (ns)
+
+0–10
+10–50
+50–60
+60–70
+70–80
+80–90
+90–100
+
+LFSR count
+
+4194310
+0
+4194310
+12582922
+29360146
+62914594
+130023490
+
+Actual count
+
+1
+0
+1
+2
+3
+4
+5
+
+Time (ns)
+
+LFSR count
+
+Actual count
+
+XNOR gate tapped between Q1 and Q2
+12582922
+60–70
+29360146
+70–75
+75–80
+29360144
+62914598
+80–90
+
+Flip-ﬂop with output Q15
+60–70
+70–80
+80–90
+90–100
+
+12582922
+29360146
+62947362
+130089026
+
+2
+3
+2325803548
+2325803549
+
+2
+3
+1647004572
+1647004573
+
+selection of the LFSR polynomial, its one-to-many implementation
+(see Section 5), and backed up by numerous further experiments,
+we can indeed generalize this observation: A single bit ﬂip in any
+LFSR cell will always infer a much larger and hence easily detect-
+able effect in the actual count, which ﬁnally justiﬁes our decision
+to use an LFSR counter.
+
+7.4. Up/down counter evaluation
+
+In our analysis, SETs were injected into all C-elements and
+inverters to evaluate the resulting behavior of the up/down coun-
+ter introduced in Section 6. Table 5 lists some of the scenarios ob-
+tained (e.g. at 75 ns and 105 ns). Recall that the up/down counters
+are initialized to a count of 5, represented by 111110000 on
+Z9    Z1 in Fig. 11c. A fault injected at 130 ns in the C-element that
+drives the output Z8, e.g., changed the outputs Z6, Z7 and Z8 to 1.
+There were also many instances when the fault injected at the
+same node in a different time interval just changed the output Z8
+temporarily to 1 (for one step) and switched back to 0.
+Overall, we observe that the effect of an SET in an up/down
+counter is dependent on the location and the direction of the
+resulting bit ﬂip. Unlike in the LFSR case, the initial effect of the
+fault is not ‘‘ampliﬁed’’, such that a particle hit in the up/down
+counter cannot easily be distinguished from a regular counting
+step caused by an SET in the associated target. This conﬁrms that
+some kind of replication is indeed mandatory for using these coun-
+ters in our measurement architecture.
+
+7.5. Overall measurement architecture and fault dictionary
+
+We have created a comprehensive fault dictionary for our
+measurement architecture, which associates every fault scenario
+
+Table 5
+Fault analysis of the up/down counter.
+
+Time (ns)
+
+Up/down count
+
+Actual count
+
+C-element (with set) between the outputs Z4 and Z5
+111110000
+65–70
+70–75
+000001111
+111100000
+75–80
+80–85
+000011111
+
+C-element (with rst) at output Z5
+111110000
+95–100
+100–105
+000001111
+111100000
+105–110
+110–115
+000011111
+
+C-element (with set) at output Z8
+111110000
+120–125
+000001111
+125–130
+130–135
+000000001
+111111110
+135–140
+
+5
+5
+4
+4
+
+5
+5
+4
+4
+
+5
+5
+8
+8
+
+784
+
+Table 6
+Fault dictionary.
+
+V. Savulimedu Veeravalli et al. / Microprocessors and Microsystems 37 (2013) 772–791
+
+Observed syndrome
+
+Location of faults
+
+U1
+
+U2
+
+No fault scenario
+5
+5
+
+Single fault scenario
+5
+6
+4
+6
+4
+5
+⁄
+5
+⁄
+5
+5
+5
+5
+5
+
+L1
+p
+
++
+p
+p
+p
+p
+X
+p
+
+L2
+p
+
+p
+p
++
+p
+p
+p
+X
+
+Double faults scenario
+Location of all faults traceable
+Problematic triple fault scenarios
+p
+⁄
+5
+X
+p
+p
+⁄
+⁄
+p
+⁄
+5
+X
+Problematic quadruple fault scenarios
+p
+⁄
+⁄
++
+⁄
+6
++
+X
+p
+⁄
+⁄
+X
+p
+⁄
+6
+X
+p
+⁄
+5
+X
+⁄
+5
+X
+X
+p
+⁄
+⁄
++
+p
+⁄
+5
+X
+p
+⁄
+4
+X
+p
+⁄
+⁄
+X
+p
+⁄
+⁄
+X
+p
+⁄
+⁄
+X
+⁄
+5
+X
+X
+
+Actual location
+
+Interpretation
+
+–
+
+D1
+D2
+D3
+U1
+U2
+L1
+L2
+
+(U1, L1, D1)
+(U1, U2, D2)
+(U2, L2, D3)
+
+(D1, D2, U2, U1)
+(D1, D3, U2, L2)
+(D1, U1, U2, L1)
+(D1, D2, U1, L1)
+(D1, D2, U2, L2)
+(D1, U1, L1, L2)
+(D2, D3, U1, U2)
+(D2, D3, U1, L2)
+(D2, D3, U2, L2)
+(D2, U1, U2, L1)
+(D2, U1, U2, L2)
+(D3, U1, U2, L2)
+(D3, U2, L1, L2)
+
+–
+
+D1
+D2
+D3
+U1
+U2
+L1
+L2
+
+(U1, L1)
+(U1, U2)
+(U2, L2)
+
+(D1, U2, U1)
+(D1, U2, L2)
+(U1, U2, L1)
+(U1, D2, L1)
+(D1, U2, L2)
+(U1, L2, L1)
+(D3, U2, U1)
+(L2, U1)
+(D2, U2, L2)
+(U1, U2, L1)
+(U1, U2, L2)
+(U1, U2, L2)
+(U2, L1, L2)
+
+(single or multiple SET hit (s) in counters and targets) with its
+‘‘syndrome’’, i.e., the set (U1, U2, L1, L2) of resulting readouts on the
+up/down counters UDC1 and UDC2, as well as the LFSRs 1 and 2.
+Used in the reverse direction, this dictionary allows us to infer from
+an observed syndrome the fault scenario that caused it, with, e.g.
+(U1, L2, D2) indicating that UDC1, LFSR2 and DUT2 have been affected
+by an SET. This mapping, unfortunately, is not bijective, as different
+multiple-fault scenarios may map to the same syndrome. We use
+two strategies to handle this issue: (1) By carefully choosing the
+measurement period (see Section 8), we can safely neglect the
+probability of experiencing many SET hits within one period (i.e.,
+before reading out and re-initializing the counters). This allows
+us to ignore fault scenarios involving more than, e.g., four SETs in
+our dictionary. The same reasoning supports our strategy (2),
+namely, associating an observed syndrome with the scenario that
+involves the lowest number of faults, as it is far more probable to
+occur than other matching scenarios that might exist. Of course,
+however, this can lead to misinterpretation in rare cases.5
+Table 6 shows an excerpt of our fault dictionary. Herein ‘‘⁄’’ and
+‘‘X’’ both indicate an incorrect counter value, with the latter being
+p
+recognizable as an error and the former not. ‘‘
+’’ indicates that the
+expected LFSR value for the fault free case is read, ‘‘+’’ stands for a
+correctly incremented LFSR value.
+It turns out that our architecture facilitates correct identiﬁca-
+tion of the hit circuit for all single faults. The same is true for all
+double faults (not shown for brevity). Furthermore, most of the tri-
+ple faults and even quadruple faults are correctly identiﬁed; the
+few problematic cases that lead to a wrong interpretation are
+shown in the table. In the case when all four counters are hit, we
+do not have any useful information left, of course.
+
+7.6. SET simulations of the measurement infrastructure
+
+To give a brief overview of our Spice analysis performed to val-
+idate our architecture, we present an example considering an in-
+verter chain as the DUT, using the measurement architecture
+from Fig. 9. We injected SETs in all the three target circuits DUT1,
+DUT2, DUT3 at different times, observable at outputs O1, O2, O3 in
+Fig. 12: An SET is injected at 117 ns in DUT2, at 147 ns in DUT1
+and at 177 ns in DUT3. The effect of these SETs in the up/down
+counters and the LFSR counters can be inferred from Figs. 12–14.
+More speciﬁcally, the effect of the SET injected at 117 ns can be
+observed in UDC1 (refer to signals Y1–Y9 of the UDC in Fig. 12) and
+in LFSR1 (refer to Fig. 13). The effect of the fault injected at 147 ns
+in DUT1 can be observed in UDC1 and UDC2 (refer to signals Y1–Y9
+and X1–X9 in Fig. 12). Similarly, the fault injected at 177 ns in
+DUT3 can be observed in UDC2 (refer to signals X1–X9 in Fig. 12)
+and in LFSR2 (refer to Fig. 14). One notices that, at 190 ns, the SETs
+injected in the target circuits cancelled the counts of UDC1 and
+UDC2, thus bringing them back to the initial state. However, the ef-
+fect of the SETs in DUT2 and DUT3 is still observable in LFSR1 and
+LFSR2, respectively.
+More speciﬁcally, assuming that these were the only three SETs
+observed in this target circuit during the measurement period of 40 s,
+we will observe no change in the UDCs and one extra count in both
+the LFSRs at the end of the measurement period. From these
+values, we can infer that the faults did not occur in LFSR1 or LFSR2:
+If a fault occurred in the LFSR, then there would not be just one
+extra count but millions of extra counts. From the LFSR’s values
+we can thus infer that the fault occurred in the target circuits
+DUT2 and DUT3 and thus explain the SET’s effect in the UDCs:
+Based on their values, we deduce that the SET in DUT1 cancelled
+the effect of SETs created by DUT2 and DUT3 in the UDCs. This is
+how we determined the corresponding entry in the fault dictionary
+in Table 6.
+Our fault dictionary has been validated by means of numerous
+simulated SET injections (up to seven at a time) into various loca-
+tions, using the same process as explained above. We are hence
+convinced that the chosen measurement architecture will indeed
+work as expected.
+
+8. Probabilistic analysis
+
+Given the non-negligible number of transistors IM of the mea-
+surement circuitry M as compared to the number of transistors IT
+of the target circuitry T in Table 2 in Section 7 on one hand, and
+the ability of M to tolerate just a double hit for sure6 on the other
+hand, the question about feasible measurement periods D = D(/)
+for a given particle ﬂux / (in particles per lm2 s) arises: D must
+be chosen small enough such that, with reasonably high probability,
+there are at most two hits in M during D; we call such a measure-
+ment period safe. At the same time, with reasonably high probability,
+two consecutive hits in T should occur within some P safe measure-
+ment periods sufﬁciently often, in order to get statistically meaning-
+ful data on the SET generation process.
+A gross estimate of D and P can be determined using cross sec-
+tion data. Although such an estimate necessarily ignores the fact
+that target and measurement circuitry have very different struc-
+ture and topology, it provides meaningful results due to the fact
+that we do not rely on single-event-upset (SEU) cross sections but
+rather on SET cross sections: Whereas it is known that memory
+elements like ﬂip-ﬂops are more susceptible to radiation than com-
+binational logic, this is primarily a consequence of the fact that
+
+5 This can be resolved on a statistical basis, which is one of our future aims.
+
+6 Given that M can also tolerate many triple and even higher-order faults, this is a
+very conservative assumption.
+
+V. Savulimedu Veeravalli et al. / Microprocessors and Microsystems 37 (2013) 772–791
+
+785
+
+A
+
+O1
+
+O2
+O3
+
+Y1
+Y2
+
+Y3
+Y4
+
+Y5
+
+Y6
+
+Y7
+Y8
+
+Y9
+
+X1
+X2
+
+1X3
+0
+
+X4
+
+X5
+X6
+
+X7
+
+X8
+1X9
+0
+
+100n
+
+120n
+
+140n
+Time (in ns)
+
+160n
+
+180n
+
+Fig. 12. Spice simulation of the up/down counters.
+
+SETs in combinational logic are relatively unlikely to be latched.
+Consequently, they do not as easily lead to an SEU as SETs resulting
+from a direct hit of a ﬂip-ﬂop. By contrast, the SET generation pro-
+cess is the same both in combinational logic and in ﬂip-ﬂops.
+Our radiation experiments for validating the 3D model provided
+a (saturated) SET cross section c of about c = 5 lm2 for our 90 nm
+ASIC technology, which matches the ﬁgures given in the literature
+[52]. The cross section expresses that a total ﬂuence of 1 particle
+per c results in 1 SET per device of interest (in our case, per tran-
+sistor) on average. Trivial calculations based on expected values re-
+veal that if we choose /D ¼ 1
+, we get one hit in M during D on
+cIM
+average. Since D should be chosen large enough to fully exploit
+M’s double-hit resilience, but should only rarely lead to triple hits,
+we choose
+D ¼ C
+c/IM
+for some constant 0 < C 6 2, which leads to E[HM] = C hits in M on
+average. For arbitrary distributions of the number of hits HM in a
+single measurement period in M, Markov’s inequality P{HM-
+
+;
+
+P h} 6 E[HM]/h reveals a triple-hit probability of p = P{HM P 3}
+6 C/3; it can be made sufﬁciently small by choosing C sufﬁciently
+small. As this results in a geometric distribution of safe measure-
+ment periods, we can expect an average of PM = 1/p P 3/C consecu-
+tive safe measurement periods.
+On the other hand, the average number of hits in T during D is
+CIT/IM, so we can expect one hit on average in T after
+P ¼ IM
+CIT
+measurement periods; note that they eat up a total time of PD ¼ 1
+.
+c/IT
+To see a hit in T before the measurement is affected by a triple
+hit in M on average, we should have something like P 6 PM, which
+6 3. This is a very conservative estimate, how-
+is guaranteed if IM
+IT
+ever. To obtain the actual probability of failure Pfail, i.e., of an unsafe
+measurement period within two consecutive target hits, we will
+assume that the number of hits in M and T follow a compound
+Poisson distribution with the same average hit rate per lm  s. This
+implies a rate kM = C per measurement period in M, and kT = CIT/IM
+in T.
+
+ð4Þ
+
+786
+
+V. Savulimedu Veeravalli et al. / Microprocessors and Microsystems 37 (2013) 772–791
+
+Z1
+Z2
+Z3
+Z4
+Z5
+Z6
+Z7
+Z8
+Z9
+Z10
+Z11
+Z12
+Z13
+Z14
+Z15
+Z16
+Z17
+Z18
+Z19
+Z20
+Z21
+Z22
+Z23
+Z24
+Z25
+Z26
+Z27
+Z28
+Z29
+Z30
+Z31
+Z32
+
+100n
+
+120n
+
+140n
+Time (in ns)
+
+160n
+
+180n
+
+Fig. 13. Spice simulation of the LFSR counter 1.
+
+kP0
+
+peC T
+eC T   1 þ p :
+
+Recalling the geometric distribution of safe measurement peri-
+ods with parameter p and the fact that the probability of no target
+hit within k measurement periods is e kT k ¼ e C T k , where we used
+X
+the abbreviation CT = CIT/IM, we ﬁnd
+pð1   pÞk e C T k ¼ p
+¼
+P fail ¼
+1   1 p
+eC T
+Since the Poisson distribution of HM implies p = P{HM P 3} =
+1   (1 + C + C2/2)e C = 1   (1 + C0 )e C with C0 = C + C2/2, we thus
+easily obtain
+P fail ¼ ð1   ð1 þ C 0 Þe C ÞeC T
+eC T   ð1 þ C 0 Þe C ¼ 1   ð1 þ C 0 Þe C
+1   ð1 þ C 0 Þe C C T
+¼ 1   ð1 þ C þ C 2
+2 Þe C
+Þ :
+2 Þe C _ðIM þIT
+1   ð1 þ C þ C 2
+IM
+
+Expression (5) for Pfail can be made as small as desired by choosing
+C 2 (0, 2] sufﬁciently small, for all reasonable ratios IT/IM. For exam-
+ple, for IT = IM/2, which is more than reasonable for all target circuits
+except for the inverter chain according to Table 2, we obtain
+Pfail < 0.01 for C = 0.2. For the inverter chain, Table 2 reveals IT = IM/
+20, which yields Pfail < 0.1 for C = 0.2. Note that, according to (4),
+C = 0.2 leads to P = 5 measurement periods between two target hits
+on average. Given the quite conservative assumptions underlying
+our probabilistic analysis, we can hence ﬁnally conclude that our
+measurement architecture is indeed excellently suited for collecting
+statistically meaningful long-term data.
+
+9. Conclusions
+
+We provided an overview of the general approach for develop-
+ing meaningful digital
+radiation failure models
+for digital
+
+ð5Þ
+
+V. Savulimedu Veeravalli et al. / Microprocessors and Microsystems 37 (2013) 772–791
+
+787
+
+W1
+W2
+W3
+W4
+W5
+W6
+W7
+W8
+W9
+W10
+W11
+W12
+W13
+W14
+W15
+W16
+W17
+W18
+W19
+W20
+W21
+W22
+W23
+W24
+W25
+W26
+W27
+W28
+W29
+W30
+W31
+W32
+
+100n
+
+120n
+
+140n
+Time (inns)
+
+160n
+
+180n
+
+Fig. 14. Spice simulation of the LFSR counter 2.
+
+asynchronous circuits in our FATAL project. We utilize a chain of
+3D models and Spice models for model validation and calibration,
+along with radiation experiments utilizing a speciﬁcally designed
+FRad Chip that will be used for gathering radiation failure statistics
+in continuous long-term experiments.
+We presented our choice of target circuits and on-chip mea-
+surement architecture of the FRad Chip, along with the results of
+the pre-fabrication analysis using our general FATAL approach.
+Key challenges are (i) distinguishing SETs from normal switching
+activity of the target circuits, (ii) providing reliable SET data acqui-
+sition in spite of radiation hits in the measurement infrastructure,
+and (iii) leaving as much of the die area available for the target cir-
+cuits as possible. Rather than employing a rad-hard design, our
+architecture considers the measurement circuitry as additional tar-
+get circuits, and hence allows to tolerate hits in the former by an
+architectural design that supports reliable fault detection based
+on a fault dictionary.
+
+Our circuit architecture has been evaluated by means of elabo-
+rate fault-injection experiments based on detailed 3D models and
+Spice models of the FRad Chip, which were in turn validated and
+calibrated using micro-beam radiation experiments. For the latter,
+target circuits instrumented with high-speed analog-ampliﬁers
+have been used for analog SET recording. Together with a probabi-
+listic analysis based on experimental cross-section data, the results
+of this evaluation allow us to predict that the FRad Chip will indeed
+serve its purpose as an effective means for the end-to-end valida-
+tion of digital failure models.
+The main focus in our future work is clearly on ﬁnalizing the de-
+sign of the FRad Chip and manufacturing the ASIC. In addition, our
+research has also revealed the need for a reﬁned understanding of
+the SET generation process and, consequently, reﬁned Spice mod-
+els, which we plan to pursue further. We also plan to leverage
+our combined simulation/experiment approach for studying the
+dependence of (transient) SEE impact and frequency on operating
+
+788
+
+V. Savulimedu Veeravalli et al. / Microprocessors and Microsystems 37 (2013) 772–791
+
+conditions like supply voltage and temperature in detail. This will
+be an interesting contribution to our general FATAL high-level
+modeling approach. Beyond the SET generation we are investigat-
+ing SET propagation as well, and, speciﬁcally in the context of asyn-
+chronous circuit structures, we have recently come up with some
+encouraging ﬁndings.
+
+References
+
+[1] M. Függer, U. Schmid, Reconciling fault-tolerant distributed computing and
+systems-on-chip, Distributed Computing 24 (6) (2012) 323–355.
+[2] M. Függer, A. Dielacher, U. Schmid, How to speed-up fault-tolerant clock
+generation in VLSI systems-on-chip via pipelining, in: Proceedings Eighth
+European Dependable Computing Conference (EDCC’10), 2010, pp. 230–239.
+[3] D. Dolev, M. Függer, C. Lenzen, U. Schmid, Fault-tolerant algorithms for tick-
+generation in asynchronous logic: robust pulse generation – (extended
+abstract), in: Proceedings 13th International Symposium on Stabilization,
+Safety, and Security of Distributed Systems (SSS’11), LNCS 6976, Springer,
+2011, pp. 163–177.
+[4] B. Charron-Bost, S. Dolev,
+J. Ebergen, U.S. chmid (Eds.), Fault-Tolerant
+Distributed Algorithms on VLSI Chips, Schloss Dagstuhl, Germany, 2009.
+[5] D.M. Chapiro, Globally-Asynchronous Locally-Synchronous Systems, Ph.D.
+Thesis, Stanford University, October 1984.
+[6] M.J. Fischer, N.A. Lynch, M.S. Paterson, Impossibility of distributed consensus
+with one faulty process, Journal of the ACM 32 (2) (1985) 374–382.
+[7] T. Verdel, Y. Makris, Duplication-based concurrent error detection in
+asynchronous circuits: shortcomings and remedies, in: Proceedings 17th
+IEEE International Symposium on Defect and Fault Tolerance in VLSI Systems
+(DFT 2002), 2002, pp. 345–353.
+[8] W. Jang, A.J. Martin, SEU-tolerant QDI circuits, in: Proceedings 11th Int’l
+Symposium on Asynchronous Circuits and Systems (ASYNC’05), 2005, pp.
+156–165.
+[9] S. Peng, R. Manohar, Efﬁcient failure detection in pipelined asynchronous
+circuits, in: Proceedings 20th IEEE International Symposium on Defect and
+Fault Tolerance in VLSI Systems (DFT’05), 2005, pp. 484–493.
+[10] W. Kuang, E. Xiao, C. Ibarra, P. Zhao, Design asynchronous circuits for soft
+error tolerance, in: Proceedings IEEE International Conference on Integrated
+Circuit Design and Technology (ICICDT’07), 2007, pp. 1–5.
+[11] G. Fuchs, A. Steininger, VLSI implementation of a distributed algorithm for
+fault-tolerant
+clock generation,
+Journal of Electrical and Computer
+Engineering (2011).
+[12] I. Koren, Z. Koren, Defect tolerance in VLSI circuits: techniques and yield
+analysis, Proceedings of the IEEE 86 (9) (1998) 1819–1838.
+[13] T. Karnik, P. Hazucha, J. Patel, Characterization of soft errors caused by single
+event upsets in CMOS processes, IEEE Transactions on Dependable and Secure
+Computing 1 (2) (2004) 128–143.
+[14] R. Baumann, Radiation-induced soft errors in advanced semiconductor
+technologies, IEEE Transactions on Device and Materials Reliability 5 (3)
+(2005) 305–316.
+[15] E. Normand, Single-event effects in avionics, IEEE Transactions on Nuclear
+Science 43 (2) (1996) 461–474.
+[16] C. Dyer, D. Rodgers, Effects on spacecraft & aircraft electronics,
+in:
+Proceedings ESA Workshop on Space Weather, ESA WPP-155, ESA,
+Nordwijk, The Netherlands, 1998, pp. 17–27.
+[17] J. Schwank, M. Shaneyfelt, P. Paillet, D. Beutler, V. Ferlet-Cavrois, B. Draper, R.
+Loemaker, P. Dodd, F. Sexton, Optimum laboratory radiation source for
+hardness assurance testing, IEEE Transactions on Nuclear Science 48 (6)
+(2001) 2152–2157.
+[18] Z. Kalbarczyk, R. Iyer, G. Ries, J. Patel, M. Lee, Y. Xiao, Hierarchical simulation
+approach to accurate fault modeling for system dependability evaluation,
+IEEE Transactions on Software Engineering 25 (5) (1999) 619–632.
+[19] D. Mavis, P. Eaton, SEU and SET modeling and mitigation in deep submicron
+technologies,
+in: Proceedings 45th Annual
+IEEE International Reliability
+Physics Symposium, 2007, pp. 293–305.
+[20] R. Ramanarayanan, V. Degalahal, R. Krishnan, J. Kim, V. Narayanan, Y. Xie, M.J.
+Irwin, K. Unlu, Modeling Soft Errors at the Device and Logic Levels for
+Combinational Circuits,
+IEEE Transactions on Dependable and Secure
+Computing 6 (3) (2009) 202–216.
+[21] J.F. Ziegler, SRIM-2003, Nuclear instruments and methods in physics research
+section b: beam interactions with materials and atoms, in: Proceedings of the
+Sixteenth International Conference on Ion Beam Analysis, vols. 219–220,
+2004, pp. 1027–1036.
+[22] K. Schweiger, M. Hofbauer, H. Dietrich, H. Zimmermann, K.. Voss, B. Merk,
+Position dependent measurement of single event transient voltage pulse
+shapes under heavy ion irradiation, Electronics Letters 48 (3) (2012) 171–
+172.
+[23] R. Garg, S.P. Khatri, Efﬁcient analytical determination of the SEU-induced
+pulse shape, in: Proceedings of the 2009 Asia and South Paciﬁc Design
+Automation Conference, ASP-DAC ’09, IEEE Press, Piscataway, NJ, USA, 2009,
+pp. 461–467.
+[24] M. Peercy, P. Banerjee, Fault tolerant VLSI systems, Proceedings of the IEEE 81
+(5) (1993) 745–758.
+
+IEEE
+
+IEEE Transactions on
+
+[25] M. Nicolaidis, Design for soft error mitigation, IEEE Transactions on Device
+and Materials Reliability 5 (3) (2005) 405–418.
+[26] P. Shivakumar, M. Kistler, S. Keckler, D. Burger, L. Alvisi, Modeling the effect of
+in:
+technology trends on the soft error rate of combinational
+logic,
+Proceedings
+International Conference on Dependable
+Systems
+and
+Networks (DSN’02), 2002, pp. 389–398.
+[27] P. Dodd, L. Massengill, Basic mechanisms and modeling of single-event upset
+in digital microelectronics, IEEE Transactions on Nuclear Science 50 (3)
+(2003) 583–602.
+[28] A. Dixit, A. Wood, The impact of new technology on soft error rates, in: Proc.
+IEEE International Reliability Physics Symposium (IRPS’11), 2011, pp. 5B.4.1–
+5B.4.7.
+[29] R. Baumann, Soft errors in advanced semiconductor devices—Part I: The three
+radiation sources, IEEE Transactions on Device and Materials Reliability 1 (1)
+(2001) 17–22.
+[30] M. Gordon, P. Goldhagen, K. Rodbell, T. Zabel, H. Tang, J. Clem, P. Bailey,
+Measurement of the ﬂux and energy spectrum of cosmic-ray induced
+neutrons on the ground, IEEE Transactions on Nuclear Science 51 (6) (2004)
+3427–3434.
+[31] Y. Tosaka, S. Satoh, T. Itakura, H. Ehara, T. Ueda, G. Wofﬁnden, S. Wender,
+Measurement and analysis of neutron-induced soft errors in sub-half-micron
+CMOS circuits, IEEE Transactions on Electron Devices 45 (7) (1998) 1453–
+1458.
+[32] I. Lantz, Soft errors induced by alpha particles,
+Reliability 45 (2) (1996) 174–179.
+[33] C.J. Myers, Asynchronous Circuit Design, John Wiley & Sons, Inc., 2001.
+[34] P. Dodd, F. Sexton, Critical charge concepts for CMOS SRAMs,
+Transactions on Nuclear Science 42 (6) (1995) 1764–1771.
+[35] P. Dodd, M. Shaneyfelt, J. Felix, J. Schwank, Production and propagation of
+single-event transients in high-speed digital logic ICs, IEEE Transactions on
+Nuclear Science 51 (6) (2004) 3278–3284.
+[36] T. Colladant, O. Flament, A. L’Hoir, V. Ferlet-Cavrois, C. D’Hose, J. du Port
+de Potcharra, Study of transient current induced by heavy-ion in NMOS/
+SOI transistors, IEEE Transactions on Nuclear Science 49 (6) (2002) 2957–
+2964.
+[37] D. Kobayashi, H. Saito, K. Hirose, Estimation of single event transient voltage
+pulses in VLSI circuits from heavy-ion-induced transient currents measured
+in a single mosfet, IEEE Transactions on Nuclear Science 54 (4) (2007) 1037–
+1041.
+[38] M.A. Bajura, Y. Boulghassoul, R. Naseer, S. Dasgupta, A.F. Witulski, J. Sondeen,
+S.D. Stansberry, J. Draper, L.W. Massengill, J.N. Damoulakis, Models and
+algorithmic limits for an ECC-based approach to hardening sub-100-nm
+SRAMs, IEEE Transactions on Nuclear Science 54 (4) (2007) 935–945.
+[39] B. Narasimham, B. Bhuva, R. Schrimpf, L. Massengill, M. Gadlage, O. Amusan,
+W. Holman, A. Witulski, W. Robinson,
+J. Black,
+J. Benedetto, P. Eaton,
+Characterization of digital single event transient pulse-widths in 130-nm and
+90-nm CMOS technologies, IEEE Transactions on Nuclear Science 54 (6)
+(2007) 2506–2511.
+[40] J. Ahlbin, L. Massengill, B. Bhuva, B. Narasimham, M. Gadlage, P. Eaton, Single-
+event transient pulse quenching in advanced CMOS logic circuits, IEEE
+Transactions on Nuclear Science 56 (6) (2009) 3050–3056.
+[41] J. Ahlbin, T. Loveless, D. Ball, B. Bhuva, A. Witul ski, L. Massengill, M. Gadlage,
+Double-pulse-single-event transients in combinational logic, in: 2011 IEEE
+International Reliability Physics Symposium (IRPS), 2011, pp. 3C.5.1–3C.5.6.
+[42] R. Garg, S. Khatri, 3d simulation and analysis of the radiation tolerance of
+voltage scaled digital circuit, in: Proceedings IEEE International Conference
+on Computer Design (ICCD’09), 2009, pp. 498–504.
+[43] M. Gadlage, J. Ahlbin, B. Narasimham, B. Bhuva, L. Ma ssengill, R. Schrimpf,
+Single-event transient measurements in nMOS and pMOS transistors in a 65-
+nm bulk CMOS technology at elevated temperatures, IEEE Transactions on
+Device and Materials Reliability 11 (1) (2011) 179–186.
+[44] N. Atkinson, J. Ahlbin, A. Witulski, N. Gaspard, W. Holman, B. Bhuva, E. Zhang,
+L. Chen, L. Massengill, Effect of transistor density and charge sharing on
+single-event transients in 90-nm bulk cmos, IEEE Transactions on Nuclear
+Science 58 (6) (2011) 2578–2584.
+[45] M. Nicolaidis, R. Perez, Measuring the width of transient pulses induced by
+ionising radiation, in: Proceedings 41st Annual IEEE International Reliability
+Physics Symposium, 2003, pp. 56–59.
+[46] M. Baze, S. Buchner, Attenuation of single event induced pulses in CMOS
+combinational logic, IEEE Transactions on Nuclear Science 44 (6) (1997)
+2217–2223.
+[47] P. Eaton, J. Benedetto, D. Mavis, K. Avery, M. Sibley, M. Gadlage, T. Turﬂinger,
+Single event transient pulsewidth measurements using a variable temporal
+latch technique, IEEE Transactions on Nuclear Science 51 (6) (2004) 3365–
+3368.
+[48] J. Benedetto, P. Eaton, D. Mavis, M. Gadlage, T. Turﬂinger, Variation of digital
+SET pulse widths and the implications for single event hardening of advanced
+CMOS processes, IEEE Transactions on Nuclear Science 52 (6) (2005) 2114–
+2119.
+[49] V. Ferlet-Cavrois, P. Paillet, D. McMorrow, A. Torres, M. Gaillardin, J. Melinger,
+A. Knudson, A. Campbell, J. Schwank, G. Vizkelethy, M. Shaneyfelt, K. Hirose,
+O. Faynot, C. Jahan, L. Tosti, Direct measurement of transient pulses induced
+by laser and heavy ion irradiation in deca-nanometer devices,
+IEEE
+Transactions on Nuclear Science 52 (6) (2005) 2104–2113.
+[50] Y. Yanagawa, K. Hirose, H. Saito, D. Kobayashi, S. Fukuda, S. Ishii, D. Takahashi,
+K. Yamamoto, Y. Kuroda, Direct measurement of SET pulse widths in 0.2-lm
+
+V. Savulimedu Veeravalli et al. / Microprocessors and Microsystems 37 (2013) 772–791
+
+789
+
+SOI logic cells irradiated by heavy ions, IEEE Transactions on Nuclear Science
+53 (6) (2006) 3575–3578.
+[51] V. Ferlet-Cavrois, P. Paillet, D. McMorrow, N. Fel, J. Baggio, S. Girard, O.
+Duhamel, J. Melinger, M. Gaillardin, J. Schwank, P. Dodd, M. Shaneyfelt, J.
+Felix, New insights into single event transient propagation in chains of
+invertersevidence
+for
+propagation-induced
+pulse
+broadening,
+IEEE
+Transactions on Nuclear Science 54 (6) (2007) 2338–2346.
+[52] B. Narasimham, M. Gadlage, B. Bhuva, R. Schrimpf, L. Massengill, W. Holman,
+A. Witulski, K. Galloway, Test circuit for measuring pulse widths of single-
+event transients causing soft errors,
+in: Proceedings IEEE International
+Conference on Microelectronic Test Structures (ICMTS’08), 2008, pp. 142–
+146.
+[53] A. Balasubramanian, B. Narasimham, B. Bhuva, L.W. Massengill, P. Eaton, M.
+Sibley, D. Mavis, Implications of total dose on single-event transient (SET)
+pulse width measurement techniques, IEEE Transactions on Nuclear Science
+55 (6) (2008) 3336–3341.
+[54] Y. Monnet, M. Renaudin, R. Leveugle, Designing resistant circuits against
+malicious faults injection using asynchronous logic, IEEE Transactions on
+Computers 55 (9) (2006) 1104–1115.
+[55] B. Narasimham, V. Ramachandran, B.L. Bhuva, R.D. Schrimpf, A.F. Witulski,
+W.T. Holman, L.W. Massengill, J.D. Black, W.H. Robinson, D. McMorrow, On-
+chip
+characterization
+of
+single-event
+transient
+pulsewidths,
+IEEE
+Transactions on Device and Materials Reliability 6 (4) (2006) 542–549.
+[56] V. Ferlet-Cavrois, P. Paillet, M. Gaillardin, D. Lambert, J. Baggio, J.R. Schwank,
+G. Vizkelethy, M.R. Shaneyfelt, K. Hirose, E.W. Blackmore, O. Faynot, C. Jahan,
+L. Tosti, Statistical analysis of the charge collected in SOI and bulk devices
+under heavy lon and proton irradiation implications for digital SETs, IEEE
+Transactions on Nuclear Science 53 (6) (2006) 3242–3252.
+[57] S. Buchner, M. Baze, D. Brown, D. McMorrow, J. Melinger, Comparison of error
+rates in combinational and sequential logic, IEEE Transactions on Nuclear
+Science 44 (6) (1997) 2209–2216.
+[58] K.J. Hass, J.W. Gambles, B. Walker, M. Zampaglione, Mitigating single event
+upsets from combinational logic, in: Proceedings of the 7th NASA Symposium
+on VLSI Design, 1998, pp. 4.1.1–4.1.10.
+[59] P. Hazucha, C. Svensson, Cosmic ray neutron multiple-upset measurements in
+a 0.6-lm CMOS process, IEEE Transactions on Nuclear Science 47 (6) (2000)
+2595–2602.
+[60] P. Hazucha, C. Sevenson, Optimized test circuits for ser characterization of a
+manufacturing process, IEEE Journal of Solid-State Circuits 35 (2) (2000) 142–
+148.
+[61] M.P. Baze, J. Wert, J.W. Clement, M.G. Hubert, A. Witulski, O.A. Amusan, L.
+Massengill, D. McMorrow, Propagating SET characterization technique for
+digital CMOS libraries, IEEE Transactions on Nuclear Science 53 (6) (2006)
+3472–3478.
+[62] G.C. Messenger, Collection of charge on junction nodes from ion tracks, IEEE
+Transactions on Nuclear Science 29 (6) (1982) 2024–2031.
+[63] M.G. Buehler, R.A. Allen, An analytical method for predicting CMOS SRAM
+upsets with application to asymmetrical memory cells, IEEE Transactions on
+Nuclear Science 33 (6) (1986) 1637–1641.
+[64] R.C. Jaeger, R.M. Fox, S.E. Diehl, Analytic expressions for the critical charge in
+CMOS static RAM cells, IEEE Transactions on Nuclear Science 30 (6) (1983)
+4616–4619.
+[65] G. Ries, G. Choi, R. Iyer, Device-level transient fault modeling, in: Proceedings
+Twenty-Fourth International Symposium on Fault-Tolerant Computing
+(FTCS-24), 1994, pp. 86–94.
+[66] K. Clark, A. Ross, H. Loomis, T. Weatherford, D. Fouts, S. Buchner, D.
+McMorrow, Modeling single-event effects in a complex digital device, IEEE
+Transactions on Nuclear Science 50 (6) (2003) 2069–2080.
+Clock
+[67] S. Dolev,
+Possible
+and
+Impossible
+Self-Stabilizing Digital
+Synchronization in General Graphs, Tech. Rep. 96–06, Department of
+Mathematics and Computer Science Ben-Gurion University, Beer-Sheva,
+Israel, August 1996.
+[68] S. Dolev, Y. Haviv, Self-stabilizing microprocessors,
+analyzing and
+overcoming soft-errors,
+IEEE Transactions on Computers 55 (4) (2006)
+385–399.
+[69] A. Ammari, K. Hadjiat, R. Leveugle, Combined fault classiﬁcation and error
+propagation analysis to reﬁne rt-level dependability evaluation, Journal of
+Electronic Testing 21 (4) (2005) 365–376.
+[70] H. Nguyen, Y. Yagil, N. Seifert, M. Reitsma, Chip-level soft error estimation
+method, IEEE Transactions on Device and Materials Reliability 5 (3) (2005)
+365–381.
+[71] N. Seifert, P. Shipley, M. Pant, V. Ambrose, B. GiII, Radiation-induced clock
+jitter and race, in: Proceedings 43rd Annual IEEE International Reliability
+Physics Symposium, 2005, pp. 215–222.
+[72] M.J. Gadlage, P.H. Eaton, J.M. Benedetto, M. Carts, V. Zhu, T.L. Turﬂinger,
+Digital device error rate trends in advanced CMOS technologies,
+IEEE
+Transactions on Nuclear Science 53 (6) (2006) 3466–3471.
+[73] A. Maheshwari, I. Koren, W. Burleson, Accurate estimation of soft error rate
+(SER) in VLSI circuits, in: Proceedings of the 2004 IEEE Int. Symposium on
+Defect and Fault Tolerance in VLSI Systems, 2004, pp. 377–385.
+[74] G. Srinivasan, P. Murley, H. Tang, Accurate, predictive modeling of soft error
+rate due to cosmic rays and chip alpha radiation, in: Proceedings 32nd Annual
+IEEE International Reliability Physics Symposium, 1994, pp. 12–16.
+[75] P. Hazucha, T. Karnik, J. Maiz, S. Walstra, B. Bloechel, J. Tschanz, G. Dermer, S.
+Hareland, P. Armstrong, S. Borkar, Neutron soft error rate measurements in a
+90-nm CMOS process and scaling trends in SRAM from 0.25-um to 90-nm
+
+generation, in: Technical Digest IEEE International Electron Devices Meeting
+(IEDM’03), 2003, pp. 21.5.1–21.5.4.
+[76] G. Gasiot, P. Roche, P. Flatresse, Comparison of multiple cell upset response of
+BULK and SOI 130 nm technologies in the terrestrial environment,
+in:
+Proceedings IEEE International Reliability Physics Symposium (IRPS’08),
+2008, pp. 192–194.
+[77] P. Roche, G. Gasiot,
+front-end and middle-end process
+Impacts of
+modiﬁcations on terrestrial soft error rate, IEEE Transactions on Device and
+Materials Reliability 5 (3) (2005) 382–396.
+[78] T. Calin, M. Nicolaidis, R. Velazco, Upset hardened memory design for
+submicron CMOS technology, IEEE Transactions on Nuclear Science 43 (6)
+(1996) 2874–2878.
+[79] R. Naseer, J. Draper, DF-DICE: A scalable solution for soft error tolerant circuit
+design, in: Proceedings. 2006 IEEE International Symposium on Circuits and
+Systems (ISCAS’06), 2006, 4pp.
+[80] P. Mongkolkachit, B. Bhuva, Design technique for mitigation of alpha-
+particle-induced single-event
+IEEE
+logic,
+in combinational
+transients
+Transactions on Device and Materials Reliability 3 (3) (2003) 89–92.
+[81] D.D. Thaker, F. Impens, I.L. Chuang, R. n Amirtharajah, F.T. Chong, Recursive
+TMR: scaling fault tolerance in the nanoscale era, IEEE Design and Test 22 (4)
+(2005) 298–305.
+[82] C. LaFrieda, R. Manohar, Fault detection and isolation techniques for quasi
+delay-insensitive circuits,
+in: Proceedings International Conference on
+Dependable Systems and Networks (DSN’04), 2004, pp. 41–50.
+[83] C. Bolchini, A. Miele, M. Santambrogio, TMR and partial dynamic
+reconﬁguration to mitigate SEU faults in FPGAs, in: Proceedings 22nd IEEE
+International Symposium on Defect and Fault Tol erance in VLSI Systems
+(DFT’07), 2007, pp. 87–95.
+[84] Y. Monnet, M. Renaudin, R. Leveugle, Hardening techniques against transient
+faults for asynchronous circuits, in: Proceedings 11th IEEE International On-
+Line Testing Symposium (IOLTS’05), 2005, pp. 129–134.
+[85] M. Nicolaidis, GRAAL: A new fault tolerant design paradigm for mitigating the
+ﬂaws of deep nanometric technologies, in: IEEE International Test Conference
+(ITC 2007), 2007, pp. 1–10.
+[86] A. Chugg, M. Moutrie, R. Jones, Broadening of the variance of the number of
+upsets in a read-cycle by MBUs, IEEE Transactions on Nuclear Science 51 (6)
+(2004) 3701–3707.
+[87] A.M. Chugg, M.J. Moutrie, A.J. Burnell, R. Jones, A statistical technique to
+measure the proportion of MBU’s in SEE testing, IEEE Transactions on Nuclear
+Science 53 (6) (2006) 3139–3144.
+[88] C. Dyer, C. Comber, P. Truscott, C. Sanderson, C. Underwood, M. Oldﬁeld, A.
+Campbell, S. Buchner, T. Meehan, Microdosimetry code simulation of charge-
+deposition spectra, single-event upsets and multiple-bit upsets,
+IEEE
+Transactions on Nuclear Science 46 (6) (1999) 1486–1493.
+[89] Y. Monnet, M. Renaudin, R. Leveugle, Formal analysis of quasi delay
+insensitive circuits behavior in the presence of SEUs, in: Proceedings 13th
+IEEE International On-Line Testing Symposium (IOLTS’07), 2007, pp. 113–
+120.
+[90] J. Di, A framework on mitigating single event upset using delay-insensitive
+asynchronous circuits, in: Proceedings IEEE Region 5 Technical Conference,
+2007, pp. 354–357.
+[91] A. Torres, J. Sauvestre, B. Fischer, P. Barberet, Charge collection measurements
+on SOI capacitors using heavy ion microprobe at GSI, in: Proceedings 8th
+European Conference on Radiation and Its Effects on Components and
+Systems (RADECS’05), 2005, pp. PG1-1–PG1-5.
+[92] S. Jahinuzzaman, M. Sharifkhani, M. Sachdev, An analytical model for soft
+error critical charge of nanometric srams, IEEE Transactions on Very Large
+Scale Integration (VLSI) Systems 17 (9) (2009) 1187–1195.
+[93] P. Roche, J. Palau, G. Bruguier, C. Tavernier, R. Ecoffet, J. Gasiot, Determination
+of key parameters for SEU occurrence using 3-d full cell SRAM simulations,
+IEEE Transactions on Nuclear Science 46 (6) (1999) 1354–1362.
+[94] Y. Xu, H. Puchner, A. Chatila, O. Pohland, B. Bruggeman, B. Jin, D. Radaelli, S.
+Daniel, Process impact on SRAM alpha-particle SEU performance, in: 42nd
+Annual 2004 IEEE International Reliability Physics Symposium Proceedings,
+2004, pp. 294–299.
+[95] B. Zhang, A. Arapostathis, S. Nassif, M. Orshansky, Analytical modeling of
+SRAM dynamic stability, in: Proceedings of the 2006 IEEE/ACM International
+Conference on Computer-Aided Design, ICCAD ’06, ACM, New York, NY, USA,
+2006, pp. 315–322.
+[96] E. Neto, I. Ribeiro, M. Vieira, G. Wirth, F. Kastensmidt, Using bulk built-in
+current sensors to detect soft errors, IEEE Micro 26 (5) (2006) 10–18.
+[97] G. Wirth, M. Vieira, F. Kastensmidt, Computer efﬁcient modeling of SRAM cell
+sensitivity to SEU, in: Proceeding of IEEE Latin American Test Workshop, IEEE
+CS Press, 2005, pp. 51–56.
+[98] D. Muller, W. Bartky, A theory of asynchronous circuits,
+Switching, Proc. Int’l Symp., 1959, pp. 204–243.
+[99] M. Shams, J. Ebergen, M. Elmasry, A comparison of CMOS implementations of
+an asynchronous circuits primitive: the C-element, in: Proceedings of the
+1996 International Symposium on Low Power Electronics and Design, ISLPED
+’96, IEEE Press, Piscataway, NJ, USA, 1996, pp. 93–96.
+[100] J. Sparsø, Asynchronous circuit design - a tutorial,
+in: Principles of
+asynchronous circuit design – A systems Perspective, Kluwer Academic
+Publishers, 2001, pp. 1–152 (Chapters 1–8).
+[101] R.E. Lyons, W. Vanderkulk, The use of triple-modular redundancy to improve
+computer reliability, IBM Journal of Research and Development 6 (1962)
+200–209.
+
+in: Theory of
+
+790
+
+V. Savulimedu Veeravalli et al. / Microprocessors and Microsystems 37 (2013) 772–791
+
+[102] F. MacWilliams, N. Sloane, The Theory of Error-Correcting Codes, second ed.,
+North-Holland Publishing Company, 1978.
+[103] D. Rennels, A. Avlzienls, M. Ercegovac, A study of standard building blocks for
+the design of fault-tolerant distributed computer systems, in: 8th Annl. Intl.
+Conf. on Fault-Tolerant Computing, 1978, pp. 144–149.
+[104] B. Elspas, The theory of autonomous linear sequential networks,
+Transactions on Circuit Theory 6 (1) (1959) 45–60.
+[105] A. Ajane, P.M. Furth, E.E. Johnson, R.L. Subramanyam, Comparison of binary
+and LFSR counters and efﬁcient LFSR decoding algorithm, in: 2011 IEEE 54th
+International Midwest Symposium on Circuits and Systems (MWSCAS), 2011,
+pp. 1–4.
+[106] A. Ahmad, N. Nanda, K. Garg, Critical role of primitive polynomials in an LFSR
+based testing technique, Electronics Letters 24 (15) (1988) 953–955.
+[107] I.E. Sutherland, Micropipelines, Communications of the ACM 32 (1989) 720–
+738.
+
+IRE
+
+Varadan Savulimedu Veeravalli is a project assistant at
+the Embedded Computing Systems Group at the Vienna
+University of Technology. He received his M.S. degree in
+Electrical and Computer Engineering from Rutgers, The
+State University of New Jersey in the year 2008 and is
+currently pursuing his PhD. His main research interests
+are single event effects, digital design, radiation toler-
+ance, fault tolerance, and interconnection networks.
+
+Thomas Polzer is a research assistant at the Embedded
+Computing Systems Group at the Vienna University of
+Technology. He received his Dipl.-Ing. degree (M.Sc.
+equivalent) in 2009 and is currently pursuing his PhD.
+His research interests are in the ﬁeld of metastability
+analysis and measurement as well as in modeling and
+analysis of radiation hits on semiconductors.
+
+Ulrich Schmid is full professor and head of
+the
+Embedded Computing Systems Group at the Institut für
+Technische Informatik at TU Vienna. He studied com-
+puter science and mathematics and also spent several
+years in industrial electronics and embedded systems
+design. Ulrich Schmid authored and co-authored
+numerous papers in the ﬁeld of theoretical and techni-
+cal computer science and received several awards and
+prices, like the Austrian START-price 1996. His current
+research interests focus on the mathematical analysis of
+fault-tolerant distributed algorithms and real-time
+systems, with special emphasis on their application in
+systems-on-chips and networked embedded systems.
+
+Andreas Steininger is associate professor
+in the
+Embedded Computing Systems group at TU Vienna’s
+Institute of Computer Engineering. He is an experienced
+hardware designer and project leader who has been
+involved in many national and international projects
+concerned with the design of fault tolerant digital cir-
+cuits and their evaluation by means of fault injection.
+During his 10 year employment at the Electrical Engi-
+neering Department he has gained experiences in ana-
+log circuit design as well. Among the numerous papers
+he has published in the areas of fault tolerant circuit
+design and their evaluation some recent ones are con-
+cerned with radiation tolerant design in the context of the FATAL project. His
+current research interests further include self-healing circuits and asynchronous
+design with a focus on robustness against parameter variations as well as fault
+effects.
+
+Michael Hofbauer was born in Vienna in Austria, in July
+1982. He received his Dipl. Ing. degree from the Vienna
+University of Technology, Austria, in 2011. Since 2005
+he is with the Vienna University of Technology, Institute
+of Electrodynamics, Microwave and Circuit Engineering.
+Since 2011 he is a Ph.D. student of this institute. His
+ﬁelds of interests are single event effects, semiconduc-
+tor simulations and optoelectronics.
+
+Kurt Schweiger was born in Vienna in Austria, in July
+1982. He received his Dr. degree in February 2012 while
+working at the Institute of Electrodynamics, Microwave
+and Circuit Engineering (EMCE), Vienna University of
+Technology, Austria. His ﬁelds of interests are analog
+circuit theory and design with the focus on down-
+sampling mixers as well as optical communication
+systems.
+
+Horst Dietrich received his MS and Ph.D. degrees in
+electrical engineering from the Vienna University of
+Technology, Austria, in 1976 and 1985, respectively. He
+is currently with the Institute of Electrodynamics,
+Microwave and Circuit Engineering, Vienna University
+of Technology, Austria, where he is professor for mea-
+surement and instrumentation. His research interests
+include conception and graphical programming of
+automated test systems, characterization of analog
+integrated circuits and design for testability.
+
+Kerstin Schneider-Hornstein was born in St. Pölten,
+Austria, on February 15, 1975. She received the Dipl. Ing.
+degree from the Vienna University of Technology, Aus-
+tria, in 2000. In 2004 she received her Dr. Techn. degree
+at the Vienna University of Technology, Austria. Since
+2001 she is with the Vienna University of Technology,
+Institute of Electrodynamics, Microwave and Circuit
+Engineering, Vienna, Austria. Her major ﬁelds of interest
+are optoelectronics and integrated circuit design. She is
+author of the Springer book ‘Highly Sensitive Optical
+Receivers’.
+
+Horst Zimmermann, received the diploma in Physics in
+1984 from the Univ. of Bayreuth, Germany, and the Dr.-
+Ing. degree in the Fraunhofer Inst. for Integrated Circuits
+(IIS-B), Erlangen, Germany in 1991. Then, he was an
+Alexander-von-Humboldt Research-Fellow at Duke
+University, Durham, N.C., working on diffusion in Si,
+GaAs, and InP until 1992. In 1993, he joined the Chair for
+Semiconductor Electronics at Kiel University, Germany,
+where he worked on optoelectronic integration. Since
+2000 he is full professor for Electronic Circuit Engi-
+neering at Vienna Univ. of Technology, Austria. His main
+interests are in design and characterization of analog
+nanometer CMOS circuits, and optoelectronic integrated CMOS and BiCMOS cir-
+cuits. He is author of the Springer books ‘Integrated Silicon Optoelectronics’ and
+‘Silicon Optoelectronic Integrated Circuits’ and ‘Highly Sensitive Optical Receivers’.
+He is also author and co-author of more than 300 publications. IEEE Senior Member
+since 2002.
+
+V. Savulimedu Veeravalli et al. / Microprocessors and Microsystems 37 (2013) 772–791
+
+791
+
+Kay-Obbe Voss received his Diploma in 2002 and his
+Doctor of Natural Sciences in 2006 from the Faculty for
+Physics and Astronomy of the University of Heidelberg,
+Germany. Since 2006 he maintains and develops the
+nuclear microprobe at the GSI Helmholtz Center for
+Heavy Ion Research in Darmstadt, Germany.
+
+Michael Hajek, studied Engineering Physics in Vienna.
+2002 Ph.D. in Health Physics and Nuclear Safety. 2006–
+2012 Assistant Professor at the Institute of Atomic and
+Subatomic Physics, Vienna University of Technology.
+From 2013, External Dosimetry Specialist
+in the
+Department of Nuclear Safety and Security, Interna-
+tional Atomic Energy Agency. International Sold State
+Dosimetry Organization (ISSDO) Award 2004. Guest
+scientist at accelerator centres in Germany, Japan and
+Switzerland. Research interests: Colour centres, dosim-
+etry, health physics, luminescence, neutron spectrome-
+try, medical physics, microdosimetric modeling, non-
+ionizing radiation, nuclear safety, radiation effects.
+
+Bruno Merk received his Diploma in 2009 from the
+Faculty for Physics and Astronomy of the University of
+Heidelberg, Germany. Since 2010 he is a Ph.D. student at
+the Technical University of Darmstadt, Germany, and
+working at-the nuclear microprobe of the GSI Helm-
+holtz Center for Heavy Ion Research in Darmstadt,
+Germany.
+
+

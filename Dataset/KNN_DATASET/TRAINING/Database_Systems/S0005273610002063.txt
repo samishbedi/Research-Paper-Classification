@@ -1,0 +1,430 @@
+YTPdb: A wiki database of yeast membrane transporters
+Sylvain Brohée a,1
+, Roland Barriot a,b,c,2
+, Yves Moreau a,3
+, Bruno André d,
+⁎
+a ESAT-SCD, Katholieke Universiteit Leuven, Kasteelpark Arenberg 10, B-3001 Leuven, Belgium
+b Université de Toulouse, UPS, Laboratoire de Microbiologie et Génétique Moléculaires, F-31000 Toulouse, France
+c Centre National de la Recherche Scientifique, LMGM, F-31000 Toulouse, France d Physiologie Moléculaire de la Cellule, Institut de Biologie et de Médecine Moléculaires, Université Libre de Bruxelles, Rue des Pr, Jeener et Brachet, B-6041 Gosselies, Belgium
+article info abstract
+Article history:
+Received 19 February 2010
+Received in revised form 17 May 2010
+Accepted 7 June 2010
+Available online 19 June 2010
+Keywords:
+yeast
+transporter
+database
+Membrane transporters constitute one of the largest functional categories of proteins in all organisms. In the
+yeast Saccharomyces cerevisiae, this represents about 300 proteins (∼5% of the proteome). We here present
+the Yeast Transport Protein database (YTPdb), a user-friendly collaborative resource dedicated to the
+precise classification and annotation of yeast transporters. YTPdb exploits an evolution of the MediaWiki
+web engine used for popular collaborative databases like Wikipedia, allowing every registered user to edit
+the data in a user-friendly manner. Proteins in YTPdb are classified on the basis of functional criteria such as
+subcellular location or their substrate compounds. These classifications are hierarchical, allowing queries to
+be performed at various levels, from highly specific (e.g. ammonium as a substrate or the vacuole as a
+location) to broader (e.g. cation as a substrate or inner membranes as location). Other resources accessible
+for each transporter via YTPdb include post-translational modifications, Km values, a permanently updated
+bibliography, and a hierarchical classification into families. The YTPdb concept can be extrapolated to other
+organisms and could even be applied for other functional categories of proteins. YTPdb is accessible at
+http://homes.esat.kuleuven.be/ytpdb/.
+© 2010 Elsevier B.V. All rights reserved.
+1. Introduction
+The membrane transporter functional class of proteins is typically
+one of the most abundantly represented in cellular proteomes. The
+estimated percentage of predicted membrane transporters ranges
+from 2% to 10% in bacteria and 2% to 7% in eukaryotes. It is 2.7% in the
+human species [1]. These proteins facilitate the transport of a very
+wide variety of small compounds (small ions, organic compounds,
+short peptides, water, etc.) across the lipid bilayers of the plasma and
+internal membranes. Most inventoried transporters belong to families
+conserved throughout evolution [2].
+Among the 5690 protein-encoding genes of the yeast Saccharomyces
+cerevisiae [3], almost 300 code for established or predicted
+transmembrane transporters [4]. Established transporters are those for
+which experimental evidence of a direct role in transmembrane
+transport of specific compounds is available. Predicted transporters
+share significant sequence similarity with at least one experimentally
+characterized transporter from any organism, but their functions
+remain unknown: although the subcellular locations of many of them
+have been determined by large-scale analysis [5], the compounds they
+recognize have not been identified and their roles in cell metabolism
+thus remain unknown.
+Specialized databases of membrane transporters have previously
+been implemented (links accessible via YTPdb). For instance, the
+Transport Classification Database (TCDB) provides a classification
+system for membrane transporters of all organisms into no less than
+550 families [2], and the related TransportDB lists all transporters
+predicted from completely sequenced genomes [1]. Other databases
+categorize transporters or membrane proteins of a single or a small
+number of organisms, e.g. the Yeast Transport Information (YETI) [6],
+the Yeast Membrane Protein Library (YMPL) [7], or the Plant
+Membrane protein Database (Aramemnon) [8]. There also exist
+databases supplying information about one type of transporters in
+different organisms (e.g. P-type ATPases [9]). Lastly, information
+about membrane transporters is also accessible through databases
+collecting data on the complete sets of genes and proteins of specific
+organisms, e.g. the Saccharomyces Genome Database (SGD) [10] or
+the Comprehensive Yeast Genome Database (CYGD) [11].
+Yet molecular biologists working in the membrane transport field
+also need databases providing classification systems based on the
+main functional properties of listed proteins, e.g. their substrate
+compounds and subcellular locations. Furthermore, these databases
+should ideally include annotations about the affinity constants (Km),
+membrane topology, post-translational modifications, as well as an
+Biochimica et Biophysica Acta 1798 (2010) 1908–1912
+⁎ Corresponding author. Tel.: +32 2 6509958.
+E-mail addresses: Sylvain.Brohee@esat.kuleuven.be (S. Brohée),
+roland.barriot@biotoul.fr (R. Barriot), yves.moreau@esat.kuleuven.be (Y. Moreau),
+bran@ulb.ac.be (B. André). 1 Tel.: +32 16 328643. 2 Tel.: +33 5 61335821. 3 Tel.: +32 16 328645.
+0005-2736/$ – see front matter © 2010 Elsevier B.V. All rights reserved.
+doi:10.1016/j.bbamem.2010.06.008
+Contents lists available at ScienceDirect
+Biochimica et Biophysica Acta
+journal homepage: www.elsevier.com/locate/bbamem
+up-to-date bibliography. It seems obvious that such goal is only
+achievable if this database can be updated through a user-friendly
+interface by several users having expertise in the field. We have
+applied these criteria to implement the Yeast Transport Protein database
+(YTPdb: http://homes.esat.kuleuven.be/ytpdb/), a web-accessible
+database devoted to the precise classification and annotation
+of S. cerevisiae membrane transport proteins. Besides its main features
+described below, YTPdb is presented in the form of a wiki, i.e. on the
+model of the well-known web encyclopedia Wikipedia. Any registered
+user can thus freely edit data in the database and add or remove
+data. We think that the YTPdb concept is extensible to other
+organisms and even to other functional classes of proteins.
+2. Results
+2.1. YTPdb content
+The Yeast Transporter Protein database provides manually annotated
+information on 299 yeast proteins classified as established (199)
+or predicted (100) membrane transporters (see Introduction). These
+299 proteins correspond to the 337 proteins predicted to be transporters
+by the TransportTP server [12] from which 38 have not been
+considered because they correspond to subunits of protein translocation
+systems, of the mitochondrial ATP synthase, of the vacuolar H+
+pump, to non-membrane proteins containing the ABC (ATP-binding
+cassette) motif, and to several enzymes (e.g. HMG-CoA reductases,
+lipid modification enzymes, etc.) and membrane proteins which may
+not be classified as established or predicted transporters. For each
+protein, YTPdb provides a page including a short description, the list
+of substrates, and the subcellular location (Fig. 1). Clicking on a substrate
+gives the list of all proteins transporting this compound and
+clicking on a protein's location gives the list of proteins colocalized
+in this cell compartment. An originality of YTPdb is that functional
+classification criteria such as subcellular location and recognized
+substrates are organized in a tree-like fashion. For instance, a glucose
+transporter is also classified as a transporter of hexose, monosaccharide,
+and carbohydrate and a cytosine transporter as a protein transporting
+pyrimidine and nucleobase. Similarly, a protein localizing to
+the Golgi compartment is also classified as a protein present in the
+Golgi and endosome membrane system, in the secretory pathway
+membrane system, and in internal membranes. It is thus possible –
+using the “Browse by substrate”, “Browse by substrate categories”,
+and “Browse by subcellular location” query tools – to retrieve proteins
+on the basis of very specific or broader criteria. For instance, the user
+can list all calcium or leucine transporters but also those for cations,
+amino acids, etc. Similarly, the user can view all transporters present
+in the “late endosome” or in the less defined “Golgi and endosomal
+membrane” system. This mode of classification is convenient in the
+case of proteins whose properties have been characterized with only
+limited precision. For instance, the P-type ATPase Neo1 has been
+located in the Golgi and/or endosomal membrane [13,14]. YTPdb
+contains a total list of 315 chemical compounds (plus 65 synonyms)
+and 28 subcellular locations, corresponding to the branch extremities
+of the tree-like classification schemes. The affinity constants (Km) for
+substrates (136 values in the May 2010 version of YTPdb) with the
+corresponding references are also accessible.
+Transporters encoded in YTPdb are also classified according to the
+transport classification (TC) system [2] (Fig. 1). Using the “Browse by
+TC class” option, proteins at any level of the TC classification can be
+listed, e.g. all channels/pores (22 proteins) or the Major Intrinsic
+Protein (MIP) Family (4 proteins). We have developed another
+classification system (YTPdb classification) including more subdivisions
+and more suited to yeast transporters. For instance, P-type
+ATPases (16 proteins in S. cerevisiae) form a unique class of proteins in
+TC, whereas they are subdivided into six subfamilies in the YTP
+classification. The YTP classification also provides a multiple sequence
+alignment computed by the Muscle algorithm [15].
+An important feature of transporters is the topology they adopt in
+the membrane. For each protein, YTPdb gives access to a web page
+recapitulating the data of topology prediction generated by seven
+distinct algorithms.
+Many protein databases do not provide an updated bibliography
+for protein entries. In YTPdb, two systems have been implemented to
+associate each transporter with references. The “All references” option
+is based on an editable Boolean formula retrieving references from the
+PubMed.gov server, and the corresponding bibliography is thus permanently
+updated. Through the “Curated references” option, the user
+can generate a list of references classified into several categories. For
+instance, “Early studies” provides references about studies preceding
+the molecular characterization of the transporter gene, “Initial
+molecular characterization, general properties and function” include
+references about the functional characterisation of the transporter.
+Other categories (eight in all) list references about “Intracellular
+trafficking and its regulation”, “Gene expression and its regulation”,
+“Transport activity (including influence of mutations) and its
+regulation”, etc. Curated lists of references are currently available
+for about 40 transporters. As mentioned below, registered curators are
+invited to associate references with their favorite transporters.
+Post-translational modifications (PTMs) play a central role in
+regulation of protein function. This is well illustrated for yeast
+transporters, e.g., ubiquitylation typically targets these proteins for
+degradation in the vacuole [16] and many yeast transporters have
+been shown to be phosphorylated. A special effort has been devoted
+to including in YTPdb all known PTMs of yeast transporters deduced
+from studies centered on specific proteins and from large-scale mass
+spectrometry analyses [17–25]. In the current version of YTPdb (May
+2010), 764 unique PTMs have been encoded for 123 transporters. For
+each protein, these PTMs are presented in a recapitulative table with
+references, and their relative positions are indicated in a figure
+showing the predicted transmembrane regions [26], global topology,
+and positions of conserved PFAM domains [27] of the protein (Fig. 2).
+This convenient presentation facilitates comparisons between proteins
+of the same family and detection of possible recurrent PTM
+profiles. For instance, many amino acid permeases are palmitoylated
+at their C-termini [28], and their cytosolic N-terminal tails often
+contain several phosphorylated serines and threonines as well as
+ubiquitylated lysines.
+YTPdb also associates each transporter with direct links to wellknown
+databases (MIPS [29], Ensembl [30], SGD [10]) to a repository
+of gene expression data (ArrayExpress) [31] and to the Yeast Gene
+Order Browser [32]. The latter is an online tool for visualizing the
+syntenic context of any gene from twelve hemiascomycete species;
+this is particularly useful for detecting the many pairs of transporter
+genes deriving from the whole genome duplication event that
+occurred in an ancestor of the S. cerevisiae lineage [33,34].
+2.2. YTPdb is a collaborative database
+There is no longer any need to introduce Wiki technology. The past
+few years have seen an explosion in the number of wiki-based web
+sites, ranging from very general (e.g. the well-known Wikipedia,
+wiktionnary) to more specialized or biological (wikiproteins [35],
+wikipathways [36], wikipedia for genes [37], etc). YTPdb is a wiki
+based on an extension of MediaWiki technology (running Wikipedia).
+This implies that almost all data in the database can be freely edited
+and extended by any registered user. For instance, specific and readily
+editable forms are available for adding Km values, post-translational
+modifications, and references and for editing the basic information
+(substrate compounds, subcellular location, gene synonyms, Boolean
+formula to retrieve references, etc.) on each transporter. A similar
+form is available for adding or editing substrate compounds
+S. Brohée et al. / Biochimica et Biophysica Acta 1798 (2010) 1908–1912 1909
+(synonyms, classification). Furthermore, by clicking on the “Edit” link
+at the top of a page (or on the “Create” link, when free text has not yet
+been included in the page), it is possible to include additional
+comments and figures about, e.g., a specific transporter (Fig. 1),
+transporter family, substrate compound, cell compartment, etc. For
+this, the user is also redirected to a form where free text can be
+entered as in standard word processors. Finally, as in Wikipedia, it is
+possible to create from scratch new pages editable by users. Extensive
+information about the editing process of YTP is available in the
+Tutorial section of the database.
+One drawback of classical wikis is that the data are stored in free
+text format in a main unique underlying database. This differs from
+Fig. 1. A YTPdb protein report. The “Family” section gives access to the protein family and upper-level families to which the protein belongs; the “Substrates” section presents the list
+of compounds recognized by the transporter; the “Location” section gives access to its subcellular location. By clicking on a given substrate or on the subcellular location, all
+transporters recognizing this compound or colocalized with the protein are shown. The other sections provide access to a list of Km values for different substrates, post-translational
+modifications, external links, sequences, and references (see text). Numbers between brackets specify the quantity of encoded data. By clicking on “edit” links, the user can introduce
+free text (e.g. Remarks).
+1910 S. Brohée et al. / Biochimica et Biophysica Acta 1798 (2010) 1908–1912
+most biological databases, where data are stored in well-structured
+repositories, and web pages are generated by extracting a set of
+entries from different tables. To circumvent this problem, YTPdb
+makes use of WikiOpener, an extension for the classical MediaWiki
+engine that augments Wiki pages by allowing on-the-fly querying,
+editing, and formatting resources external to the Wiki (MediaWiki
+web site: http://www.mediawiki.org/wiki/Extension:WikiOpener).
+Those resources may correspond to data extracted from databases, flat
+files, DAS tracks, or even results returned by local or remote
+bioinformatics analysis tools. WikiOpener has already been successfully
+used in the frame of another biological database that aims at
+depicting the relationships between human heart defects and gene
+alterations [38]. In the case of YTPdb, WikiOpener mainly queries a
+relational database, distinct from the main database used to populate
+the pages of the wiki. Moreover, WikiOpener uses the PubMed
+identifier of references to connect to the NCBI web services and gather
+the references details which are stored in the YTPdb relational
+database. WikiOpener also determines the presentation format of
+these queries within the wiki. The PHP code of the YTPdb components
+as well as the scheme of the relational database can be obtained by
+simple request to the authors.
+3. Discussion
+YTPdb displays several features distinguishing it from other
+protein databases and useful to experts in the transport field as well
+as to occasional users. Transporters can be retrieved from hierarchical
+classification systems based on substrate specificity, subcellular
+location, and similarities of primary structure. YTPdb also includes
+Km values and all reported post-translational modifications. Importantly,
+these annotations are based solely on experimental data
+available in the literature and source references are indicated.
+Furthermore, YTPdb is a collaborative database, meaning that any
+registered user is invited to modify and update entries related to his/
+her expertise. The web engine running YTPdb is the same as the one
+running the Wikipedia web encyclopedia, making editing and adding
+information easy and straightforward for people having less computer
+skills. The advantage of a collaborative database is that it can be
+constantly updated by multiple curators. This reduces the risk of the
+database progressively becoming obsolete, as often occurs with small
+specialized biological databases [39–41]. The disadvantage of a
+collaborative database is that users can potentially add wrong
+information. In the case of YTPdb, however, curators have to register
+(a difference with Wikipedia) allowing the administrator to limit
+access of YTPdb to scientists active in the field. We propose that the
+concept and structure of YTPdb is transposable to other species for
+which availability of a transporter database would be beneficial to the
+scientific community. We also think that YTPdb can serve as a model
+for databases of other functional categories of proteins.
+Acknowledgements
+Many thanks to Daniel Van Belle for creating with BA the initial
+version of YTPdb. We thank Jacques van Helden, Robert Herzog, Marc
+Colet, and Antonio Urrestarazu for constant support and encouragement.
+We also thank Morgane Thomas-Chollier, Elsa Lauwers,
+Eckhard Boles, and Valérie Ledent for many helpful discussions.
+Finally, we thank Olivier Cagnac, Hana Sychrova, Emmanuel Lesuisse,
+and Juergen Stolz for adding the first external contributions to YTPdb.
+SB was the recipient of a PhD grant from the Belgian Fonds pour la
+Fig. 2. Example of a report presenting the post-translational modifications associated with a specific yeast transporter. These modifications are reported on a protein map, together
+with the PFAM functional domains and the predicted transmembrane segments.
+S. Brohée et al. / Biochimica et Biophysica Acta 1798 (2010) 1908–1912 1911
+Formation à la Recherche dans l'Industrie et l'Agriculture (FRIA) and is
+now supported by the E.U. FP7 CHeartED project. KULeuven SCDSISTA
+lab is funded by grants provided by the (1) Research Council
+KUL: GOA MaNet, CoE EF/05/007 SymBioSys; (2) IWT: SBO-MoKa;
+(3) the Belgian Federal Science Policy Office: IUAP P6/25 (BioMaGNet);
+and (4) the European Union: FP7-HEALTH CHeartED.
+References
+[1] Q. Ren, K. Chen, I.T. Paulsen, TransportDB: a comprehensive database resource for
+cytoplasmic membrane transport systems and outer membrane channels, Nucleic
+Acids Res. 35 (2007) D274–D279.
+[2] M.H. Saier Jr., M.R. Yen, K. Noto, D.G. Tamang, C. Elkan, The Transporter Classifi-
+cation Database: recent advances, Nucleic Acids Res. 37 (2009) D274–D278.
+[3] A. Goffeau, B.G. Barrell, H. Bussey, R.W. Davis, B. Dujon, H. Feldmann, F. Galibert, J.D.
+Hoheisel, C. Jacq, M. Johnston, E.J. Louis, H.W. Mewes, Y. Murakami, P. Philippsen,
+H. Tettelin, S.G. Oliver, Life with 6000 genes, Science 274 (1996) 546, 563–546,
+567.
+[4] D. Van Belle, B. André, A genomic view of yeast membrane transporters, Curr.
+Opin. Cell Biol. 13 (2001) 389–398.
+[5] W.K. Huh, J.V. Falvo, L.C. Gerke, A.S. Carroll, R.W. Howson, J.S. Weissman, E.K.
+O'Shea, Global analysis of protein localization in budding yeast, Nature 425 (2003)
+686–691.
+[6] B. De Hertogh, E. Carvajal, E. Talla, B. Dujon, P. Baret, A. Goffeau, Phylogenetic
+classification of transporters and other membrane proteins from Saccharomyces
+cerevisiae, Funct. Integr Genomics 2 (2002) 154–170.
+[7] J.M. Ward, Identification of novel families of membrane proteins from the model
+plant Arabidopsis thaliana, Bioinformatics. 17 (2001) 560–563.
+[8] R. Schwacke, A. Schneider, E. van der Graaff, K. Fischer, E. Catoni, M. Desimone, W.B.
+Frommer, U.I. Flugge, R. Kunze, ARAMEMNON, a novel database for Arabidopsis
+integral membrane proteins, Plant Physiol 131 (2003) 16–26.
+[9] K.B. Axelsen, M.G. Palmgren, Evolution of substrate specificities in the P-type
+ATPase superfamily, J. Mol. Evol. 46 (1998) 84–101.
+[10] S.R. Engel, R. Balakrishnan, G. Binkley, K.R. Christie, M.C. Costanzo, S.S. Dwight, D.G.
+Fisk, J.E. Hirschman, B.C. Hitz, E.L. Hong, C.J. Krieger, M.S. Livstone, S.R. Miyasato, R.
+Nash, R. Oughtred, J. Park, M.S. Skrzypek, S.Weng, E.D.Wong, K. Dolinski, D. Botstein,
+J.M. Cherry, Saccharomyces Genome Database provides mutant phenotype data,
+Nucleic Acids Res. 38 (2010) D433–D436.
+[11] U. Guldener, M. Munsterkotter, G. Kastenmuller, N. Strack, J. van Helden, C. Lemer,
+J. Richelle, S.J. Wodak, J. Garcia-Martinez, J.E. Perez-Ortin, H. Michael, A. Kaps, E.
+Talla, B. Dujon, B. Andre, J.L. Souciet, J. De Montigny, E. Bon, C. Gaillardin, H.W.
+Mewes, CYGD: the Comprehensive Yeast Genome Database, Nucleic Acids Res. 33
+(2005) D364–D368.
+[12] H. Li, X. Dai, X. Zhao, A nearest neighbor approach for automated transporter
+prediction and categorization from protein sequences, Bioinformatics. 24 (2008)
+1129–1136.
+[13] S. Wicky, H. Schwarz, B. Singer-Kruger, Molecular interactions of yeast Neo1p, an
+essential member of the Drs2 family of aminophospholipid translocases, and its
+role in membrane trafficking within the endomembrane system, Mol. Cell Biol. 24
+(2004) 7402–7418.
+[14] Z. Hua, T.R. Graham, Requirement for neo1p in retrograde transport from the
+Golgi complex to the endoplasmic reticulum, Mol. Biol. Cell 14 (2003) 4971–4983.
+[15] R.C. Edgar, MUSCLE: a multiple sequence alignment method with reduced time
+and space complexity, BMC, Bioinformatics 5 (2004) 113.
+[16] E. Lauwers, Z. Erpapazoglou, R. Haguenauer-Tsapis, B. Andre, The ubiquitin code of
+yeast permease trafficking, Trends Cell Biol. 20 (2010) 196–204.
+[17] A. Gruhler, J.V. Olsen, S. Mohammed, P. Mortensen, N.J. Faergeman, M. Mann, O.N.
+Jensen, Quantitative phosphoproteomics applied to the yeast pheromone
+signaling pathway, Mol. Cell Proteomics. 4 (2005) 310–327.
+[18] X. Li, S.A. Gerber, A.D. Rudner, S.A. Beausoleil, W. Haas, J. Villen, J.E. Elias, S.P. Gygi,
+Large-scale phosphorylation analysis of alpha-factor-arrested Saccharomyces
+cerevisiae, J. Proteome. Res. 6 (2007) 1190–1197.
+[19] A. Chi, C. Huttenhower, L.Y. Geer, J.J. Coon, J.E. Syka, D.L. Bai, J. Shabanowitz, D.J.
+Burke, O.G. Troyanskaya, D.F. Hunt, Analysis of phosphorylation sites on proteins
+from Saccharomyces cerevisiae by electron transfer dissociation (ETD) mass
+spectrometry, Proc. Natl. Acad. Sci. U.S.A. 104 (2007) 2193–2198.
+[20] M.B. Smolka, C.P. Albuquerque, S.H. Chen, H. Zhou, Proteome-wide identification
+of in vivo targets of DNA damage checkpoint kinases, Proc. Natl. Acad. Sci. U.S.A.
+104 (2007) 10364–10369.
+[21] C.P. Albuquerque, M.B. Smolka, S.H. Payne, V. Bafna, J. Eng, H. Zhou, A
+multidimensional chromatography technology for in-depth phosphoproteome
+analysis, Mol. Cell Proteomics. 7 (2008) 1389–1396.
+[22] A. Huber, B. Bodenmiller, A. Uotila, M. Stahl, S. Wanka, B. Gerrits, R. Aebersold, R.
+Loewith, Characterization of the rapamycin-sensitive phosphoproteome reveals
+that Sch9 is a central coordinator of protein synthesis, Genes Dev. 23 (2009)
+1929–1943.
+[23] A.L. Hitchcock, K. Auld, S.P. Gygi, P.A. Silver, A subset of membrane-associated
+proteins is ubiquitinated in response to mutations in the endoplasmic
+reticulum degradation machinery, Proc. Natl. Acad. Sci. U.S.A. 100 (2003)
+12735–12740.
+[24] J. Peng, D. Schwartz, J.E. Elias, C.C. Thoreen, D. Cheng, G. Marsischky, J. Roelofs, D.
+Finley, S.P. Gygi, A proteomics approach to understanding protein ubiquitination,
+Nat. Biotechnol. 21 (2003) 921–926.
+[25] F. Gnad, L.M. de Godoy, J. Cox, N. Neuhauser, S. Ren, J.V. Olsen, M. Mann, Highaccuracy
+identification and bioinformatic analysis of in vivo protein phosphorylation
+sites in yeast, Proteomics. 9 (2009) 4642–4652.
+[26] A. Krogh, B. Larsson, Heijne G. von, E.L. Sonnhammer, Predicting transmembrane
+protein topology with a hidden Markov model: application to complete genomes,
+J.Mol.Biol. 305 (2001) 567–580.
+[27] S.J. Sammut, R.D. Finn, A. Bateman, Pfam 10 years on: 10, 000 families and still
+growing, Brief. Bioinform. 9 (2008) 210–219.
+[28] A.F. Roth, J. Wan, A.O. Bailey, B. Sun, J.A. Kuchar, W.N. Green, B.S. Phinney, J.R.
+Yates III, N.G. Davis, Global analysis of protein palmitoylation in yeast, Cell 125
+(2006) 1003–1013.
+[29] H.W. Mewes, S. Dietmann, D. Frishman, R. Gregory, G. Mannhaupt, K.F. Mayer, M.
+Munsterkotter, A. Ruepp, M. Spannagl, V. Stumpflen, T. Rattei, MIPS: analysis and
+annotation of genome information in 2007, Nucleic Acids Res. 36 (2008)
+D196–D201.
+[30] P. Flicek, B.L. Aken, B. Ballester, K. Beal, E. Bragin, S. Brent, Y. Chen, P. Clapham, G.
+Coates, S. Fairley, S. Fitzgerald, J. Fernandez-Banet, L. Gordon, S. Graf, S. Haider,
+M. Hammond, K. Howe, A. Jenkinson, N. Johnson, A. Kahari, D. Keefe, S. Keenan,
+R. Kinsella, F. Kokocinski, G. Koscielny, E. Kulesha, D. Lawson, I. Longden, T.
+Massingham, W. McLaren, K. Megy, B. Overduin, B. Pritchard, D. Rios, M. Ruffier,
+M. Schuster, G. Slater, D. Smedley, G. Spudich, Y.A. Tang, S. Trevanion, A. Vilella,
+J. Vogel, S. White, S.P. Wilder, A. Zadissa, E. Birney, F. Cunningham, I. Dunham, R.
+Durbin, X.M. Fernandez-Suarez, J. Herrero, T.J. Hubbard, A. Parker, G. Proctor, J.
+Smith, S.M. Searle, Ensembl's 10th year, Nucleic Acids Res. 38 (2010)
+D557–D562.
+[31] M. Kapushesky, I. Emam, E. Holloway, P. Kurnosov, A. Zorin, J. Malone, G. Rustici, E.
+Williams, H. Parkinson, A. Brazma, Gene expression atlas at the European
+bioinformatics institute, Nucleic Acids Res. 38 (2010) D690–D698.
+[32] K.P. Byrne, K.H. Wolfe, Visualizing syntenic relationships among the hemiascomycetes
+with the Yeast Gene Order Browser, Nucleic Acids Res. 34 (2006)
+D452–D455.
+[33] K.H. Wolfe, D.C. Shields, Molecular evidence for an ancient duplication of the
+entire yeast genome, Nature 387 (1997) 708–713.
+[34] M. Kellis, B.W. Birren, E.S. Lander, Proof and evolutionary analysis of ancient
+genome duplication in the yeast Saccharomyces cerevisiae, Nature 428 (2004)
+617–624.
+[35] B. Mons, M. Ashburner, C. Chichester, E. van Mulligen, M. Weeber, J. den Dunnen,
+G.J. van Ommen, M. Musen, M. Cockerill, H. Hermjakob, A. Mons, A. Packer, R.
+Pacheco, S. Lewis, A. Berkeley, W. Melton, N. Barris, J. Wales, G. Meijssen, E.
+Moeller, P.J. Roes, K. Borner, A. Bairoch, Calling on a million minds for community
+annotation in WikiProteins, Genome Biol 9 (2008) R89-.
+[36] A.R. Pico, T. Kelder, M.P. van Iersel, K. Hanspers, B.R. Conklin, C. Evelo,
+WikiPathways: pathway editing for the people, PLoS.Biol. 6 (2008) e184-.
+[37] J.W. Huss III, P. Lindenbaum, M. Martone, D. Roberts, A. Pizarro, F. Valafar, J.B.
+Hogenesch, A.I. Su, The Gene Wiki: community intelligence applied to human
+gene annotation, Nucleic Acids Res. 38 (2010) D633–D639.
+[38] R. Barriot, J. Breckpot, B. Thienpont, S. Brohée, S. Van Vooren, B. Coessens, L.C.
+Tranchevent, P. Van Loo, M. Gewillig, K. Devriendt, Y. Moreau, Collaboratively
+charting the gene-to-phenotype network of human congenital heart defects,
+Genome Med. 2 (2010) 16.
+[39] L.B. Ellis, D. Kalumbi, The demise of public data on the web? Nat. Biotechnol. 16
+(1998) 1323–1324.
+[40] L.B. Ellis, D. Kalumbi, Financing a future for public biological data, Bioinformatics.
+15 (1999) 717–722.
+[41] Chandras Christina, Weaver Thomas, Zouberakis Michae, Smedley Damian,
+Schughart Klaus, Rosenthal Nadia, Hancock John M, Kollias George, Schofield
+Paul N, Aidinis Vasilis, Models for financial sustainability of biological databases
+and resources, Databases 2009:bap017 (2009).
+1912 S. Brohée et al. / Biochimica et Biophysica Acta 1798 (2010) 1908–1912

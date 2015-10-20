@@ -1,0 +1,761 @@
+OpenFlow: Enabling Innovation in Campus Networks
+
+Hari Balakrishnan
+Tom Anderson
+Nick McKeown
+MIT
+University of Washington
+Stanford University
+Jennifer Rexford
+Larry Peterson
+Guru Parulkar
+Princeton University
+Stanford University
+Princeton University
+Jonathan Turner
+Scott Shenker
+Washington University in
+University of California,
+Berkeley
+St. Louis
+This ar ticle is an editorial note submitted to CCR. It has NOT been peer reviewed.
+Authors take full responsibility for this ar ticle’s technical content.
+Comments can be posted through CCR Online.
+
+ABSTRACT
+This whitepaper proposes OpenFlow: a way for researchers
+to run experimental protocols in the networks they use ev-
+ery day. OpenFlow is based on an Ethernet switch, with
+an internal ﬂow-table, and a standardized interface to add
+and remove ﬂow entries. Our goal is to encourage network-
+ing vendors to add OpenFlow to their switch products for
+deployment in college campus backbones and wiring closets.
+We believe that OpenFlow is a pragmatic compromise: on
+one hand, it allows researchers to run experiments on hetero-
+geneous switches in a uniform way at line-rate and with high
+port-density; while on the other hand, vendors do not need
+to expose the internal workings of their switches. In addition
+to allowing researchers to evaluate their ideas in real-world
+traﬃc settings, OpenFlow could serve as a useful campus
+component in proposed large-scale testbeds like GENI. Two
+buildings at Stanford University will soon run OpenFlow
+networks, using commercial Ethernet switches and routers.
+We will work to encourage deployment at other schools; and
+We encourage you to consider deploying OpenFlow in your
+university network too.
+
+Categories and Subject Descriptors
+C.2 [Internetworking]: Routers
+
+General Terms
+Experimentation, Design
+
+Keywords
+Ethernet switch, virtualization, ﬂow-based
+
+1. THE NEED FOR PROGRAMMABLE
+NETWORKS
+Networks have become part of the critical infrastructure
+of our businesses, homes and schools. This success has been
+both a blessing and a curse for networking researchers; their
+work is more relevant, but their chance of making an im-
+pact is more remote. The reduction in real-world impact of
+any given network innovation is because the enormous in-
+stalled base of equipment and protocols, and the reluctance
+
+to experiment with production traﬃc, which have created an
+exceedingly high barrier to entry for new ideas. Today, there
+is almost no practical way to experiment with new network
+protocols (e.g., new routing protocols, or alternatives to IP)
+in suﬃciently realistic settings (e.g., at scale carrying real
+traﬃc) to gain the conﬁdence needed for their widespread
+deployment. The result is that most new ideas from the net-
+working research community go untried and untested; hence
+the commonly held belief that the network infrastructure has
+“ossiﬁed”.
+Having recognized the problem, the networking commu-
+nity is hard at work developing programmable networks,
+such as GENI [1] a proposed nationwide research facility
+for experimenting with new network architectures and dis-
+tributed systems. These programmable networks call for
+programmable switches and routers that (using virtualiza-
+tion) can process packets for multiple isolated experimen-
+tal networks simultaneously. For example, in GENI it is
+envisaged that a researcher will be allocated a slice of re-
+sources across the whole network, consisting of a portion
+of network links, packet processing elements (e.g. routers)
+and end-hosts; researchers program their slices to behave as
+they wish. A slice could extend across the backbone, into
+access networks, into college campuses, industrial research
+labs, and include wiring closets, wireless networks, and sen-
+sor networks.
+Virtualized programmable networks could lower the bar-
+rier to entry for new ideas, increasing the rate of innovation
+in the network infrastructure. But the plans for nationwide
+facilities are ambitious (and costly), and it will take years
+for them to be deployed.
+This whitepaper focuses on a shorter-term question closer
+to home: As researchers, how can we run experiments in
+our campus networks? If we can ﬁgure out how, we can
+start soon and extend the technique to other campuses to
+beneﬁt the whole community.
+To meet this challenge, several questions need answering,
+including: In the early days, how will college network admin-
+istrators get comfortable putting experimental equipment
+(switches, routers, access points, etc.) into their network?
+How will researchers control a portion of their local net-
+work in a way that does not disrupt others who depend on
+it? And exactly what functionality is needed in network
+
+ACM SIGCOMM Computer Communication Review69Volume 38, Number 2, April 2008switches to enable experiments? Our goal here is to propose
+a new switch feature that can help extend programmability
+into the wiring closet of college campuses.
+One approach - that we do not take - is to persuade
+commercial “name-brand” equipment vendors to provide an
+open, programmable, virtualized platform on their switches
+and routers so that researchers can deploy new protocols,
+while network administrators can take comfort that the
+equipment is well supported. This outcome is very unlikely
+in the short-term. Commercial switches and routers do not
+typically provide an open software platform, let alone pro-
+vide a means to virtualize either their hardware or software.
+The practice of commercial networking is that the standard-
+ized external interfaces are narrow (i.e., just packet forward-
+ing), and all of the switch’s internal ﬂexibility is hidden. The
+internals diﬀer from vendor to vendor, with no standard
+platform for researchers to experiment with new ideas. Fur-
+ther, network equipment vendors are understandably ner-
+vous about opening up interfaces inside their boxes: they
+have spent years deploying and tuning fragile distributed
+protocols and algorithms, and they fear that new experi-
+ments will bring networks crashing down. And, of course,
+open platforms lower the barrier-to-entry for new competi-
+tors.
+A few open software platforms already exist, but do not
+have the performance or port-density we need. The simplest
+example is a PC with several network interfaces and an op-
+erating system. All well-known operating systems support
+routing of packets between interfaces, and open-source im-
+plementations of routing protocols exist (e.g., as part of the
+Linux distribution, or from XORP [2]); and in most cases it
+is possible to modify the operating system to process packets
+in almost any manner (e.g., using Click [3]). The problem,
+of course, is performance: A PC can neither support the
+number of ports needed for a college wiring closet (a fanout
+of 100+ ports is needed per box), nor the packet-processing
+performance (wiring closet switches process over 100Gbits/s
+of data, whereas a typical PC struggles to exceed 1Gbit/s;
+and the gap between the two is widening).
+Existing platforms with specialized hardware for line-rate
+processing are not quite suitable for college wiring clos-
+ets either. For example, an ATCA-based virtualized pro-
+grammable router called the Supercharged PlanetLab Plat-
+form [4] is under development at Washington University,
+and can use network processors to process packets from
+many interfaces simultaneously at line-rate. This approach
+is promising in the long-term, but for the time being is tar-
+geted at large switching centers and is too expensive for
+widespread deployment in college wiring closets. At the
+other extreme is NetFPGA [5] targeted for use in teaching
+and research labs. NetFPGA is a low-cost PCI card with
+a user-programmable FPGA for processing packets, and 4-
+ports of Gigabit Ethernet. NetFPGA is limited to just four
+network interfaces—insuﬃcient for use in a wiring closet.
+Thus, the commercial solutions are too closed and inﬂex-
+ible, and the research solutions either have insuﬃcient per-
+formance or fanout, or are too expensive. It seems unlikely
+that the research solutions, with their complete generality,
+can overcome their performance or cost limitations. A more
+promising approach is to compromise on generality and to
+seek a degree of switch ﬂexibility that is:
+(cid:129) Amenable to high-performance and low-cost imple-
+mentations.
+
+Scope of OpenFlow Switch Specification
+
+OpenFlow
+Switch
+
+sw
+
+Secure
+Secure
+Channel
+Channel
+
+hw
+
+Flow
+Flow
+Table
+Table
+
+Controller
+
+OpenFlow
+Protocol
+
+SSL
+
+PC
+
+Figure 1: Idealized OpenFlow Switch. The Flow
+Table is controlled by a remote controller via the
+Secure Channel.
+
+(cid:129) Capable of supporting a broad range of research.
+(cid:129) Assured to isolate experimental traﬃc from production
+traﬃc.
+(cid:129) Consistent with vendors’ need for closed platforms.
+
+This paper describes the OpenFlow Switch—a speciﬁca-
+tion that is an initial attempt to meet these four goals.
+
+2. THE OPENFLOW SWITCH
+The basic idea is simple: we exploit the fact that most
+modern Ethernet switches and routers contain ﬂow-tables
+(typically built from TCAMs) that run at line-rate to im-
+plement ﬁrewalls, NAT, QoS, and to collect statistics. While
+each vendor’s ﬂow-table is diﬀerent, we’ve identiﬁed an in-
+teresting common set of functions that run in many switches
+and routers. OpenFlow exploits this common set of func-
+tions.
+OpenFlow provides an open protocol to program the ﬂow-
+table in diﬀerent switches and routers. A network admin-
+istrator can partition traﬃc into production and research
+ﬂows. Researchers can control their own ﬂows - by choosing
+the routes their packets follow and the processing they re-
+ceive. In this way, researchers can try new routing protocols,
+security models, addressing schemes, and even alternatives
+to IP. On the same network, the production traﬃc is isolated
+and processed in the same way as today.
+The datapath of an OpenFlow Switch consists of a Flow
+Table, and an action associated with each ﬂow entry. The
+set of actions supported by an OpenFlow Switch is exten-
+sible, but below we describe a minimum requirement for
+all switches. For high-performance and low-cost the data-
+path must have a carefully prescribed degree of ﬂexibility.
+This means forgoing the ability to specify arbitrary handling
+of each packet and seeking a more limited, but still useful,
+range of actions. Therefore, later in the paper, deﬁne a basic
+required set of actions for all OpenFlow switches.
+
+ACM SIGCOMM Computer Communication Review70Volume 38, Number 2, April 2008An OpenFlow Switch consists of at least three parts: (1)
+A Flow Table, with an action associated with each ﬂow en-
+try, to tell the switch how to process the ﬂow, (2) A Secure
+Channel that connects the switch to a remote control pro-
+cess (called the control ler), allowing commands and packets
+to be sent between a controller and the switch using (3) The
+OpenFlow Protocol, which provides an open and standard
+way for a controller to communicate with a switch. By speci-
+fying a standard interface (the OpenFlow Protocol) through
+which entries in the Flow Table can be deﬁned externally,
+the OpenFlow Switch avoids the need for researchers to pro-
+gram the switch.
+It is useful to categorize switches into dedicated OpenFlow
+switches that do not support normal Layer 2 and Layer 3
+processing, and OpenFlow-enabled general purpose com-
+mercial Ethernet switches and routers, to which the Open-
+Flow Protocol and interfaces have been added as a new fea-
+ture.
+
+Dedicated OpenFlow switches. A dedicated OpenFlow
+Switch is a dumb datapath element that forwards packets
+between ports, as deﬁned by a remote control process. Fig-
+ure 1 shows an example of an OpenFlow Switch.
+In this context, ﬂows are broadly deﬁned, and are limited
+only by the capabilities of the particular implementation of
+the Flow Table. For example, a ﬂow could be a TCP con-
+nection, or all packets from a particular MAC address or
+IP address, or all packets with the same VLAN tag, or all
+packets from the same switch port. For experiments involv-
+ing non-IPv4 packets, a ﬂow could be deﬁned as all packets
+matching a speciﬁc (but non-standard) header.
+Each ﬂow-entry has a simple action associated with it;
+the three basic ones (that all dedicated OpenFlow switches
+must support) are:
+
+1. Forward this ﬂow’s packets to a given port (or ports).
+This allows packets to be routed through the network.
+In most switches this is expected to take place at line-
+rate.
+
+2. Encapsulate and forward this ﬂow’s packets to a con-
+troller. Packet is delivered to Secure Channel, where
+it is encapsulated and sent to a controller. Typically
+used for the ﬁrst packet in a new ﬂow, so a controller
+can decide if the ﬂow should be added to the Flow
+Table. Or in some experiments, it could be used to
+forward all packets to a controller for processing.
+
+3. Drop this ﬂow’s packets. Can be used for security, to
+curb denial of service attacks, or to reduce spurious
+broadcast discovery traﬃc from end-hosts.
+
+An entry in the Flow-Table has three ﬁelds: (1) A packet
+header that deﬁnes the ﬂow, (2) The action, which deﬁnes
+how the packets should be processed, and (3) Statistics,
+which keep track of the number of packets and bytes for
+each ﬂow, and the time since the last packet matched the
+ﬂow (to help with the removal of inactive ﬂows).
+In the ﬁrst generation “Type 0” switches, the ﬂow header
+is a 10-tuple shown in Table 1. A TCP ﬂow could be spec-
+iﬁed by all ten ﬁelds, whereas an IP ﬂow might not include
+the transport ports in its deﬁnition. Each header ﬁeld can
+be a wildcard to allow for aggregation of ﬂows, such as ﬂows
+in which only the VLAN ID is deﬁned would apply to all
+traﬃc on a particular VLAN.
+
+In
+Port
+
+VLAN
+ID
+
+Ethernet
+SA DA Type
+
+IP
+SA DA Proto
+
+TCP
+Src Dst
+
+Table 1: The header ﬁelds matched in a “Type 0”
+OpenFlow switch.
+
+The detailed requirements of an OpenFlow Switch are de-
+ﬁned by the OpenFlow Switch Speciﬁcation [6].
+
+OpenFlow-enabled switches.
+commercial
+Some
+switches, routers and access points will be enhanced with
+the OpenFlow feature by adding the Flow Table, Secure
+Channel and OpenFlow Protocol (we list some examples in
+Section 5). Typically, the Flow Table will re-use existing
+hardware, such as a TCAM; the Secure Channel and Proto-
+col will be ported to run on the switch’s operating system.
+Figure 2 shows a network of OpenFlow-enabled commercial
+switches and access points.
+In this example, all the Flow
+Tables are managed by the same controller; the OpenFlow
+Protocol allows a switch to be controlled by two or more
+controllers for increased performance or robustness.
+Our goal is to enable experiments to take place in an ex-
+isting production network alongside regular traﬃc and ap-
+plications. Therefore, to win the conﬁdence of network ad-
+ministrators, OpenFlow-enabled switches must isolate ex-
+perimental traﬃc (processed by the Flow Table) from pro-
+duction traﬃc that is to be processed by the normal Layer 2
+and Layer 3 pipeline of the switch. There are two ways to
+achieve this separation. One is to add a fourth action:
+
+4. Forward this ﬂow’s packets through the switch’s nor-
+mal processing pipeline.
+
+The other is to deﬁne separate sets of VLANs for experi-
+mental and production traﬃc. Both approaches allow nor-
+mal production traﬃc that isn’t part of an experiment to be
+processed in the usual way by the switch. All OpenFlow-
+enabled switches are required to support one approach or
+the other; some will support both.
+
+Additional features. If a switch supports the header for-
+mats and the four basic actions mentioned above (and de-
+tailed in the OpenFlow Switch Speciﬁcation), then we call it
+a “Type 0” switch. We expect that many switches will sup-
+port additional actions, for example to rewrite portions of
+the packet header (e.g., for NAT, or to obfuscate addresses
+on intermediate links), and to map packets to a priority
+class. Likewise, some Flow Tables will be able to match on
+arbitrary ﬁelds in the packet header, enabling experiments
+with new non-IP protocols. As a particular set of features
+emerges, we will deﬁne a “Type 1” switch.
+
+Controllers. A controller adds and removes ﬂow-entries
+from the Flow Table on behalf of experiments. For example,
+a static controller might be a simple application running
+on a PC to statically establish ﬂows to interconnect a set
+of test computers for the duration of an experiment.
+In
+this case the ﬂows resemble VLANs in current networks—
+providing a simple mechanism to isolate experimental traﬃc
+from the production network. Viewed this way, OpenFlow
+is a generalization of VLANs.
+One can also imagine more sophisticated controllers that
+dynamically add/remove ﬂows as an experiment progresses.
+In one usage model, a researcher might control the complete
+
+ACM SIGCOMM Computer Communication Review71Volume 38, Number 2, April 2008Server room 
+
+OpenFlow
+Access Point
+
+Controller
+
+PC
+
+OpenFlow
+
+OpenFlow
+
+OpenFlow
+
+OpenFlow-enabled
+Commercial Switch
+
+Normal
+Software
+
+Normal
+Datapath
+
+Secure
+Secure
+Channel
+Channel
+
+Flow
+Flow
+Table
+Table
+
+Figure 2: Example of a network of OpenFlow-
+enabled commercial switches and routers.
+
+network of OpenFlow Switches and be free to decide how all
+ﬂows are processed. A more sophisticated controller might
+support multiple researchers, each with diﬀerent accounts
+and permissions, enabling them to run multiple indepen-
+dent experiments on diﬀerent sets of ﬂows. Flows identiﬁed
+as under the control of a particular researcher (e.g., by a
+policy table running in a controller) could be delivered to a
+researcher’s user-level control program which then decides if
+a new ﬂow-entry should be added to the network of switches.
+
+3. USING OPENFLOW
+As a simple example of how an OpenFlow Switch might be
+used imagine that Amy (a researcher) invented Amy-OSPF
+as a new routing protocol to replace OSPF. She wants to
+try her protocol in a network of OpenFlow Switches, with-
+out changing any end-host software. Amy-OSPF will run in
+a controller; each time a new application ﬂow starts Amy-
+OSPF picks a route through a series of OpenFlow Switches,
+and adds a ﬂow- entry in each switch along the path. In her
+experiment, Amy decides to use Amy-OSPF for the traﬃc
+entering the OpenFlow network from her own desktop PC—
+so she doesn’t disrupt the network for others. To do this,
+she deﬁnes one ﬂow to be all the traﬃc entering the Open-
+Flow switch through the switch port her PC is connected to,
+and adds a ﬂow-entry with the action “Encapsulate and for-
+ward all packets to a controller”. When her packets reach
+a controller, her new protocol chooses a route and adds a
+new ﬂow-entry (for the application ﬂow) to every switch
+along the chosen path. When subsequent packets arrive at
+a switch, they are processed quickly (and at line-rate) by
+the Flow Table.
+There are legitimate questions to ask about the perfor-
+
+mance, reliability and scalability of a controller that dynam-
+ically adds and removes ﬂows as an experiment progresses:
+Can such a centralized controller be fast enough to process
+new ﬂows and program the Flow Switches? What happens
+when a controller fails? To some extent these questions were
+addressed in the context of the Ethane prototype, which
+used simple ﬂow switches and a central controller [7]. Pre-
+liminary results suggested that an Ethane controller based
+on a low-cost desktop PC could process over 10,000 new
+ﬂows per second — enough for a large college campus. Of
+course, the rate at which new ﬂows can be processed will de-
+pend on the complexity of the processing required by the re-
+searcher’s experiment. But it gives us conﬁdence that mean-
+ingful experiments can be run. Scalability and redundancy
+are possible by making a controller (and the experiments)
+stateless, allowing simple load-balancing over multiple sep-
+arate devices.
+
+3.1 Experiments in a Production Network
+Chances are, Amy is testing her new protocol in a network
+used by lots of other people. We therefore want the network
+to have two additional properties:
+
+1. Packets belonging to users other than Amy should be
+routed using a standard and tested routing protocol
+running in the switch or router from a “name-brand”
+vendor.
+
+2. Amy should only be able to add ﬂow entries for her
+traﬃc, or for any traﬃc her network administrator has
+allowed her to control.
+
+Property 1 is achieved by OpenFlow-enabled switches.
+In Amy’s experiment, the default action for all packets
+that don’t come from Amy’s PC could be to forward them
+through the normal processing pipeline. Amy’s own packets
+would be forwarded directly to the outgoing port, without
+being processed by the normal pipeline.
+Property 2 depends on the controller. The controller
+should be seen as a platform that enables researchers to im-
+plement various experiments, and the restrictions of Prop-
+erty 2 can be achieved with the appropriate use of permis-
+sions or other ways to limit the powers of individual re-
+searchers to control ﬂow entries. The exact nature of these
+permission-like mechanisms will depend on how the con-
+troller is implemented. We expect that a variety of con-
+trollers will emerge. As an example of a concrete realization
+of a controller, some of the authors are working on a con-
+troller called NOX as a follow-on to the Ethane work [8].
+A quite diﬀerent controller might emerge by extending the
+GENI management software to OpenFlow networks.
+3.2 More Examples
+As with any experimental platform, the set of experiments
+will exceed those we can think of up-front — most experi-
+ments in OpenFlow networks are yet to be thought of. Here,
+for illustration, we oﬀer some examples of how OpenFlow-
+enabled networks could be used to experiment with new net-
+work applications and architectures.
+
+Example 1: Network Management and Access Con-
+trol. We’ll use Ethane as our ﬁrst example [7] as it was
+the research that inspired OpenFlow. In fact, an OpenFlow
+
+ACM SIGCOMM Computer Communication Review72Volume 38, Number 2, April 2008Switch can be thought of as a generalization of Ethane’s
+datapath switch. Ethane used a speciﬁc implementation of
+a controller, suited for network management and control,
+that manages the admittance and routing of ﬂows. The ba-
+sic idea of Ethane is to allow network managers to deﬁne a
+network-wide policy in the central controller, which is en-
+forced directly by making admission control decisions for
+each new ﬂow. A controller checks a new ﬂow against a set
+of rules, such as “Guests can communicate using HTTP, but
+only via a web proxy” or “VoIP phones are not allowed to
+communicate with laptops.” A controller associates pack-
+ets with their senders by managing all the bindings between
+names and addresses — it essentially takes over DNS, DHCP
+and authenticates all users when they join, keeping track of
+which switch port (or access point) they are connected to.
+One could envisage an extension to Ethane in which a policy
+dictates that particular ﬂows are sent to a user’s process in
+a controller, hence allowing researcher-speciﬁc processing to
+be performed in the network.
+
+Example 2: VLANs. OpenFlow can easily provide users
+with their own isolated network, just as VLANs do. The
+simplest approach is to statically declare a set of ﬂows which
+specify the ports accessible by traﬃc on a given VLAN ID.
+Traﬃc identiﬁed as coming from a single user (for example,
+originating from speciﬁc switch ports or MAC addresses) is
+tagged by the switches (via an action) with the appropriate
+VLAN ID.
+A more dynamic approach might use a controller to man-
+age authentication of users and use the knowledge of the
+users’ locations for tagging traﬃc at runtime.
+
+Example 3: Mobile wireless VOIP clients. For this
+example consider an experiment of a new call- handoﬀ
+mechanism for WiFi-enabled phones.
+In the experiment
+VOIP clients establish a new connection over the OpenFlow-
+enabled network. A controller is implemented to track the
+location of clients, re-routing connections — by reprogram-
+ming the Flow Tables — as users move through the network,
+allowing seamless handoﬀ from one access point to another.
+
+Example 4: A non-IP network. So far, our examples
+have assumed an IP network, but OpenFlow doesn’t require
+packets to be of any one format — so long as the Flow
+Table is able to match on the packet header. This would
+allow experiments using new naming, addressing and rout-
+ing schemes. There are several ways an OpenFlow-enabled
+switch can support non-IP traﬃc. For example, ﬂows could
+be identiﬁed using their Ethernet header (MAC src and dst
+addresses), a new EtherType value, or at the IP level, by a
+new IP Version number. More generally, we hope that fu-
+ture switches will allow a controller to create a generic mask
+(oﬀset + value + mask), allowing packets to be processed
+in a researcher-speciﬁed way.
+
+Example 5: Processing packets rather than ﬂows.
+The examples above are for experiments involving ﬂows —
+where a controller makes decisions when the ﬂow starts.
+There are, of course,
+interesting experiments to be per-
+formed that require every packet to be processed. For ex-
+ample, an intrusion detection system that inspects every
+packet, an explicit congestion control mechanism, or when
+modifying the contents of packets, such as when converting
+packets from one protocol format to another.
+
+Controller
+
+PC
+
+OpenFlow-enabled
+Commercial Switch
+
+Normal
+Software
+
+Normal
+Datapath
+
+Secure
+Secure
+Channel
+Channel
+
+Flow
+Flow
+Table
+Table
+
+Laboratory
+
+NetFPGA
+
+Figure 3: Example of processing packets through an
+external line-rate packet-processing device, such as
+a programmable NetFPGA router.
+
+There are two basic ways to process packets in an
+OpenFlow-enabled network. First, and simplest, is to force
+all of a ﬂow’s packets to pass through a controller. To do
+this, a controller doesn’t add a new ﬂow entry into the Flow
+Switch — it just allows the switch to default to forward-
+ing every packet to a controller. This has the advantage of
+ﬂexibility, at the cost of performance.
+It might provide a
+useful way to test the functionality of a new protocol, but
+is unlikely to be of much interest for deployment in a large
+network.
+The second way to process packets is to route them to
+a programmable switch that does packet processing — for
+example, a NetFPGA-based programmable router. The ad-
+vantage is that the packets can be processed at line-rate in
+a user-deﬁnable way; Figure 3 shows an example of how this
+could be done, in which the OpenFlow-enabled switch op-
+erates essentially as a patch-panel to allow the packets to
+reach the NetFPGA. In some cases, the NetFPGA board (a
+PCI board that plugs into a Linux PC) might be placed in
+the wiring closet alongside the OpenFlow-enabled switch, or
+(more likely) in a laboratory.
+
+4. THE OPENFLOW CONSORTIUM
+The OpenFlow Consortium aims to popularize OpenFlow
+and maintain the OpenFlow Switch Speciﬁcation. The Con-
+sortium is a group of researchers and network administra-
+tors at universities and colleges who believe their research
+mission will be enhanced if OpenFlow-enabled switches are
+installed in their network.
+Membership is open and free for anyone at a school,
+college, university, or government agency worldwide. The
+OpenFlow Consortium welcomes individual members who
+are not employed by companies that manufacture or sell
+Ethernet switches, routers or wireless access points (because
+we want to keep the consortium free of vendor inﬂuence). To
+join, send email to join@OpenFlowSwitch.org.
+
+ACM SIGCOMM Computer Communication Review73Volume 38, Number 2, April 2008The Consortium web-site 1 contains the OpenFlow Switch
+Speciﬁcation, a list of consortium members, and reference
+implementations of OpenFlow switches.
+Licensing Model: The OpenFlow Switch Speciﬁcation
+is free for all commercial and non-commercial use. (The ex-
+act wording is on the web-site.) Commercial switches and
+routers claiming to be “OpenFlow-enabled” must conform
+to the requirements of an OpenFlow Type 0 Switch, as de-
+ﬁned in the OpenFlow Switch Speciﬁcation. OpenFlow is a
+trademark of Stanford University, and will be protected on
+behalf of the Consortium.
+
+5. DEPLOYING OPENFLOW SWITCHES
+We believe there is an interesting market opportunity
+for network equipment vendors to sell OpenFlow-enabled
+switches to the research community. Every building in thou-
+sands of colleges and universities contains wiring closets
+with Ethernet switches and routers, and with wireless ac-
+cess points spread across campus.
+We are actively working with several switch and router
+manufacturers who are adding the OpenFlow feature to their
+products by implementing a Flow Table in existing hard-
+ware; i.e. no hardware change is needed. The switches run
+the Secure Channel software on their existing processor.
+We have found network equipment vendors to be very
+open to the idea of adding the OpenFlow feature. Most ven-
+dors would like to support the research community without
+having to expose the internal workings of their products.
+We are deploying large OpenFlow networks in the Com-
+puter Science and Electrical Engineering departments at
+Stanford University. The networks in two buildings will
+be replaced by switches running OpenFlow. Eventually, all
+traﬃc will run over the OpenFlow network, with produc-
+tion traﬃc and experimental traﬃc being isolated on dif-
+ferent VLANs under the control of network administrators.
+Researchers will control their own traﬃc, and be able to
+add/remove ﬂow-entries.
+We also expect many diﬀerent OpenFlow Switches to be
+developed by the research community. The OpenFlow web-
+site contains “Type 0” reference designs for several diﬀerent
+platforms: Linux (software), OpenWRT (software, for ac-
+cess points), and NetFPGA (hardware, 4-ports of 1GE). As
+more reference designs are created by the community we will
+post them. We encourage developers to test their switches
+against the reference designs.
+All reference implementations of OpenFlow switches
+posted on the web site will be open-source and free for com-
+mercial and non-commercial use.2
+
+6. CONCLUSION
+We believe that OpenFlow is a pragmatic compromise
+that allows researchers to run experiments on heterogeneous
+switches and routers in a uniform way, without the need for
+vendors to expose the internal workings of their products,
+or researchers to write vendor-speciﬁc control software.
+If we are successful in deploying OpenFlow networks in
+our campusses, we hope that OpenFlow will gradually catch-
+on in other universities, increasing the number of networks
+that support experiments. We hope that a new generation
+of control software emerges, allowing researchers to re-use
+controllers and experiments, and build on the work of oth-
+ers. And over time, we hope that the islands of OpenFlow
+networks at diﬀerent universities will be interconnected by
+tunnels and overlay networks, and perhaps by new Open-
+Flow networks running in the backbone networks that con-
+nect universities to each other.
+
+7. REFERENCES
+[1] Global Environment for Network Innovations. Web site
+http://geni.net.
+[2] Mark Handley Orion Hodson Eddie Kohler. “XORP:
+An Open Platform for Network Research,” ACM
+SIGCOMM Hot Topics in Networking, 2002.
+[3] Eddie Kohler, Robert Morris, Benjie Chen, John
+Jannotti, and M. Frans Kaashoek. “The Click modular
+router,” ACM Transactions on Computer Systems
+18(3), August 2000, pages 263-297.
+[4] J. Turner, P. Crowley, J. Dehart, A. Freestone, B.
+Heller, F. Kuhms, S. Kumar, J. Lockwood, J. Lu,
+M.Wilson, C. Wiseman, D. Zar. “Supercharging
+PlanetLab - High Performance, Multi-Application,
+Overlay Network Platform,” ACM SIGCOMM ’07,
+August 2007, Kyoto, Japan.
+[5] NetFPGA: Programmable Networking Hardware. Web
+site http://netfpga.org.
+[6] The OpenFlow Switch Speciﬁcation. Available at
+http://OpenFlowSwitch.org.
+[7] Martin Casado, Michael J. Freedman, Justin Pettit,
+Jianying Luo, Nick McKeown, Scott Shenker. “Ethane:
+Taking Control of the Enterprise,” ACM SIGCOMM
+’07, August 2007, Kyoto, Japan.
+[8] Natasha Gude, Teemu Koponen, Justin Pettit, Ben
+Pfaﬀ, Martin Casadao, Nick McKeown, Scott Shenker,
+“NOX: Towards an Operating System for Networks,”
+In submission. Also:
+http://nicira.com/docs/nox-nodis.pdf.
+
+1 http://www.OpenFlowSwitch.org
+2 Some platforms may limit the license terms of software
+running on them. For example, a reference implementation
+on Linux may be limited by the Linux GPL.
+
+ACM SIGCOMM Computer Communication Review74Volume 38, Number 2, April 2008

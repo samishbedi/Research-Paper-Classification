@@ -1,0 +1,2608 @@
+Journal of Machine Learning Research 12 (2011) 1389-1423
+
+Submitted 8/09; Revised 9/10; Published 4/11
+
+Clustering Algorithms for Chains
+
+AUKKON EN@YAHOO - INC .COM
+
+Antti Ukkonen
+Yahoo! Research
+Av. Diagonal 177
+08018 Barcelona, Spain
+
+Editor: Marina Meila
+
+Abstract
+
+We consider the problem of clustering a set of chains to k clusters. A chain is a totally ordered
+subset of a ﬁnite set of items. Chains are an intuitive way to e xpress preferences over a set of
+alternatives, as well as a useful representation of ratings in situations where the item-speci ﬁc scores
+are either difﬁcult to obtain, too noisy due to measurement e rror, or simply not as relevant as the
+order that they induce over the items. First we adapt the classical k-means for chains by proposing
+a suitable distance function and a centroid structure. We also present two different approaches for
+mapping chains to a vector space. The ﬁrst one is related to th e planted partition model, while the
+second one has an intuitive geometrical interpretation. Finally we discuss a randomization test for
+assessing the signi ﬁcance of a clustering. To this end we pre sent an MCMC algorithm for sampling
+random sets of chains that share certain properties with the original data. The methods are studied
+in a series of experiments using real and arti ﬁcial data. Res ults indicate that the methods produce
+interesting clusterings, and for certain types of inputs improve upon previous work on clustering
+algorithms for orders.
+
+Keywords: Lloyd’s algorithm, orders, preference statements, planted partition model, randomiza-
+tion testing
+
+1. Introduction
+
+Clustering (see, e.g., Alpaydin, 2004; Hand et al., 2001) is a traditional problem in data analysis.
+Given a set of objects, the task is to divide the objects to homogeneous groups based on some crite-
+ria, typically a distance function between the objects. Cluster analysis has applications in numerous
+ﬁelds, and a myriad of different algorithms for various clustering problems have been developed
+over the past decades. The reader is referred to the surveys by Xu and Wunsch (2005) and Berkhin
+(2006) for a more general discussion about clustering algorithms and their applications.
+This work is about clustering a set of orders, a problem previously studied by Murphy and Mar-
+tin (2003), Busse et al. (2007), and Kamishima and Akaho (2009). Rankings of items occur naturally
+in various applications, such as preference surveys, decision analysis, certain voting systems, and
+even bioinformatics. As an example, consider the Single transferable vote system (Tideman, 1995),
+where a vote is an ordered subset of the candidates. By clustering such votes, the set of voters can
+be divided to a number of groups based on their political views. Or, in gene expression analysis it
+is sometimes of interest to analyze the order of genes induced by the expression levels instead of
+the actual numeric values (Ben-Dor et al., 2002). In this case a clustering groups genes according
+to their activity for example under various environmental conditions.
+
+c(cid:13)2011 Antti Ukkonen.
+
+UKKON EN
+
+We focus on a particular subclass of (partial) orders, called chains. Informally, chains are totally
+ordered subsets of a set of items, meaning that for all items that belong to a chain we know the order,
+and for items not belonging to the chain the order is unknown. For example, consider a preference
+survey about movies where the respondents are requested to rank movies they have seen from best
+to worst. In this scenario chains are a natural representation for the preference statements, as it is
+very unlikely that everyone would list the same movies. In a clustering of the responses people with
+similar preferences should be placed in the same cluster, while people who strongly disagree should
+be placed in different clusters.
+
+This example also illustrates a very useful property of chains as preference statements: inde-
+pendence of the “scale” used by the respondents when assigning scor
+es to the alternatives. For
+example, suppose that person A gives movie X three stars, and movie Y ﬁve stars. Person B gives
+movies X and Y one and three stars, respectively. While these ratings are very different, both A
+and B prefer movie Y to movie X. If we represent a response as a vector of ratings, there is a risk
+of obtaining clusters that are based on the general level of ratings instead the actual preferences.
+That is, one cluster might contain respondents who tend to give low ratings, while another cluster
+contains respondents who give high ratings. Clearly this is not a desirable outcome if the purpose is
+to study the preferences of the respondents. Statements in the form of chains let us directly focus on
+the relationships between the alternatives. Moreover, the use of chains can also facilitate preference
+elicitation, as people may ﬁnd it easier to rank a small set of items instead of assig ning scores to
+individual items.
+
+Fundamentally the problem of clustering orders does not differ much from the problem of clus-
+tering any set of objects for which a distance function can be deﬁned. Th ere are some issues,
+however. First, deﬁning a good distance function for chains is not straightforward . One option is
+to use existing distance functions for permutations, such as Kendall’s tau or Spearman’s rho. The
+usual approach to accommodate these for chains, as taken for example by Kamishima and Akaho
+(2009), is to only consider the common items of two chains. However, if the chains have no over-
+lap, which can in practice happen quite often, their distance has to be deﬁned in some arbitrary way.
+The second issue is the computational complexity of some of the operations that are commonly used
+by clustering algorithms. For instance, running Lloyd’s algorithm (often called k-means) requires
+the computation of the mean of a set of objects. While this is very easy for numerical inputs and
+common distance functions, in case of orders one has to solve the rank aggregation problem that is
+computationally nontrivial; for some choices of the distance function rank aggregation is NP-hard
+(Dwork et al., 2001). We tackle the aforementioned issues on one hand by formulating the cluster-
+ing problem in a way that no computationally hard subproblems are involved (Section 2), and on
+the other hand by by mapping the chains to a vector space (Section 3). By taking the latter approach
+the problem of clustering chains is reduced to that of clustering vectors in Rn .
+
+In general clustering algorithms will always produce a clustering. However, it is not obvious
+whether this clustering is reﬂecting any real phenomena present in the inpu t. Chances are that the
+output is simply a consequence of random noise. Therefore, in addition to algorithms for ﬁnding
+a clustering, we also propose a method for assessing the validity of the clusterings we ﬁnd. Our
+approach falls in the framework of randomization testing (Good, 2000), where the statistical signif-
+icance of a data analysis result is evaluated by running the same analysis on a number of random
+data sets. If clusterings of a number of random data sets are indistinguishable from a clustering of
+real data (according to a relevant test statistic), the validity of the clustering found in real data can
+
+1390
+
+C LU S T ER ING A LGOR I THM S FOR CHA IN S
+
+be questioned. To make use of this approach we propose a method for generating random sets of
+chains that share some properties with our original input (Section 4).
+
+1.1 Related Work
+
+Previous research on cluster analysis in general is too numerous to be covered here in full. Instead,
+we refer the readers to recent surveys by Xu and Wunsch (2005) and Berkhin (2006). For the
+problem of clustering orders, surprisingly little work has been done. The problem discussed in this
+paper is also studied by Kamishima and Akaho (2009), and earlier by Kamishima and Fujiki (2003).
+Murphy and Martin (2003) propose a mixture model for clustering orders. However, they only
+consider inputs that consist of total orders, that is, every chain in the input must order all items in M .
+This restriction is not made by Busse et al. (2007) who study a setting similar to ours. An important
+aspect of their approach is to represent a chain using the set of total orders that are compatible
+with the chain. This idea can also be found in the work by Critchlow (1985), and is a crucial
+component of a part of our work in Section 3. Recently Cl ´emenc¸ on and Jakubowicz (2010) propose
+a distance function for permutations based on earth mover’s distance between doubly stochastic
+matrices. While this framework seems quite interesting, extending it for chains seems nontrivial.
+The use of randomization testing (Good, 2000) in the context of data mining was ﬁrst proposed
+by Gionis et al. (2007). Theoretical aspects of the sampling approach are discussed by Besag and
+Clifford (1989) and Besag and Clifford (1991).
+
+1.2 Organization and Contributions of This Paper
+
+The contributions of this paper are the following:
+
+• In Section 2 we adapt Lloyd’s algorithm (Lloyd, 1982) for chains. The main problem is the
+lack of a good distance function for chains, as well as the computational complexity of rank
+aggregation. At the core of our approach is to consider the probabilities of pairs of items to
+precede one another in the cluster.
+
+• In Section 3 we present two methods for mapping chains to high-dimensional vector spaces.
+The ﬁrst method aims to preserve the distance between two chains that are as sumed to origi-
+nate from the same component in a simple generative model. The second method represents
+each chain as the mean of the set of linear extensions of the chain. Our main contribution here
+is Theorem 5 stating that this can be achieved with a very simple mapping. In particular, it is
+not necessary to enumerate the set of linear extensions of a chain.
+
+• In Section 4 we present an MCMC algorithm for uniformly sampling sets of chains that share
+a number of characteristics with a given set of chains. The random sets of chains are used for
+signiﬁcance testing.
+
+• In Section 5 we conduct a number of experiments to compare the proposed method with
+existing algorithms for clustering chains. Turns out that the algorithms are in some sense
+orthogonal. For smaller data sets the algorithms by Kamishima and Akaho (2009) give in
+most cases a better result. However, as the input size increases, the method proposed in this
+paper outperforms other algorithms.
+
+Many of the results presented have appeared previously as a part of the author’s doctoral dis-
+sertation (Ukkonen, 2008). Theorem 5 in Section 3.2 was presented earlier by Ukkonen (2007) but
+
+1391
+
+UKKON EN
+
+Algorithm 1 Lloyd’s algorithm
+1: k-means(D, k) {Input: D, set of points; k, number of clusters. Output: The clustering C =
+{D1 , . . . , Dk }.}
+2: {D1 , . . . , Dk } ← PickInitialClusters( D, k );
+i=1 (cid:229)x∈Di d (p, Centroid(Di ));
+3: e ← (cid:229)k
+4: repeat
+e0 ← e;
+5:
+C0 ← {D1 , . . . , Dk };
+6:
+for i ← 1, . . . , k do
+7:
+Di ← {x ∈ D | i = arg min j d (x, Centroid(D j )};
+8:
+end for
+9:
+e ← (cid:229)k
+i=1 (cid:229)x∈Di d (x, Centroid(Di ));
+10:
+11: until e = e0 ;
+12: return C0 ;
+
+its proof was omitted. Also contents of Section 4 have appeared in less detail in previous work by
+Ukkonen and Mannila (2007).
+
+2. Adapting Lloyd’s Algorithm for Chains
+
+Lloyd’s algorithm, also known as k-means, is one of the most common clustering algorithms. In
+this section we address questions related to the use of Lloyd’s algorithm with chains. We start with
+the basic deﬁnitions used throughout this paper.
+
+2.1 Basic Deﬁnitions
+Let M be a set of m items. A chain p is a subset of M together with a total order tp on the items,
+meaning that for every u, v ∈ p ⊆ M we have either (u, v) ∈ tp or (v, u) ∈ tp . We use a slightly
+simpliﬁed notation, and say that the pair (u, v) belongs to p, denoted (u, v) ∈ p, whenever (u, v) ∈ tp .
+Whenever (u, v) belongs to p, we say that u precedes v according to p. For items in M \ p, the chain
+p does not specify the order in any way. The chain p is therefore a partial order. When p is deﬁned
+over the entire set M of items, we say it is a total order. Let D be a multiset of n chains. A clustering
+of D is a disjoint partition of D to k subsets, denoted D1 , . . . , Dk , so that every p ∈ D belongs to one
+and only one Di .
+Lloyd’s algorithm (Duda and Hart, 1973; Lloyd, 1982; Ball and Hall, 1967) ﬁnds a clustering
+of D1 , . . . , Dk so that its reconstruction error, deﬁned as
+k(cid:229)
+(cid:229)
+x∈Di
+i=1
+
+d (x, Centroid(Di )),
+
+(1)
+
+is at a local minimum. Here d is a distance function, Di is a cluster, and Centroid(Di ) refers to a
+“center point” of Di . With numerical data one typically uses the mean as the centroid and squared
+Euclidean distance as d . The algorithm is given in Algorithm 1. On every iteration Lloyd’s algo-
+rithm updates the clustering by assigning each point x ∈ D to the cluster with the closest centroid.
+The PickInitialClusters function on line 2 of Algorithm 1 can be implemented for example by se-
+lecting k total orders at random, and assigning each chain to the the closest one. More sophisticated
+
+1392
+
+C LU S T ER ING A LGOR I THM S FOR CHA IN S
+
+techniques, such as the one suggested by Arthur and Vassilvitskii (2007) can also be considered.
+The algorithm terminates when the clustering error no longer decreases. Note that the resulting
+clustering is not necessarily a global optima of Equation 1, but the algorithm can end up at a local
+minimum.
+
+2.2 Problems with Chains
+
+Clustering models are usually based on the concept of distance. In the case of hierarchical clus-
+tering we must be able to compute distances between two objects in the input, while with Lloyd’s
+algorithm we have to compute distances to a centroid. Usually the centroid belongs to the same
+family of objects as the ones in D that we are clustering. However, it can also be something else,
+and in particular for the problem of clustering chains, the centroid does not have to be a chain or
+even a total order. This is very useful, because deﬁning a good distanc e function for chains is not
+straightforward. For example, given the chains (1, 4, 5) and (2, 3, 6), it is not easy to say anything
+about their similarity, as they share no common items. We return to this question later in Section 3.1,
+but before this we will describe an approach where the distance between two chains is not required.
+
+Another issue arises from the centroid computation. If we use a total order for representing
+the centroid we have to solve the rank aggregation problem: given all chains belonging to the
+cluster Ci , we have to compute a total order that is in some sense the “average” of the c hains in Ci .
+This is not trivial, but can be solved by several different approaches. Some of them have theoretical
+performance guarantees, such as the algorithms by Ailon et al. (2005) and Coppersmith et al. (2006),
+and some are heuristics that happen to give reasonable results in practice (Kamishima and Akaho,
+2006). The hardness of rank aggregation also depends on the distance function. For the Kendall’s
+tau the problem is always NP-hard (Dwork et al., 2001), but for Spearman’s rho it can be solved in
+polynomial time if all chains in the input happen to be total orders. In the general case the problem
+is NP-hard also for Spearman’s rho (Dwork et al., 2001). Our approach is to replace the centroid
+with a structure that can be computed more efﬁciently.
+
+2.3 Distances and Centroids
+
+Next we discuss the choice of a centroid and a distance function so that Algorithm 1 can be used
+directly with an input consisting of chains. Suppose ﬁrst that the centroid o f a cluster is the total
+order t. Observe that t can be represented by a matrix Xt , where Xt (u, v) = 1 if and only if we have
+(u, v) ∈ t, otherwise Xt (u, v) = 0. We can view Xt as an order relation. This relation is completely
+deterministic, since each pair (u, v) either belongs, or does not belong to t. Moreover, if (u, v) does
+not belong to t, the pair (v, u) has to belong to t.
+A simple generalization of this is to allow the centroid to contain fractional contributions for
+the pairs. That is, the pair (u, v) may belong to the centroid with a weight that is a value between 0
+and 1. We restrict the set of possible weights so that they satisfy the probability constraint, deﬁned
+as X (u, v) + X (v, u) = 1 for all u, v ∈ M . In this case the centroid corresponds to a probabilistic
+order relation. Below we show that for a suitable distance function this approach leads to a natural
+generalization of the case where the centroids are represented by total orders together with Kendall’s
+tau as the distance function. However, this relaxation lets us avoid the rank aggregation problem
+discussed above.
+
+1393
+
+UKKON EN
+
+d (p, X ),
+
+Consider the following general deﬁnition of a centroid. Given a set D of objects and the class Q
+of centroids for D, we want to ﬁnd a X ∗ ∈ Q, so that
+(cid:229)
+X ∗ = arg min
+p∈D
+X ∈Q
+where d (p, X ) is a distance between p and X . Intuitively X ∗ must thus reside at the “center ” of the
+set D. We let Q be set of probabilistic order relations on M , that is, the set of |M | × |M | matrices
+satisfying the probability constraint. Given a matrix X ∈ Q and a chain p, we deﬁne the distance
+d (p, X ) as
+d (p, X ) = (cid:229)
+(u,v)∈p
+This choice of d (p, X ) leads to a simple way of computing the optimal centroid, as is shown below.
+Note that this distance function is equivalent with Kendall’s tau if X is a deterministic order relation.
+To ﬁnd the centroid of a given set D of chains, we must ﬁnd a matrix X ∈ Q such that the cost
+(cid:229)
+c(X , D) = (cid:229)
+p∈D
+(u,v)∈p
+
+X (v, u)2
+
+X (v, u)2 .
+
+(2)
+
+is minimized. By writing the sum in terms of pairs of items instead of chains, we obtain
+(cid:229)
+c(X , D) = (cid:229)
+u∈M
+v∈M
+
+CD (u, v)X (v, u)2 ,
+
+where CD (u, v) denotes the number of chains in D where u appears before v. Let U denote the set of
+all unordered pairs of items from M . Using U the above can be written as
+c(X , D) = (cid:229)
+{u,v}∈U (cid:0)CD (u, v)X (v, u)2 + CD (v, u)X (u, v)2(cid:1).
+As X must satisfy the probability constraint, this becomes
+c(X , D) = (cid:229)
+{u,v}∈U (cid:0)CD (u, v)(1 − X (u, v))2 + CD (v, u)X (u, v)2
+(cid:1).
+|
+{z
+}
+c(X ,{u,v})
+To minimize Equation 3 it is enough to independently minimize the individual parts of the sum
+corresponding to the pairs in U , denoted c(X , {u, v}). Setting the ﬁrst derivative of this with respect
+to X (u, v) equal to zero gives
+
+(3)
+
+X ∗ (u, v) =
+
+CD (u, v)
+CD (u, v) + CD (v, u)
+
+.
+
+(4)
+
+That is, the optimal centroid is represented by a matrix X ∗ where X ∗ (u, v) can be seen as a simple
+estimate of the probability of item u ∈ M to precede item v ∈ M in the input D. This is a natural way
+of expressing the the ordering information present in a set of chains without having to construct an
+explicit total order.
+It is also worth noting that long chains will be consistently further away from the centroid than
+short chains, because we do not normalize Equation 2 with the length of the chain. This is not a
+problem, however, since we are only using the distance to assign a chain to one of the k centroids.
+
+1394
+
+C LU S T ER ING A LGOR I THM S FOR CHA IN S
+
+Distances of two chains of possibly different lengths are not compared. We also emphasize that
+even if longer chains in some sense contribute more to the centroid, as they contain a larger number
+of pairs, the contribution to an individual element of the matrix X is independent of chain length.
+We propose thus to use Lloyd’s algorithm as shown in Algorithm 1 with the distance function in
+Equation 2 and the centroid as deﬁned by Equation 4. The algorithm conver ges to a local optimum,
+as the reconstruction error decreases on every step. When assigning chains to updated centroids the
+error can only decrease (or stay the same) because the chains are assigned to clusters that minimize
+the error (line 8 of Alg. 1). When we recompute the centroids given the new assignment of chains
+to clusters, the error is non-increasing as well, because the centroid X ∗ (Equation 4) by deﬁnition
+minimizes the error for every cluster.
+
+3. Mappings to Vector Spaces
+
+In this section we describe an alternative approach to clustering chains. Instead of operating directly
+on the chains, we ﬁrst map them to a vector space. This makes it possible to co mpute the clustering
+using any algorithm that clusters vectors. Note that this will lead to a clustering that does not
+minimize the same objective function as the algorithm described in the previous section. However,
+the two approaches are complementary: we can ﬁrst use the vector space representation to compute
+an initial clustering of the chains, and then reﬁne this with Lloyd’s algorithm us ing the centroid and
+distance function of the previous section. Note that these mappings can also be used to visualize
+sets of chains (Ukkonen, 2007; Kidwell et al., 2008).
+
+3.1 Graph Representation
+
+The mapping that we describe in this section is based on the adjacency matrices of two graphs where
+the chains of the input D appear as vertices. These graphs can be seen as special cases of the so
+called planted partition model (Condon and Karp, 2001; Shamir and Tsur, 2002).
+
+3 .1 .1 MOT IVAT ION
+
+We return to the question of computing the distance between two chains. Both Spearman’s rho
+and Kendall’s tau can be modiﬁed for chains so that they only consider the c ommon items. If the
+chains p1 and p2 have no items in common, we have to use a ﬁxed distance between p1 and p2 .
+This is done for example by Kamishima and Fujiki (2003), where the distance between two chains
+is given by 1 − r, where r ∈ [−1, 1] is Spearman’s rho. For two fully correlated chains the distance
+becomes 0, and for chains with strong negative correlation the distance is 2. If the chains have no
+common items we have r = 0 and the distance is 1. We could use the same approach also with the
+Kendall distance by deﬁning the distance between the chains p1 and p2 as the (normalized) Kendall
+distance between the permutations that are induced by the common items in p1 and p2 . If there
+are no common items we set the distance to 0.5. Now consider the following example. Let p1 =
+(1, 2, 3, 4, 5), p2 = (6, 7, 8, 9, 10), and p3 = (4, 8, 2, 5, 3). By deﬁnition we have dK (p1 , p2 ) = 0.5,
+and a simple calculation gives dK (p1 , p3 ) = 0.5 as well. Without any additional information this is
+a valid approach.
+However, suppose that the input D has been generated by the following model: We are given
+k partial orders P j , j = 1, . . . , k, on M . A chain p is generated by ﬁrst selecting one of the P j s at
+random, then choosing one linear extension t of P j at random, and ﬁnally picking a random subset
+
+1395
+
+UKKON EN
+
+of l items and creating the chain by projecting t on this subset. (This model is later used in the
+experiments in Section 5).
+Continuing the example, let p1 , p2 , and p3 be deﬁned as above, assume for simplicity that the
+P j s of the generative model are total orders, and that p1 and p2 have been generated by the same
+component, the total order (1, 2, 3, 4, 5, 6, 7, 8, 9, 10), and that p3 is generated by another component,
+the total order (6, 7, 9, 10, 4, 8, 2, 5, 3, 1). Under this assumption it no longer appears meaningful
+to have dK (p1 , p2 ) = dK (p1 , p3 ), as the clustering algorithm should separate chains generated by
+different components from each other. We would like to have dK (p1 , p2 ) < dK (p1 , p3 ). Of course
+we can a priori not know the underlying components, but when computing a clustering we are
+assuming that they exist.
+
+3 .1 .2 AGR E EM EN T AND D I SAGR E EM EN T GRA PH S
+Next we propose a method for mapping the chains to Rn so that the distances between the vectors
+that correspond to p1 , p2 and p3 satisfy the inequality of the example above. In general we want
+chains that are generated by the same component to have a shorter distance to each other than
+to chains that originate from other components. To this end, we deﬁne the dis tance between two
+chains in D as the distance between their neighborhoods in appropriately constructed graphs. If the
+neighborhoods are similar, that is, there are many chains in D that are (in a sense to be formalized
+p1 and p2 , we consider also p1 and p2 similar to each other. Note that this
+shortly) “close to” both
+deﬁnition of distance between two chains is dependent on the input D. In other words, the distance
+between p1 and p2 can change if other chains in D are modiﬁed.
+We say that chains p1 and p2 agree if for some items u and v we have (u, v) ∈ p1 and (u, v) ∈ p2 .
+Likewise, the chains p1 and p2 disagree if for some u and v we have (u, v) ∈ p1 and (v, u) ∈ p2 .
+Note that p1 and p2 can simultaneously both agree and disagree. We deﬁne the agreement and
+disagreement graphs:
+Deﬁnition 1 Let Ga (D) and Gd (D) be undirected graphs with chains in D as vertices. The graph
+Ga (D) is the agreement graph, where two vertices are connected by an edge if their respective
+chains agree and do not disagree. The graph Gd (D) is the disagreement graph, where two vertices
+are connected by an edge if their respective chains disagree and do not agree.
+The distance between chains p1 and p2 will be a function of the sets of neighboring vertices of p1
+and p2 in Ga (D) and Gd (D). Before giving the precise deﬁnition we discuss some theory related to
+the graph Ga (D). This will shed some light on the hardness of ﬁnding a clustering if the input D is
+very sparse.
+
+3 .1 .3 TH E P LAN T ED PART I T ION MOD E L
+
+Consider the following stochastic model for creating a random graph of n vertices. First partition
+the set of vertices to k disjoint subsets denoted V1 , . . . , Vk . Then, independently generate edges
+between the vertices as follows: add an edge between two vertices that belong to the same subset
+with probability p, and add an edge between two vertices that belong to different subsets with
+probability q < p. This model, called the planted partition model, was ﬁrst discussed by Condon
+and Karp (2001) and subsequently by Shamir and Tsur (2002). They also proposed algorithms for
+recovering the underlying clustering as long as the gap D = p − q is not too small.
+Assuming a simple process that generates the input D we can view the agreement graph Ga (D)
+as an instance of the planted partition model with values of p and q that depend on the characteristics
+
+1396
+
+C LU S T ER ING A LGOR I THM S FOR CHA IN S
+
+Pr(|p1 ∩ p2 | = i) Pr(p1⊥ip2 ).
+
+of the input D. More speciﬁcally, let D be generated by k total orders on the set of items M , so that
+each chain p ∈ D is the projection of one of the total orders on some l -sized subset of M . In theory
+we can compute a clustering of D by applying one of the existing algorithms for the planted partition
+model on the graph Ga (D). However, this approach may fail in practice. We argue that for realistic
+inputs D the graph Ga (D) is unlikely to satisfy the condition on the gap D required by the algorithms
+given by Condon and Karp (2001) and Shamir and Tsur (2002). Also, these algorithms are rather
+complex to implement.
+We start by considering the probability of observing an edge between two vertices in the graph
+Ga (D) when D is generated using the model outlined above. This happens when two independent
+events are realized. First, the chains corresponding to the vertices must have at least 2 common
+items, the probability of which we denote by Pr(|p1 ∩ p2 | ≥ 2). Observe that this is the disjoint
+union of events where there are exactly i common items, i ∈ [2, l ]. Therefore, we have Pr(|p1 ∩ p2 | ≥
+i=2 Pr(|p1 ∩ p2 | = i). Second, the common items must be ordered in the same way in both
+2) = (cid:229)l
+of the chains. Denote the probability of this by Pr(p1⊥ip2 ) for the case of i common items. The
+probability of observing an edge between p1 and p2 is thus given by the sum
+l(cid:229)
+i=2
+Next we use this to derive the probabilities p and q of observing an edge between two chains that
+belong either to the same, or two different components, respectively. Clearly we have Pr(|p1 ∩ p2 | =
+l (cid:1)−1 in both cases, as the number of common items is independent of their ordering.
+l−i (cid:1)(cid:0)m
+i(cid:1)(cid:0)m−l
+i) = (cid:0)l
+The only part that matters is thus Pr(p1⊥ip2 ). When p1 and p2 belong to the same component, this
+probability is equal to 1, because p1 and p2 are always guaranteed to order every subset of items in
+the same way. Hence Equation 5 gives
+l (cid:19)−1 l(cid:229)
+p = (cid:18)m
+i=2 (cid:18)l
+i(cid:19)(cid:18)m − l
+l − i (cid:19).
+When p1 and p2 belong to different components, we must make sure that the component that emits
+p2 orders the common items in the same way as p1 . (To simplify matters we allow the second
+component to be identical to the one that has generated p1 . This will not signiﬁcantly affect the
+subsequent analysis.) The number of permutations on m items where the order of i items is ﬁxed is
+m!/i!. Since the component of p2 is sampled uniformly at random from all possible permutations,
+we have Pr(p1⊥ip2 ) = m!
+i!m! = 1/i!. This together with Equation 5 yields
+l−i (cid:1)
+i(cid:1)(cid:0)m−l
+(cid:0)l
+l (cid:19)−1 l(cid:229)
+q = (cid:18)m
+i!
+i=2
+2 +e
+The algorithm of Condon and Karp (2001) requires a gap D of order W(n− 1
+) given an input
+of size n to ﬁnd the correct partitioning (for k = 2). The improved algorithm by Shamir and Tsur
+(2002) is shown to produce a correct output with D of order W(kn− 1
+2 log n). Another way of seeing
+these results is that as D decreases more and more data is needed (n must increase) for the algorithms
+to give good results. Next we study how the gap D behaves in Ga (D) as a function of m = |M | and
+the length l of the chains. (Assuming that all chains are of equal length.) Since we have
+l−i (cid:1)(cid:16)1 − 1
+i! (cid:17)
+(cid:229)l
+i(cid:1)(cid:0)m−l
+i=2 (cid:0)l
+l (cid:1)
+(cid:0)m
+
+D = p − q =
+
+,
+
+(5)
+
+(6)
+
+(7)
+
+.
+
+1397
+
+UKKON EN
+
+where (1 − 1
+i (say, i ≤ 3), it is reasonable to bound
+i! ) is signiﬁcantly less than 1 only for very small
+D by using an upper bound for p. We obtain the following theorem:
+Theorem 2 Let p and q be deﬁned as in Equations 6 and 7, respectively, and let D = p − q. For
+l < m/2, we have
+D < p = O(cid:16) l 2
+m (cid:17).
+
+Proof See Appendix A.1.
+
+The bound expresses how the density of the graph Ga (D) depends on the number of items m and the
+length of the chains l . The gap D becomes smaller as m increases and l decreases. This, combined
+with the existing results concerning D, means that for short chains over a large M the input D has to
+be very large for the algorithms of Condon and Karp (2001) and Shamir and Tsur (2002) to produce
+good results. For example with l = 5 and m = 200, Theorem 2 gives an upper bound of 1/8 for
+D. But for example the algorithm of Shamir and Tsur (2002) requires D to be lower bounded by
+kn− 1
+2 log(n) (up to a constant factor). To reach 1/8 with k = 2, n must in this case be of order
+105 , which can be tricky for applications such as preference surveys. Therefore, we conclude that
+for these algorithms to be of practical use a relatively large number of chains is needed if the data
+consists of short chains over a large number of different items. Also, even though Theorem 2 is
+related to the graph Ga (D), it gives some theoretical justiﬁcation to the intuition that increasing the
+length of the chains should make the clusters easier to separate.
+
+3 .1 .4 U S ING Ga (D) AND Gd (D)
+In the agreement graph, under ideal circumstances the chain p is mostly connected to chains gen-
+erated by the same component as p. Also, it is easy to see that in the disagreement graph the chain
+p is (again under ideal circumstances) not connected to any of the chains generated by the same
+component, and only to chains generated by the other components. This latter fact makes it possible
+to ﬁnd the correct clustering by ﬁnding a
+k-coloring of Gd (D). Unfortunately this has little practical
+value as in real data sets we expect to observe noise that will distort both Ga (D) and Gd (D).
+Above we argued that representations of two chains emitted by the same component should be
+more alike than representations of two chains emitted by different components. Consider the case
+where k = 2 and both clusters are of size n/2. Let fp ∈ Rn be the row of the adjacency matrix of
+Ga (D) that corresponds to chain p. Let chain p1 be generated by the same component as p, and let
+p2 be generated by a different component. Also, deﬁne the similarity s between fp and fp′ as the
+number of elements where both fp and fp′ have the value 1. Consider the expected value of this
+similarity under the planted partition model. We have:
+
+E [s( fp , fp1 )] =
+
+E [s( fp , fp2 )] =
+
+n
+2
+n
+2
+
+p2 +
+
+pq +
+
+n
+2
+n
+2
+
+( p2 + q2 ),
+
+q2 =
+
+n
+2
+q p = nq p.
+
+It is easy to see that E [s( fp , fp1 )] > E [ fp , fp2 ] if we let p = cq, with c > 1. (This is true if p and q are
+deﬁned as in Equations 6 and 7.) Therefore, at least under these simple a ssumptions the expected
+distance between two chains from the same component is always less than the expected distance
+between two chains from different components. In practice we can combine the adjacency matrices
+of Ga (D) and Gd (D) to create the ﬁnal mapping:
+
+1398
+
+C LU S T ER ING A LGOR I THM S FOR CHA IN S
+
+Deﬁnition 3 Let Gad = Ga (D) − Gd (D), where Ga (D) and Gd (D) denote the adjacency matrices of
+the agreement and disagreement graphs. The representation of the chain p in Rn is the row of Gad
+that corresponds to p.
+While the analysis above only concerns Ga (D), we chose to combine both graphs in the ﬁnal repre-
+sentation. This can be motivated by the following example. As above, let fp denote the row of the
+adjacency matrix of Ga (D) that corresponds to the chain p, and let gp denote the same for Gd (D).
+Suppose that the chain p1 agrees with the chain p, meaning that fp1 (p) = 1 and gp1 (p) = 0, and
+let the chain p2 disagree with p, meaning that fp2 (p) = 0 and gp2 (p) = 1. Also, assume that the
+chain p3 neither agrees nor disagrees with p, meaning that fp3 (p) = gp3 (p) = 0. Intuitively, in this
+example the distance between p1 and p2 should be larger than the distance between p1 and p3 . With
+hpi = fpi − gpi , we
+Gad (D) this property is satis ﬁed, as now in the ﬁnal representations, deﬁned as
+have hp1 (p) = 1, hp2 (p) = −1, and hp3 (p) = 0. Using only Ga (D) fails to make this distinction,
+because fp2 (p) = fp3 (p).
+Using the agreement and disagreement graphs has the obvious drawback that the adjacency
+matrices of Ga (D) and Gd (D) are both of size n × n, and computing one entry takes time proportional
+to l 2 . Even though Ga (D) and Gd (D) have the theoretically nice property of being generated by
+the planted partition model, using them in practice can be prohibited by these scalability issues.
+However, there is some experimental evidence that the entire Gad graph is not necessarily needed
+(Ukkonen, 2008).
+
+3.2 Hypersphere Representation
+
+Next we devise a method for mapping chains to an m-dimensional (as opposed to n-dimensional)
+vector space. The mapping can be computed in time O(nm). This method has a slightly different
+motivation than the one discussed above. Let f be the mapping from the set of all chains to Rm and
+let d be a distance function in Rm . Furthermore, let p be a chain and denote by pR the reverse of p,
+that is, the chain that orders the same items as p, but in exactly the opposite way. The mapping f
+and distance d should satisfy
+d ( f (p), f (pR )) = maxp′
+{d ( f (p), f (p′ ))}
+1 )) = d ( f (p2 ), f (pR
+d ( f (p1 ), f (pR
+2 )) for all p1 and p2 .
+Less formally, we want the reversal of a chain to be furthest away from it in the vector space (8), and
+the distance between p and pR should be the same for all chains (9). We proceed by ﬁrst deﬁning
+a mapping for total orders that satisfy the conditions above and then generalize this for chains. In
+both cases the mappings have an intuitive geometrical interpretation.
+
+(8)
+
+(9)
+
+3 .2 .1 A MA P P ING FOR TOTA L ORD ER S
+We deﬁne a function f that maps total orders to Rm as follows: Let t be a total order on M , and let
+t(u) denote the position of u ∈ M in t. For example, if M = {1, . . . , 8} and t = (5, 1, 6, 3, 7, 2, 8, 4),
+we have t(5) = 1. Consider the vector ft where
+
+m + 1
++ t(u)
+ft (u) = −
+(10)
+2
+for all u ∈ M . We deﬁne the mapping f such that f (t) = ft/kftk = ˆft . Note that this mapping is a
+simple transformation of the Borda count (see, e.g., Moulin, 1991), where candidates in an election
+
+1399
+
+UKKON EN
+
+are given points based on their position in the order speciﬁed by a vote. Re turning to the example,
+according to Equation 10 we have
+
+ft = (−2.5, 1.5, −0.5, 3.5, −3.5, −1.5, 0.5, 2.5),
+
+and as kftk = 6.48, we have
+
+f (t) = ˆft = (−0.39, 0.23, −0.08, 0.54, −0.54, −0.23, 0.08, 0.39).
+
+When d is the cosine distance between two vectors, which in this case is simply 1 − ˆfTt ˆft′ as the vec-
+tors are normalized, it is straightforward to check that ˆft satis ﬁes Equations 8 and 9. This mapping
+has a geometrical interpretation: all permutations are points on the surface of an m-dimensional
+unit-sphere centered at the origin. Moreover, the permutation t and its reversal tR are on exactly
+opposite sides of the sphere. That is, the image of tR is found by mirroring the image of t at the
+origin.
+
+3 .2 .2 A MA P P ING FOR CHA IN S
+
+To extend the above for chains we apply the technique used also by Critchlow (1985) and later by
+Busse et al. (2007). The idea is to represent a chain p on M by the set of total orders on M that are
+compatible with p. That is, we view p as a partial order on M and use the set of linear extensions1
+of p to construct the representation f (p). More precisely, we want f (p) to be the center of the
+points in the set { f (t) : t ∈ E (p)}, where f is the mapping for permutations deﬁned in the previous
+section, and E (p) is the set of linear extensions of p. Our main contribution in this section is that
+l (cid:1)(m − l )!, we can compute f (p) very efﬁciently. We start by giving a
+despite the size of E (p) is (cid:0)m
+f (p) that is unrelated to E (p).
+deﬁnition for
+Deﬁnition 4 Let p be a chain over M and deﬁne the vector fp so that
+fp (u) = (cid:26) − |p|+1
+2 + p(u)
+0
+for all u ∈ M . The mapping f is deﬁned so that f (p) = fp/kfpk = ˆfp .
+
+iff u ∈ p,
+iff u 6∈ p,
+
+(11)
+
+This is a generalization of the mapping for total orders to the case where only a subset of the items
+f (p) the center of the set
+has been ordered. The following theorem states that this deﬁnition makes
+{ f (t) : t ∈ E (p)}.
+
+Theorem 5 If the vector ft is deﬁned as in Equation 10, and the vector
+tion 11, then there exists a constant Q so that
+fp (u) = Q (cid:229)
+t∈E (p)
+
+ft (u)
+
+fp is deﬁned as in Equa-
+
+(12)
+
+for all u ∈ M .
+
+1. A linear extension of a partial order p is a total order t so that (u, v) ∈ p → (u, v) ∈ t.
+
+1400
+
+C LU S T ER ING A LGOR I THM S FOR CHA IN S
+
+Proof See Appendix A.2.
+What does this theorem mean in practice? We want f (p) to be the mean of the points that represent
+the linear extensions of p, normalized to unit length. Theorem 5 states that this mean has a simple
+explicit formula that is given by Equation 11. Thus, when normalizing fp we indeed get the normal-
+ized mean vector without having to sum over all linear extensions of p. This is very important, as
+E (p) is so large that simply enumerating all its members is computationally infeasible.
+The ﬁrst advantage of the hypersphere representation over the agre ement and disagreement
+fp for all chains in the input is of order O(nm), which
+graphs is efﬁciency. Computing the vectors
+is considerably less than the requirement of O(n2m2 ) for the graph based approach. As a downside
+we lose the property of having a shorter distance between chains generated by the same component
+than between chains generated by different components. The second advantage of the hypersphere
+mapping is size. Storing the full graph representation requires O(n2 ) memory, while storing the
+hypersphere representation needs only O(nm) of storage. This is the same as needed for storing D,
+and in most cases less than O(n2 ) as usually we have m ≪ n.
+
+4. Assessing the Signiﬁcance of Clusterings
+
+Clustering algorithms will in general always produce a clustering of the input objects. However,
+it is not obvious that these clusterings are meaningful. If we run one of the algorithms discussed
+above on a random set of chains, we obtain a clustering as a result. But clearly this clustering has
+in practice no meaning. To assess the signiﬁcance of a clustering of the inpu t D, we compare its
+reconstruction error with the errors of clusterings obtained from random (in a sense made precise
+below) sets of chains. If the error from real data is smaller than the errors from random data, we
+have evidence for the clustering to be meaningful. The random sets of chains must share certain
+aspects with our original input D. In this section we deﬁne these aspects precisely, and devise a
+method for sampling randomized sets of chains that share these aspects with a given input D.
+
+4.1 Randomization Testing and Empirical p-values
+
+For a thorough discussion of randomization testing, we refer the reader to the textbook by Good
+(2000). Below we give only a brief outline and necessary deﬁnitions. De note by A a data analysis
+algorithm that takes D as the input and produces some output, denoted A (D). We can assume that
+A (D) is in fact the value of a test statistic that we are interested in. For the remainder of this
+paper A is a clustering algorithm and A (D) is the reconstruction error of the clustering found by A .
+Moreover, denote by ˜D1 , . . . , ˜Dh a sequence of random sets of chains that share certain properties
+with D. These will be deﬁned more formally later.
+If the value A (D) considerably deviates from the values A ( ˜D1 ), . . . , A ( ˜Dh ), we have some ev-
+idence for the output of A to be meaningful. In practice this means we can rule out the common
+properties of the real and random data sets as the sole causes for the results found. As usual in
+statistical testing we can speak of a null hypothesis H0 and an alternative hypothesis H1 . These are
+deﬁned as follows:
+
+{A ( ˜Di )},
+H0 : A (D) ≥ min
+i
+{A ( ˜Di )}.
+H1 : A (D) < min
+i
+
+1401
+
+UKKON EN
+
+In statistics the p-value of a test usually refers to the probability of making an error when
+rejecting H0 (and accepting H1 ). In order to determine the p-value one typically needs to make
+some assumptions of the distribution of the test statistic. In general, if we cannot, or do not want
+to make such assumptions, we can compute the empirical p-value based on the randomized data
+sets. This is deﬁned simply as the fraction of cases where the value of A ( ˜Di ) is more extreme than
+the value A (D). Or more formally, for the one-tailed case where A (D) is expected to be small
+according to H1 , we have
+
+|{ ˜Di : A ( ˜Di ) ≤ A (D)}| + 1
+h + 1
+One problem with using ˆp is that in order to get useful values the number of randomized data
+sets must be fairly high. For instance, to have ˆp = 0.001 we must sample at least 999 data sets.
+Depending on the complexity of generating one random data set this may be difﬁcult. Of course,
+already with 99 data sets we can obtain an empirical p-value of 0.01 if all random data sets have a
+larger value of the test statistic. This should be enough for many practical applications.
+
+ˆp =
+
+.
+
+4.2 Equivalence Classes of Sets of Chains
+
+The random data sets must share some characteristics with the original data D. Given D, we deﬁne
+an equivalence class of sets of chains, so that all sets belonging to this equivalence class have the
+same properties as D.
+
+Deﬁnition 6 Let D1 and D2 be two sets of chains on items of the set M . D1 and D2 belong to the
+same equivalence class whenever the following three conditions hold.
+
+1. The number of chains of length l is the same in D1 as in D2 for all l .
+
+2. For all M ′ ⊆ M , the number of chains that contain M ′ as a subset is the same in D1 and D2 .
+
+3. We have CD1 (u, v) = CD2 (u, v) for all u, v ∈ M , where CD (u, v) is the number of chains in D
+that rank u before v.
+
+Given a set D of chains, we denote the equivalence class speciﬁed by D with C (D). Next we
+discuss an algorithm for sampling uniformly from C (D). But ﬁrst we elaborate why it is useful to
+maintain the properties listed above when testing the signiﬁcance of A (D).
+When analyzing chains over the items in M , the most interesting property is how the chains
+actually order the items.
+In other words, the clustering should reﬂect the ordering information
+present in D. This is only one property of D, however. Other properties are those that we mention
+in the conditions above. Condition 1 is used to rule out the possibility that the value of A (D) is
+somehow caused only by the length distribution of the chains in D. Note that this requirement also
+implies that D1 and D2 are of the same size. Likewise, condition 2 should rule out the possibility
+that the result is not a consequence of the rankings, but simply the co-occurrences of the items.
+Maintaining CD (u, v) is motivated from a slightly different point of view. If D contained real-
+valued vectors instead of chains, it would make sense to maintain the empirical mean of the obser-
+vations. The intuition with chains is the same: we view D as a set of points in the space of chains.
+The random data sets should be located in the same region of this space as D. By maintaining
+CD (u, v) the randomized data sets ˜Di will (in a way) have the same mean as D. This is because the
+rank aggregation problem, that is, ﬁnding the mean of a set of permutations,
+can be solved using
+only the CD (u, v) values (Ukkonen, 2008).
+
+1402
+
+C LU S T ER ING A LGOR I THM S FOR CHA IN S
+
+4.3 An MCMC Algorithm for Sampling from C (D)
+
+Next we will discuss a Markov chain Monte Carlo algorithm that samples uniformly from a subset
+of C (D) given D. We can only guarantee that the sample will be from a neighborhood of D in C (D).
+Whether this neighborhood covers all of C (D) is an open problem.
+
+4 .3 .1 A LGOR I THM OV ERV I EW
+
+The MCMC algorithm we propose can be seen as a random walk on an undirected graph with C (D)
+as the set of vertices. Denote this graph by G(D). The vertices D1 and D2 of G(D) are connected by
+an edge if we obtain D2 from D1 by performing a small local modiﬁcation to D1 (and vice versa).
+We call this local modiﬁcation a swap and will deﬁne it in detail below. First, let us look at a high
+level description of the algorithm.
+In general, when using MCMC to sample from a distribution, we must construct the Markov
+Chain so that its stationary distribution equals the target distribution we want to sample from. If
+all vertices of G(D) are of equal degree, the stationary distribution will be the uniform distribution.
+As we want to sample uniformly from C (D), this would be optimal. However, it turns out that the
+way we have deﬁned the graph G(D) does not result in the vertices having the same number of
+neighboring vertices. To remedy this, we use the Metropolis-Hastings algorithm (see, e.g., Gelman
+et al., 2004) for picking the next state. Denote by N (Di ) the set of neighbors of the vertex Di in
+G(D). When the chain is at Di , we pick uniformly at random the vertex Di+1 from N (Di ). The
+chain moves to Di+1 with probability
+
+min(
+
+|N (Di )|
+|N (Di+1 )|
+
+, 1),
+
+(13)
+
+that is, the move is accepted always when Di+1 has a smaller degree, and otherwise we move with a
+probability that decreases as the degree of Di+1 increases. If the chain does not move, it stays at the
+state Di and attempts to move again (possibly to some other neighboring vertex) in the next step.
+It is easy to show that this modiﬁed random walk has the desired property of
+converging to
+a uniform distribution over the set of vertices. Denote by p(Di ) the target distribution we want
+to sample from. In this case p(Di ) is the uniform distribution over C (D). Hence, we must have
+p(Di ) = p(Di+1 ) = |C (D)|−1 . The Metropolis-Hastings algorithm jumps to the next state Di+1 with
+probability min(r, 1), where
+
+r =
+
+p(Di+1 )/J (Di+1 |Di )
+p(Di )/J (Di |Di+1 )
+
+.
+
+(14)
+
+Above J (·|·) is a proposal distribution, which in this case is simply the uniform distribution over the
+neighbors of Di for all i. That is, we have J (Di+1 |Di ) = |N (Di )|−1 and J (Di |Di+1 ) = |N (Di+1 )|−1 .
+When this is substituted into Equation 14 along with the fact that p(Di ) = p(Di+1 ) we obtain Equa-
+tion 13.
+Given D, a simple procedure for sampling one ˜D uniformly from C (D) works as follows: we
+start from D = D0 , run the Markov chain resulting in slightly modiﬁed data Di on every step i.
+After s steps we are at the set Ds which is our ˜D. We repeat this process until enough samples from
+C (D) have been obtained. It is very important to run the Markov chain long enough (have a large
+enough s), so that the samples are as uncorrelated as possible with the starting point D, as well as
+independent of each other. We will discuss a heuristic for assessing the correct number steps below.
+
+1403
+
+UKKON EN
+
+However, guaranteeing that the samples are independent is nontrivial. Therefore we only require
+the samples to be exchangeable. The following approach, originally proposed by Besag and Clifford
+(1989), draws h sets of chains from C (D) so that the samples satisfy the exchangeability condition.
+We ﬁrst start the Markov chain from D and run it backwards for s steps. (In practice the way we
+deﬁne our Markov chain, running it backwards is equivalent to runnin g it forwards.) This gives us
+˜D0 . Next, we run the chain forwards h − 1 times for s steps, each time starting from ˜D0 .
+the set
+This way the samples are not dependent on each other, but only on ˜D0 . And since we obtained ˜D0
+by running the Markov chain backwards from D, the samples depend on ˜D0 in the same way as D
+depends on ˜D0 . Note that a somewhat more efﬁcient approach is proposed by Besag an d Clifford
+(1991).
+
+4 .3 .2 TH E SWA P
+
+Above we deﬁned the Markov chain as a random walk over the elements of C (D), where two states
+D and D′ are connected if one can be obtained from the other by a local modi ﬁcation o perator. We
+call this local modiﬁcation a swap for reasons that will become apparent shortly. Since the Markov
+chain must remain in C (D), the swap may never result in a set of chains ˆD 6∈ C (D). More precisely,
+if Di+1 is obtained from Di by the swap and Di ∈ C (D), then Di+1 must belong to C (D) as well.
+Next we deﬁne a swap that has this property.
+Formally we deﬁne a swap as the tuple (p1 , p2 , i, j), where p1 and p2 are chains, i is an index of
+p1 , and j an index of p2 . To execute the swap (p1 , p2 , i, j), we transpose the items at positions i and
+i + 1 in p1 , and at positions j and j + 1 in p2 . For example, if p1 = (1, 2, 3, 4, 5) and p2 = (3, 2, 6, 4, 1),
+the swap (p1 , p2 , 2, 1) will result in the chains p′
+1 = (1, 3, 2, 4, 5) and p′
+2 = (2, 3, 6, 4, 1). The positions
+of items 2 and 3 are changed in both p1 and p2 .
+Clearly this swap does not affect the number of chains, lengths of any chain, nor the occurrence
+frequencies of any itemset as items are not inserted or removed. To guarantee that also the CD (u, v)s
+are preserved, we must pose one additional requirement for the swap. When transposing two adja-
+cent items in the chain p1 , say, u and v with u originally before v, CD (u, v) is decremented by one
+as there is one instance less of u preceding v after the transposition, and CD (v, u) is incremented by
+one as now there is one instance more where v precedes u. Obviously, if the swap would change
+only p1 , the resulting data set would no longer belong to C (D) as CD (u, v) and CD (v, u) are changed.
+But the second transposition we carry out in p2 cancels out the effect the ﬁrst transposition had on
+CD (u, v) and CD (v, u), and the resulting set of chains remains in C (D).
+Deﬁnition 7 Let D be a set of chains and let p1 and p2 belong to D. The tuple (p1 , p2 , i, j) is a valid
+swap for D, if the item at the ith position of p1 is the same as the item at the j + 1th position of p2 ,
+and if the item at i + 1th position of p1 is the same as the item at the jth position of p2 .
+The swap we show in the example above is thus a valid swap.
+Given the data D, we may have several valid swaps to choose from. To see how the set of valid
+swaps evolves in a single step of the algorithm, consider the following example. Let Di contain the
+three chains below:
+p3 : (3, 2, 6, 4, 1)
+p2 : (7, 8, 4, 3, 6)
+p1 : (1, 2, 3, 4, 5)
+The valid swaps in this case are (p1 , p3 , 2, 1) and (p1 , p2 , 3, 3). If we apply the swap (p1 , p2 , 3, 3) we
+obtain the chains
+p′
+1 : (1, 2, 4, 3, 5)
+
+p′
+2 : (7, 8, 3, 4, 6)
+
+p3 : (3, 2, 6, 4, 1)
+
+1404
+
+C LU S T ER ING A LGOR I THM S FOR CHA IN S
+
+Obviously (p1 , p2 , 3, 3) is still a valid swap, as we can always revert the previous swap. But notice
+that (p1 , p2 , 2, 1) is no longer a valid swap as the items 2 and 3 are not adjacent in p′
+1 . Instead
+2 , p3 , 4, 3) is introduced as a new valid swap since now 4 and 6 are adjacent in p′
+(p′
+2 .
+Given this deﬁnition of the swap, is C (D) connected with respect to the valid swaps? Meaning,
+can we reach every member of C (D) starting from D? This is a desirable property as we want to
+sample uniformly from C (D), but so far this remains an open question.
+
+4 .3 .3 CONV ERG ENC E
+Above it was mentioned that we must let the Markov chain run long enough to make sure ˜Ds is not
+correlated with the starting state D0 . The chain should have mixed, meaning that when we stop it
+the probability of landing at a particular state Ds actually corresponds to the probability Ds has in
+the stationary distribution of the chain. Determining when a simulated Markov chain has converged
+to its stationary distribution is not easy.
+Hence we resort to a fairly simple heuristic. An indicator of the current sample Di being uncor-
+related to D0 = D is the following measure:
+
+dK (D( j), Di ( j)),
+
+(15)
+
+d(D, Di ) = |D|−1
+
+|D|(cid:229)
+j=1
+where D( j) is the jth chain in D. Note that d(D, Di ) is always deﬁned, as the chain Di ( j) is a
+permutation of D( j). The distance deﬁned in Equation 15 is thus the average Kendall distance
+between the permutations in D and Di . To assess the convergence we observe how d(D, Di ) behaves
+as i grows. When d(D, Di ) has converged to some value or is not increasing only at a very low
+rate, we assume the current sample is not correlated with D0 more strongly than with most other
+members of C (D).
+Note that here we are assuming that the chains in D are labeled. To see what this means consider
+the following example with the sets D and Di both containing four chains.
+
+Di (1) : 2, 1, 3
+D(1) : 1, 2, 3
+Di (2) : 6, 5, 4
+D(2) : 4, 5, 6
+Di (3) : 1, 2, 3
+D(3) : 2, 1, 3
+Di (4) : 4, 5, 6
+D(4) : 6, 5, 4
+Here we have obtained Di from D with the multiple swap operations. The distance d(D, Di ) is 2
+even though D and Di clearly are identical as sets. Hence, the measure of Equation 15 can not be
+used for testing this identity. To do this we should compute the Kendall distance between D( j) and
+Di (h( j)), where h is a bijective mapping between chains in D and Di that minimizes the sum of the
+pairwise distances. However, we consider this simple approach sufﬁcien t for the purposes of this
+paper.
+
+4 .3 .4 IM P L EM EN TAT ION I S SU E S
+
+Until now we have discussed the approach at a general level. There’s also a practical issue when im-
+plementing the proposed algorithm. The number of valid swaps at a given state is of order O(m2n2 )
+in the worst case, which can get prohibitively large for storing each valid swap as a tuple explicitly.
+Hence, we do not store the tuples, but only maintain two sets that represent the entire set of swaps
+
+1405
+
+UKKON EN
+
+but use a factor of n less space. We let
+AD = {{u, v} | ∃p1 ∈ D st. uv ∈ p1 ∧ ∃p2 ∈ D st. vu ∈ p2},
+where uv ∈ p denotes that u and v are adjacent in p with u before v. This is the set of swappable
+pairs of items. The size of AD is of order O(m2 ) in the worst case. In addition, we also have the sets
+SD (u, v) = {p ∈ D | uv ∈ p}
+for all (u, v) pairs. This is simply a list that contains the set of chains where we can transpose u and
+v. Note that SD (u, v) and SD (v, u) are not the same set. In SD (u, v) we have chains where u appears
+before v, while in SD (v, u) are chains where v appears before u. The size of each SD (u, v) is of order
+O(n) in the worst case, and the storage requirement for AD and SD is hence only O(m2n), a factor
+of n less than storing the tuples explicitly.
+The sets AD and SD indeed fully represent all possible valid swaps. A valid swap is constructed
+from AD and SD by ﬁrst picking a swappable pair {u, v} from AD , and then picking two chains,
+one from SD (u, v) and the other from SD (v, u). It is easy to see that a swap constructed this way
+must be a valid swap. Also, verifying that there are no valid swaps not described by AD and SD is
+straightforward.
+There is still one concern. Recall that we want to use the Metropolis-Hastings approach to
+sample from the uniform distribution over C (D). In order to do this we must be able to sample
+uniformly from the neighbors of Di , and we have to know the precise size of Di ’s neighborhood.
+The size of the neighborhood N (Di ) is precisely the number of valid swaps at Di , and is given by
+|N (Di )| = (cid:229)
+|SDi (u, v)| · |SDi (v, u)|,
+{u,v}∈ADi
+which is easy to compute given ADi and SDi .
+To sample a neighbor of Di uniformly at random using ADi and SDi , we ﬁrst pick the swappable
+pair {u, v} from ADi with the probability
+
+|SDi (u, v)| · |SDi (v, u)|
+(16)
+Pr({u, v}) =
+,
+|N (Di )|
+which is simply the fraction of valid swaps in N (Di ) that affect items u and v. Then p1 and p2
+are sampled uniformly from SD (u, v) and SD (v, u) with probabilities |SD (u, v)|−1 and |SD (v, u)|−1 ,
+respectively. Thus we have
+
+Pr({u, v}) · |SD (u, v)|−1 · |SD (v, u)|−1 =
+
+1
+|N (Di )|
+
+as required.
+The ﬁnal algorithm that we call SWA P - PA IR S is given in Algorithm 2. It takes as arguments the
+data D and the integer s that speciﬁes the number of rounds the algorithm is run. On lines 2–6 we
+initialize the sets AD and SD , while lines 8–20 contain the main loop. First, on line 9 the pair {u, v}
+is sampled from AD with the probability given in Equation 16. The SAM P L E -UN I FORM function
+simply samples an element from the set it is given as the argument. On lines 13 and 15 we compute
+the neighborhood sizes before and after the swap, respectively. The actual swap is carried out by the
+A P P LY- SWA P function, that modiﬁes p and t in D and updates AD and SD accordingly. Lines 16–
+18 implement the Metropolis-Hastings step. Note that it is easier to simply perform the swap and
+backtrack if the jump should not have been accepted. A swap can be canceled simply by applying it
+a second time. The function RAND() returns a uniformly distributed number from the interval [0, 1].
+
+1406
+
+C LU S T ER ING A LGOR I THM S FOR CHA IN S
+
+Algorithm 2 The SWA P - PA IR S algorithm for sampling uniformly from C (D).
+1: SWA P - PA IR S(D, s)
+2: AD ← {{u, v} | ∃p1 ∈ D st. uv ∈ p1 ∧ ∃p2 ∈ D st. vu ∈ p2}
+3: for all {u, v} ∈ AD do
+SD (u, v) ← {p ∈ D | uv ∈ p}
+4:
+SD (v, u) ← {p ∈ D | vu ∈ p}
+5:
+6: end for
+7: i ← 0
+8: while i < n do
+{u, v} ← SAM P L E - PA IR(AD , SD )
+9:
+p ← SAM P L E -UN I FORM(SD (u, v))
+10:
+t ← SAM P L E -UN I FORM(SD (v, u))
+11:
+s ← (p, t, p(u), t(v))
+12:
+Nbefore ← (cid:229){u,v}∈AD |SD (u, v)| · |SD (v, u)|
+13:
+A P P LY- SWA P(s, D, AD , SD )
+14:
+Nafter ← (cid:229){u,v}∈AD |SD (u, v)| · |SD (v, u)|
+15:
+if RAND() ≥ Nbefore
+then
+16:
+Nafter
+A P P LY- SWA P(s, D, AD , SD )
+17:
+end if
+18:
+i ← i + 1
+19:
+20: end while
+21: return D
+
+5. Experiments
+
+In this section we discuss experiments that demonstrate how our algorithms perform on various
+artiﬁcial and real data sets. We consider a two-step algorithm that either sta rts with random initial
+clusters (RND), or a clustering that is computed with standard k-means (initialized with random cen-
+troids) in the graph (GR) or hypersphere (H S) representation. This initial clustering is subsequently
+reﬁned with the variant of Lloyd’s algorithm discussed in Section 2 to obtain th e ﬁnal clustering.
+We also compare our method against existing approaches by Kamishima and Akaho (2006). These
+algorithms, called TM S E and EBC, are similar clustering algorithms for sets of chains, but they are
+based on slightly different distance functions and types of centroid. We used original implementa-
+tions of TM S E and EBC that were obtained from the authors.
+
+5.1 Data Sets
+
+The artiﬁcial data sets are generated by the procedure described in Sec tion 3.1.1. In addition to
+artiﬁcial data we use four real data sets that are all based on publicly ava ilable sources. The data
+consist of preference rankings that are either explicit, derived, or observed. We say a preference
+ranking is explicit if the preferences are directly given as a ranked list of alternatives. A preference
+ranking is derived if the ranking is based on item-speciﬁc scores, such as movie ratings. Finally ,
+a preference ranking is observed if it originates from a source where preferences over alternatives
+only manifest themselves indirectly in different types of behavior, such as web server access logs.
+
+1407
+
+UKKON EN
+
+SUSHI MLENS DUBLIN MSNBC
+5000
+5000
+2191
+5000
+100
+207
+12
+17
+6
+4
+10
+6
+6.5
+4.8
+13.3
+10
+10
+15
+6
+8
+
+n
+m
+min. l
+avg. l
+max. l
+
+Table 1: Key statistics for different real data sets. The number of chains, the number of items, and
+the length of a chain are denoted by n, m, l , respectively.
+
+Key statistics of the data sets are summarized in Table 1. More details are given below for each data
+set.
+
+5 .1 .1 SUSH I
+
+These data are explicit preference rankings of subsets of 100 items. Each chain is a response from
+a survey2 where participants were asked to rank 10 ﬂavors of sushi in order of p reference. Each set
+of 10 ﬂavors was chosen randomly from a total set of 100 ﬂavors. The
+data consists of 5000 such
+responses.
+
+5 .1 .2 MLENS
+
+These data are derived preference rankings of subsets of 207 items. The original data consists of
+movie ratings (1–5 stars) collected by the GroupLens 3 research group at University of Minnesota.
+We discarded movies that had been ranked by fewer than 1000 users and were left with 207 movies.
+Next we pruned users who have not used the entire scale of ﬁve stars in their ratings and were left
+with 2191 users. We generate one chain per user by ﬁrst sampling a subs et of movies the user has
+rated, so that at most three movies having the same rating are in the sample. Finally we order the
+sample according to the ratings and break ties in ratings arbitrarily.
+
+5 .1 .3 DUBL IN
+
+These data are explicit preference rankings of subsets of 12 items. Each chain is a vote placed in the
+2002 general elections in Ireland.4 and ranks a subset of 12 candidates from the electoral district of
+northern Dublin. We only consider votes that rank at least 4 and at most 6 candidates and are left
+with 17737 chains. Of this we took a random sample of 5000 chains for the analysis.
+
+5 .1 .4 MSNBC
+
+These data are observed preference rankings over 17 items. Each chain shows the order in which
+a user accessed a subset of 17 different sections of a web site (msnbc.com).5 Each chain contains
+only the ﬁrst occurrence of a category, subsequent occurrences were removed. Also, we selected a
+
+2. The SUSHI data be found at http://www.kamishima.net/sushi (29 April 2011).
+3. The MLENS data can be found at http://www.grouplens.org/node/12 (29 April 2011).
+4. At
+the
+time of publication this data
+can be
+found by accessing old versions of http://www.
+dublincountyreturningofficer.com/ in the Internet Archive at http://waybackmachine.org.
+5. MSNBC data can be found at http://kdd.ics.uci.edu/databases/msnbc/ (29 April 2011).
+
+1408
+
+C LU S T ER ING A LGOR I THM S FOR CHA IN S
+
+subset of the users who had visited at least 6 and at most 8 different categories and were left with
+14598 chains. Again we used a random subset of 5000 chains for the analysis.
+
+5.2 Recovering a Planted Clustering
+
+In this section we discuss experiments on artiﬁcial data, with the emphasis on stu dying the per-
+formance of the algorithms under different conditions. These conditions can be characterized by
+parameters of the input data, such as length of the chains or total number of items. The task is to
+recover a “true” clustering that was planted in the input data.
+
+5 .2 .1 EX P ER IM EN TA L S E TU P
+
+The notion of correctness is difﬁcult to deﬁne when it comes to clustering mod
+els. With real data
+we do not in general know the correct structure, or if there even is any structure to be found. To have
+a meaningful deﬁnition of a correct clustering, we generate synthetic data that contains a planted
+clustering. We compare this with the clusterings found by the algorithms.
+To measure the similarity between two clusterings we use a variant of the Rand Index (Rand,
+1971) called the Adjusted Rand Index (Lawrence and Phipps, 1985). The basic Rand Index essen-
+tially counts the number of pairs of points where two clusterings agree (either both assign the points
+in the same cluster, or both assign the points in different clusters), normalized by the total number
+of pairs. The maximum value for two completely agreeing clusterings is thus 1. The downside with
+this approach is that as the number of clusters increases, even random partitions will have a score
+close to 1, which makes it difﬁcult to compare algorithms. The Adjusted Rand In dex corrects for
+this by normalizing the scores with respect to the expected value of the score under the assumption
+that the random partition follows a generalized hypergeometric distribution (Lawrence and Phipps,
+1985).
+Artiﬁcial sets of chains are created with the procedure described in Sectio n 3.1.1. Instead of
+arbitrary partial orders as the components, we use bucket orders (or ordered partitions) of M . More
+speciﬁcally, a bucket order on M is a totally ordered set of disjoint subsets (buckets) of M that cover
+all items in M . If the items u and v both belong to the bucket Mi ⊆ M , they are unordered. If
+u ∈ Mi ⊆ M and v ∈ M j ⊆ M , and Mi precedes M j , then also u precedes v. We used bucket orders
+with 10 buckets in the experiments.
+Input size n is ﬁxed to 2000. We varied the following parameters: length of a chain l , total
+number of items m, and number of clusters in the true clustering k. We ran the algorithms on
+various combinations of these with different values of k, that is, we also wanted to study how the
+algorithms behave when the correct number of clusters is not known in advance.
+
+5 .2 .2 COM PAR ING IN I T IA L I ZAT ION S TRAT EG I E S
+
+Results for our variant of Lloyd’s algorithm with the three different initialization strategies (H S, GR,
+and RND) are shown in Figure 1 for a number of combinations of k and m. Here we only plot cases
+where k = k, meaning that the algorithm was given the correct number of clusters in advance. The
+grey lines are 95 percent conﬁdence intervals. As on one hand sugge sted by intuition, and on the
+other hand by Theorem 2, ﬁnding a planted clustering becomes easier as th e length of the chains
+increase. With l = 9 the original clustering is found almost always independent of the values of m
+and k. For smaller values of l the effect of m and k is stronger. The problem becomes more difﬁcult
+as m and k increase. When comparing the initialization strategies, H S and GR outperform RND.
+
+1409
+
+UKKON EN
+
+m = 20
+
+m = 50
+
+m = 100
+
+1
+
+2
+ 
+=
+ 
+K
+
+0.5
+
+0
+
+1
+
+4
+ 
+=
+ 
+K
+
+0.5
+
+1
+
+6
+ 
+=
+ 
+K
+
+0.5
+
+1
+
+8
+ 
+=
+ 
+K
+
+0.5
+
+1
+
+0.5
+
+0
+1
+ 
+=
+ 
+K
+
+3
+
+4
+
+5
+
+6
+
+7
+
+8
+
+9
+
+1
+
+0.5
+
+0
+
+1
+
+0.5
+
+3
+
+4
+
+5
+
+6
+
+7
+
+8
+
+9
+
+3
+
+4
+
+5
+
+6
+
+7
+
+8
+
+9
+
+3
+
+4
+
+5
+
+6
+
+7
+
+8
+
+9
+
+1
+
+0.5
+
+3
+
+4
+
+5
+
+6
+
+7
+
+8
+
+9
+
+3
+
+4
+
+5
+
+6
+
+7
+
+8
+
+9
+
+1
+
+0.5
+
+3
+
+4
+
+5
+
+6
+
+7
+
+8
+
+9
+
+3
+
+4
+
+5
+
+6
+
+7
+
+8
+
+9
+
+1
+
+0.5
+
+3
+
+4
+
+5
+
+6
+
+7
+
+8
+
+9
+
+3
+
+4
+
+5
+
+6
+
+7
+
+8
+
+9
+
+1
+
+0.5
+
+0
+
+1
+
+0.5
+
+0
+
+1
+
+0.5
+
+0
+
+1
+
+0.5
+
+0
+
+1
+
+0.5
+
+0
+
+3
+
+4
+
+5
+
+6
+
+7
+
+8
+
+9
+
+3
+
+4
+
+5
+
+6
+
+7
+
+8
+
+9
+
+3
+
+4
+
+5
+
+6
+
+7
+
+8
+
+9
+
+3
+
+4
+
+5
+
+6
+
+7
+
+8
+
+9
+
+3
+
+4
+
+5
+
+6
+
+7
+
+8
+
+9
+
+Figure 1: The Adjusted Rand Index (median over 25 trials) between a recovered clustering and the
+true clustering as a function of the length of a chain in random data sets consisting of 2000
+chains each. Initialization methods are ◦: GR, +: H S, and ⋄: RND. Gray lines indicate 95
+percent conﬁdence intervals.
+
+5 .2 .3 COM PAR ING AGA IN S T EX I S T ING M E THOD S
+
+We compared how our approach using the H S initialization compares with existing algorithms. The
+H S-based variant was chosen because of fairness: The process we use to generate artiﬁcial data
+exactly matches the assumption underlying the GR approach, and hence may give this algorithm an
+unfair advantage. Also, the H S initialization is faster to compute.
+Results are shown in Figure 2 for m = 10 and m = 100, and k ∈ {2, 6, 10}. The total number of
+items m has a strong effect on the performance. As above, the problem or recovering the clustering
+becomes harder as m increases and l decreases. Our algorithm suffers from very poor performance
+
+1410
+
+C LU S T ER ING A LGOR I THM S FOR CHA IN S
+
+K = 2
+
+K = 6
+
+K = 10
+
+1
+
+0.5
+
+1
+
+0.5
+
+3
+
+4
+
+5
+
+6
+
+3
+
+4
+
+5
+
+6
+
+3
+
+4
+
+5
+
+6
+
+1
+
+0.5
+
+1
+
+0.5
+
+1
+
+0
+1
+ 
+=
+ 
+m
+
+0.5
+
+0
+
+1
+
+0
+0
+1
+ 
+=
+ 
+m
+
+0.5
+
+0
+
+3
+
+4
+
+5
+
+6
+
+3
+
+4
+
+5
+
+6
+
+3
+
+4
+
+5
+
+6
+
+Figure 2: The Adjusted Rand Index (median over 25 trials) between a recovered clustering and
+the true clustering as a function of the length of a chain. Labels are: +: our algorithm
+initialized using H S, ◦: EBC, ⋄: TM S E.
+
+with m = 100, while the EBC and TM S E algorithms can recover the planted clustering rather well
+also in this case. In contrast, for m = 10 and small l , our approach yields better results especially
+for k > 2. Recall that our algorithm relies on the pairwise probabilities of one item to precede an
+other. When m = 100 we have 4950 distinct pairs of items, when m = 10 this number is merely 45.
+With a large m it is therefore likely that our estimates of the pairwise probabilities are noisy simply
+because there are less observations of individual pairs since the input size is ﬁxed. By increasing
+the size of the input these estimates should become more accurate.
+We tested this hypothesis by running an experiment with random data sets ten times larger, that
+is, with an input of 20000 chains on m = 100 items. We concentrated on two cases: k = 2 with
+l = 4, and k = 6 with l = 6. The ﬁrst corresponds to a situation where there is a small gap between
+the performance of TM S E/EBC and our method, and all algorithms show mediocre performance (see
+Fig. 2, 2nd row, left column). The second combination of k and l covers a case where this gap is
+considerably bigger, and TM S E/EBC both do rather well in recovering the planted clustering (see
+Fig. 2, 2nd row, middle column). Results are shown in Table 2. Increasing the size of the input
+leads to a considerable increase in performance of our algorithm. This suggests that for large data
+sets the approach based on pairwise probabilities may yield results superior to those obtained with
+existing algorithms.
+
+5 .2 .4 UNKNOWN S I Z E O F TRU E C LU S T ER ING
+So far we have only considered cases where k = k, that is, the algorithms were given the correct
+number of clusters. When analyzing real data k is obviously unknown. We studied the algorithms’
+sensitivity to the value of k. Figure 3 shows the Adjusted Rand Index for our algorithm with H S
+initialization, and the EBC and TM S E algorithms when m = 20, and k = 6. All three algorithms
+
+1411
+
+UKKON EN
+
+l = 4
+
+l = 5
+
+l = 6
+
+1
+
+0.5
+
+1
+
+0.5
+
+1
+
+0.5
+
+2 3 4 5 6 7 8 9 10
+
+2 3 4 5 6 7 8 9 10
+
+2 3 4 5 6 7 8 9 10
+
+Figure 3: Adjusted Rand Index (median over 25 trials) as a function of k for different algorithms.
+We have k = 6, and m = 20 in each case, the value of l is shown above each curve. Labels
+are: +: our algorithm initialized using H S, ◦: EBC, ⋄: TM S E.
+
+perform similarly. For short chains (l = 4) the differences are somewhat stronger. While our H S-
+based method seems to be marginally better in recovering the original clustering, there is a lot of
+overlap in the conﬁdence intervals, and none of the algorithms is able to ﬁnd th
+e true clustering
+exactly. We also acknowledge that the stronger performance of our method with l = 5 and l = 6
+may be attributed to an implementation detail: Our algorithm is not guaranteed to return k clusters,
+it may return a number less than k if one of the clusters becomes empty during the computation. It
+is not clear how the implementations of TM S E and EBC deal with empty clusters.
+
+5.3 Experiments with Real Data
+
+This experiment was carried out by computing a k-way clustering of each data set described in Sec-
+tion 5.1 with k ranging from 2 to 10. Performance is measured by the clustering error as deﬁned in
+Equation 1, using the centroid and distance function that are described in Section 2.3. Each com-
+bination of algorithm, data, and k was repeated 25 times with a randomly chosen initial clustering.
+(Note that even if we initialize our method by computing a clustering using either of the vector
+space representations, the algorithms that compute these must be initialized somehow.)
+Figure 4 shows the reconstruction error as a function of k. Note that values on the y-axis have
+been normalized by the baseline error of having all chains in the same cluster. The error bars indicate
+95 percent conﬁdence intervals. The EBC algorithm is omitted from the ﬁgures, as this method was
+consistently outperformed by the TM S E algorithm. This result is also in line with previous empirical
+
+k = 2, l = 4
+k = 6, l = 6
+
+0.817
+0.935
+
+EBC
+(0.816, 0.822)
+(0.932, 0.938)
+
+0.818
+0.937
+
+TM S E
+(0.816, 0.822)
+(0.934, 0.939)
+
+0.891
+0.974
+
+H S init.
+(0.891, 0.892)
+(0.973, 0.976)
+
+Table 2: Adjusted Rand Index (median over 25 trials) for different methods computed from artiﬁcial
+data consisting of 20000 chains with m = 100 and the shown values for k and l . Numbers
+in parenthesis indicate 95 percent conﬁdence intervals.
+
+1412
+
+C LU S T ER ING A LGOR I THM S FOR CHA IN S
+
+Figure 4: Reconstruction error as expressed in Equation 1 with the deﬁnitio ns of distance and cen-
+troid from Section 2.3 as a function of k. The y-axis has been normalized to show the
+error as a fraction of the baseline error of k = 1. Legend: (cid:3): only standard k-means in GR
+representation, ◦: only standard k-means in H S representation, +: our variant of Lloyd’s
+algorithm with RND init., ∗: the TM S E algorithm.
+
+evidence reported by Kamishima and Akaho (2006). We also left out results obtained with our
+algorithm using either of the vector space representations to compute an initial clustering. (The
+curves for H S and GR therefore show performance that is obtained simply by mapping chains to
+the respective vector spaces and running standard k-means.) Contrary to random data (see results
+of Section 5.2), these initialization strategies did not give signiﬁcantly better re sults than simple
+random initialization.
+Our k-means procedure outperforms the TM S E algorithm with the MSNBC and DUBLIN data
+sets. With SUSHI and MLENS the situation is reversed. This statement holds for all values of k, and
+seems robust as the conﬁdence intervals do not overlap. Also, when mea suring clustering quality
+in this way, the results obtained by using only the vector space representations are considerably
+inferior to the other methods. Of course this is not an entirely fair comparison as the objective
+functions differ. In Figure 5 we plot the reconstruction error computed with the distance function
+and centroid representation used by TM S E. For details, please see Kamishima and Akaho (2006,
+Section 3.1). Using this measure, the SUSHI and MLENS data sets demonstrate an even stronger
+difference between the methods. With MSNBC and DUBLIN our algorithm continues to perform
+somewhat better, albeit this time the conﬁdence intervals overlap. Interesting ly, if an algorithm is
+better, it is better independent of the cost function used to evaluate the result. For instance, with
+MSNBC and DUBLIN our algorithm marginally outperforms TM S E even in terms of TM S E’s own
+
+1413
+
+UKKON EN
+
+Figure 5: Reconstruction error of a clustering as expressed in Equation 1 with the deﬁnitions of dis-
+tance and centroid from Kamishima and Akaho (2006) as a fraction of the baseline error
+of k = 1. Legend: +: our algorithm with random initialization, ∗: the TM S E algorithm.
+
+cost function, and vice versa with SUSHI and MLENS. These results are in line with the ones we
+obtain with artiﬁcial data. As can be seen in Table 1, the data sets MSNBC and D UBLIN have a
+considerably smaller m. The experiments in Section 5.2.3 suggest that by collecting more data we
+could improve our result for the SUSHI and MLENS data sets.
+
+5.4 Testing Clustering Validity
+
+We use the randomization method of Section 4 to test the interestingness of the found clusterings. A
+clustering is assumed to be interesting if its test statistic substantially differs from the ones we obtain
+from randomized data. The test statistic we use is the reconstruction error given in Equation 1. The
+methods use their respective deﬁnitions of distance and centroid to compute the error.
+To carry out the test, we must ﬁrst estimate how many swaps are needed to ob tain a single
+sample that is uncorrelated with the original data. To this end we run the SWA P - PA IR S algorithm for
+10 × 106 swaps on each data set and measure d(D, Di ) every 0.1 × 106 swaps. The assumption is
+that the data Di are uncorrelated with the initial state D when d(D, Di ) no longer increases. Figure 6
+shows how the distance d(D, Di ) develops with the number of swaps i for the data sets. From this
+we can read the number of swaps that are needed to obtain approximately uncorrelated samples. For
+SUSHI and MLENS the Markov chain seems to converge after approximately 5 × 106 swaps, for
+DUBLIN the distance d(D, Di ) stabilizes already after about 0.5 × 106 swaps, while with MSNBC
+this happens after roughly 3 × 106 swaps. The randomized data used in the remaining analysis are
+
+1414
+
+C LU S T ER ING A LGOR I THM S FOR CHA IN S
+
+Figure 6: The distance d(D, Di ) as a function of the number of swaps i.
+
+computed using these swap counts, respectively. Here we also want to point out that randomization
+is computationally intensive. The table below shows the times to perform 10 × 106 swaps for the
+different data sets.
+
+t (seconds)
+
+SUSHI MLENS DUBLIN MSNBC
+297
+670
+73
+81
+
+We observe that n, the number of chains in the input, does not affect the running time t , but the
+number of items m plays a signiﬁcant part. (See also Table 1.)
+For the actual analysis we sample 99 random instances from the equivalence class of each data
+set, and compare the test statistic with the one obtained from real data. Figure 7 shows the histogram
+of the reconstruction error in randomized data together with the minimum, maximum, and median
+error over 25 trials with real data. If this interval is clearly to the left of the histogram, it is unlikely
+to observe an error of the same magnitude in randomized data. If the interval overlaps with the
+histogram, the results should be considered as not signiﬁcant according to this test.
+In general the results suggest that the clusterings we obtain from the actual data sets have a
+smaller reconstruction error than a clustering computed with the same algorithm from a randomized
+data. There are some interesting exceptions, however. For MSNBC, SUSHI, and DUBLIN the
+clusterings obtained by our method from real data seem considerably better than those we obtain in
+random data, independent of K . In case of MLENS the results are clearly not signiﬁcant for any K .
+For the TM S E algorithm the test suggests a signiﬁcant outcome in case of SUSHI and MLEN S, while
+for MSNBC and DUBLIN the clustering from real data is not considerably better than a clustering
+from randomized data.
+
+1415
+
+UKKON EN
+
+k=2
+
+k=6
+
+k=10
+
+k=2
+
+k=6
+
+k=10
+
+D
+N
+R
+
+E
+S
+M
+T
+
+D
+N
+R
+
+E
+S
+M
+T
+
+0.87
+
+0.65
+
+0.56
+
+0.90
+
+0.75
+
+0.68
+
+D
+N
+R
+
+E
+S
+M
+T
+
+0.98
+
+0.79
+MSNBC
+
+0.65
+
+0.84
+
+0.62
+SUSHI
+
+0.55
+
+k=2
+
+k=6
+
+k=10
+
+k=2
+
+k=6
+
+k=10
+
+0.78
+
+0.52
+
+0.42
+
+0.85
+
+0.53
+
+0.38
+
+D
+N
+R
+
+E
+S
+M
+T
+
+0.80
+
+0.55
+DUBLIN
+
+0.40
+
+0.78
+
+0.59
+MLENS
+
+0.53
+
+Figure 7: Results of randomization testing with our algorithm using RND initialization and the
+TM S E algorithm for different values of K . The numbers are normalized by the clus-
+tering error for K = 1. The histograms show the distribution of the clustering error on the
+randomized data. The light gray (green online), dashed, and dark gray (red online) lines
+indicate the minimum, median, and maximum of the clustering error on the original data.
+Both algorithms use their own cost functions.
+
+6. Conclusion
+
+We have discussed the problem of clustering chains. First, in Section 2 we gave simple deﬁnitions
+of a centroid and a distance function that can be used together with Lloyd’s algorithm (k-means) for
+computing a clustering directly using chains. In Section 3 we gave two methods for mapping chains
+to a high-dimensional vector space. These representations have the advantage that any clustering
+algorithm can be used. Moreover, a clustering obtained in this way can still be further reﬁned using
+the technique of Section 2. Mapping chains to vector spaces is an interesting subject in its own right
+and can have many other uses in addition to clustering. For example, they can be used to visualize
+of sets of chains, as was done by Ukkonen (2007), as well as by Kidwell et al. (2008). Also, we
+believe that the connections to the planted partition model (Condon and Karp, 2001; Shamir and
+Tsur, 2002) are very interesting at least from a theoretical point of view.
+
+1416
+
+C LU S T ER ING A LGOR I THM S FOR CHA IN S
+
+We also proposed a method for testing if a clustering found in a set of chains is any different from
+a clustering of random data. If the value of a suitable test statistic, such as the reconstruction error,
+does not substantially differ between the original input and the randomized data sets the clustering
+found in real data is probably not very meaningful. To this end we devised an MCMC algorithm for
+sampling sets of chains that all belong to the same equivalence class as a given set of chains.
+In the experiments we compared our methods with the TM S E and EBC algorithms by Kamishima
+and Akaho (2009). We observe that for some data sets our algorithm yields better results, while for
+some other data sets the TM S E algorithm is a preferred choice. Interestingly, these differences can
+also be seen in the randomization tests. When an algorithm performs poorly, the results tend to be
+not signiﬁcant according to the randomization test. Moreover, it seems that
+in cases where the TM S E
+algorithm is superior, our algorithm does not have enough data to perform well. Experiments on
+artiﬁcial data indicate that as the size of the input is increased (and other va riables left unchanged),
+the performance of our algorithm increases considerably, and even outperforms the TM S E algo-
+rithm. Therefore, we suspect that by increasing data size we could improve the performance of our
+algorithm also with real data.
+The main difference between the algorithms is the notion of distance. TM S E essentially uses
+a modiﬁed version of Spearman’s rank correlation coefﬁcient that is a “p
+ositional” distance for
+permutations, as it only considers the positions in which different items appear. We propose a
+“pairwise” distance that considers how pairs of items are related to each oth er. The experiments
+suggest that the pairwise approach is more powerful as long as there is enough data, but for smaller
+data sets positional distances seem more robust. Finding the tipping point in terms of input size and
+other data parameters where the pairwise approach becomes favorable over positional distances is
+an interesting open question.
+
+Acknowledgments
+
+I would like to thank the anonymous reviewers for their valuable feedback that helped to improve
+this manuscript considerably. This work was partly funded by the Academy of Finland (grant
+131276).
+
+Appendix A. Proofs of Theorems
+
+Proofs of Theorem 2 and Theorem 5 are given below.
+
+A.1 Proof of Theorem 2
+
+The proof is a simple matter of upper bounding Equation 6. First we note that using Vandermonde’s
+convolution (Graham et al., 1994, Equation 5.22) the sum in Equation 6 can be rewritten as
+l (cid:19) − (cid:16)(cid:18) l
+(cid:18)m
+1(cid:19)(cid:18)m − l
+l − 1 (cid:19) + (cid:18)m − l
+l (cid:19)
+(cid:17).
+{z
+}
+|
+A
+Essentially Vandermonde’s convolution states that (cid:229)l
+l−i (cid:1) = (cid:0)m
+i(cid:1)(cid:0)m−l
+i=0 (cid:0)l
+l (cid:1), and we simply subtract the
+ﬁrst two terms indicated by A, because above the sum starts from i = 2. Using simple manipulations
+
+1417
+
+UKKON EN
+
+we obtain
+
+A = (cid:18)m − l
+l (cid:19)(cid:16)
+
+l 2
+m − 2l + 1
+
++ 1(cid:17),
+
+l 2
+m − 2l + 1
+
+which gives the following:
+l (cid:19)−1(cid:16)(cid:18)m
+p = (cid:18)m
+l (cid:19) − (cid:18)m − l
+l (cid:19)(cid:16)
++ 1(cid:17)(cid:17).
+l 2
+With l < m/2 the part
+m−2l+1 + 1 is lower bounded by 1, and we have
+l (cid:19)−1(cid:16)(cid:18)m
+l (cid:19)−1(cid:18)m − l
+p < (cid:18)m
+l (cid:19) − (cid:18)m − l
+l (cid:19)(cid:17) = 1 − (cid:18)m
+l (cid:19)
+l !(m − l )!
+(m − l )!
+= 1 −
+·
+l !(m − 2l )!
+m!
+(m − l )(m − l − 1) · · · (m − 2l + 1)
+m(m − 1) · · · (m − l + 1)
+(m − l )(m − l − 1) · · · (m − 2l + 1)
+ml
+ml − (m − 2l )l
+ml
+
+(m − 2l + 1)l
+ml
+
+= 1 −
+
+< 1 −
+
+< 1 −
+
+<
+
+.
+
+We can factor ml − (m − 2l )l as follows:
+ml − (m − 2l )l = (m − (m − 2l ))(cid:16)ml−1 (m − 2l )0 + ml−2 (m − 2l )1 + . . .
+· · · + m1 (m − 2l )l−2 + m0 (m − 2l )l−1(cid:17)
+l−1(cid:229)
+ml−1−i (m − 2l )i .
+= 2l
+i=0
+
+Using this we write
+
+ml − (m − 2l )l
+ml
+
+= 2l
+
+l−1(cid:229)
+(
+i=0
+
+1
+m
+
+)l ml−1−i (m − 2l )i .
+
+Letting a = l − 1 and taking one 1
+m out of the sum we get
+
+1
+m
+
+2(a + 1)
+
+a(cid:229)
+(
+i=0
+
+1
+m
+
+)ama−i (m − 2(a + 1))i =
+
+=
+
+1
+m
+1
+m
+
+2(a + 1)
+
+2(a + 1)
+
+1
+m
+
+a(cid:229)
+(
+i=0
+a(cid:229)
+(1 −
+i=0
+
+)i (m − 2(a + 1))i
+
+2(a + 1)
+m
+
+)i .
+
+We assume l = a + 1 is considerably smaller than m, and hence (1 − 2(a+1)
+m )i is at most 1. There are
+m 2(a + 1)(a + 1) = 2 l 2
+a + 1 terms in the sum, so the above is upper bounded by 1
+m , which concludes
+the proof of the theorem.
+
+1418
+
+C LU S T ER ING A LGOR I THM S FOR CHA IN S
+
+(17)
+
+(18)
+
+−
+
+m + 1
+2
+
++ t(u) =
+
+m + 1
+2
+
+A.2 Proof of Theorem 5
+Let u ∈ p: We start by showing that the claim of Equation 12 holds for all u that belong to p. That
+is, we will show that
+|p| + 1
+(cid:229)
++ p(u)(cid:1)
+ft (u) = Q(cid:0)−
+2
+t∈E (p)
+for all u ∈ p. First, note that (cid:229)t∈E (p) ft (u) can be rewritten as follows
+m−|p|+p(u)(cid:229)
+(cid:229)
+#{t(u) = i}(cid:16)−
++ i(cid:17),
+i=p(u)
+t∈E (p)
+where #{t(u) = i} denotes the number of times u appears at position i in the linear extensions of p.
+The sum is taken over the range p(u), . . . , m − |p| + p(u), as t(u) can not be less than p(u), because
+the items that appear before u in p must appear before it in t as well, likewise for the other end of
+the range.
+To see what #{t(u) = i} is, consider how a linear extension t of p is structured. When u appears
+at position i in t, there are exactly p(u) − 1 items belonging to p that appear in the i − 1 indices to
+the left of u, and |p| − p(u) items also belonging to p that appear in the m − i indices to the right of
+p(u)−1(cid:1) different ways, while the ones on the
+u. The ones on the left may choose their indices in (cid:0) i−1
+|p|−p(u)(cid:1) different ways. The remaining items that do not belong
+right may choose their indices in (cid:0) m−i
+to p are assigned in an arbitrary fashion to the remaining m − |p| indices. We have thus,
+#{t(u) = i} = (cid:18) i − 1
+p(u) − 1(cid:19)(cid:18) m − i
+|p| − p(u)(cid:19)(m − |p|)!.
+When this is substituted into the right side of (18), and after rearranging the terms slightly, we get
+m−|p|+p(u)(cid:229)
+i=p(u) (cid:18) i − 1
+p(u) − 1(cid:19)(cid:18) m − i
+|p| − p(u)(cid:19)(cid:16)−
+
+ft (u) = (m − |p|)!
+
+(cid:229)
+t∈E (p)
+
+m + 1
+2
+
++ i(cid:17).
+
+This can be written as
+
+where
+
+(cid:229)
+t∈E (p)
+
+ft (u) = (m − |p|)!(S1 + S2 ),
+
+(19)
+
+S1 = −
+
+m−|p|+p(u)(cid:229)
+i=p(u) (cid:18) i − 1
+p(u) − 1(cid:19)(cid:18) m − i
+|p| − p(u)(cid:19), and
+m + 1
+2
+m−|p|+p(u)(cid:229)
+i(cid:18) i − 1
+p(u) − 1(cid:19)(cid:18) m − i
+|p| − p(u)(cid:19).
+i=p(u)
+Let us ﬁrst look at S2 . The part i(cid:0) i−1
+p(u)−1(cid:1) can be rewritten as follows:
+p(u)
+i(cid:18) i − 1
+p(u) − 1(cid:19) =
+i!
+i (i − 1)!
+= p(u)
+·
+(p(u) − 1)!(i − p(u))!
+p(u)
+p(u)!(i − p(u))!
+
+S2 =
+
+= p(u)(cid:18) i
+p(u)(cid:19).
+
+1419
+
+UKKON EN
+
+This gives
+
+S2 = p(u)
+
+m−|p|+p(u)(cid:229)
+i=p(u) (cid:18) i
+p(u)(cid:19)(cid:18) m − i
+|p| − p(u)(cid:19) = p(u)(cid:18) m + 1
+|p| + 1(cid:19),
+where the second equality is based on Equation 5.26 in Graham et al. (1994). Next we must show
+|p|+1(cid:1) will appear in S1 as well. We can rewrite the sum as follows:
+that (cid:0) m+1
+m−|p|+p(u)(cid:229)
+m−|p|+p(u)−1(cid:229)
+i=p(u) (cid:18) i − 1
+p(u) − 1(cid:19)(cid:18) m − i
+i=p(u)−1 (cid:18) i
+|p| − p(u)(cid:19) =
+q(cid:19)(cid:18) r − i
+p − q(cid:19),
+where q = p(u) − 1, r = m − 1 and p = |p| − 1. Again we apply Equation 5.26 of Graham et al.
+(1994) to get
+2 (cid:18) m
+2 (cid:18) r + 1
+|p|(cid:19),
+p + 1(cid:19) = −
+m + 1
+m + 1
+
+S1 = −
+
+which we multiply by |p|+1
+|p|+1 and have
+|p| + 1
+2
+
+S1 = −
+
+·
+
+|p| + 1
+2 (cid:18) m + 1
+|p| + 1(cid:19).
+
+|p| + 1 (cid:18) m
+|p|(cid:19) = −
+m + 1
+When S1 and S2 are substituted into (19) we have
+|p| + 1
+2 (cid:18) m + 1
+|p| + 1(cid:19) + p(u)(cid:18) m + 1
+|p| + 1(cid:19)(cid:17),
+(cid:229)
+ft (u) = (m − |p|)!(cid:16)−
+t∈E (p)
+which is precisely Equation 17 when we let Q = (m − |p|)!(cid:0) m+1
+|p|+1(cid:1).
+Let u 6∈ p: To complete the proof we must still show that Equation 12 also holds for items u that
+do not appear in the chain p. For such u we have fp (u) = 0 by deﬁnition. Since we showed above
+that Q > 0, we have to show that (cid:229)t∈E (p) ft (u) = 0 when u 6∈ p to prove the claim.
+We’ll partition E (p) to disjoint groups deﬁned by index sets
+I . Let S(I ) denote the subset of
+E (p) where the items that belong to p appear at indices I = {i1 , . . . , i|p|}. Furthermore, let I R =
+{m − i1 + 1, . . . , m − i|p| + 1}. See Figure 8 for an illustration of the structure of the permutations
+that belong to S(I ) and S(I R ).
+Now we can write for every u 6∈ p:
+(cid:229)
+(cid:229)
+(cid:229)
+t∈E (p)
+t∈{S(I )∪S(I R )}
+I
+That is, we ﬁrst sum over all possible index sets I , and then sum over all t that belong to the union of
+S(I ) and S(I R ). Each I is counted twice (once as I and once as I R ), so we multiply the right hand side
+2 . To make sure that Equation 20 equals zero, it is enough to show that (cid:229)t∈{S(I )∪S(I R )} ft (u) = 0
+by 1
+for each I .
+Note that we have ft (u) + ftR (u) = 0 because tR (u) = m − t(u) + 1. That is, the values at indices
+j and m − j + 1 cancel each other out. This property will give us the desired result if we can show
+that for each permutation t ∈ {S(I ) ∪ S(I R )} where an item u 6∈ p appears at position j, there exists a
+corresponding permutation t′ , also in {S(I ) ∪ S(I R )}, where u appears at position m − j + 1. Denote
+by #(S, u, j) the size of the set {t ∈ S | t(u) = j}.
+
+ft (u) =
+
+ft (u).
+
+(20)
+
+1
+2
+
+1420
+
+C LU S T ER ING A LGOR I THM S FOR CHA IN S
+
+Figure 8: Permutations in S(I ) have the positions I occupied by items that belong to the chain p,
+while permutations in S(I R ) have the positions I R occupied by items of p. See proof of
+Theorem 5.
+
+An index is free if it does not belong to the set {I ∪ I R}. Let j be a free index. By deﬁnition of
+the sets I and I R , m − j + 1 is also a free index. We have #(S(I ), u, j) = #(S(I ), u, m − j + 1). This
+holds for S(I R ) as well. As a consequence, when we sum over all permutations in {S(I ) ∪ S(I R )},
+the values corresponding to index j and m − j + 1 cancel each other out because u appears equally
+many times at positions j and m − j + 1. The total contribution to the sum (cid:229)t∈{S(I )∪S(I R )} ft (u) of u
+appearing at the free indices is therefore zero.
+I and I R , the index m − j + 1
+Let j belong to I , meaning it is not free. By deﬁnition of the sets
+now belongs to I R , and is also not free. However, because of symmetry we have #(S(I R ), u, j) =
+#(S(I ), u, m − j + 1). That is, the number of times the item u appears at position j in a permutation
+belonging to S(I R ) is the same as the number of times it appears at position m − j + 1 in a permutation
+belonging to S(I ). When we sum over the permutations in {S(I ) ∪ S(I R )}, the values of u appearing
+at position j in S(I R ) are cancelled out by the values of u appearing at position m − j + 1 in S(I ).
+The total contribution to the sum (cid:229)t∈{S(I )∪S(I R )} ft (u) of u appearing at an index in I is therefore
+zero as well. This concludes the proof of Theorem 5.
+
+References
+
+N. Ailon, M. Charikar, and A. Newman. Aggregating inconsistent information: ranking and clus-
+tering. In Proceedings of the 37th ACM Symposium on Theory of Computing, pages 684–693,
+2005.
+
+E. Alpaydin. Introduction to Machine Learning. The MIT Press, 2004.
+
+D Arthur and S Vassilvitskii. k-means++: the advantages of careful seeding. In Proceedings of the
+eighteenth annual ACM-SIAM symposium on Discrete algorithms, pages 1027–1035, 2007.
+
+G. H. Ball and D. J. Hall. A clustering technique for summarizing multivariate data. Behavioral
+Science, 12:153–155, 1967.
+
+A. Ben-Dor, B. Chor, R. Karp, and Z. Yakhini. Discovering local structure in gene expression
+data: the order-preserving submatrix problem. In Proceedings of the Sixth Annual International
+Conference on Computational Biology, pages 49–57, 2002.
+
+P Berkhin. Grouping Multidimensional Data, chapter A Survey of Clustering Data Mining Tech-
+niques, pages 25–71. Springer, 2006.
+
+1421
+
+UKKON EN
+
+J. Besag and P. Clifford. Generalized Monte Carlo signiﬁcance tests. Biometrika, 76(4):633–642,
+1989.
+
+J. Besag and P. Clifford. Sequential Monte Carlo p-values. Biometrika, 78(2):301–304, 1991.
+
+L. M. Busse, P. Orbanz, and J. M. Buhmann. Cluster analysis of heterogeneous rank data.
+Proceedings of the 24th international conference on Machine learning, pages 113–120, 2007.
+
+In
+
+S Cl ´emenc¸ on and J Jakubowicz. Kantorovich distances between rankings with applications to rank
+aggregation. In Machine Learning and Knowledge Discovery in Databases, European Confer-
+ence, ECML PKDD 2010, 2010.
+
+A. Condon and R. M. Karp. Algorithms for graph partitioning on the planted partition model.
+Random Structures and Algorithms, 18(2):116–140, 2001.
+
+D. Coppersmith, L. Fleischer, and A. Rudra. Ordering by weighted number of wins gives a good
+ranking for weighted tournaments. In Proceedings of the Seventeenth Annual ACM-SIAM Sym-
+posium on Discrete Algorithms, pages 776–782, 2006.
+
+D. Critchlow. Metric Methods for Analyzing Partially Ranked Data, volume 34 of Lecture Notes in
+Statistics. Springer-Verlag, 1985.
+
+R. O. Duda and P. E. Hart. Pattern Classiﬁcation and Scene Analysis . John Wiley & Sons, 1973.
+
+C. Dwork, R. Kumar, M. Naor, and D. Sivakumar. Rank aggregation methods for the web.
+Proceedings of the 10th International World Wide Web Conference, 2001.
+
+In
+
+A. Gelman, J. B. Carlin, H. S. Stern, and D. B. Rubin. Bayesian Data Analysis. Texts in Statistical
+Science. Chapman & Hall, CRC, 2004.
+
+A. Gionis, H. Mannila, T. Mielik ¨ainen, and P. Tsaparas. Assessing data mining results via swap
+randomization. ACM Transactions on Knowledge Discovery from Data, 1(3), 2007.
+
+P I Good. Permutation Tests: A Practical Guide to Resampling Methods for Testing Hypotheses,
+volume 2 of Springer series in statistics. Springer, 2000.
+
+R. L. Graham, D. E. Knuth, and O. Patashnik. Concrete Mathematics. Addison-Wesley, 2nd edition,
+1994.
+
+D. Hand, H. Mannila, and P. Smyth. Principles of Data Mining. The MIT Press, 2001.
+
+T. Kamishima and S. Akaho. Efﬁcient clustering for orders. In Workshops Proceedings of the 6th
+IEEE International Conference on Data Mining, pages 274–278, 2006.
+
+T. Kamishima and S. Akaho. Mining Complex Data, volume 165 of Studies in Computational
+Intelligence, chapter Efﬁcient Clustering for Orders, pages 261–279. Springer
+, 2009.
+
+T. Kamishima and J. Fujiki. Clustering orders. In Proceedings of the 6th International Conference
+on Discovery Science, pages 194–207, 2003.
+
+P Kidwell, G Lebanon, and W S Cleveland. Visualizing incomplete and partially ranked data. IEEE
+Trans. Vis. Comput. Graph., 14(6):1356–1363, 2008.
+
+1422
+
+C LU S T ER ING A LGOR I THM S FOR CHA IN S
+
+H Lawrence and A Phipps. Comparing partitions. Journal of Classiﬁcation , 2:193–218, 1985.
+
+S. P. Lloyd. Least squares quantization in PCM. IEEE Transactions on Information Theory, 28(2):
+129–137, 1982.
+
+H. Moulin. Axioms of Cooperative Decision Making. Cambride Universiy Press, 1991.
+
+T. B. Murphy and D. Martin. Mixtures of distance-based models for ranking data. Computational
+Statistics & Data Analysis, 41:645–655, 2003.
+
+W M Rand. Objective criteria for the evaluation of clustering methods. Journal of the American
+Statistical Association, 66(336):846–850, 1971.
+
+R. Shamir and D. Tsur. Improved algorithms for the random cluster graph model. In Proceedings
+of Scandanavian Workshop on Algorithms Theory, pages 230–239, 2002.
+
+N. Tideman. The single transferable vote. Journal of Economic Perspectives, 9(1):27–38, 1995.
+
+A. Ukkonen. Visualizing sets of partial rankings. In Advances in Intelligent Data Analysis VII,
+pages 240–251, 2007.
+
+A. Ukkonen. Algorithms for Finding Orders and Analyzing Sets of Chains. PhD thesis, Helsinki
+University of Technology, 2008.
+
+A. Ukkonen and H. Mannila. Finding outlying items in sets of partial rankings.
+Discovery in Databases: PKDD 2007, pages 265–276, 2007.
+
+In Knowledge
+
+R. Xu and D. Wunsch. Survey of clustering algorithms. IEEE Transactions on Neural Networks,
+16(3):645–678, 2005.
+
+1423
+
+

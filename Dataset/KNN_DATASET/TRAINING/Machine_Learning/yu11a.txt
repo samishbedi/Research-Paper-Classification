@@ -1,0 +1,3363 @@
+Journal of Machine Learning Research 12 (2011) 2649-2680
+
+Submitted 6/09; Revised 5/11; Published 9/11
+
+Bayesian Co-Training
+
+SH I P ENG .YU@ S I EM EN S .COM
+BA LA J I .KR I SHNA PURAM@ S I EM EN S .COM
+
+ROM ERR@YAHOO - INC .COM
+
+BHARAT.RAO@ S I EM EN S .COM
+
+Shipeng Yu
+Balaji Krishnapuram
+Business Intelligence and Analytics
+Siemens Medical Solutions USA, Inc.
+51 Valley Stream Parkway
+Malvern, PA 19355, USA
+R ´omer Rosales
+Yahoo! Labs
+4401 Great America Pkwy
+Santa Clara, CA 95054, USA
+
+R. Bharat Rao
+Business Intelligence and Analytics
+Siemens Medical Solutions USA, Inc.
+51 Valley Stream Parkway
+Malvern, PA 19355, USA
+
+Editor: Carl Edward Rasmussen
+
+Abstract
+Co-training (or more generally, co-regularization) has been a popular algorithm for semi-supervised
+learning in data with two feature representations (or views), but the fundamental assumptions un-
+derlying this type of models are still unclear.
+In this paper we propose a Bayesian undirected
+graphical model for co-training, or more generally for semi-supervised multi-view learning. This
+makes explicit the previously unstated assumptions of a large class of co-training type algorithms,
+and also clari ﬁes the circumstances under which these assum ptions fail. Building upon new insights
+from this model, we propose an improved method for co-training, which is a novel co-training ker-
+nel for Gaussian process classi ﬁers. The resulting approac h is convex and avoids local-maxima
+problems, and it can also automatically estimate how much each view should be trusted to accom-
+modate noisy or unreliable views. The Bayesian co-training approach can also elegantly handle
+data samples with missing views, that is, some of the views are not available for some data points
+at learning time. This is further extended to an active sensing framework, in which the missing
+(sample, view) pairs are actively acquired to improve learning performance. The strength of active
+sensing model is that one actively sensed (sample, view) pair would improve the joint multi-view
+classi ﬁcation on all the samples. Experiments on toy data an d several real world data sets illustrate
+the beneﬁts of this approach.
+Keywords: co-training, multi-view learning, semi-supervised learning, Gaussian processes, undi-
+rected graphical models, active sensing
+
+1. Introduction
+
+In machine learning, data samples may sometimes be characterized in multiple ways. For instance in
+web page classiﬁcation, the web pages can be described both in terms of the textual content in each
+page and the hyperlink structure between them; for cancer diagnosis where the goal is to determine
+
+c(cid:13)2011 Shipeng Yu, Balaji Krishnapuram, R ´omer Rosales and R. Bharat Rao.
+
+YU , KR I SHNA PURAM , RO SA L E S AND RAO
+
+if the patient has cancer or not, multiple medical imaging techniques (such as CT, Ultrasound and
+MRI) might be considered to collect complete characteristic of the patient from different perspec-
+tives. For learning under such a setting, it has been shown in Dasgupta et al. (2001) that the error
+rate on unseen test samples can be upper bounded by the disagreement between the classiﬁcation-
+decisions obtained from independent characterizations (i.e., views) of the data. Thus, in the web
+page example, misclassi ﬁcation rate can be indirectly minimized by reducing the rate of disagree-
+ment between hyperlink-based and content-based classiﬁers, provided the se characterizations are
+independent conditional on the class label.
+As a completely new learning principle, multi-view consensus learning has been the subject of a
+large body of research recently. This type of methods were originally developed for semi-supervised
+learning, where class labels are expensive to obtain but unlabeled data are cheap and abundantly
+available, such as in web page classiﬁcation. When the data samples can be c haracterized in multiple
+views, the disagreement between the class labels suggested by different views can be computed even
+when using unlabeled data. Therefore, a natural strategy for using unlabeled data to minimize the
+misclassiﬁcation rate is to enforce consistency between the classiﬁcation decisions based on several
+independent characterizations of the unlabeled samples. For brevity, unless otherwise speciﬁed, we
+shall use the term co-training to describe the entire genre of methods that rely upon this intuition,
+although strictly it should only refer to the original algorithm of Blum and Mitchell (1998).
+In this pioneering paper, Blum and Mitchell introduced an iterative, alternating co-training
+method, which works in a bootstrap mode by repeatedly adding pseudo-labeled unlabeled samples
+into the pool of labeled samples, retraining the classiﬁers for each view, an d pseudo-labeling addi-
+tional unlabeled samples where at least one view is conﬁdent about its dec ision. The paper provided
+PAC-style guarantees that if (a) there exist weakly useful classiﬁers o n each view of the data, and (b)
+these characterizations of the sample are conditionally independent given the class label, then the
+co-training algorithm can use the unlabeled data to learn arbitrarily strong classiﬁers. Later Balcan
+et al. (2004) tried to reduce the strong theoretical requirements, and they showed that co-training
+would be useful if (a) there exist low error rate classiﬁers on each view , (b) these classiﬁers never
+make mistakes in classiﬁcation when they are conﬁdent about their decisions
+, and (c) the two views
+are not too highly correlated, in the sense that there would be at least some cases where one view
+does not have much
+makes conﬁdent classiﬁcation decisions while the classiﬁer on the other view
+conﬁdence in its own decision. While each of these theoretical guarantees
+is intriguing and theoret-
+ically interesting, they are also rather unrealistic in many application domains. The assumption that
+classi ﬁers do not make mistakes when they are conﬁdent and that of class
+conditional independence
+are rarely satis ﬁed in practice. Empirical studies of co-training on many app lications show mixed
+results. See, for instance, Pierce and Cardie (2001) and Kiritchenko and Matwin (2002); Hwa et al.
+(2003).
+A strongly related algorithm is the co-EM algorithm from Nigam and Ghani (2000), which
+extends the original bootstrap approach of the co-training algorithm to operate simultaneously on
+all unlabeled samples in an iterative batch mode. Brefeld and Scheffer (2004) used this idea with
+SVMs as base classi ﬁers, and subsequently in unsupervised learning in Bickel and Scheffer (2005).
+However, co-EM also suffers from local maxima problems, and while each iteration’s optimization
+step is clear, the co-EM is not really an expectation maximization algorithm (i.e., it lacks a clearly
+deﬁned overall log-likelihood that monotonically improves across iterations) .
+In recent years, some co-training algorithms jointly optimize an objective function which in-
+iew, and a regulariza-
+cludes misclassiﬁcation penalties (i.e., loss terms) for classiﬁers from each v
+
+2650
+
+BAY E S IAN CO -TRA IN ING
+
+tion term that penalizes lack of agreement between the classiﬁcation decision s of the different views.
+This co-regularization approach has become the dominant strategy for exploiting the intuition be-
+hind multi-view consensus learning, rendering obsolete earlier alternating-optimization strategies.
+Krishnapuram et al. (2004) proposed an approach for two-view consensus learning based on simul-
+taneously learning multiple classiﬁers by maximizing an objective function which p enalized mis-
+classi ﬁcations by any individual classiﬁer, and included a regularization
+term that penalized a high
+level of disagreement between different views. This co-regularization framework improves upon the
+co-training and co-EM algorithms by maximizing a convex objective function; however the algo-
+rithm still depends on an alternating optimization that optimizes one view at a time. This approach
+was later adapted to two-view spectral clustering in de Sa (2005). The two-view co-regularization
+approach was subsequently adopted by Sindhwani et al. (2005), Brefeld et al. (2006), Sindhwani
+and Rosenberg (2008) and Farquhar et al. (2005) for semi-supervised classiﬁcation and regression
+based on the reproducing kernel Hilbert space (RKHS). In these approaches a new co-regularization
+term is added to the objective function which is based on the disagreement of the two views. Repre-
+senter theorem still holds and solutions can be easily derived by direct optimization. However, it is
+unclear how to set the regularization parameters (i.e., to control the weight of the co-regularization
+term). Theoretical analysis of this and other types of algorithms can be found in Balcan and Blum
+(2006), Sridharan and Kakade (2008), Wang and Zhou (2007) and Wang and Zhou (2010).
+Much of these previous work on co-training has been somewhat ad-hoc in nature. Although
+some algorithms were empirically successful in speciﬁc applications, it was no t always clear what
+precise assumptions were made, what was being optimized overall or why they worked well. In
+this paper we propose a principled undirected graphical model for co-training which we call the
+Bayesian co-training, and show that co-regularization algorithms provide one way for maximum-
+likelihood (ML) learning under this probabilistic model. By explicitly highlighting previously un-
+stated assumptions, Bayesian co-training provides a deeper understanding of the co-regularization
+framework, and we are also able to discuss certain fundamental limitations of multi-view consen-
+sus learning. Summarizing our algorithmic contributions, we show that co-regularization is exactly
+equivalent to the use of a novel co-training kernel for support vector machines (SVMs) and Gaus-
+sian processes (GP), thus allowing one to leverage the large body of available literature for these
+algorithms. The kernel is intrinsically non-stationary, that is, the level of similarity between any
+pair of samples depends on all the available samples, whether labeled or unlabeled, thus promoting
+semi-supervised learning. Therefore, this approach is signiﬁcantly simple r and more efﬁcient than
+the alternating-optimization that is used in previous co-regularization implementations. Further-
+more, we can automatically estimate how much each view should be trusted, and thus accommodate
+noisy or unreliable views.
+The basic idea of Bayesian co-training was published in a short conference paper by Yu et al.
+(2008). In the current paper we have all the derivation details and more discussions to its related
+models. More importantly, we extend the Bayesian co-training model to handle data samples with
+missing views (i.e., some views are missing for certain data samples), and introduce a novel ap-
+plication called the active sensing. This makes the current paper signiﬁcantly different from its
+conference version.
+Active sensing aims to efﬁciently choose, among all the missing features (gro uped in views),
+what views and samples to additionally acquire (or sense) to improve the overall learning perfor-
+mance. This is different from the typical active learning, which addresses the problem of efﬁciently
+choosing data samples to be labeled in order to improve overall learning performance. From a can-
+
+2651
+
+YU , KR I SHNA PURAM , RO SA L E S AND RAO
+
+cer diagnosis perspective, active learning is equivalent to choosing patients to do a biopsy such that
+the tumor is correctly diagnosed (benign/malignant), whereas active sensing is targeting at collect-
+ing (the not-yet-been-collected) medical imaging features (of, e.g., CT, Ultrasound and MRI) from
+some patients such that all the patients can be better diagnosed. This is important, since a patient
+does not undergo all possible tests at once (due to various side effects such as radiation and con-
+trast), but these tests are selected based on the evidence collected up to a particular point. This is
+normally referred to as differential diagnosis. Another example is in land mine detection in a sensor
+network. We may have different types of sensors (as different views) deployed at one location, but
+some sensors may not be available for all locations due to high cost. So active sensing is to decide
+which location and which type of sensor we should additionally consider to achieve better detection
+accuracy. Formulated within the Bayesian co-training framework, two approaches will be discussed
+for efﬁciently choosing the (sample, view) pair, based on the mutual informa tion (involving various
+random variables) and on the predictive uncertainty, respectively.
+example, Melville
+This active sensing problem is similar to active feature acquisition—see, for
+et al. (2004) and Bilgic and Getoor (2007) —but there is a clear differen
+ce. Previous feature acqui-
+sition only considers one sample at a time, that is, when one sample is in consideration, the other
+samples will not be affected. But in active sensing, one actively acquired (sample, view) pair will
+improve the classiﬁcation performance of all the unlabeled samples via a co-training setting. A
+related yet different problem was considered in Krause et al. (2008) to identify the optimal spatial
+locations for placing a single type of sensor to model spatially varying phenomena; however, this
+work addressed the use of a single type of sensor, and do not consider the scenario of multiple views.
+The rest of the paper is organized as follows. We introduce the Bayesian co-training model in
+Section 2, covering both the undirected graphical model and various marginalizations. Co-training
+kernel will be discussed in detail to highlight the insight of the approach. The model is extended to
+handle missing views in Section 4, and this provides the basics for the active sensing solution. The
+active sensing problem is discussed in Section 5, in which we provide two methods for deciding
+which incomplete samples should be further characterized, and which sensors should be deployed
+on them. Experimental results are provided in Section 6, including both some toy problems and
+real world problems on web page classiﬁcation and differential diagnosis . We conclude with a brief
+discussion and future work in Section 7.
+
+2. Bayesian Co-Training
+
+We start from an undirected graphical model for single-view learning with Gaussian processes,
+and then present Bayesian co-training which is a new undirected graphical model for multi-view
+learning.
+
+2.1 Single-View Learning with Gaussian Processes
+
+A Gaussian process (GP) deﬁnes a nonparametric prior over functions
+in Bayesian statistics (Ras-
+mussen and Williams, 2006). A random, real-valued function f : Rd → R follows a GP, denoted
+by f ∼ G P (h, k), if for any ﬁnite number of data points x 1 , . . . , xn ∈ Rd , f = { f (xi )}n
+i=1 follows
+a multivariate Gaussian distribution N (h, K) with mean vector h = {h(xi )}n
+i=1 and covariance ma-
+i, j=1 . The functions h and k are called the mean function and the
+trix deﬁned as K = {k(xi , x j )}n
+covariance function, respectively. Conventionally, the mean function is ﬁ xed as h ≡ 0, and the co-
+
+2652
+
+BAY E S IAN CO -TRA IN ING
+
+f(x1)
+
+f(x2)
+
+(a)
+
+f (xn)
+
+(b)
+
+f1(x1
+
+(1))
+
+f1(x2
+(1))
+
+f1(xn
+(1))
+
+y1
+
+y2
+
+yn
+
+fc(x1)
+
+fc(x2)
+
+y1
+
+y2
+
+fc(xn)
+
+yn
+
+f2(x1
+
+(2))
+
+f2(x2
+(2))
+
+f2(xn
+(2))
+
+Figure 1: Factor graph for (a) one-view and (b) two-view models.
+
+variance function k is assumed to take a parametric (and usually stationary) form (e.g., the squared
+2r2 kxi − x j k2 ) with r > 0 a width parameter).
+exponential function k(xi , x j ) = exp(− 1
+In a single-view, supervised learning scenario, an output or target yi is given for each observation
+xi (e.g., for regression yi ∈ R and for classiﬁcation yi ∈ {−1, +1}). In the GP model we assume
+there is a latent function f underlying the output,
+p(yi |xi ) = Z p(yi | f , xi ) p( f ) d f = Z p(yi | f (xi )) p( f ) d f ,
+with the GP prior p( f ) = G P (h, k). Given the latent function f , for regression p(yi | f (xi )) takes a
+Gaussian noise model N (yi | f (xi ), s2 ), with s > 0 a parameter for the noise level; for classiﬁcation
+p(yi | f (xi )) takes the form of a sigmoid function l(yi f (xi )). For instance for GP logistic regression,
+we have l(z) = (1 + exp(−z))−1 . See Rasmussen and Williams (2006) for more details on this.
+The dependency structure of the single-view GP model can be shown as an undirected graph
+as in Figure 1(a). The maximal cliques of the graphical model are the fully connected nodes
+{ f (x1 ), . . . , f (xn )} and the pairs {yi , f (xi )}, i = 1, . . . , n. Therefore, the joint probability of ran-
+dom variables f = { f (xi )} and y = {yi} is deﬁned as
+n(cid:213)
+1
+y(f)
+p(f, y) =
+Z
+i=1
+with potential functions y(f) = exp(− 1
+2 f⊤K−1 f), and1
+y(yi , f (xi )) = (exp(− 1
+2s2 kyi − f (xi )k2 )
+l(yi f (xi ))
+The normalization factor Z hereafter is deﬁned such that the joint probability sums to 1.
+1. The deﬁnition of y in this paper has been overloaded to simplify notation, but its meaning should be clear from the
+function arguments.
+
+for regression,
+for classiﬁcation.
+
+(1)
+
+y(yi , f (xi )),
+
+2653
+
+…
+…
+…
+YU , KR I SHNA PURAM , RO SA L E S AND RAO
+
+2-views
+f2
+f1
+
+fc
+
+multi-views
+f2 …
+f1
+fm
+
+fc
+
+y
+y
+Figure 2: Factor graph in the functional space for 2-view and multi-view learning.
+
+2.2 Undirected Graphical Model for Multi-View Learning
+In multi-view learning, suppose we have m different views of a same set of n data samples. Let x( j)
+i ∈
+Rd j be the features for the ith sample obtained using the jth view, where d j is the dimensionality of
+the input space for view j. Note that subscripts index the data sample, and superscripts (with round
+brackets) index the view. Then the vector xi , (x(1)
+, . . . , x(m)
+) is the complete representation of the
+i
+i
+ith data sample, and x( j) , (x( j)
+1 , . . . , x( j)
+n ) represents all sample observations for the jth view. As in
+the single-view learning, let y = [y1 , . . . , yn ]⊤ be the output where yi is the single output assigned to
+the ith data point.
+One can certainly concatenate the multiple views of the data into a single view, and apply a
+single-view GP model. But the basic idea of multi-view learning is to introduce one function per
+view, which only uses the features from that speciﬁc view to make predictions. M ulti-view learning
+then jointly optimizes these functions such that they come to a consensus. From a GP perspective,
+let f j denote the latent function for the jth view (i.e., using features only from view j), and let
+f j ∼ G P (0, k j ) be its GP prior in view j with covariance function k j . Since one data sample i has
+only one single label yi even though it has multiple features from the multiple views (i.e., latent
+function value f j (x( j)
+i ) for view j), the label yi should depend on all of these latent function values
+for data sample i.
+The challenge here is to make this dependency explicit in a graphical model. We tackle this
+problem by introducing a new latent function, the consensus function fc , to ensure conditional
+independence between the output y and the m latent functions { f j } for the m views. See Figure 1(b)
+for the undirected graphical model for multi-view learning. At the functional level, the output y
+depends only on fc , and latent functions { f j } depend on each other only via the consensus function
+fc (see Figure 2 for the factor graphs for 2-view and multi-view cases). That is, the joint probability
+is deﬁned as:
+
+p(y, fc , f1 , . . . , fm ) =
+
+y(y, fc )
+
+1
+Z
+
+m(cid:213)
+j=1
+
+y( f j , fc ),
+
+(2)
+
+with some potential functions y. In the ground network where we have n data samples, let fc =
+i=1 and f j = { f j (x( j)
+{ fc (xi )}n
+i )}n
+i=1 be the functional values for the consensus view and the jth view,
+
+2654
+
+BAY E S IAN CO -TRA IN ING
+
+1
+2
+
+(3)
+
+(4)
+
+y(yi , fc (xi ))
+
+y(f j )y(f j , fc ).
+
+1
+Z
+
+p (y, fc , f1 , . . . , fm ) =
+
+respectively. The graphical model leads to the following factorization:
+n(cid:213)
+m(cid:213)
+i=1
+j=1
+Here the within-view potential y(f j ) speciﬁes the dependency structure within each view j, and
+the consensus potential y(f j , fc ) describes how each latent function f j is related to the consensus
+function fc . With a GP prior for each of the m views, we can deﬁne the following potentials:
+j f j(cid:19), y(f j , fc ) = exp (cid:18) − kf j − fck2
+j (cid:19),
+y(f j ) = exp (cid:18) −
+f⊤j K−1
+2s2
+where K j is the covariance matrix of view j, that is, K j (xk , xℓ ) = k j (x( j)
+ℓ ), and s j > 0 is a
+k , x( j)
+scalar which quantiﬁes how apart the latent function f j is from the consensus function fc . It is seen
+that the within-view potentials only rely on the intrinsic structure of each view, that is, through the
+covariance matrix in a GP setting. Finally, the output potential y(yi , fc (xi )) is deﬁned the same as
+that in (1) for regression or for classiﬁcation.
+The most important potential function in Bayesian co-training is the consensus potential, which
+simply deﬁnes an isotropic multivariate Gaussian for the difference of f j and fc , that is, f j − fc ∼
+N (0, s2
+j I). This can also be interpreted as assuming a conditional isotropic Gaussian for f j with
+the consensus fc being the mean. Alternatively if fc is of interest, the joint consensus potentials
+effectively deﬁne a conditional Gaussian prior for f c , fc |f1 , . . . , fm , as N ( µ c , s2
+c I) where
+j (cid:19)−1
+c (cid:229)
+c = (cid:18) (cid:229)
+f j
+1
+µ c = s2
+s2
+s2
+s2
+j
+j
+j
+One can easily verify that this is a product of Gaussian distributions, with each Gaussian being
+N (fc |f j , s2
+j I).2 This indicates that, given the latent functions {f j }m
+j=1 , the posterior mean of the
+consensus function fc is a weighted average of these latent functions, and the weight is given by
+the inverse variance (i.e., the precision) of each consensus potential. The higher the variance, the
+smaller the contribution to the consensus function. In the following we call s2
+j the view variance
+for view j. In this paper these view variances are taken as parameters of the Bayesian co-training
+model, but one can also assign a prior (e.g., a Gamma prior) to them and treat them instead as
+hidden variables. We will discuss the consensus potential and the view variances in more details in
+Section 3.
+In (3) we assume the output y is available for all the n data samples. More generally we consider
+semi-supervised multi-view learning, in which only a subset of data samples have outputs available.
+This is actually the setting for which co-training and multi-view learning were originally motivated
+(Blum and Mitchell, 1998). Formally, let nl be the number of data samples which have outputs
+available, and let nu be the number of data samples which do not. We still keep n = nl + nu to be
+the total number of data samples. Under this setting, we only have outputs available for nl samples,
+that is, yl = [y1 , . . . , ynl ]⊤ .
+In the functional space, the undirected graphical model for semi-supervised multi-view learning
+is the same as in Figure 2. The joint probability is also the same as in (2). In the ground network,
+
+,
+
+.
+
+(5)
+
+2. Note that this conditional Gaussian for fc has a normalization factor which depends on f1 , . . . , fm .
+
+2655
+
+YU , KR I SHNA PURAM , RO SA L E S AND RAO
+
+since the output vector yl is only of length nl , the joint probability is now:
+nl(cid:213)
+m(cid:213)
+i=1
+j=1
+
+p (yl , fc , f1 , . . . , fm ) =
+
+y(yi , fc (xi ))
+
+1
+Z
+
+y(f j )y(f j , fc ).
+
+(6)
+
+Note that the product of output potentials contains only that of the nl labeled data samples, and
+i=1 and f j = { f j (x( j)
+that fc = { fc (xi )}n
+i )}n
+i=1 are still of length n. Unlabeled data samples contribute
+to the joint probability via the within-view potentials y(f j ) and consensus potentials y(f j , fc ). All
+the potentials are deﬁned similarly as in (4). In the following we will mainly discuss
+this more
+interesting setting.
+
+3. Inference and Learning in Bayesian Co-Training
+
+In this section we discuss inference and learning in the proposed model, assuming ﬁrst that there
+is no missing data in any of the views (the setting with missing data will be discussed in Sec-
+tion 4). Instead of working with the undirected graphical model directly, we show different types
+of marginalizations under this model. The standard inference task is that of inferring y from the
+observed data, that is, obtaining p(y); however, in order to gain insight into the proposed model and
+co-training, we explore different marginalizations. All marginalizations lead to standard Gaussian
+process inference with different latent function at consideration, but interestingly, these different
+marginalizations show different insights of the proposed undirected graphical model. One advan-
+tage of the marginalizations is that it allows us to see that many existing multi-view learning models
+are actually special cases of the proposed framework. In addition, this Bayesian interpretation helps
+us understand both the beneﬁts and the limitations of co-training. For clarity we put the derivations
+into Appendix A.
+
+3.1 Marginal 1: Co-Regularized Multi-View Learning
+
+Our ﬁrst marginalization focuses on the joint probability distribution of the m latent functions, when
+the consensus function fc is integrated out. This would lead to a GP model in which the latent
+functions are the view speci ﬁc functions f 1 , . . . , fm . Taking the integral of (3) over fc (and ignoring
+the output potential for the moment), we obtain the joint marginal distribution as follows after some
+mathematics (for derivations see Appendix A.1):
+j<k " kf j − fk k2
+exp (−
+ℓ #) .
+(cid:229)
+k (cid:30) (cid:229)
+1
+s2
+s2
+s2
+j
+ℓ
+It can be seen that the negation of the logarithm of this marginal recovers the regularization terms
+in the co-regularized multi-view learning (see, e.g., Sindhwani et al., 2005; Brefeld et al., 2006). In
+particular, we have
+
+f⊤j K−1
+j f j −
+
+p(f1 , . . . , fm ) =
+
+m(cid:229)
+j=1
+
+1
+Z
+
+(7)
+
+1
+2
+
+1
+2
+
+− log p(f1 , . . . , fm ) =
+
+=
+
+1
+2
+
+1
+2
+
+m(cid:229)
+j=1
+m(cid:229)
+j=1
+
+f⊤j K−1
+j f j +
+
+W j (f j ) +
+
+1
+2
+
+1
+2
+
+j<k " kf j − fk k2
+ℓ # + log Z
+(cid:229)
+k (cid:30) (cid:229)
+1
+s2
+s2
+s2
+j
+ℓ
+(cid:229)
+1
+L(f j , fk ) + log Z ,
+(cid:229)ℓ
+j<k
+
+1
+s2
+ℓ
+
+2656
+
+BAY E S IAN CO -TRA IN ING
+
+where W j (f j ) , f⊤j K−1
+j f j regularizes the functional space of each individual view j, and the loss
+s2
+function L(f j , fk ) , kf j − fk k2(cid:14)s2
+k measures the disagreement of every pair of the function outputs,
+j
+inversely weighted by the product of the corresponding variances. The higher the variance s2
+j of
+view j, the less the contribution view j brings to the overall loss. We refer to this as variance-
+sensitive co-regularized multi-view learning. Note that unlike the formulation in Brefeld et al.
+(2006) where the disagreements are only with respect to the unlabeled data, here we regularize the
+disagreements of all data samples. From the GP perspective, (7) actually deﬁnes a joint multi-view
+prior for the m latent functions, (f1 , . . . , fm ) ∼ N (0, L−1 ), where L is a mn × mn precision matrix
+with block-wise deﬁnition:
+(cid:229)
+1
+1
+1
+1
+s2
+s2
+s2
+s2
+(cid:229)ℓ
+(cid:229)ℓ
+j
+j
+k
+k 6= j
+j ′
+It is seen that the block-wise precision matrix for view j has contributions from all the other views.
+When we take into account the observed output variable y, we can also easily derive the joint
+marginal of y with all the latent functions f1 , . . . , fm . For instance for regression, the marginal distri-
+bution turns out to be (recall that s2 is the variance parameter in the output potential for regression):
+exp ( −
+2rs2 (cid:229)
+1
+j
+
+(cid:229)n
+i=1 (yi − f j (xi ))2
+s2
+j
+
+I, L( j, j ′ ) = −
+
+L( j, j) = K−1
+j +
+
+p(y, f1 , . . . , fm ) =
+
+j ′ 6= j.
+
+1
+Z
+
+1
+s2
+ℓ
+
+1
+s2
+ℓ
+
+I,
+
+(8)
+
+1
+2
+
+−
+
+(cid:229)
+j
+
+k ).
+kf j − fk k2
+s2
+s2
+j
+Here r , 1
+s2 + (cid:229) j
+1
+is the sum of all the inverse variances, including the regression variance. Max-
+s2
+j
+imizing this marginal distribution is equivalent to solving a minimization problem in co-regularized
+multi-view learning with least square loss. It is seen that the least square loss with respect to the
+jth latent function f j is inversely weighted by the variance s2
+j , which indicates again that a higher
+variance leads to less contribution to the total loss.
+
+f⊤j K−1
+j f j −
+
+2r (cid:229)
+1
+j<k
+
+(9)
+
+3.2 Marginal 2: The Co-Training Kernel
+
+The joint multi-view kernel deﬁned in (8) is interesting, but it has a large dimen sion and is difﬁcult
+to work with. A more interesting kernel can be obtained if we instead integrate out all the m latent
+functions f1 , . . . , fm in (3). This leads to a standard (transductive) Gaussian process model, with fc
+being the latent function realizations, and GP prior being p(fc ) = N (0, Kc ) where
+j I)−1#−1
+Kc = " (cid:229)
+(K j + s2
+j
+See Appendix A.2 for the derivation. This indicates that by marginalization, we can transfer the
+multi-view problem into a single-view problem with respect to the consensus function fc , without
+loss of information. The new kernel matrix Kc is derived via all the m kernels from the m views,
+and note that each entry (i, j) in Kc depends not only on the features of the corresponding data
+items xi and x j , but also on all the other labeled and unlabeled data points (as seen in (10) through
+matrix inverse). This is the result of the multi-view dependency in the graphical model in Bayesian
+
+(10)
+
+.
+
+2657
+
+YU , KR I SHNA PURAM , RO SA L E S AND RAO
+
+co-training, and it also means that this kernel lacks the marginalization property and can only be
+used in a transductive setting.
+This kernel deﬁnition is crucial to Bayesian co-training, and in the following we call Kc the
+co-training kernel for multi-view learning. This marginalization reveals the previously unclear
+insight of how the kernels from different views are combined together in a multi-view learning
+framework. This allows us to transform a multi-view learning problem into a single-view prob-
+lem, and simply use the co-training kernel Kc to solve GP classiﬁcation or regression. Since this
+marginalization is equivalent to (7),3 we end up with solutions that are largely similar to any other
+co-regularization algorithm, but however a key difference is the Bayesian treatment contrasting pre-
+vious ML-optimization methods.
+Formulation (10) can also be viewed as a kernel design for transductive multi-view learning,
+namely, the inverse of the co-training kernel is the sum of the inverse of all individual kernels,
+corrected by the view speciﬁc variance term. Higher variance leads to less
+contribution to the
+overall co-training kernel. In a transductive setting where the data are partially labeled, the co-
+training kernel between labeled data is also dependent on the unlabeled data. Hence the proposed
+co-training kernel, by the design in (10), can be used for semi-supervised GP learning (Zhu et al.,
+2003).
+Additional beneﬁts of the co-training kernel include the following:
+• With ﬁxed hyperparameters (e.g., s2
+j ), the co-training kernel avoids repeated alternating op-
+timizations with respect to the different views f j , and directly works with a single consensus
+view fc . This reduces both time complexity and space complexity (since we only maintain Kc
+in memory) of multi-view learning.
+• While other alternating optimization algorithms might converge to local minima (because
+they optimize, not integrate), the single consensus view guarantees the global optimal infer-
+ence solution for multi-view learning since it marginalizes other latent functions and leads to
+a standard GP inference model.
+• Even if all the individual kernels are stationary, Kc is in general non-stationary. This is
+because the inverse-covariances are added and then inverted again.
+
+3.3 Marginal 3: Individual View Learning with Side-Information
+
+In Bayesian co-training model we can also focus on one particular view j by marginalizing all the
+other views and the consensus view. This is particularly interesting if there is one view that is of
+the main interest (e.g., it provides the most useful features, or it has the least missing features), and
+we want to understand how the other views inﬂuence this view in the inferenc e process. This can
+be done by integrating out the other latent functions fk , k 6= j, in (7), and it will lead to another GP
+formulation with f j being the latent function. Since (7) represents a jointly Gaussian distribution,
+we obtain f j ∼ N (0, C j ), where
+k I(cid:1)−1 #−1
+j + "s2
+j I + (cid:229)
+k 6= j (cid:0)Kk + s2
+C−1
+j = K−1
+3. The equivalence is in the sense that both marginalizations are based on the same underlying graphical model, and
+any optimal solution derived from these marginalizations should be a solution which optimizes the likelihood of the
+graphical model.
+
+(11)
+
+.
+
+2658
+
+BAY E S IAN CO -TRA IN ING
+
+See Appendix A.3 for the derivation. This can be intuitively understood as that the precision matrix
+of the individual view, C−1
+, is the sum of its original precision matrix and the contributions from
+j
+other views, weighted by the inverse of the variance. Therefore if s2
+k is big for some view k, its
+contribution to the other views will be compromised. Hence, if one particular view is of interest, we
+can encode the additional information from the other views into the kernel for the interested view.
+Another beneﬁt of this marginalization is the possibility of introducing an inducti ve inference
+x∗ , we try to make
+scheme (rather than transductive as in Section 3.2) —given a new test data
+a prediction of y∗ if the jth view x( j)
+Inspired by Yu et al. (2005), let us deﬁne
+is available.
+∗
+a jik j (x( j) , x( j)
+a j = [a j1 , . . . , a jn ]⊤ ∈ Rn such that f j (x) = (cid:229)n
+i ) (this is also motivated by the Rep-
+i=1
+resenter theorem). On the training data, this yields f j = K j a j . From (11) we can see that this
+re-parameterization leads to a co-training prior for a j as a j ∼ N (0, K−1
+j C jK−1
+j ). At testing time
+when we have the posterior of a j , y∗ can be approximated by f j (x∗ ) = (cid:229)n
+a jik j (x( j)
+∗ , x( j)
+i ). This
+i=1
+approach is particularly interesting in the case that one of the views is known to be predictive (i.e.,
+the other views are “side” information to help this primary view), or test data of
+ten come with fea-
+tures only in a speciﬁc view (since the features from the other views would b e disregarded at testing
+time).
+
+3.4 Optimization of Hyperparameters
+
+One of the advantages of Bayesian co-training is that each view j has a view-speciﬁc variance term
+s2
+j to quantify how far the latent function f j is apart from the consensus view fc . In particular, a
+larger value of s2
+jth view.
+j implies less conﬁdence on the observation of evidence provided by the
+In the perspective of kernel design, this leads to a lesser weight on the kernel K j . Thus when some
+views of the data are better at predicting the output than the others, they are weighted more while
+forming consensus opinions. These variance terms are hyperparameters of the Bayesian co-training
+model.
+To optimize these variance terms together with other hyperparameters involved in each covari-
+ance function (e.g., parameter r > 0 in the Gaussian kernel k(xi , x j ) = exp(−rkxi − x j k2 )), we
+can use the type II maximum likelihood method (sometimes called evidence approximation), which
+maximizes the marginal likelihood with respect to each of these hyperparameters. For simplicity we
+put the derivation and detailed equations in Appendix B. For more details on the type II maximum
+likelihood in the GP setting, please refer to Rasmussen and Williams (2006).
+
+3.5 Discussions
+
+The proposed undirected graphical model provides better understanding of multi-view learning al-
+gorithms. In each of the marginalizations, we end up with a standard GP model for some latent
+functions (i.e., {f1 , . . . , fm} in Marginal 1, fc in Marginal 2, and f j in Marginal 3). This simpli-
+ﬁes learning and inference under the proposed model. Under a transdu ctive setting, the co-training
+kernel in (10) indicates that Bayesian co-training is equivalent to single-view learning with a spe-
+cially designed (non-stationary) kernel. This is also the preferable way of working with multi-view
+learning since it avoids alternating optimizations at the inference step.
+The proposed graphical model also motivates new methods for unsupervised multi-view learn-
+ing such as spectral clustering. While the similarity matrix of each view j is encoded in K j , the
+
+2659
+
+YU , KR I SHNA PURAM , RO SA L E S AND RAO
+
+co-training kernel Kc encodes the similarity of two data samples with multiple views, and thus can
+be used directly in spectral clustering.
+
+We would also like to point out the limitations of the proposed consensus-based learning, which
+are shared by co-training as proposed by Blum and Mitchell (1998) and many other multi-view
+learning algorithms. As mentioned before, the consensus-based potentials in (4) can be interpreted
+as deﬁning a Gaussian prior (5) to f c , where the mean is a weighted average of the m individual
+views. This averaging indicates that the value of fc is never higher (or lower) than that of any single
+view. While the consensus-based potentials are intuitive and useful for many applications, they are
+limited for some real world problems where the evidence from different views should be additive (or
+enhanced) rather than averaging. For instance, when a radiologist is making a diagnostic decision
+about a lung cancer patient, he or she might look at both the CT image and the MRI image. If
+either of the two images gives a strong evidence of cancer by that image alone, he or she can make
+a decision based on a single view (and thus, ignoring the other image completely); if either of the
+images only gives a moderate evidence (i.e., from a single-view learner which ignores the other
+image), it would be beneﬁcial to look at both images (i.e., to consider both views ), and the ﬁnal
+evidence of cancer after observing both images should be higher (or lower, depending on the speciﬁc
+scenario) than either of them if observed individually. It’s clear that in this scenario the multiple
+views are reinforcing or weakening each other, not averaging. While all the previously proposed co-
+training and co-regularization algorithms have thus far been based on enforcing consensus between
+the views explicitly or implicitly, we make this clear from the graphical model perspective, and allow
+effective tailoring of the view importance from the training data. As part of future work, it would
+be interesting to explore the possibility of going beyond consensus-based multi-view learning.
+
+4. Bayesian Co-Training with Missing Views
+
+In the previous two sections we assume that the input data are complete, that is, all the views
+are observed for every data sample. However for many real-world problems, the features could
+be incomplete or missing for various reasons. For instance, in cancer diagnosis we cannot ask
+every patient to take all the available imaging tests (e.g., CT, PET, Ultrasound, MRI) for the ﬁnal
+diagnosis, so some views (i.e., imaging tests) are missing for certain patients. In this section we
+extend Bayesian co-training to the case where there are missing (sample, view) pairs in the input
+data (which can happen both in labeled data and in unlabeled data). The three marginalizations will
+also be discussed. To the best of our knowledge, this is the ﬁrst elegant
+framework to account for
+the missing views in the multi-view learning setting.
+
+Let each view j be observed for a subset of n j ≤ n samples, and let I j denote the indices of
+these samples in the whole sample set (including labeled and unlabeled data). Note that under this
+notation, the single-view kernel matrix K j for view j is of size n j × n j , which are deﬁned over the
+subset of samples denoted by indicator I j . From the co-training kernel perspective, the difﬁculty
+here is to combine the kernels of different sizes together from different views, if at all possible.
+
+We start from the undirected graphical model and make necessary changes to the potentials to
+account for the missing views. The idea is to treat the missing view information as hidden in the
+graphical model. The undirected graphical model is shown in Figure 3 for Bayesian co-training
+
+2660
+
+BAY E S IAN CO -TRA IN ING
+
+with missing views, which is very similar to Figure 1(b). The joint probability can be deﬁned as:
+nl(cid:213)
+m(cid:213)
+i=1
+j=1
+
+p (yl , fc , f1 , . . . , fm ) =
+
+y(f j )y(f j , fc ),
+
+y(yi , fc (xi ))
+
+1
+Z
+
+(12)
+
+i=1 ∈ Rn , and f j = { f j (x( j)
+i )}i∈I j ∈ Rn j . Note that f j is only realized on a subset
+where fc = { fc (xi )}n
+of samples and is of length n j (instead of n). The within-view potential y(f j ) is deﬁned via the
+GP prior, y(f j ) = exp(− 1
+2 f⊤j K−1
+j f j ), where K j ∈ Rn j ×n j is the covariance matrix for view j; the
+consensus potential y(f j , fc ) is deﬁned as follows:
+y(f j , fc ) = exp  − kf j − fc (I j )k2
+! ,
+2s2
+j
+in which fc (I j ) takes the length-n j subset of vector fc with indices given in I j . In other words, the
+consensus potentials is deﬁned such that
+y( f j (xi ), fc (xi )) = exp  −
+j (cid:0) f j (xi ) − fc (xi )(cid:1)2! ,
+1
+2s2
+The idea here is to deﬁne the consensus potential for view j using only the data samples observed in
+view j. The other data samples with missing view information for view j are treated as hidden (or
+integrated out) in this potential deﬁnition. As before, s j > 0 quantiﬁes how far the latent function f j
+is apart from fc . Note that the smaller n j is, the less the contribution of view j to the overall graphical
+model.4 Next we look at the three marginalizations to gain more insight about this graphical model.
+
+i ∈ I j .
+
+(13)
+
+4.1 Co-Regularization with Missing Views
+
+It is straightforward to derive all the marginalizations of Bayesian co-training with missing views.
+For the co-regularization marginal, a simple calculation leads to the following joint distribution for
+the m latent functions:
+
+1
+Z
+
+1
+2
+
+1
+2
+
+(cid:229)
+j<k
+
+m(cid:229)
+j=1
+
+p(f1 , . . . , fm ) =
+
+f⊤j K−1
+j f j −
+
+exp ( −
+x∈I j ∧Ik " [ f j (x) − fk (x)]2
+ℓ # ).
+(cid:229)
+(cid:30) (cid:229)
+1
+s2
+s2
+s2
+j
+ℓ:x∈Iℓ
+k
+As in the Bayesian co-training with fully observed views, this provides an equivalent form to co-
+regularized multi-view learning. The ﬁrst part regularizes the functional
+space of each view, and the
+second part constrains that every pair of views need to agree on the outputs for co-observed samples
+(inversely weighted by view variances and the sum of inverse variances of the views in which the
+sample is observed). This is very intuitive and naturally extends the joint distribution in (7). If
+view j and view k do not share any data sample (i.e., no data sample has features from both view
+j and view k), the view pair ( j, k) will not contribute to the joint distribution.5 A joint probability
+distribution involving output yl can also be derived which takes a similar form as in (9).
+4. Also note that after hyperparameter learning, s j might not fully represent how strongly each view j contributes to
+the consensus, since the contribution also depends on the number of available data n j in the view j .
+5. Note that view j and view k will still contribute to the overall distribution through other views that they share data
+samples with.
+
+2661
+
+YU , KR I SHNA PURAM , RO SA L E S AND RAO
+
+(1)
+
+x1
+
+(1)
+
+xj
+
+(1)
+
+xk
+
+(1)
+xn
+(a)
+
+f(x1)
+
+y1
+
+(1)
+
+x1
+
+f1(x1
+
+(1))
+
+fc(x1)
+
+f2(x1
+
+(2))
+
+f(xj)
+
+yj
+
+(1)
+
+xj
+
+f1(xj
+
+(1))
+
+f(xk)
+
+yk
+
+(1)
+
+xk
+
+f1(xk
+
+(1))
+
+f(xn)
+
+yn
+
+(1)
+xn
+(b)
+
+f1(xn
+
+(1))
+
+y1
+
+fc(xj)
+
+yj
+
+fc(xk)
+
+yk
+fc(xn)
+
+yn
+
+f2(xj
+
+(2))
+
+f2(xk
+
+(2))
+
+f2(xn
+(2))
+
+(2)
+
+x1
+
+(2)
+
+xj
+
+(2)
+
+xk
+
+(2)
+xn
+
+Figure 3: Factor graphs for Bayesian co-training with missing views, for (a) one-view and (b) two-
+view problems. Observed variables are marked as dark/bold, and unobserved ones are
+marked as red/non-bold, including functions f1 , f2 , fc (blue/non-bold). Unobserved vari-
+ables in a dotted box (such as x(1)
+j ) are potential observations for active sensing (see
+Section 5). All labels y are denoted as observed in the graph, but this is not required.
+
+4.2 Co-Training Kernel with Missing Views
+We can also derive a co-training kernel Kc by integrating out all the latent functions {f j } in (12).
+This leads to a Gaussian prior p(fc ) = N (0, Kc ), with
+
+Kc = L−1
+c
+
+,
+
+Lc =
+
+m(cid:229)
+j=1
+
+A j ,
+
+where each A j is a n × n matrix deﬁned as
+A j (I j , I j ) = (K j + s2
+j I)−1 , and 0 otherwise.
+(14)
+That is, A j is an expansion of the one-view information matrix (K j + s2
+j I)−1 to the full size n × n,
+with the other (unindexed) entries ﬁlled with 0. It is easily seen that such a ke rnel Kc is indeed
+positive deﬁnite, as long as each one-view kernel K j is positive deﬁnite and at least there are two
+views sharing one data sample. We also call Lc the co-training precision matrix. Very importantly,
+we note that one additional observation of a (sample, view) pair will affect all the elements of the
+co-training kernel. In other words, the kernel value for a pair of samples is potentially changed even
+when a third (unrelated) object is further characterized by an additional sensor.6 This property mo-
+tivates us to do active feature acquisition (or active sensing) in the Bayesian co-training framework.
+Section 5 will discuss this in detail.
+
+6. Note that the marginalizations in Section 4.2 and Section 4.1 are still equivalent (since they come from the same un-
+derlying graphical model), despite the fact that additional (sample, view) pair inﬂuences the kernels (with dimension
+nm × nm in Section 4.1 and n × n in Section 4.2) differently in these two marginalizations.
+
+2662
+
+…
+…
+…
+…
+…
+…
+…
+…
+…
+…
+…
+…
+…
+…
+…
+…
+…
+…
+BAY E S IAN CO -TRA IN ING
+
+4.3 Individual View Learning with Missing Views
+
+If one particular view j is of interest, we can also integrate out the consensus view and all the other
+views, leading to a GP prior for view j, f j ∼ N (0, C j ), with the precision matrix being
+j + (cid:2)s2
+j I + Lc\ j (I j , I j )−1 (cid:3)−1
+C−1
+j = K−1
+.
+Here we extract the (I j , I j ) sub-matrix from the leave-one-view-out co-training precision matrix
+Lc\ j , which is deﬁned as Lc\ j = (cid:229)k 6= j Ak . Each Ak is deﬁned as in (14). This marginalization allows
+us to, for example, measure how much beneﬁt every other view brings to the interested view. An
+important fact to realize here is that with an observed (sample, view) pair from another view k, even
+if this sample is not observed in the primarily interested view j, the kernel of the view j will still be
+affected so long as I j ∧ Ik 6= /0. One can also introduce the inductive GP inference as in Section 3.3
+under this setting.
+
+4.4 Discussion
+
+Bayesian co-training with missing views provides an elegant framework to combine information
+from multiple views or multiple data sources together, even when different subsets of data samples
+are measured in different views. For learning and inference, we still prefer using the co-training
+kernel with the second marginalization due to its simplicity.
+ence of the
+We note that the deﬁnition of the consensus potentials in (13) implies that the inﬂu
+different pairs of views has been factored into a product. As a consequence, the view-pairs are
+combined in a linear manner. A way to go beyond this is by using higher-order potentials.
+A higher order potential deﬁnition y(f1 , ..., fm , fc ), which combines f1 , ..., fm simultaneously,
+would produce a richer combination of views, but often at
+the expense of
+increased
+inference/computational complexity. It is not clear how to achieve this effect with standard co-
+training.
+Since one observation of a (sample, view) pair will affect the overall co-training kernel, we
+can derive a framework for active sensing, which aims to actively select the best pair for feature
+acquisition or sensing. This active sensing problem is different from active learning where the goal
+is to select the best pair for labeling. We discuss this idea in detail in the next section.
+
+5. Active Sensing in Bayesian Co-Training
+
+In active sensing, we are interested in selecting the best unobserved (sample, view) pair for sensing,
+or for view acquisition, which will improve the overall classiﬁcation performa nce. In this section we
+will focus on logistic regression loss for binary classiﬁcation. For active sensing we mainly discuss
+an approach based on the mutual information framework, which measures the expected information
+gain after observing an additional (sample, view) pair. Another approach based on the predictive
+uncertainty is also brieﬂy discussed in Section 5.5.
+In the following let DO and DU denote the observed and unobserved (sample, view) pairs,
+respectively. Recall that under the second marginalization in which only the consensus function fc
+is of primary interest, the Bayesian co-training model for binary classiﬁcatio n reduces to
+nl(cid:213)
+i=1
+
+y(yi , fc (xi )),
+
+p(yl , fc ) =
+
+y(fc )
+
+1
+Z
+
+2663
+
+YU , KR I SHNA PURAM , RO SA L E S AND RAO
+
+where yl contains the binary labels for the nl labeled samples, y(fc ) is deﬁned via the co-training
+kernel as y(fc ) = exp (cid:8)− 1
+c fc(cid:9), and y(yi , fc (xi )) is the output potential l(yi fc (xi )) with l(·)
+2 f⊤c K−1
+the logistic function. The log marginal likelihood of the output yl under this model, conditioned on
+i } and model parameters Q, is:
+the input data X , {x( j)
+L , log p(yl |X, Q) = log Z p(yl |fc , Q) p(fc |X, Q) d fc − log Z
+nl(cid:213)
+1
+c fc(cid:27) d fc − log Z .
+l(yi fc (xi )) · exp (cid:26)−
+= log Z
+f⊤c K−1
+2
+i=1
+
+5.1 Laplace Approximation
+
+To calculate the mutual information we need to calculate the differential entropy of the consensus
+view function fc . With co-training kernel and the logistic regression loss, Laplace approximation
+can be applied to approximate the a posteriori distribution of fc as a Gaussian distribution. The a
+posteriori distribution of fc , p(fc |DO , yl , Q) (cid:181) p(yl |fc , Q) p(fc |DO , Q), is approximately
+N ( ˆfc , (Dpost )−1 ),
+
+(15)
+
+where ˆfc is the maximum a posteriori (MAP) estimate of fc , and the a posteriori precision matrix is
+Dpost = K−1
+c + F,
+(16)
+with F the Hessian of the negative log-likelihood. It turns out that F is a diagonal matrix, with
+F(i, i) = hi (1 − hi ) where hi = l( ˆfc (xi )). The differential entropy of fc under this Laplace approxi-
+mation is
+1
+n
+log(2pe) −
+log det(Dpost ),
+H (fc ) = −
+2
+2
+where det(·) denotes the matrix determinant.
+5.2 Mutual Information for Active Sensing
+Remind that x( j)
+i denote the features in the jth view for the ith sample. In active sensing, the mutual
+information (MI) between the consensus view function fc and the unobserved (sample, view) pair
+x( j)
+i ∈ DU is the expected decrease in entropy of fc when x( j)
+is observed,
+i
+1
+log det(Dpost ) +
+i ) = E[H (fc )] − E[H (fc |x( j)
+I (fc , x( j)
+i )] = −
+2
+where the expectation is with respect to p(x( j)
+|DO , yl ), the distribution of the unobserved (sample,
+i
+view) pair given all the observed pairs and available outputs. Dx(i, j)
+is the a posteriori precision
+post
+matrix, derived from (16), after one pair x( j)
+is observed.
+i
+The maximum MI criterion has been used before to identify the “best ” unlabele d sample in
+active learning (MacKay, 1992). Here we adopt this criterion and choose the unobserved pair which
+maximizes MI:
+
+E [log det(Dx(i, j)
+post )],
+
+1
+2
+
+(i∗ , j∗ ) = arg max
+x( j)
+i ∈DU
+
+I (fc , x( j)
+i ) = arg max
+x( j)
+i ∈DU
+
+E [log det(Dx(i, j)
+post )].
+
+(17)
+
+2664
+
+BAY E S IAN CO -TRA IN ING
+
+5.3 Density Modeling
+
+In order to calculate the expectation in (17), we need a conditional density model for the unobserved
+pairs, that is, p(x( j)
+|DO , yl ). This of course depends on the type of the features in each view, and
+i
+for our applications we use a special Gaussian mixture model (GMM). This model has the nice
+property that all the marginals are still GMMs, and yet is not too ﬂexible like the full GMM. One
+can certainly deﬁne other density models based on the applications.
+For a m-view input data x = (x(1) , . . . , x(m) ), let the joint input density be
+
+p(x(1) , . . . , x(m) ) = p(y = +1) p(x(1) , . . . , x(m) |y = +1) + p(y = −1) p(x(1) , . . . , x(m) |y = −1),
+and each conditional density takes a component-wise factorized GMM form, that is,
+p(x(1) , . . . , x(m) |y = +1) = (cid:229)
+c (cid:213)
+p+
+c
+j
+p(x(1) , . . . , x(m) |y = −1) = (cid:229)
+p−c (cid:213)
+c
+j
+
+N (x( j) | µ +( j)
+c
+N (x( j) | µ −( j)
+c
+
+, S−( j)
+c
+
+, S+( j)
+c
+
+).
+
+),
+
+and S+( j)
+Here, for the positive class, µ +( j)
+are the mean and covariance matrix for view j in
+c
+c
+c > 0, (cid:229)c p+
+component c, and p+
+c = 1 are the mixture weights. For the negative class we use sim-
+ilar notations. Note that although the conditional density for each mixture component is decou-
+pled for different views, the joint conditional density is not.7 Under this model, the joint density
+p(x(1) , . . . , x(m) ) is also a GMM, and any marginal (conditioned on y or not) density is still a GMM,
+for example, p(x( j) |y = +1) = (cid:229)c p+
+, S+( j)
+c N (x( j) | µ +( j)
+).
+c
+c
+Now it is easy to calculate p(x( j)
+|DO , yl ). Let x(O)
+be the set of observed views for xi , we need
+i
+i
+to distinguish two different settings. When the label yi is available, for example, yi = +1, we have
+, yi = +1) = (cid:229)
+c
+
+|DO , yl ) = p(x( j)
+i
+
+) · N (x( j)
+i
+
+| µ +( j)
+c
+
+|x(O)
+i
+
+, S+( j)
+c
+
+p(x( j)
+i
+
+(x(O)
+i
+
+p+( j)
+c
+
+),
+
+(18)
+
+which is again a GMM model, with the mixing weights being
+
+, S+(k)
+(cid:213)k∈O N (x(k)
+| µ +(k)
+c
+c
+i
+p(x(O)
+|yi = +1)
+i
+When the label yi is not available, we need to integrate out the labeling uncertainty and compute
+
+) = p+
+c
+
+(x(O)
+i
+
+p+( j)
+c
+
+)
+
+.
+
+p(x( j)
+i
+
+|DO , yl ) = p(x( j)
+|x(O)
+)
+i
+i
+= p(yi = +1) p(x( j)
+i
+
+|x(O)
+, yi = +1) + p(yi = −1) p(x( j)
+i
+i
+which is a GMM model as well, as can be seen from (18).
+
+|x(O)
+i
+
+, yi = −1),
+
+7. A straightforward EM algorithm can be derived to estimate all these parameters. When labels are only available for
+a very limited number of samples, one might assume a full generative GMM model neglecting the dependency on
+labels (instead of a conditional GMM model).
+
+2665
+
+YU , KR I SHNA PURAM , RO SA L E S AND RAO
+
+5.4 Expectation Calculation
+
+Ak + F,
+
+(19)
+
+We are now ready to compute the expectation in (17). The a posteriori precision matrix after one
+is observed, Dx(i, j)
+(sample, view) pair x( j)
+post , can be calculated as
+i
+j + (cid:229)
+)−1 + F = Ax(i, j)
+Dx(i, j)
+post = (Kx(i, j)
+c
+k 6= j
+where Kx(i, j)
+and Ax(i, j)
+are the new Kc and A j matrices after the new pair is observed. Based on
+c
+j
+(14), to calculate Ax(i, j)
+we need to recalculate the kernel for the jth view, K j , after an additional
+j
+pair x( j)
+is observed. This is simply done by adding one row and column to the old K j as:
+i
+= (cid:20)K j b j
+a j (cid:21) ,
+Kx(i, j)
+j
+b⊤j
+where a j = k j (x( j)
+i ) ∈ R, and b j ∈ Rn j has the ℓth entry as k j (x( j)
+, x( j)
+i
+ℓ
+non-zero part of Ax(i, j)
+is calculated as
+j
+= (cid:20)K j + s2
+G j −l j G j b j
+= (cid:20)G j + l j G j b j b⊤j
+j (cid:21)−1
+j I
+b j
+j I(cid:17)−1
+(cid:21) ,
+j + s2
+(cid:16)Kx(i, j)
+a j + s2
+G j
+l j
+−l j b⊤j
+b⊤j
+j I)−1 and l j =
+using the block-matrix inverse formula, where G j = (K j + s2
+1
+.
+G j b j
+a j +s2
+j −b⊤j
+As seen from (19) and (20), it is difﬁcult to directly calculate the expectatio n in (17). Since
+for any matrix Q, E [log det(Q)] ≤ log det(E [Q]) due to the concavity of log det(·), we alternatively
+take the upper bound log det( E [Dx(i, j)
+post ]) as the selection criteria and also take the risk that the best
+pair (i, j) that optimizes log det( E [Dx(i, j)
+post ]) doesn’t necessarily optimize E [log det(Dx(i, j)
+post )]. From
+(19) and (20), this reduces to computing E[l j ], E[l j b j ] and E[l j b j b⊤j ], where the expectations are
+with respect to p(x( j)
+|DO , y), a GMM model (cf. Section 5.3). In general one needs to calculate
+i
+these expectations numerically, as different kernel functions lead to different integrals. As another
+approximation one might assume each of the GMM component is a point-mass such that the mean
+is used for the calculation.
+
+, x( j)
+i ). Then from (14), the
+
+(20)
+
+5.5 Discussion
+
+The mutual information based approach directly measures the expected information gain for every
+(sample, view) pair. A different (and simpler) approach is based on the predictive uncertainty, in
+which the most uncertain sample (after the current classiﬁer is trained) is selected for view acqui-
+sition. This approach was taken for a different problem in Melville et al. (2004). This uncertainty
+(i.e., predictive variance) is estimated as the diagonal entries of the a posteriori covariance matrix
+(Dpost )−1 , as seen from (15). However it is not clear what view to acquire for this sample (if more
+than one view is missing for the sample). The advantage of this approach is that no density modeling
+is necessary for unobserved views.
+
+6. Experiments
+
+For the ﬁrst part of the experiments we empirically evaluate some single-view a nd multi-view learn-
+ing algorithms on several toy data and two real world data sets. We compare the proposed Bayesian
+
+2666
+
+BAY E S IAN CO -TRA IN ING
+
+co-training models with the original co-training method proposed by Blum and Mitchell (1998),
+and several single-view learning algorithms. Since this co-training algorithm—
+sometimes we call it
+the canonical co-training algorithm—was proposed for classiﬁcation problems, we focus on classi-
+ﬁcation in this section and compare all the methods with the logistic regression loss . We show both
+problems where co-training works and does not work (i.e., is not better compared to the single-view
+learning counterpart).
+In the second part we evaluate the active sensing algorithms in the Bayesian co-training setting.
+We are given a classiﬁcation task with missing views, and at each iteration we a re allowed to select
+an unobserved (sample, view) pair for sensing (i.e., feature acquisition). The proposed methods are
+compared with random sensing in which a random unobserved (sample, view) pair is selected for
+sensing.
+
+6.1 Toy Examples for Bayesian Co-Training
+
+First of all, we show some 2D toy classiﬁcation problems to visualize the co-train ing result in
+Figure 4. We assume each of these 2D problems is a two-view problem, in which one view only
+contains one single feature. Canonical co-training is applied by iteratively training one classiﬁer
+based on one view, adding the most conﬁdent unlabeled data from one vie w to the training pool of
+the other classiﬁer, and retraining each classiﬁer till convergence (i.e., n
+o conﬁdent unlabeled data
+can be added further). In Bayesian co-training we use the squared exponential covariance function
+as mentioned in Section 2, and the width r is set to 1/√2 which yields the optimal performance.
+Our ﬁrst example is a two-Gaussian case with mean (2, −2) and (−2, 2), where either feature
+x(1) or x(2) can be used alone to fully solve the problem (Figure 4(a)). This is an ideal case for
+co-training, since: 1) each single view is sufﬁcient to train a classiﬁer, an
+d 2) both views are con-
+ditionally independent given the class labels. Therefore we see that both canonical co-training and
+Bayesian co-training yield the same perfect result (Figure 4(b),(c)).
+For the second toy data (Figure 4(d)) we assume the two Gaussians are aligned to the x(1) -axis
+(with mean (2, 0) and (−2, 0)). In this case the feature x(2) is totally irrelevant to the classiﬁcation
+problem. The canonical co-training fails here (Figure 4(e)) since when we add labels using the x(2)
+feature , noisy labels will be introduced and expanded to future training. The Bayesian co-training
+model can handle this situation since we can adapt the weight of each view and penalize the feature
+x(2) (Figure 4(f)).
+The third toy data follows an XOR shape where the data from four Gaussians (with mean (2, 2),
+(−2, 2), (2, −2), (−2, −2)) lead to a binary classiﬁcation problem that is not linearly separable
+(Figure 4(g)). In this case both the two assumptions mentioned above are violated, and neither
+canonical nor Bayesian co-training will work (Figure 4(i)).8 On the other hand, a supervised GP
+classi ﬁcation model with squared exponential covariance function can ea sily recover the non-linear
+underlying structure (see Figure 4(h)). This indicates that the learning a multi-view classiﬁer for
+this problem with the current co-training type algorithms will not succeed. From a kernel design
+perspective, the consensus based co-training kernel Kc is not suitable for this type of problem.
+In summary, these toy problems indicate that when co-training works, Bayesian co-training
+performs better than or at least as well as canonical co-training models. But since Bayesian co-
+training is fundamentally a kernel design for a single-view supervised learning, it will not work
+when the problem calls for more ﬂexible kernel form (e.g., in Figure 4(g)) .
+
+8. We also tried other types of covariance functions but they yield similar results.
+
+2667
+
+YU , KR I SHNA PURAM , RO SA L E S AND RAO
+
+)
+2
+(
+x
+
+)
+2
+(
+x
+
+)
+2
+(
+x
+
+6
+
+4
+
+2
+
+0
+
+−2
+
+−4
+
+−6
+−6
+
+6
+
+4
+
+2
+
+0
+
+−2
+
+−4
+
+−6
+−6
+
+6
+
+4
+
+2
+
+0
+
+−2
+
+−4
+
+−6
+−6
+
+−4
+
+−2
+
+0
+x(1)
+
+2
+
+4
+
+6
+
+(a) Toy data 1 (T1)
+
+−4
+
+−2
+
+0
+x(1)
+
+2
+
+4
+
+6
+
+(d) Toy data 2 (T2)
+
+−4
+
+−2
+
+0
+x(1)
+
+2
+
+4
+
+6
+
+)
+2
+(
+x
+
+)
+2
+(
+x
+
+)
+2
+(
+x
+
+6
+
+4
+
+2
+
+0
+
+−2
+
+−4
+
+−6
+−6
+
+6
+
+4
+
+2
+
+0
+
+−2
+
+−4
+
+−6
+−6
+
+6
+
+4
+
+2
+
+0
+
+−2
+
+−4
+
+−6
+−6
+
+)
+2
+(
+x
+
+6
+
+4
+
+2
+
+0
+
+−2
+
+−4
+
+−6
+−6
+
+−4
+
+−2
+
+0
+x(1)
+
+2
+
+4
+
+6
+
+−4
+
+−2
+
+0
+x(1)
+
+2
+
+4
+
+6
+
+(b) Co-training on T1
+
+(c) Bayesian co-training on T1
+
+)
+2
+(
+x
+
+6
+
+4
+
+2
+
+0
+
+−2
+
+−4
+
+−6
+−6
+
+−4
+
+−2
+
+0
+x(1)
+
+2
+
+4
+
+6
+
+−4
+
+−2
+
+0
+x(1)
+
+2
+
+4
+
+6
+
+(e) Co-training on T2
+
+(f) Bayesian co-training on T2
+
+0
+
+−
+0
+.
+5
+
+−
+
+0
+
+.
+
+5
+
+0
+.
+5
+
+0
+
+0
+
+0 . 5
+
+5
+.
+0
+
+0
+
+−0.5
+
+5
+.
+0
+
+−
+0
+.
+5
+
+5
+.
+0
+
+0
+
+−4
+
+−2
+
+0
+
+0
+x(1)
+
+2
+
+4
+
+6
+
+)
+2
+(
+x
+
+6
+
+4
+
+2
+
+0
+
+−2
+
+−4
+
+−6
+−6
+
+−4
+
+−2
+
+0
+x(1)
+
+2
+
+4
+
+6
+
+(g) Toy data 3 (T3)
+
+(h) GP classiﬁcation on T3
+
+(i) (Bayesian) co-training on T3
+
+Figure 4: Toy problems for co-training. (b)∼(c) show canonical and Bayesian co-training results
+on two-Gaussian data (a); (e)∼(f) show the results on two-Gaussian data (d); (h) shows
+GP classiﬁcation result on four-Gaussian XOR data (g); (i) shows (Bay esian) co-training
+result on data (g). Square exponential covariance function was used with width 1 for GP
+classi ﬁcation and 1 /√2 for each feature in two-view learning. In the toy data big red-
+square/blue-triangle markers denote the +1/ − 1 labeled points, and black dots denote
+the unlabeled points.
+
+2668
+
+BAY E S IAN CO -TRA IN ING
+
+MOD E L
+T EX T
+INBOUND L INK
+OU TBOUND L INK
+T EX T+L INK
+CO -TRA IN ED GPLR
+BAY E S IAN CO -TRA IN ING
+
+# TRA IN + 4 / - 2 0
+# TRA IN + 2 / - 1 0
+F 1
+AUC
+AUC
+F 1
+0.1443 ± 0.0705
+0.5770 ± 0.0209
+0.1359 ± 0.0565
+0.5725 ± 0.0180
+0.3521 ± 0.0017
+0.5479 ± 0.0035
+0.3510 ± 0.0011
+0.5451 ± 0.0025
+0.3600 ± 0.0059
+0.5662 ± 0.0124
+0.3552 ± 0.0053
+0.5550 ± 0.0119
+0.1474 ± 0.0721
+0.5782 ± 0.0218
+0.5730 ± 0.0177
+0.1386 ± 0.0561
+0.4042 ± 0.2321
+0.6519 ± 0.1091
+0.6459 ± 0.1034
+0.4001 ± 0.2186
+0.4530 ± 0.0293
+0.6880 ± 0.0300
+0.4210 ± 0.0401
+0.6536 ± 0.0419
+Table 1: Results for Citeseer with different numbers of labeled training data (positive/negative).
+The ﬁrst three lines are supervised learning results using only the single- view features.
+The fourth line shows the supervised learning results by combining features from all the
+three views. The ﬁfth and sixth lines are the co-training results. Bold face in dicates the
+best performance.
+
+MOD E L
+
+T EX T
+INBOUND L INK
+T EX T+L INK
+CO -TRA IN ED GPLR
+BAY E S IAN CO -TRA IN ING
+
+# TRA IN + 2 / - 2
+# TRA IN + 4 / - 4
+AUC
+F 1
+AUC
+F 1
+0.6150 ± 0.0594
+0.5767 ± 0.0430
+0.4449 ± 0.1614
+0.5338 ± 0.1267
+0.5761 ± 0.0013
+0.5758 ± 0.0015
+0.5211 ± 0.0017
+0.5210 ± 0.0019
+0.6150 ± 0.0594
+0.5766 ± 0.0429
+0.4443 ± 0.1610
+0.5336 ± 0.1267
+0.5624 ± 0.1058
+0.5437 ± 0.1225
+0.5959 ± 0.0927
+0.5737 ± 0.1203
+0.5794 ± 0.0491
+0.5562 ± 0.1598
+0.6140 ± 0.0675
+0.5742 ± 0.1298
+Table 2: Results for WebKB with different numbers of labeled training data (positive/negative). The
+ﬁrst two lines are supervised learning results using only the single-view fe atures. The third
+line shows the supervised learning results by combining features from both views. The
+fourth and ﬁfth lines are the co-training results. Bold face indicates the bes t performance.
+
+6.2 Bayesian Co-Training for Web Page Classiﬁcation
+
+We use two sets of linked documents for our experiment. The main purpose of these empirical
+studies is to show the beneﬁt of the proposed Bayesian co-training method c ompared to single-view
+learning and the canonical co-training algorithms, and also highlight the limitations of co-training
+type algorithms. As will be seen later, we show one case that co-training works, in which case
+Bayesian co-training yields the best performance; we also show one case that co-training does not
+improve over the single-view counterpart, in which case Bayesian co-training is slightly better than
+canonical co-training. As the co-training kernel based approach is equivalent to the adaptive co-
+regularized multi-view learning (since they are based on the same underlying graphical model), we
+do not include a separate line of results for the co-regularization methods.
+The Citeseer data set contains 3,312 documents that belong to six classes. There are three
+natural views for each document: the text view consists of title and abstract of the paper; the two
+link views are inbound and outbound references. The bag-of-words features are extracted from
+each view, which amount to 3,703 for the text view, 1,107 for the inbound view and 903 for the
+outbound view. We pick up the largest class which contains 701 documents and test the one-vs-
+rest classiﬁcation performance. The WebKB data set is a collection of 4,501 academic web pages
+
+2669
+
+YU , KR I SHNA PURAM , RO SA L E S AND RAO
+
+manually grouped into six classes (student, faculty, staff, department, course, project). There are
+two views containing the text on the page (24,480 features) and the anchor text (901 features) of
+all inbound links, respectively. We consider the binary classiﬁcation pro blem “student” against
+“faculty”, for which there are 1,641 and 1,119 documents, respectively . The preprocessed data sets
+are kindly shared by Steffen Bickel at http://www.mpi-inf.mpg.de/∼bickel/mvdata/.
+We compare the single-view learning methods based on logistic regression with Gaussian pro-
+cesses (using features in the single view such as T EX T, INBOUND L INK, and OU TBOUND L INK),
+concatenated-view method based on logistic regression with Gaussian processes (T EX T+L INK), and
+co-training methods CO -TRA IN ED GPLR (which stands for Co-Trained Gaussian Process Logistic
+Regression using canonical co-training) and BAY E S IAN CO -TRA IN ING (using co-training kernel
+with logistic regression loss function). Linear kernels are used for all the competing methods since
+it is very robust from our experience in these experiments. For CO -TRA IN ED GPLR method, we
+repeat the procedure 50 times, and in each iteration we add the most predictable 1 positive sample
+and r negative samples into the training set where r depends on the number of negative/positive
+ratio of each training data set. The classiﬁer we use is the Gaussian proces s classiﬁer with logistic
+regression loss (or GPLR for short). For BAY E S IAN CO -TRA IN ING, we use the co-training ker-
+nel approach with the same GPLR classiﬁer. Performance is evaluated usin g AUC score and F1
+measure. We vary the number of labeled training documents as seen in Table 1 and 2 (with ratio
+proportional to the true positive/negative ratio). Single-view learning methods use only the labeled
+data, and co-training algorithms are allowed to use all the unlabeled data in the training process.
+The experiments are repeated 20 times and the prediction means and standard deviations are shown
+in Table 1 and 2.
+It can be seen that for the binary classiﬁcation problem in Citeseer data se t, the co-training
+methods are better than the single-view methods. In this case BAY E S IAN CO - TRA IN ING is better
+than CO -TRA IN ED GPLR and achieves the best performance. For WebDB, however, CO -TRA IN ED
+GPLR is not as good as the single-view counterparts, and thus BAY E S IAN CO - TRA IN ING is also
+worse than the purely supervised methods though it is slightly better than CO -TRA IN ED GPLR.
+This is maybe because the T EX T and L INK features are not independent given the class labels
+(especially when two classes “faculty” and “staff ” might share features
+). CO -TRA IN ED GPLR has
+higher standard deviations than other methods due to the possibility of adding noisy labels. We have
+also tried other number of iterations but 50 seems to give an overall best performance.
+Note that the single-view learning with T EX T almost achieves the same performance as concatenated-
+view method. This might be because the number of text features are much more than the link fea-
+tures (e.g., for WebKB there are 24,480 text features and only 901 link features). So these multiple
+views are very unbalanced and should be taken into account in co-training with different weights.
+Bayesian co-training provides a natural way of doing it.
+
+6.3 Active Sensing on Toy Data
+
+We show some empirical results on active sensing in this and the following subsections. Suppose we
+are given a classi ﬁcation task with missing views, and at each iteration we are allowed to select an
+unobserved (sample, view) pair for sensing (i.e., feature acquisition). We compare the classiﬁcation
+performance on unlabeled data using the following three sensing approaches:
+
+• Active Sensing MI: The pair is selected based on the mutual information criteria (17).
+
+2670
+
+BAY E S IAN CO -TRA IN ING
+
+)
+2
+(
+x
+
+6
+
+4
+
+2
+
+0
+
+−2
+
+−4
+
+−6
+−6
+
+)
+2
+(
+x
+
+6
+
+4
+
+2
+
+0
+
+−2
+
+−4
+
+−6
+−6
+
+−4
+
+−2
+
+0
+x(1)
+
+2
+
+4
+
+6
+
+−4
+
+−2
+
+0
+x(1)
+
+2
+
+4
+
+6
+
+1
+
+e
+r
+o
+c
+S
+ 
+C
+U
+A
+ 
+t
+s
+e
+T
+
+0.98
+
+0.96
+
+0.94
+
+0.92
+
+ 
+
+Active Sensing MI
+Active Sensing VAR
+Random Sensing
+Learn with Full Features
+
+ 
+
+20
+15
+10
+5
+Number of acquired (sample, view) pairs in order
+
+Figure 5: Toy data for active sensing (left). Big red-square/blue-triangle markers denote +1/ −
+1 labeled points, and black dots denote unlabeled points. Data are sampled from two
+Gaussians with mean (2, −2), (−2, 2) and unit variance. After “hiding” one feature for
+some of the data points, the data look like (middle) with removed features replaced with
+0. Comparison of active sensing with random sensing is shown on the right. The x-axis
+labels each acquired pair in order.
+
+• Active Sensing VAR: A sample is selected ﬁrst which has the maximal predictive variance
+and has missing views, and then one of the missing views is randomly selected for sensing.
+
+• Random Sensing: A random unobserved (sample, view) pair is selected for sensing.
+
+After the pair is acquired in each iteration, learning is done using the Bayesian co-training model
+(with missing views), as discussed in Section 4. Note that for all the three approaches, the acquired
+(sample, view) pair will affect all the samples in the next iteration (via the co-training kernel). In
+active sensing with MI, we use EM algorithm to learn the GMM structure with missing entries, and
+the GMM model is re-estimated after each pair is selected and ﬁlled in (this is fast
+thanks to the
+incremental updates in the EM algorithm).
+We ﬁrst illustrate active sensing with a toy example. Figure 5 (left) shows a we ll separated
+two-class problem which is similar to the one shown in Figure 4(a). To simulate our active sensing
+experiment, we randomly “hide” one of the two features of each sample with 40 % probability each,
+and with 20% probability observe both features. The ﬁnal incomplete training data are shown in
+Figure 5 (middle) with the incomplete samples shown along the ﬁrst or second ax is. It can be seen
+that only 2 fully observed positive and negative samples are available. For active sensing MI we use
+the Gaussian kernel with width 0.5, and let the GMM choose the number of clusters automatically
+(see, e.g., Corduneanu and Bishop, 2001). Standard transductive setting is applied where all the
+unlabeled data are available for co-training kernel calculation.
+In Figure 5 (right) we compare
+active sensing with random sensing, using AUC for the unlabeled data. This indicates that active
+sensing is much better than random sensing in improving the classiﬁcation perf ormance. The Bayes
+optimal accuracy (reachable when there is no missing data) is reached by the 16th query by active
+sensing whereas random sensing improves much slower with the number of acquired pairs. The two
+active sensing algorithms show similar results.
+
+2671
+
+YU , KR I SHNA PURAM , RO SA L E S AND RAO
+
+Features for NSCLC 2-years Survival Prediction
+Feature
+Description
+View
+1st
+GENDER 1-Male, 2-Female
+WHO performance status
+WHO
+1st
+Forced expiratory volume
+in 1 second
+Gross tumor volume
+Number of positive
+lymph node stations
+
+NPLN
+
+FEV1
+
+GTV
+
+1st
+
+2nd
+
+2nd
+
+0.67
+
+e
+r
+o
+c
+S
+ 
+C
+U
+A
+ 
+t
+s
+e
+T
+
+0.66
+
+0.65
+
+0.64
+
+0.63
+
+ 
+
+Active Sensing MI
+Active Sensing VAR
+Random Sensing
+
+ 
+
+20
+15
+10
+5
+Number of acquired (sample, view) pairs in order
+
+Figure 6: Experiments on NSCLC survival prediction. The features for the 2 views are listed in
+the left table, and the performance comparison of active sensing and random sensing is
+shown in the right ﬁgure. As baselines, training with full features (i.e., no s ensing needed)
+yields 0.73; training with mean imputation (i.e., using the mean of each feature to ﬁll in
+the missing entries) yields 0.62.
+
+6.4 Active Sensing in Survival Prediction for Lung Cancer
+
+We consider 2-year survival prediction for advanced non-small cell lung cancer (NSCLC) patients
+treated with (chemo-)radiotherapy. This is currently a very challenging problem in clinical research,
+since the prognosis of this group of patients is very poor (less than 40% survive two years). Cur-
+rently most models in the literature rely on various clinical factors of the patient such as gender and
+the WHO performance status. Very recently, imaging-related factors such as the size of the tumor
+and the number of positive lymph node stations are shown to be better predictors (Dehing-Oberije
+et al., 2009). However, it is expensive to obtain the images and to manually measure these factors.
+Therefore we study how to select the best set of patients to go through imaging to get additional
+features. All the relevant factors are listed in Figure 6 (left) with short descriptions. These factors
+are all known to be predictive based on Dehing-Oberije et al. (2009). From Bayesian co-training
+point of view we have 2 views, with 3 features in the ﬁrst (clinical feature) view and 2 features in
+the second (imaging-based feature) view.
+Our study contains 233 advanced NSCLC patients treated at the MAASTRO Clinic in the
+Netherlands from 2002 to 2006, among which 77 survived 2 years (labeled +1). All the features are
+available for these patients, and are normalized to have zero mean and unit variance before training.
+We randomly choose 30% of the patients as training samples (with labels known), and the rest 70%
+as unlabeled samples. We use linear kernel for each view, and let the GMM algorithm automatically
+choose the number of clusters. As the active sensing setup, the ﬁrst view is available for all the
+patients, and the second view is available only for randomly chosen 50% patients. So our goal is
+to sequentially select patients to acquire features in view 2, such that the overall classiﬁer perfor-
+mance is maximized. Figure 6 (right) shows the test AUC scores (with error-bars) of active sensing
+and random sensing, with different number of acquired pairs. Performance is averaged over 20 runs
+with randomly chosen 50% patients at the start. Active sensing in general yields better performance,
+nd VAR again yield very
+and is signiﬁcantly better after 5 ﬁrst pairs. Active sensing based on MI a
+
+2672
+
+BAY E S IAN CO -TRA IN ING
+
+similar results. We have also tested other experimental settings, and the comparison is not sensitive
+to this setup.
+
+6.5 Active Sensing in pCR Prediction for Rectal Cancer
+
+Our second example is to predict tumor response after chemo-radiotherapy for locally advanced rec-
+tal cancer. This is important in individualizing treatment strategies, since patients with a pathologic
+complete response (pCR) after therapy, that is, with no evidence of viable tumor on pathologic anal-
+ysis, would need less invasive surgery or another radiotherapy strategy instead of resection. Most
+available models combine clinical factors such as gender and age, and pre-treatment imaging-based
+factors such as tumor length and SUVmax (from CT/PET imaging), but it is expected that adding
+imaging data collected after therapy would lead to a better predictive model (though with a higher
+cost).
+In this study we show how to effectively select patients to go through pre-treatment and
+post-treatment imaging to better predict pCR.
+We use the data from Capirci et al. (2007) which contains 78 prospectively collected rectal
+cancer patients. All patients underwent a CT/PET scan before treatment and 42 days after treatment,
+and 21 of them had pCR (labeled +1). We split all the features into 3 views (clinical, pre-treatment
+imaging, post-treatment imaging), and the features are listed in Figure 7 (left). For active sensing,
+we assume that all the (labeled or unlabeled) patients have view 1 features available, 70% of the
+patients have view 2 features available, and 40% of the patients have view 3 features available. This
+is to account for the fact that view 3 features are most expensive to get. All the other settings are the
+same as the NSCLC survival prediction study. Figure 7 (right) shows the performance comparison of
+active sensing with random sensing, and it is seen that after about 18 pair acquisitions, active sensing
+is signi ﬁcantly better than random sensing. Active sensing MI and VAR sha re a similar trend, and
+the MI based active sensing is overall better than VAR based active sensing. The difference is
+however not statistically signiﬁcant. The optimal AUC (when there are no missin g features) is
+shown as a dotted line, and we see that with around 34 actively acquired pairs, active sensing
+can almost achieve the optimum. It takes however much longer for random sensing to reach this
+performance.
+
+7. Conclusion
+
+This paper has two principal contributions. We have proposed a graphical model for combining
+multi-view data, and shown that previously derived co-regularization based training algorithms
+maximize the likelihood of this model. In the process, we showed that these algorithms have been
+making an intrinsic assumption of the form p( fc , f1 , f2 , . . . , fm ) (cid:181) y( fc , f1 )y( fc , f2 ) . . . y( fc , fm ),
+even though it was not explicitly realized earlier. We also studied circumstances when this assump-
+tion proves unreasonable. Thus, our ﬁrst contribution was to clarify the implicit assumptions and
+limitations in multi-view consensus learning in general, and co-regularization in particular.
+Motivated by the insights from the graphical model, our second contribution was the devel-
+opment of alternative algorithms for co-regularization; in particular the development of a non-
+stationary co-training kernel. Unlike previously published co-regularization algorithms, our ap-
+proach handles all the following in an elegant framework: (a) handles naturally more than 2 views;
+(b) automatically learns which views of the data should be trusted more while predicting class la-
+bels; (c) shows how to leverage previously developed methods for efﬁc iently training GP/SVM; (d)
+clearly explains our assumptions, for example, what is being optimized overall; (e) does not suffer
+
+2673
+
+YU , KR I SHNA PURAM , RO SA L E S AND RAO
+
+Features for pCR Prediction in Rectal Cancer
+View
+Feature
+Description
+GENDER 1-Male, 2-Female
+1st
+1st
+Age in years
+AGE
+1st
+STAGE
+Staging of cancer
+2nd
+LENGTH Max diameter of the tumor
+SUVPre
+SUVmax before treatment
+2nd
+Absolute difference of SUVmax
+DSUV
+before and after treatment
+Response Index, DSUV in %
+
+3rd
+
+3rd
+
+RI
+
+0.75
+
+e
+r
+o
+c
+S
+ 
+C
+U
+A
+ 
+t
+s
+e
+T
+
+0.7
+
+0.65
+
+0.6
+
+0.55
+
+ 
+
+Active Sensing MI
+Active Sensing VAR
+Random Sensing
+Learn with Full Features
+
+ 
+
+10
+50
+40
+30
+20
+Number of acquired (sample, view) pairs in order
+
+Figure 7: Experiments on pCR prediction for rectal cancer. The features for the 3 views are listed
+in the left table, and the performance comparison of active sensing and random sensing is
+shown in the right ﬁgure. As baselines, training with full features (i.e., no s ensing needed)
+yields 0.74 (shown as a dotted line); training with mean imputation (i.e., using the mean
+of each feature to ﬁll in the missing entries) yields 0.55 (not shown).
+
+from local maxima problems; (f) is less computationally demanding in terms of both speed and
+memory requirements.
+
+We also extend this framework to handle multi-view data with missing features, and introduce
+an active sensing framework which allows us to actively acquiring missing (sample, view) pairs to
+maximize performance. In the future we plan to study alternative potentials based on the proposed
+graphical model, and explore inductive multi-view learning in a more principled manner.
+
+Appendix A. Derivations of the Marginalizations
+
+In this appendix we provide the derivations of the various marginalizations of the Bayesian co-
+training model, described in Section 3. The joint probability of all the variables is deﬁned as in (6)
+and is repeated here:
+
+p (yl , fc , f1 , . . . , fm ) =
+
+1
+Z
+
+nl(cid:213)
+i=1
+
+y(yi , fc (xi ))
+
+m(cid:213)
+j=1
+
+y(f j )y(f j , fc ).
+
+(21)
+
+Recall that the following integration result is true for any x ∈ R p , b ∈ R p , and symmetric matrix
+A ∈ R p× p .
+
+Z exp (cid:26)−
+
+1
+2
+
+x⊤Ax + b⊤x(cid:27) d x = qdet(2pA−1 ) exp (cid:26) 1
+2
+2674
+
+b⊤A−1b(cid:27) .
+
+(22)
+
+BAY E S IAN CO -TRA IN ING
+
+A.1 Marginal 1: Co-Regularized Multi-View Learning
+
+I,
+
+(23)
+
+=
+
+=
+
+=
+
+p (f1 , . . . , fm ) =
+
+in which we deﬁne
+
+The ﬁrst marginalization integrates out the latent consensus function f c in (21). Ignoring the output
+consensus function y(yi , fc (xi )) for the moment, we derive the joint likelihood
+m(cid:213)
+1
+y(f j )y(f j , fc ) d fc
+Z Z
+j=1
+j ) d fc
+exp (−
+j f⊤j − kf j − fck2
+m(cid:213)
+1
+1
+Z Z
+f⊤j K−1
+2s2
+2
+j=1
+j=1 "f⊤j K−1
+#) d fc
+Z Z exp (−
+m(cid:229)
+j f⊤j + kf j − fck2
+1
+1
+s2
+2
+j
+1
+Z Z exp (cid:26)−
+f⊤c Afc + b⊤ fc + C(cid:27) d fc ,
+j # .
+j "f⊤j K−1
+j f j + kf j k2
+b = (cid:229)
+(cid:229)
+A = (cid:229)
+f j
+1
+, C = −
+s2
+s2
+s2
+j
+j
+j
+j
+Note that C does not depend on fc . Applying (22) and absorbing the constants into the normalization
+factor Z , we have
+2
+exp 
+j (cid:13)(cid:13)(cid:13)(cid:13)(cid:13)
+(cid:13)(cid:13)(cid:13)(cid:13)(cid:13)
+(cid:229)
+f j
+1
+1
+s2
+(cid:229) j
+1
+2
+s2
+j
+
+
+j
+exp 
+j − (cid:13)(cid:13)(cid:13)(cid:13)(cid:13)
+j (cid:13)(cid:13)(cid:13)(cid:13)(cid:13)
+kf j k2
+(cid:229)
+j · (cid:229)
+f j
+1
+s2
+s2
+s2
+j
+j
+
+exp 
+k 
+kf j − fk k2
+.
+s2
+s2
+1
+s2
+j
+
+
+j
+This recovers the marginal 1 as in (7). To see the GP view of this marginal as in (8), we just need to
+notice that (7) is a quadratic form of the joint latent functions (f1 , . . . , fm ), and relocate the terms in
+(7) in the GP format.
+When the output potentials y(yi , fc (xi )) are taken into account, the whole derivation follows
+with the only difference that there is an additional term with respect to y in each summation in (23).
+So we obtain (9) as the joint marginal likelihood.
+
+kf j k2
+s2
+j
+
+(cid:229)
+
+j
+(cid:229)
+j<k
+
+2
+
+
+
+
+f⊤j K−1
+j f j −
+
+f⊤j K−1
+j f j −
+
+f⊤j K−1
+j f j −
+
+p (f1 , . . . , fm ) =
+
+1
+2
+
+1
+(cid:229) j
+
+1
+Z
+
+1
+Z
+
+1
+Z
+
+1
+2
+
+1
+(cid:229) j
+
+(cid:229)
+j
+
+(cid:229)
+j
+
+(cid:229)
+j
+
+1
+2
+
+1
+2
+
+1
+2
+
+1
+2
+
+(cid:229)
+j
+
+−
+
+−
+
+−
+
+=
+
+=
+
+1
+2
+
+1
+s2
+j
+
+1
+2
+
++
+
+A.2 Marginal 2: The Co-Training Kernel
+
+To get the co-training kernel we integrate out all the m latent functions in (21), leaving only fc and
+yl . We calculate the marginal distribution of yl and fc as follows:
+p(yl , fc ) = Z p(yl , fc , f1 , . . . , fm ) d f1 . . . d fm
+nl(cid:213)
+m(cid:213)
+1
+y(yi , fc (xi ))
+Z y(f j )y(f j , fc ) d f j ,
+Z
+j=1
+i=1
+
+(24)
+
+=
+
+2675
+
+YU , KR I SHNA PURAM , RO SA L E S AND RAO
+
+and
+
+1
+2
+
+(25)
+
+1
+s2
+j
+
+Z y(f j )y(f j , fc ) d f j = Z exp (−
+j ) d f j
+j f j − kf j − fck2
+f⊤j K−1
+2s2
+I! f j +
+j ) d f j
+= Z exp (−
+f⊤j  K−1
+f j − kfck2
+f⊤c
+1
+1
+j +
+s2
+s2
+2s2
+2
+j
+j
+I!−1
+= exp 
+j 
+j  K−1
+j − kfck2
+f⊤c
+1
+fc
+j +
+s2
+s2
+2s2
+2
+
+
+= exp (cid:26)−
+f⊤c A j fc(cid:27) ,
+I!−1
+j  K−1
+1
+1
+1
+1
+= (cid:0)K j + s2
+j I(cid:1)−1
+I −
+j +
+s2
+s2
+s2
+s2
+j
+j
+j
+Note that from (25) to (26) we applied the integration result (22). Therefore, from (24) and (27) we
+have
+A j(cid:19)fc) ,
+y(yi , fc (xi )) exp (−
+nl(cid:213)
+f⊤c (cid:18) (cid:229)
+1
+1
+2
+Z
+i=1
+j
+in which the output potentials are equivalent to the conditional density p(yl |fc ), and the big expo-
+nential term can be seen as a prior term for the consensus function fc . This leads to the co-training
+Gaussian prior p(fc ) = N (0, Kc ), with Kc = ((cid:229) j A j )−1 being the co-training kernel (10).
+
+p(yl , fc ) =
+
+where
+
+A j ,
+
+(27)
+
+(26)
+
+1
+2
+
+.
+
+A.3 Marginal 3: Individual View Learning with Side-Information
+
+The third marginalization leaves out only the latent function f j and integrates out the consensus
+function fc and all the other latent functions {fk }k 6= j . Ignoring the output potentials for the moment,
+based on (27) and (22) we have
+p(f j ) = Z p(fc , f1 , . . . , fm ) d fc d f1 . . . d f j−1 d f j+1 . . . d fm
+Z y(fk )y(fk , fc ) d fk! d fc
+y(f j ) Z  y(f j , fc ) (cid:213)
+1
+Z
+k 6= j
+Ak! fc) d fc
+y(f j ) Z exp (− kf j − fck2
+f⊤c   (cid:229)
+1
+j −
+2s2
+2
+k 6= j
+y(f j ) Z exp (−
+I! fc +
+j ) d fc
+f⊤c   (cid:229)
+f⊤j
+fc − kf j k2
+1
+1
+Ak +
+s2
+s2
+2s2
+2
+j
+j
+k 6= j
+I!−1
+j 
+f j(cid:27) exp 
+j   (cid:229)
+f⊤j
+j − kf j k2
+f j
+1
+exp (cid:26)−
+f⊤j K−1
+s2
+s2
+2s2
+j
+2
+k 6= j
+
+
+j f j(cid:27) ,
+exp (cid:26)−
+f⊤j C−1
+
+1
+s2
+j
+
+Ak +
+
+1
+Z
+
+1
+Z
+
+1
+Z
+
+1
+Z
+
+1
+2
+
+1
+2
+
+=
+
+=
+
+=
+
+=
+
+=
+
+2676
+
+BAY E S IAN CO -TRA IN ING
+
+where in the last line we deﬁne
+
+j   (cid:229)
+1
+1
+j = K−1
+C−1
+I −
+Ak +
+j +
+s2
+s2
+j
+k 6= j
+Ak!−1
+j +  s2
+j I + (cid:229)
+= K−1
+k 6= j
+This yields the Equation (11). If we consider the output potentials, a similar GP prior for f j holds
+but takes a more sophisticated form.
+
+1
+s2
+j
+
+1
+s2
+j
+
+.
+
+I!−1
+
+Appendix B. Optimization of the View Variance Parameters
+In this appendix we derive the equations to optimize the view variance s2
+j for each view j using
+the type II maximum likelihood. Under the second marginalization in which only the consensus
+function fc is of primary interest, the Bayesian co-training model reduces to
+nl(cid:213)
+i=1
+where y(yi , fc (xi )) is the output potential as deﬁned in (1), and y(fc ) is deﬁned via the co-training
+kernel as
+
+y(yi , fc (xi )),
+
+p(yl , fc ) =
+
+y(fc )
+
+1
+Z
+
+1
+Z
+
+1
+2
+
+(28)
+
+y(fc ) =
+
+c fc(cid:27) .
+exp (cid:26)−
+f⊤c K−1
+Note that fc is of length n ≥ nl . This deﬁnes a single-view learning problem, and we are effectively
+assigning a GP prior to fc with the co-training kernel Kc . The log marginal likelihood of the output
+i } and model parameters Q, is:
+yl under this model, conditioned on the input data X , {x( j)
+L , log p(yl |X, Q) = log Z p(yl |fc , Q) p(fc |X, Q) d fc .
+In (29) all the probabilities are conditional probabilities, in which p(yl |fc , Q) is deﬁned via (1) and
+p(fc |X, Q) is a Gaussian distribution deﬁned via the co-training kernel (28). Here the model param-
+eters Q contain all the view variance parameters {s2
+j }, all kernel parameters and other parameters
+involved in the output potentials. In type II maximum likelihood we maximize (29) with respect to
+these model parameters. In the following we derive the equations in the regression case, that is, the
+output potential is a Gaussian noise model. Similar but more complicated equations can be derived
+for classiﬁcation case and readers please refer to Rasmussen and Williams
+(2006) for details.
+When the outputs yl are regression outputs, the integral in (29) can be computed analytically as
+
+(29)
+
+1
+1
+n
+y⊤l G−1yl −
+log det G −
+L = −
+2
+2
+2
+in which for simplicity we rename G , Kc (1 : nl , 1 : nl ) + s2 I. Note that since yl is only of length
+nl ≤ n, matrix G only involves the nl × nl sub-matrix of Kc . For each q ∈ Q, the partial derivative
+2677
+
+log 2p,
+
+YU , KR I SHNA PURAM , RO SA L E S AND RAO
+
+of L with respect to q is calculated as:
+¶L
+¶q =
+
+¶G
+1
+1
+tr (cid:20)G−1
+¶q G−1yl −
+y⊤l G−1
+2
+2
+¶G
+1
+¶q (cid:21) ,
+tr (cid:20)(cid:0)aa⊤ − G−1(cid:1)
+2
+where a = G−1yl , and tr(·) denote the matrix trace. We are now ready to calculate the partial
+derivative of L with respect to each view variance s2
+j . We ﬁrst compute the partial derivative of K c
+with respect to s2
+j as:
+
+¶G
+¶q (cid:21)
+
+(30)
+
+=
+
+=
+
+¶Kc
+¶s2
+j
+
+j I(cid:1)−1#−1
+¶
+j "(cid:229)
+j (cid:0)K j + s2
+¶s2
+¶
+j (cid:0)K j + s2
+j I(cid:1)−1
+= −Kc ·
+· Kc
+¶s2
+¶
+j (cid:0)K j + s2
+j I(cid:1) · (cid:0)K j + s2
+= Kc (cid:0)K j + s2
+j I(cid:1)−1 Kc
+j I(cid:1)−1
+·
+¶s2
+(cid:0)K j + s2
+= Kc (cid:0)K j + s2
+j I(cid:1)−1 Kc .
+j I(cid:1)−1
+j I)−1 (K j + s2
+Then if we name matrix B j , Kc (K j + s2
+j I)−1Kc , we have
+¶G
+¶
+¶s2
+¶s2
+j
+j
+
+Kc (1 : nl , 1 : nl ) = B j (1 : nl , 1 : nl ).
+
+=
+
+(31)
+
+This equation follows since we have
+¶
+¶s2
+j
+
+Kc (1 : nl , 1 : nl ) =
+
+¶
+0 (cid:1) · Kc · (cid:18) Inl
+0 (cid:19)
+j (cid:0) Inl
+¶s2
+¶
+Kc · (cid:18) Inl
+0 (cid:19)
+= (cid:0) Inl
+0 (cid:1) ·
+¶s2
+j
+0 (cid:1) · B j · (cid:18) Inl
+0 (cid:19)
+= (cid:0) Inl
+= B j (1 : nl , 1 : nl ).
+Note that even though we only need to consider the top left corner of matrix B j in the derivative
+calculation, each entry in this sub-matrix depends both on labeled data and on unlabeled data. This
+provides some additional insight since even with fc integrated out, the marginal likelihood still
+depends on unlabeled data, so as the optimization of the hyperparameters s2
+j .
+With (30) and (31) we can calculate ¶L /¶s2
+j and then use conjugate gradients to ﬁnd the optimal
+j are coupled, one needs to iteratively optimize each s2
+s2
+j . Since the derivatives for the different s2
+j
+until convergence. The partial derivative for s2 can be easily computed as ¶G
+¶s2 = Inl . Similarly one
+can derive the partial derivatives for other kernel parameters inside each kernel K j and we omit the
+details.
+
+2678
+
+BAY E S IAN CO -TRA IN ING
+
+References
+
+M. Balcan and A. Blum. A PAC-style model for learning from labeled and unlabeled data.
+Semi-Supervised Learning, pages 111–126. MIT Press, 2006.
+
+In
+
+M. Balcan, A. Blum, and K. Yang. Co-training and expansion: Towards bridging theory and prac-
+tice. In NIPS, 2004.
+
+S. Bickel and T. Scheffer. Estimation of mixture models using Co-EM. In ECML, 2005.
+
+M. Bilgic and L. Getoor. VOILA: Efﬁcient feature-value acquisition for c lassiﬁcation. In AAAI,
+2007.
+
+A. Blum and T. Mitchell. Combining labeled and unlabeled data with co-training. In COLT, 1998.
+
+U. Brefeld and T. Scheffer. Co-EM support vector learning. In ICML, 2004.
+
+U. Brefeld, T. G ¨artner, T. Scheffer, and S. Wrobel. Efﬁcient co-regularised least
+In ICML, pages 137–144, 2006.
+
+squares regression.
+
+C. Capirci, L. Rampin, P. Erba, F. Galeotti, G. Crepaldi, E. Banti, M. Gava, S. Fanti, G. Mariani,
+P. Muzzio, and D. Rubello. Sequential FDG-PET/CT reliably predicts response of locally ad-
+vanced rectal cancer to neo-adjuvant chemo-radiation therapy. Eur J Nucl Med Mol Imaging, 34,
+2007.
+
+A. Corduneanu and C. M. Bishop. Variational Bayesian model selection for mixture distributions.
+In Workshop AI and Statistics, pages 27—34, 2001.
+
+S. Dasgupta, M. Littman, and D. McAllester. PAC generalization bounds for co-training. In NIPS,
+2001.
+
+V. de Sa. Spectral clustering with two views. In ICML Workshop on Learning With Multiple Views,
+2005.
+
+C. Dehing-Oberije, S. Yu, D. De Ruysscher, S. Meerschout, K. van Beek, Y. Lievens, J. van Meer-
+beeck, W. de Neve, G. Fung, B. Rao, S. Krishnan, H. van der Weide, and P. Lambin. Development
+and external validation of prognostic model for 2-year survival of non-small-cell lung cancer pa-
+tients treated with chemoradiotherapy. Int J Radiat Oncol Biol Phys, 2009.
+
+J. Farquhar, D. Hardoon, H. Meng, J-S. Taylor, and S. Szedmak. Two view learning: SVM-2K,
+Theory and Practice. In NIPS, 2005.
+
+R. Hwa, M. Osborne, A.Sarkar, and M. Steedman. Corrected co-training for statistical parsers. In
+ICML Workshop The Continuum from Labeled to Unlabeled Data, 2003.
+
+S. Kiritchenko and S. Matwin. Email classiﬁcation with co-training. Technical
+of Ottawa, 2002.
+
+report, University
+
+A. Krause, A. Singh, and C. Guestrin. Near-optimal sensor placements in Gaussian processes:
+JMLR, 9:235–284, 2008.
+Theory, efﬁcient algorithms and empirical studies.
+
+2679
+
+YU , KR I SHNA PURAM , RO SA L E S AND RAO
+
+B. Krishnapuram, D. Williams, Y. Xue, A. Hartemink, L. Carin, and M. Figueiredo. On semi-
+supervised classiﬁcation. In NIPS, 2004.
+
+D. MacKay. Information-based objective functions for active data selection. Neural Computation,
+4:590–604, 1992.
+
+P. Melville, M. Saar-Tsechansky, F. Provost, and R. Mooney. Active feature-value acquisition for
+classiﬁer induction. In IEEE International Conference on Data Mining, 2004.
+
+K. Nigam and R. Ghani. Analyzing the effectiveness and applicability of co-training. In Workshop
+on information and knowledge management, 2000.
+
+D. Pierce and C. Cardie. Limitations of co-training for natural language learning from large datasets.
+In EMNLP-2001, 2001.
+
+C. E. Rasmussen and C. K. I. Williams. Gaussian Processes for Machine Learning. MIT Press,
+2006.
+
+V. Sindhwani and D. S. Rosenberg. An RKHS for multi-view learning and manifold co-
+regularization. In ICML, 2008.
+
+V. Sindhwani, P. Niyogi, and M. Belkin. A co-regularization approach to semi-supervised learning
+with multiple views. ICML Workshop on Learning With Multiple Views, 2005.
+
+K. Sridharan and S. M. Kakade. An information theoretic framework for multi-view learning. In
+COLT, 2008.
+
+W. Wang and Z.-H. Zhou. Analyzing co-training style algorithms.
+Machine Learning, 2007.
+
+In European Conference on
+
+W. Wang and Z.-H. Zhou. A new analysis of co-training. In International Conference on Machine
+Learning, 2010.
+
+K. Yu, V. Tresp, and A. Schwaighofer. Learning Gaussian processes from multiple tasks. In Inter-
+national Conference on Machine Learning, 2005.
+
+S. Yu, B. Krishnapuram, R. Rosales, H. Steck, and B. Rao. Bayesian co-training. In NIPS, 2008.
+
+X. Zhu, J. Lafferty, and Z. Ghahramani. Semi-supervised learning: from Gaussian ﬁelds to Gaussian
+processes. Technical report, CMU-CS-03-175, 2003.
+
+2680
+
+

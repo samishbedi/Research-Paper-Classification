@@ -1,0 +1,559 @@
+DBMS RESEARCH
+AT A CROSSROADS: THE VIENNA UPDATE
+Michael Stonebraker
+Rakesh Agrawal
+Umeshwar Dayal
+Erich J. Neuhold
+Andreas Reuler
+Abstract - On April 23, 1993 a panel discussion was
+held at the IEEE International Conference on Data Engi-
+neering in Vienna, Austria, at which five members of the
+data base research community discussed future research
+topics in the DBMS area. This paper summarizes the dis-
+cussion which took place. The panel followed a similar
+format to that used at Laguna Beach four years earlier, and
+four of the five panelists attended the earlier conference.
+As such, we contrast the recommendations of the Laguna
+Beach participants with those obtained four years later by a
+similar group.
+1. INTRODUCTION
+In February 1989, an informal workshop was held in
+Laguna Beach, California, attended by 7 senior DBMS
+researchers from Germany and 9 from the USA. This
+workshop was organized by Erich Neuhold of GMD and
+Michael Stonebraker of Berkeley, and sponsored by the
+International Computer Science Institute (ICSI). The pur-
+pose of that workshop was to discuss what DBMS topics
+deserve research attention in the future. During the first
+day, each participant presented four topics that he was not
+working on that he thought were important and that he
+would like to investigate. In addition, each participant was
+asked to present two topics that others were working on,
+which he thought were unlikely to yield significant
+research progress. All participants then cast five votes in
+support of research topics proposed by others. They were
+also given two votes to indicate agreement with overrated
+topics. The workshop report [4] summarized the discus-
+sion which took place, but did not indicate the actual
+scorn from the exercise.
+On April 23, 1993, a similar exercise was held in a
+panel discussion at the IEEE Data Engineering Confcrcncc
+among five participants, four of whom had attcndcd the
+Laguna Beach workshop. Each panelist was asked to pre-
+sent 4 problems he would like to see solved that he was not
+working on. Further, he was asked to present 4 problems
+that he would be happy never to see another paper on.
+Subsequently, each panelist was given two votes hc could
+cast to support important topics proposed by others and
+two votes to agree with overrated topics.
+The exercise in Vienna was slightly diffcrcnt from
+Laguna Beach, in that it ensured that “positive” topics
+could not have “ncgativc” votes and ncgativc topics could
+not have positive votes. Also, Vienna had a much smaller
+tGun of panelists, who did not bcncfit from an opportunity
+to discuss the various topics before voting. Even so, the
+authors believe that contrasting the two sets of scores will
+provide guidance to the research community in sclccting
+what problems to address.
+As such, in Section 2 we briefly review the Laguna
+Beach scores, followed in Section 3 by the Vienna scores.
+We close in Section 4 with some comments and views,
+shared by all five authors.
+2. A REVIEW OF LACUNA
+BEACH
+There were thereby a total 144 “positive” votes and 64
+“negative” votes cast at Laguna Beach, and the raw results
+arc summarized in Table 1. Notice that it is possible for
+some researchers to consider a topic to have much promise
+and others to consider it having littlc promise. Hence, the
+number of positive and negative votes for each topic arc
+prescntcd.
+The thing that amazed the participants was that 10 top-
+ics collected 101 of 144 positive votes and six topics
+received 42 out of 64 possible ncgativc votes.
+Essentially all participants wanted to see more re.scan*h
+on end-user interfaces to data base systems and active data
+bases, i.e. rule systems supporting triggers and alcrtcrs.
+Considcrablc support was also present for parallel query
+Research sponsored by the National Science Foundation Grant
+w-91 -07455.
+Permission IO copy witho~ fee all or part of fhir material k grant-
+ed provided what the copies are not made or distributed for direct com-
+merical advantage, the VLDB copyrighl notice and the title of the publi-
+cation and its dale appear, and notice is given thaw copying is by permk-
+sion of the Very Large Data Base Endowment. To copy otherwire. or 10
+republirh, requires a fee andlor special permiwion from the Endowment.
+Proceedings of the 19th VLDB Conference Dublin,
+Ireland, 1993.
+688Topic
+End User Interfaces
+Active Data Bases
+Parallelism
+New Transaction Models
+CIM. Image, IR Appl.
+CASE Applications
+Security & High Availability
+Large Dist. Data Bases
+DB/OS Interaction
+Transaction Design Tools
+Large Syslem Admin.
+Real lime DBMS
+DBMS Impl. Blkbd Paradigm
+IMS-style Joins
+Automatic DB Design
+Tool-kit DBMS Systems
+Data Translation
+CICDB
+Dcpendcncy Theory
+Interface Btwn DBMS & Prolog
+New Data Model
+Common 00 Data Model
+Tradit ConcurrConaol
+Hardware DB machines
+General Recursion Queries
+Positive
+votes
+14
+15
+11
+10
+10
+9
+9
+9
+7
+7
+5
+3
+3
+3
+4
+5
+2
+7
+0
+0
+0
+2
+0
+0
+0
+Negative
+votes
+0
+1
+0
+0
+0
+0
+0
+1
+0
+1
+1
+0
+0
+0
+2
+3
+1
+6
+3
+5
+5
+7
+7
+8
+10
+Laguna Beach Results
+Table I
+processing on multiprocessor systems, new transaction
+models, c.g. Sagas [31 and Contracts [5), and finding rele-
+vant rcscarch problems by studying new application arcas
+such as Computer Integrated Manufacturing (CIM), image
+data bases, Information Retrieval (IR) applications, and
+Computer Assisted Softwarc Engineering (CASE). Con-
+sidcration of high availability, security, scaling problems in
+very large distributed data bases, interface issues between
+the DBMS and the operating system and tools to assist
+users in designing transactions rounded out the list of pop-
+ular topics.
+The six unpopular topics were general recursion, hard-
+wart data base machines, exploration of concurrency con-
+tml schcmcs supporting serializability on a single machine
+a common object-oriented data model. new data models of
+any kind, and interfaces between a DBMS and Prolog.
+Gcncral recursion was unpopular because none of the
+participants had ever seen an application that needed this
+capability. The participants thought that advocates of gen-
+eral recursion research should either find a credible appli-
+cation for the technology or move on to other more rele-
+vant topics. Hardware data base machines were unpopular
+because the participants felt that software-only data base
+machines, i.e. conventional multiprocessors running paral-
+lel software offered much more promise. Concurrency
+control was unpopular because of the appearance of a large
+number of papers on the topic in the mid 1980’s, all differ-
+ing in seemingly minor ways. The participants thought
+that little progress would be made by continuing to publish
+minor variations on a set of common themes. Data models
+(object-oriented or otherwise) were not in favor, because
+the participants had seen a large number of them, differing
+in small ways, and they did not want to see any more.
+Lastly, interfaces to Prolog were not considered the best
+way to build expert data base systems. Rather rules sys-
+tems integrated with the DBMS should be the focus of
+research activity.
+It is an understatement to say that the report was imme-
+diately controversial. Perhaps the biggest problem with
+the report was that the composition of the participants was
+primarily from the systems area. For example, there was
+nobody from the theory .community, and the representative
+from the deductive DBMS community was forced to can-
+cel at the last minute. Hence, the participants did not rep-
+resent a broad cross section of DBMS researchers. As
+such. their collective judgement may be biased in assorted
+ways.
+3. THE VIENNA
+UPDATE
+In this section we present the scores captured during the
+Vienna panel discussion. Although opinions were hastily
+conceived and from a narrower collection of researchers;
+nevertheless some of the conclusions that can be drawn are
+very interesting. There were a total of 30 positive votes
+and 30 negative votes cast by the panelists, and we summa-
+rize the results in Table. 2.
+There was near-universality of interest in five topics.
+The panelists were enthusiastic about new user interfaces,
+such as workflow languages and collaboration tools. They
+lamented that progress in this area continues to be done by
+industry, and the research community has very little impact
+on this important topic.
+In addition, there was interest in studying problems of
+scaling DBMSs to very big (multi-terabyte) data bases and
+very big (thousands of clients) systems. Scaling to ter-
+abyte data bases entails coping with memory management
+in a multilevel hierarchy and performing very intelligentTopic
+Positive
+votes
+End User Interfaces
+Big Systems
+Legacy Applications
+Multimedia Applications
+Data Mining
+Mobile Data Bases
+Method Optimization
+Embedded DBMS
+Object Repositories
+00 Data Base Design
+Constraints
+Relational Extensions
+Synchronization theory
+Simplistic Data Integration
+Less than ACID Transactions
+Persistent C++
+Multi-data base Transactions
+New 00 Data Models
+Replication Algorithms
+Bizarre Performance Studies
+Traditional Engines
+General recursion
+4.5
+4.5
+4
+4
+4
+2
+2
+2
+1
+1
+1
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+Problems associated with storing large multi-media
+objects in data bases also stood out. These include how to
+build indexes on the content of such objects and how to
+provide services such as guaranteed delivery.
+Negative
+votes
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+1
+1
+1
+2
+2
+3
+3
+4
+4
+4
+5
+Lastly, “data mining” was a very popular topic. It is
+motivated by the decision support problem faced by most
+large retail chains. They record every item that is pur-
+chased in cvcry store by capturing this data at the point of
+sale. Buyers and merchandise arrangers use this data base
+to rotate stock and make purchasing decisions. The query
+to such a data base is “tell me something interesting”.
+Specifically, users want a system that would “mine” the
+data for useful information.
+Three other topics received lesser support. The first
+concerned problems in mobile data bases. There will hc
+applications where clients have hand-held dcviccs, which
+may only be intermittently connected to a DBMS server.
+As such, system designers must cope with issues such as
+operating the system in disconnected mode and then per-
+forming downstream version merging. Furthermore, opti-
+mizing queries to minimize power consumption is a worth-
+while cxcrcisc.
+Second, extendible and object-oriented data base sys-
+tems allow user to add user-defined functions to the
+DBMS. Such functions can be written in the query lan-
+guage, or they can bc written in a gcncml purpose pro-
+gramming language such as C with intermixed SQL
+queries intcmal to the function. In this latter cast, the
+function is “opaque” and its cost of cxccution cannot bc
+idcntilicd. How to make a query optimizer intclligcntly
+deal with queries containing such funclions was thought
+important by some panelists.
+Vienna Results
+Table 2
+caching. Also, a DBMS must cope with millions (and pcr-
+haps billions) of objects. Scaling to a large number of
+clients requires solving such matters as installing a new
+copy of an application program without taking the system
+down and keeping track of an application in which certain
+clients am running different versions of the same applica-
+tion.
+Furthermore, essentially all large companies are run-
+ning their business on large application systems that are at
+least ten years old. Such systems are typically poorly
+structured and often use obsolete DBMS technology or
+even no DBMS at all. Managers in these companies want
+to retire this “legacy” code to move to modem DBMS and
+client-server technology, and they can proceed by a global
+rewrite or incremental migration. Since total rewrites are
+perilous and failure prone, users need help in generating
+feasible incremental migration strategies for legacy appli-
+cations. Participants were enthusiastic about reverse engi-
+neering techniques as well as architectural suggestions
+such as [l].
+ti!)o
+The final topic was one of embcddcd DBMSs. Hcrc,
+the focus was on applications such as telephone switches
+where the hardware and software arc a “closed world”
+which is constructed at the factory and not changul in the
+field. There is no requirement to run arbitrary user pro-
+grams or for protecting the DBMS from application pro-
+grams. Instead other issues arise such as a very high avail-
+ability requirement, which requires that new versions of
+the software be installable without taking down the device,
+and extremely high performance requirements.
+The panelists were uniformly hostile to gcncral recur-
+sion. Ever increasing numbers of papers are being written
+to define yet another declarative semantics of stratelicd
+aggregation/negation or provide a twist on magic set opti-
+mization techniques. It has been four years since Laguna
+Beach, and there is still no known user of this technology.
+The segment of the DBMS research community that writcs
+papers on this topic should really be charged with finding
+applications that can use their results.The optimization of traditional single site DBMSs for
+business data processing applications was also poorly
+received. The scn.sc of the panelists was that this topic is
+well understood and that WC should d&arc it a solved
+problem. Future research will bc incrcmcntal in this arca,
+and researchers are “polishing a round ball”. In fact, one
+panelist observed that in 1995 it will be possible to buy
+1000 transactions per second for $100,000, and that there
+arc only two known applications which require higher
+transaction rates. More typical applications require 100
+transactions per second and will need only a small portion
+of a chwp machine. They will increasingly be able to get
+by with “brute force” solutions to their DBMS problems,
+rcndcring further research in this area of questionable
+value. In a sense Laguna Beach declared traditional con-
+currency control a dead topic; Vienna extended this death
+warranl to single site DBMSs.
+request to this site can be piggy-backed onto the query.
+Similarly, all copies must be updated and a lock request
+again can be piggy-backed. As such, it is difficult to beat a
+scheme that reads and locks any copy and writes and locks
+all copies that are currently operational, as explained in
+[2]. Any author writing a replication paper must keep in
+mind this simple fact.
+Another hostilely received topic was any additional
+object-oriented data models. The feeling was that lots of
+models have been invented, and lots more will presumably
+be discovered, all differing in minor ways. The feeling of
+the panelists was that no more papers should be written in
+this area. This reinforces the same feeling from the
+Laguna Beach participants.
+Another topic with 3 negative votes was transactions
+spanning multiple data bases. Specifically, the panelists
+were negative on algorithms supporting two-phase commit
+in a heterogeneous distributed data base environment in
+which the various local DBMSs do not support a prepare
+message. This requires sophisticated and expensive algo-
+rithms to simulate this capability outside the DBMS. The
+feeling of the panelists was that XA would force all vcn-
+dors of data managers to support a common distributed
+transaction capability, and render this problem irrelevant.
+In this scenario, a prepare message would only be missing
+from legacy “home brew” systems, and it is unlikely that
+the sophistication to implement simulations of two-phase
+commit would be present in such application shops.
+Hence, this problem is not relevant to any real world situa-
+tion.
+Two final topics deserve comment. First, the panelists
+felt that there is a limited commercial market for persistent
+C++ data base systems. Compared to the SQL DBMS mar-
+ket, persistent C++ is perhaps l-2%, and that it is not likely
+to “take off” in the near future. As such, researchers
+should focus their energy on problem areas with a higher
+possibility of product penetration.
+The third topic received with disfavor was performance
+studies of artificial environments. Two examples were
+heavily cited. Fist, studies of “toy” disk-based data bases
+of a few megabytes or less which were fronted by even
+smaller main memory caches were scorned. Current work-
+stations routinely come with 32 Mbytes of memory, and
+performance studies that assume a cache size considerably
+smaller than this number seemed unreal to the panelists. In
+cffcct any study with a small number of Mbytes of data
+that did not assume full main memory caching seemed
+silly. Hcncc, performance studies should use technology
+pWilmCtCrS rcflccting current reality, not some past reality.
+Second, Jim Gray once formulated to following law:
+In a well-designed data base, the probability
+of waiting as a result of a lock
+rcqucst is less than 0.01
+Specifically, in a real data base, transactions nrely wait.
+The reason is that an application cannot afford to have
+humans sitting idle waiting for lock releases. A data base
+administrator faced with this situation will redesign his
+data base to make the probability of waiting very rare.
+The last topic was the study of concurrency control and
+crash recovery systems that supported less than ACID
+properties. The feeling was that such schemes are not gen-
+eral purpose enough to ever find much favor in real
+DBMSs. Hence, there is limited applicability for such
+research.
+There have been a large number of papers recently pub-
+lished in which the probability of waiting is more than one
+order of magnitude higher than that in Jim Gray’s law.
+Such authors should realize they are optimizing a DBMS
+for a load that will never be experienced in the real world.
+Another unappealing arca was algorithms for updating
+multiple topics of objects in distributed data bases. There
+have been a large number of papers exploring new tech-
+niyucs in this arca, and the panelists felt that a large num-
+bcr of additional papers could be written. Moreover, most
+entail setting read locks at more than one site and write
+locks at less than all sites. Quorum and majority consen-
+sus algorithms have this property. However, a read com-
+mand need be sent to only one site, and a single lock
+4. COMMENTS
+ON THE EXERCISE
+One striking feature of these two exercises is that most
+of the important Laguna Beach topics have been exten-
+sively addressed in the intervening four years, and have
+dropped off the list of things requiring attention. Only user
+interfaces remains on the 1993 list. In addition, work on
+the negative topics has largely ceased. With the exception
+691of general recursion, most of the negative topics have dis-
+appeared from the 1993 list. As a result, it appears that the
+DBMS community has largely addressed the opinions
+voiced in the Laguna Beach report PI
+However, we must now ponder the Vienna results in
+Table 2. One member of the Vienna audience pointed out
+that the 1993 Data Engineering conference had a large
+number of papers in the areas considered negative by the
+panel and almost no papers in areas considered important.
+Assuming that this conference is typical of DBMS
+research, it appears that our community is largely working
+on the wrong problems. 121
+Put more strongly, we are at a crossroads, in that the
+traditional topics we have studied such as buffer manage-
+ment, concurrency control and query optimization should
+be declared “solved”. However,.as a community we con-
+tinue to “plow” the familiar ground and we appear to be
+increasingly “polishing a round ball”. On the other hand,
+the problems identified by the panel as important have the
+property that they are both very hard (e.g. data mining is
+almost certainly “AI complete”) and also away from the
+center of previous DBMS activity. Hence, our community
+is at a crossroads where we can either continue along the
+traditional road or take a path exploring largely unknown
+terrain.
+It is, of course, safer to take the traditional path. Pro-
+gram committees react favorably to “more of the same”,
+and often react badly to papers in new areas, especially if
+they do not contain well thought out formal results. As a
+community, we should consciously break out of this mold.
+Another way of considering the 1993 table is that
+DBMS research in the 1990’s should have an application
+focus rather than a technology focus. The old wisdom was
+to find a technical problem and then solve it, while the new
+adage appears to be “find a customer” and then solve the
+problem that he explains to you. The important problems
+from the 1993 table appear to have largely come from
+applying this advice.
+A last lament echoed in the halls of the conference hut
+not directly by the data in Table 2 is that there are simply
+too many papers being published. The number of
+researchers needing to gain tenure as well as the number of
+conferences has increased dramatically. It is now nearly
+impossible to keep up with the DBMS literature across
+more than a very narrow slice of the research terrain.
+Moreover, most researchers seem to dissect their ideas into
+“least publishable units”, so as to maximize the length of
+their vitae, contributing further to the paper explosion. A
+way to lower the number of words published is clearly
+needed.
+REFERENCES
+r31
+r41
+PI
+Brodie, M. and Stonebmlcer, M., “Incrcmcntal
+Migration of Legacy Data Base Applications,”
+GTE Laboratories, Waltham, Mass., Technical
+Report 93-12, January 1993.
+El Abbadi. A. et. al., “An Efficient Fault-
+tolerant Protocol for Rcplicatcd Data Managc-
+ment,” hoc. 1985 SIGACTSIGMOD Sympo-
+sium on Principles of Data Base Systems,
+1985.
+Garcia-Molina, H. and Sakm. K., “SAGAS.”
+Pm. 1987 ACM-SIGMOD
+Conference on
+Management of Data, San Francisco, Ca.,
+May 1987.
+Stonebrakcr, M. and N&old,
+E., “The
+Laguna Beach Report,” International Institute
+of Computer Science Technical Report #I,
+Berkeley, Ca., June 1989.
+Wachter, H. and Reuter, A., “The ConTract
+Model,” in “Transaction Models for Advanced
+Database Applications,” Morgan-Kaufman
+Publishers, Redwood City, Ca., 1992.

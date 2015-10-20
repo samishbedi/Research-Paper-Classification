@@ -1,0 +1,3289 @@
+Journal of Machine Learning Research 16 (2015) 617-652
+
+Submitted 11/12; Revised 9/14; Published 3/15
+
+Generalized Hierarchical Kernel Learning
+
+Pratik Jawanpuria
+Jagarlapudi Saketha Nath
+Ganesh Ramakrishnan
+Department of Computer Science and Engineering
+Indian Institute of Technology Bombay
+Mumbai 400076, INDIA
+
+Editor: Francis Bach
+
+pratik.j@cse.iitb.ac.in
+saketh@cse.iitb.ac.in
+ganesh@cse.iitb.ac.in
+
+Abstract
+
+This paper generalizes the framework of Hierarchical Kernel Learning (HKL) and illustrates
+its utility in the domain of rule learning. HKL involves Multiple Kernel Learning over
+a set of given base kernels assumed to be embedded on a directed acyclic graph. This
+paper proposes a two-fold generalization of HKL: the ﬁrst is employing a generic (cid:96)1 /(cid:96)ρ
+block-norm regularizer (ρ ∈ (1, 2]) that alleviates a key limitation of the HKL formulation.
+The second is a generalization to the case of multi-class, multi-label and more generally,
+multi-task applications. The main technical contribution of this work is the derivation of a
+highly specialized partial dual of the proposed generalized HKL formulation and an eﬃcient
+mirror descent based active set algorithm for solving it. Importantly, the generic regularizer
+enables the proposed formulation to be employed in the Rule Ensemble Learning (REL)
+where the goal is to construct an ensemble of conjunctive propositional rules. Experiments
+on benchmark REL data sets illustrate the eﬃcacy of the proposed generalizations.
+Keywords: multiple kernel learning, mixed-norm regularization, multi-task learning, rule
+ensemble learning, active set method
+
+1. Introduction
+
+A Multiple Kernel Learning (MKL) (Lanckriet et al., 2004; Bach et al., 2004) framework for
+construction of sparse linear combinations of base kernels embedded on a directed acyclic
+graph (DAG) was recently proposed by Bach (2008). Since the DAG induces hierarchical
+relations between the base kernels, this framework is more commonly known as Hierarchical
+Kernel Learning (HKL). It has been established that HKL provides a powerful algorithm
+for task speciﬁc non-linear feature selection. HKL employs a carefully designed (cid:96)1/(cid:96)2 block-
+norm regularizer: (cid:96)1 -norm across some predeﬁned components associated with the DAG
+and (cid:96)2 -norm within each such component. However, the sparsity pattern of kernel (feature)
+selection induced by this regularizer is somewhat restricted: a kernel is selected only if the
+kernels associated with al l its ancestors in the DAG are selected.
+In addition, it can be
+proved that the weight of the kernel associated with a (selected) node will always be greater
+than the weight of the kernels associated with its descendants. Such a restricted selection
+pattern and weight bias may limit the applicability of HKL in real world problems.
+This paper proposes a two-fold generalization of HKL. The ﬁrst is employing a (cid:96)1/(cid:96)ρ , ρ ∈
+(1, 2), block-norm regularizer that mitigates the above discussed weight and selection bias
+
+©2015 Pratik Jawanpuria, Jagarlapudi Saketha Nath and Ganesh Ramakrishnan.
+
+Jawanpuria, Nath and Ramakrishnan
+
+among the kernels, henceforth termed as gHKL. Note that for the special case of ρ = 2,
+gHKL renders the HKL regularizer. Further, gHKL is generalized to the paradigm of Multi-
+task Learning (MTL), where multiple related tasks need to be learnt jointly. We consider
+the MTL setup where the given learning tasks share a common sparse feature space (Lounici
+et al., 2009; Jawanpuria and Nath, 2011; Obozinski et al., 2011). Our goal is to construct a
+shared sparse feature representation that is suitable for all the given related tasks. We pose
+the problem of learning this shared feature space as that of learning a shared kernel, common
+across all the tasks. The proposed generalization is henceforth referred to as gHKLMT . In
+addition to learning a common feature representation, gHKLMT is generic enough to model
+additional correlations existing among the given tasks.
+Though employing a (cid:96)1/(cid:96)ρ , ρ ∈ (1, 2), regularizer is an incremental modiﬁcation to the
+HKL formulation, devising an algorithm for solving it is not straightforward. The pro jected
+gradient descent employed in the active set algorithm for solving HKL (Bach, 2008) can no
+longer be employed for solving gHKL as pro jections onto (cid:96)ρ -norm balls are known to be
+signiﬁcantly more challenging than those onto (cid:96)1 -norm balls (Liu and Ye, 2010). Hence naive
+extensions of the existing HKL algorithm will not scale well. Further, the computational
+challenge is compounded with the generalization for learning multiple tasks jointly. The
+key technical contribution of this work is the derivation of a highly specialized partial
+dual of the gHKL/gHKLMT formulations and an eﬃcient mirror descent (Ben-Tal and
+Nemirovski, 2001; Beck and Teboulle, 2003) based active set algorithm for solving it. The
+dual presented here is an elegant convex optimization problem with a Lipschitz continuous
+ob jective and constrained over a simplex. Moreover, the gradient of the ob jective can
+be obtained by solving a known and well-studied variant of the MKL formulation. This
+motivates employing the mirror descent algorithm that is known to solve such problems
+eﬃciently. Further eﬃciency is brought in by employing an active set method similar in
+spirit to that in Bach (2008).
+A signiﬁcant portion of this paper focuses on the application of Rule Ensemble Learn-
+ing (REL) (Dembczy´nski et al., 2010, 2008), where HKL has not been previously explored.
+Given a set of basic propositional features describing the data, the goal in REL is to con-
+struct a compact ensemble of conjunctions with the given propositional features that gen-
+eralizes well for the problem at hand. Such ensembles are expected to achieve a good
+trade-oﬀ between interpretability and generalization ability. REL approaches (Cohen and
+Singer, 1999; Friedman and Popescu, 2008; Dembczy´nski et al., 2010) have additionally
+addressed the problem of learning a compact set of rules that generalize well in order to
+maintain their readability. One way to construct a compact ensemble is to consider a linear
+model involving all possible conjunctions of the basic propositional features and then per-
+forming a (cid:96)1 -norm regularized empirical risk minimization (Friedman and Popescu, 2008;
+Dembczy´nski et al., 2010). Since this is a computationally infeasible problem, even with
+moderate number of basic propositions, the existing methods either approximate such a
+regularized solution using strategies such as shrinkage (Friedman and Popescu, 2008; Dem-
+bczy´nski et al., 2010, 2008) or resort to post-pruning (Cohen and Singer, 1999). This work
+proposes to solve a variant of this regularized empirical risk minimization problem optimally
+using the framework of gHKL. The key idea is to deﬁne kernels representing every possible
+conjunction and arranging them on a DAG. The proposed gHKL regularizer is applied on
+this DAG of kernels, leading to a sparse combination of promising conjunctions. Note that
+
+618
+
+Generalized Hierarchical Kernel Learning
+
+with such a setup, the size of the gHKL optimization problem is exponential in the number
+of basic propositional features. However, a key result in the paper shows that the proposed
+gHKL algorithm is guaranteed to solve this exponentially large problem with a complexity
+polynomial in the ﬁnal active set1 size. Simulations on benchmark binary (and multiclass)
+classiﬁcation data sets show that gHKL (and gHKLMT ) indeed constructs a compact en-
+semble that on several occasions outperforms state-of-the-art REL algorithms in terms of
+generalization ability. These results also illustrate the beneﬁts of the proposed generaliza-
+tions over HKL: i) the ensembles constructed with gHKL (with low ρ values) involve fewer
+number of rules than with HKL; though the accuracies are comparable ii) gHKLMT can
+learn rule ensemble on multiclass problems; whereas HKL is limited to two-class problems.
+The rest of the paper2 is organized as follows. Section 2 introduces the classical Multi-
+ple Kernel Learning setup, brieﬂy reviews the HKL framework and summarizes the existing
+works in Multi-task Learning. In Section 3, we present the proposed gHKL and gHKLMT
+formulations. The key technical derivation of the specialized dual is also presented in this
+section. The proposed mirror descent based active set algorithm for solving gHKL/gHKLMT
+formulations is discussed in Section 4. In Section 5, we propose to solve the REL problem
+by employing the gHKL formulation and discuss its details. In Section 6, we report em-
+pirical evaluations of gHKL and gHKLMT formulations for REL on benchmark binary and
+multiclass data sets respectively. Section 7 concludes the paper.
+
+2. Related Works
+
+This section provides a brief introduction to the Multiple Kernel Learning (MKL) frame-
+work, the HKL setup and formulation (Bach, 2008, 2009) as well as the existing works in
+Multi-task Learning.
+
+2.1 Multiple Kernel Learning Framework
+
+We begin by discussing the regularized risk minimization framework (Vapnik, 1998), which
+has been employed in the proposed formulations.
+Consider a learning problem like classiﬁcation or regression and let its training data be
+denoted by D = {(xi , yi ), i = 1, . . . , m | xi ∈ X , yi ∈ R ∀i}, where (xi , yi ) represents the ith
+input-output pair. The aim is to learn an aﬃne prediction function F (x) that generalize
+well on unseen data. Given a positive deﬁnite kernel k that induces a feature map φk (·), the
+prediction function can be written as: F (x) = (cid:104)f , φk (x)(cid:105)Hk − b. Here Hk is the Reproducing
+Kernel Hilbert Space (RKHS) (Sch¨olkopf and Smola, 2002) associated with the kernel k ,
+endowed with an inner product (cid:104)·, ·(cid:105)Hk , and f ∈ Hk , b ∈ R are the model parameters to
+be learnt. A popular framework to learn these model parameters is the regularized risk
+m(cid:88)
+minimization (Vapnik, 1998), which considers the following problem:
+i=1
+
+min
+f ∈Hk ,b∈R
+
+(1)
+
+1
+2
+
+Ω(f )2 + C
+
+(cid:96)(yi , F (xi )),
+
+1. Roughly, this is the number of selected conjunctions and is potentially far less than the total number of
+conjunctions.
+2. Preliminary results of this work were reported in Jawanpuria et al. (2011).
+
+619
+
+Jawanpuria, Nath and Ramakrishnan
+
+where Ω(·) is a norm based regularizer, (cid:96) : R×R → R is a suitable convex loss function and C
+we know that the optimal f has the following form f (·) = (cid:80)m
+is a regularization parameter. As an example, the support vector machine (SVM) (Vapnik,
+1998) employs Ω(f ) = (cid:107)f (cid:107)Hk . From the representer theorem (Sch¨olkopf and Smola, 2002),
+i αik(·, xi ) where α = (αi )m
+i=1
+is a vector of coeﬃcients to be learnt.
+It can be observed from above that the kernel deﬁnition plays a crucial role in deﬁning
+the quality of the solution obtained by solving (1). Hence learning a kernel suitable to the
+problem at hand has been an active area of research over the past few years. One way
+combination of the given base kernels k1 , . . . , kl : k = (cid:80)l
+to learn kernels is via the Multiple Kernel Learning (MKL) framework (Lanckriet et al.,
+2004; Bach et al., 2004). Lanckriet et al. (2004) proposed to learn the kernel k as a conic
+i=1 ηiki , ηi ≥ 0 ∀ i. Here η = (ηi )l
+i=1
+√
+is a coeﬃcient vector to be (additionally) learnt in the optimization problem (1). In this
+ηiφki )l
+setting, the feature map with respect to the kernel k is given by φk = (
+i=1 (see
+Rakotomamonjy et al., 2008, for details). It is a weighted concatenation of feature maps
+induced by the individual base kernels. Hence, sparse kernel weights will result in a low
+dimensional φk . Some of the additional constraints on η explored in the existing MKL works
+are (cid:96)1 -norm constraint (Bach et al., 2004; Rakotomamonjy et al., 2008), (cid:96)p -norm constraint
+(p > 1) (Kloft et al., 2011; Vishwanathan et al., 2010; Aﬂalo et al., 2011), etc.
+
+2.2 Hierarchical Kernel Learning
+
+Hierarchical Kernel Learning (HKL) (Bach, 2008) is a generalization of MKL and assumes
+a hierarchy over the given base kernels. The base kernels are embedded on a DAG and a
+carefully designed (cid:96)1/(cid:96)2 block-norm regularization over the associated RKHS is proposed
+to induce a speciﬁc sparsity pattern over the selected base kernels. We begin by discussing
+its kernel setup.
+Let G (V , E ) be the given DAG with V denoting the set of vertices and E denoting
+the set of edges. The DAG structure entails relationships like parent, child, ancestor and
+descendant (Cormen et al., 2009). Let D(v) and A(v) represent the set of descendants and
+ancestors of the node v in the G . It is assumed that both D(v) and A(v) include the node
+(cid:91)
+v . For any subset of nodes W ⊂ V , the hull and sources of W are deﬁned as:
+hull(W ) =
+sources(W ) = {w ∈ W | A(w) ∩ W = {w}} .
+w∈W
+The size and complement of W are denoted by |W | and W c respectively. Let kv : X ×X → R
+be the positive deﬁnite kernel associated with the vertex v ∈ V . In addition, let Hkv be
+(cid:88)
+its associated RKHS and φkv be its induced feature map. Given this, HKL employs the
+following prediction function:
+(cid:104)fv , φkv (x)(cid:105)Hkv
+v∈V
+which is an aﬃne model parameterized by f = (fv )v∈V , the tuple with entries as fv ∈ Hkv
+and b ∈ R. Some more notations follow: for any subset of nodes W ⊂ V , fW = (fv )v∈W
+and φW = (φv )v∈W . In general, the entries in a vector are referred to using an appropriate
+subscript, i.e., entries in u ∈ Rd are denoted by u1 , . . . , ud . The kernels are denoted by the
+lower case ‘k ’ and the corresponding Gram matrices are denoted by the upper case ‘K ’.
+
+F (x) =
+
+A(w),
+
+− b,
+
+620
+
+Generalized Hierarchical Kernel Learning
+
++ C
+
+(cid:96) (yi , F (xi )) ,
+
+(2)
+
+dv (cid:107)fD(v)(cid:107)2
+
+HKL formulates the problem of learning the optimal prediction function F as the fol-
+(cid:32)(cid:88)
+(cid:33)2
+m(cid:88)
+lowing regularized risk minimization problem:
+1
+min
+fv ∈Hkv ∀v∈V ,b∈R
+(cid:16)(cid:80)
+w∈D(v) (cid:107)fw (cid:107)2(cid:17) 1
+2
+v∈V
+i=1
+2 ∀v ∈ V , (cid:96)(·, ·) is a suitable convex loss function and
+where (cid:107)fD(v)(cid:107)2 =
+(dv )v∈V are given non-negative parameters.
+As is clear from (2), HKL employs a (cid:96)1/(cid:96)2 block-norm regularizer, which is known
+to promote group sparsity (Yuan and Lin, 2006).
+Its implications are discussed in the
+following. For most of v ∈ V , (cid:107)fD(v)(cid:107)2 = 0 at optimality due to the sparsity inducing
+nature of the (cid:96)1 -norm. Moreover ((cid:107)fD(v)(cid:107)2 = 0) ⇒ (fw = 0 ∀w ∈ D(v)). Thus it is
+expected that most fv will be zero at optimality. This implies that the prediction function
+involves very few kernels. Under mild conditions on the kernels (being strictly positive),
+it can be shown that this hierarchical penalization induces the following sparsity pattern:
+(fw (cid:54)= 0) ⇒ (fv (cid:54)= 0 ∀v ∈ A(w)). In other words, if the prediction function employs a kernel
+kw then it certainly employs al l the kernels associated with the ancestor nodes of w.
+(cid:88)
+m(cid:88)
+Bach (2008) proposes to solve the following equivalent variational formulation:
+δw (γ )−1(cid:107)fw (cid:107)2 + C
+1
+min
+min
+γ∈∆1
+fv ∈Hkv ∀v∈V ,b∈R
+v∈V zv ≤ 1(cid:9) and δw (γ )−1 = (cid:80)
+where ∆1 = (cid:8)z ∈ R|V | | z ≥ 0, (cid:80)
+2
+w∈V
+i=1
+in the HKL is: k = (cid:80)
+d2
+v∈A(w)
+. From the repre-
+v
+γv
+senter theorem (Sch¨olkopf and Smola, 2002), it follows that the eﬀective kernel employed
+w∈V δw (γ )kw . Since the optimization problem (3) has a (cid:96)1 -norm
+constraint over γ variables, most γv at optimality are expected to be zero. Moreover the
+kernel weight δw (γ ) is zero whenever γv = 0 for any v ∈ A(w). Thus, the HKL performs
+a sparse selection of the base kernels and can be understood as a generalization of the
+classical MKL framework. However, the sparsity pattern for the kernels has the following
+restriction: if a kernel is not selected then none of the kernels associated with its descen-
+dants are selected, as (γv = 0) ⇒ (δw (γ ) = 0 ∀w ∈ D(v)). For the case of strictly positive
+kernels, it follows that a kernel is selected only if all the kernels associated with its ances-
+tors are selected. In addition, the following relationship holds among the kernels weights:
+δv (γ ) ≥ δw (γ ) ∀w ∈ D(v) (strict inequality holds if δw (γ ) > 0). Hence, the weight of the
+kernel associated with a (selected) node is always be greater than the weight of the kernels
+associated with its descendants.
+Since the size of γ is same as that of V and since the optimal γ is known to be sparse, Bach
+(2008) proposes an active set based algorithm (Lee et al., 2007) for solving (3). At each
+iteration of the active set algorithm, (3) is solved with respect to only those variables in the
+active set via the pro jected gradient descent technique (Rakotomamonjy et al., 2008).
+As illustrated in Bach (2008), the key advantage of HKL is in performing non-linear
+feature selection. For example, consider the case where the input space is X = Rn and
+let I be power set of {1, . . . , n}. Consider the following 2n kernels arranged on the usual
+j ∀i ∈ I . HKL can be applied in this setup to select
+subset lattice: ki (x, x(cid:48) ) = Πj∈ixj x(cid:48)
+
+(cid:96) (yi , F (xi )) ,
+
+(3)
+
+621
+
+Jawanpuria, Nath and Ramakrishnan
+
+the promising sub-products of the input features over all possible sub-products. Please
+refer to Bach (2008) for more such pragmatic examples of kernels and corresponding DAGs.
+The most interesting result in Bach (2008) is that in all these examples where the size of
+the DAG is exponentially large, the computational complexity of the active set algorithm
+is polynomial in the training set dimensions and the active set size.
+Importantly, the
+complexity is independent of |V |!
+Though encouraging, the above discussed weight bias (in favor of the kernels towards
+the top of the DAG) and restricted kernel selection pattern may limit the applicability
+of HKL in real world problems. For instance, in case of the sub-product kernel example
+mentioned above, the following is true: a sub-product is selected only if all the products
+including it are selected. This clearly may lead to selection of many redundant sub-products
+(features). In Section 3, we present the proposed generalization that provides a more ﬂexible
+kernel selection pattern by employing a (cid:96)1/(cid:96)ρ , ρ ∈ (1, 2), regularizer. A key result of this
+paper (refer Corollary 6) is that for all the cases discussed in Bach (2008), the proposed
+mirror descent based active set algorithm for solving the generalization has a computational
+complexity that is still polynomial in the training set dimensions and the active set size.
+In other words, the proposed generalization does not adversely aﬀect the computational
+feasibility of the problem and hence is an interesting result in itself.
+
+2.3 Multi-task Learning
+
+Multi-task Learning (Caruana, 1997; Baxter, 2000) focuses on learning several prediction
+tasks simultaneously. This is in contrast with the usual approach of learning each task
+separately and independently. The key underlying idea behind MTL is that an appropriate
+sharing of information while learning related tasks will help in obtaining better prediction
+models. Various deﬁnitions of task-relatedness have been explored over the past few years
+like proximity of task parameters (Baxter, 2000; Evgeniou and Pontil, 2004; Xue et al., 2007;
+Jacob et al., 2008; Jawanpuria and Nath, 2012) or sharing common feature space (Ando
+and Zhang, 2005; Ben-David and Schuller, 2008; Argyriou et al., 2008; Lounici et al., 2009;
+Obozinski et al., 2011). Many learning settings like multiclass classiﬁcation, multi-label
+classiﬁcation or learning vector-valued function may be viewed as a special case of multi-
+task learning.
+In this work, we consider the common setting in which the task parameters share a simul-
+taneously sparse structure: only a small number of input features are relevant for each of the
+tasks and the set of such relevant features is common across all the tasks (Turlach et al., 2005;
+Lounici et al., 2009). Existing works in this setting typically employ a group lasso penalty
+(cid:16)(cid:80)T
+t=1 |fti |q (cid:17) 1
+on the tasks parameters: (cid:96)1/(cid:96)2 block-norm (Lounici et al., 2009; Obozinski et al., 2011) or
+propose a multi-task regularizer of the form: Ω(f1 , . . . , fT ) = (cid:80)d
+the (cid:96)1/(cid:96)∞ block-norm (Turlach et al., 2005; Negahban and Wainwright, 2009). Thus, they
+q where
+i=1
+the input feature space is assumed to be d dimensional, ft is the task parameter of the
+tth task and ft = (fti )i=1,...,d and q = {2, ∞}. Note that in addition to (sparse) shared
+feature selection, the (cid:96)1/(cid:96)∞ block-norm penalty also promote proximity among the task
+parameters.
+We pose the problem of learning the shared features as that of learning a shared ker-
+nel, whose induced feature space is common across all the tasks. The shared kernel is
+
+622
+
+Generalized Hierarchical Kernel Learning
+
+constructed as a sparse combination of the given base kernels. A hierarchical relationship
+exists over the given kernels (feature spaces). We employ a graph based (cid:96)1/(cid:96)ρ block-norm
+regularization over the task parameters that enable non-linear feature selection for multiple
+tasks simultaneously. The details of the proposed MTL formulation are discussed in the
+following section.
+
+3. Generalized Hierarchical Kernel Learning
+
+In this section, we present the proposed generalizations over HKL. As discussed earlier, the
+ﬁrst generalization aims at mitigating the weight bias problem as well as the restrictions
+imposed on the kernel selection pattern of HKL, and is termed as gHKL. The gHKL formu-
+lation is then further generalized to the paradigm of MTL, the proposed formulation being
+termed as gHKLMT . We begin by introducing the gHKL formulation.
+
+3.1 gHKL Primal Formulation
+
+Recall that HKL employs a (cid:96)1/(cid:96)2 block norm regularizer. As we shall understand in more
+detail later, a key reason for the kernel weight bias problem and the restricted sparsity
+pattern in HKL is the (cid:96)2 -norm regularization. One way to mitigate these restrictions is by
+(cid:88)
+employing the following generic regularizer:
+dv (cid:107)fD(v)(cid:107)ρ ,
+ΩS (f ) =
+w∈D(v) (cid:107)fw (cid:107)ρ(cid:17) 1
+(cid:16)(cid:80)
+v∈V
+where f = (fv )v∈V , (cid:107)fD(v)(cid:107)ρ =
+ρ and ρ ∈ (1, 2]. The implications of the
+(cid:96)1/(cid:96)ρ block-norm regularization are discussed in the following. Since the (cid:96)1 -norm promotes
+sparsity, it follows that (cid:107)fD(v)(cid:107)ρ = 0 (that is fw = 0 ∀w ∈ D(v)) for most v ∈ V . This
+phenomenon is similar as in HKL. But now, even in cases where (cid:107)fD(v)(cid:107)ρ is not forced to
+zero by the (cid:96)1 -norm, many components of fD(v) tend to zero3 (that is fw → 0 for many
+w ∈ D(v)) as the value of ρ tends to unity. Also note that ρ = 2 renders the HKL regularizer.
+m(cid:88)
+To summarize, the proposed gHKL formulation is
+i=1
+
+min
+fv ∈Hkv ∀v∈V ,b∈R
+
+(5)
+
+(4)
+
+1
+2
+
+(ΩS (f ))2 + C
+
+(cid:96) (yi , F (xi )) .
+
+We next present the gHKLMT formulation, which further generalizes gHKL to MTL paradigm.
+
+3.2 gHKLMT Primal Formulation
+
+We begin by introducing some notations for the multi-task learning setup. Let T be the
+number of tasks and let the training data for the tth task be denoted by Dt = {(xti , yti ), i =
+1, . . . , m | xti ∈ X , yti ∈ R ∀i}, where (xti , yti ) represents the ith input-output pair of the
+3. Note that as (cid:96)ρ -norm (ρ > 1) is diﬀerentiable, it rarely induce sparsity (Szafranski et al., 2010). However,
+as ρ → 1, they promote only a few leading terms due to the high curvatures of such norms (Szafranski
+et al., 2007). In order to obtain a sparse solution in such cases, thresholding is commonly employed by
+existing (cid:96)p -MKL (ρ > 1) algorithms (Vishwanathan et al., 2010; Orabona et al., 2012; Jain et al., 2012;
+Jawanpuria et al., 2014). We employed thresholding in our experiments.
+
+623
+
+Jawanpuria, Nath and Ramakrishnan
+
+2
+
+(6)
+
+1
+2
+
+dv
+
++ C
+
+min
+ft ,bt ∀t
+
+(cid:96)(yti , Ft (xti )),
+
+T(cid:88)
+t=1
+
+m(cid:88)
+i=1
+
+Ft (x) = (cid:80)
+tth task. For the sake of notational simplicity, it is assumed that the number of training
+examples is same for all the tasks. The prediction function for the tth task is given by:
+− bt , where ft = (ftv )v∈V and bt are the task parameters to
+v∈V (cid:104)ftv , φkv (x)(cid:105)Hkv
+be learnt. We propose the following regularized risk minimization problem for estimating
+
+
+these task parameters and term it as gHKLMT :
+ 1
+ (cid:88)
+(cid:88)
+ρ
+(cid:124)
+(cid:125)
+(cid:123)(cid:122)
+(Qw (f1 , . . . , fT ))ρ
+v∈V
+w∈D(v)
+ΩT (f1 ,...,fT )
+where ρ ∈ (1, 2] and Qw (f1 , . . . , fT ) is a norm-based multi-task regularizer on the task
+parameters ftw ∀t .
+In the following, we discuss the eﬀect of the above regularization.
+Firstly, there is a (cid:96)1 -norm regularization over the group of nodes (feature spaces) and a
+(cid:96)ρ -norm regularization within each group. This (cid:96)1/(cid:96)ρ block-norm regularization is same as
+that of gHKL and will have the same eﬀect on the sparsity pattern of the selected feature
+spaces (kernels). Hence, only a few nodes (feature spaces) will be selected by the gHKLMT
+regularizer ΩT (f1 , . . . , fT ). Secondly, nature of the task relatedness within each (selected)
+feature space is governed by the Qw (f1 , . . . , fT ) regularizer.
+For instance, consider the following deﬁnition of Qw (f1 , . . . , fT ) (Lounici et al., 2009;
+(cid:33) 1
+(cid:32) T(cid:88)
+Jawanpuria and Nath, 2011):
+2
+t=1
+
+Qw (f1 , . . . , fT ) =
+
+(cid:107)ftw (cid:107)2
+
+(7)
+
+.
+
+The above regularizer couples the task parameters within each feature space via (cid:96)2 -norm. It
+encourages the task parameters within a feature space to be either zero or non-zero across
+all the tasks. Therefore, ΩT (f1 , . . . , fT ) based on (7) has the following eﬀect: i) all the tasks
+will simultaneously select or reject a given feature space, and ii) overall only a few feature
+spaces will be selected in the gHKL style sparsity pattern.
+Several multi-task regularizations (Evgeniou and Pontil, 2004; Evgeniou et al., 2005;
+Jacob et al., 2008) have been proposed to encourage proximity among the task parameters
+within a given feature space. This correlation among the tasks may be enforced while
+(cid:13)(cid:13)(cid:13)(cid:13)(cid:13)2 1
+µ
+(cid:13)(cid:13)(cid:13)(cid:13)(cid:13)ftw − 1
+(cid:13)(cid:13)(cid:13)(cid:13)(cid:13)
+(cid:13)(cid:13)(cid:13)(cid:13)(cid:13)2
+learning a shared sparse feature space by employing the following Qw (f1 , . . . , fT ):
+T(cid:88)
+T(cid:88)
+T(cid:88)
+2
+T + µ
+t=1
+t=1
+t=1
+where µ > 0 is a given parameter. The above Qw (f1 , . . . , fT ) consists of two terms: the ﬁrst
+regularizes the mean while the second regularizes the variance of the task parameters in
+the feature space induced by kernel kw . The parameter µ controls the degree of proximity
+among the task parameters, with lower µ encouraging higher proximity. Note that when
+µ = ∞, (8) simpliﬁes to (7). The gHKLMT regularizer ΩT (f1 , . . . , fT ) based on (8) has the
+
+Qw (f1 , . . . , fT ) =
+
+1
+T + µ
+
+ftw
+
+ftw
+
+(8)
+
++
+
+,
+
+624
+
+Generalized Hierarchical Kernel Learning
+
+following eﬀect: i) all the tasks will simultaneously select or reject a given feature space, ii)
+overall only a few feature spaces will be selected in the gHKL style sparsity pattern, and
+iii) within each selected feature space, the task parameters ftw ∀t are in proximity.
+Thus, gHKLMT framework provides a mechanism to learn a shared feature space across
+the tasks. In addition, it can also preserve proximity among the tasks parameters in the
+learnt feature space. As we shall discuss in the next section, more generic correlations
+among task parameters may be also modeled within the gHKLMT framework.
+It is clear that the gHKL optimization problem (5) may be viewed as a special case
+of the gHKLMT optimization problem (7), with the number of tasks set to unity. Hence
+the rest of the discussion regarding dual derivation and optimization focuses primarily on
+gHKLMT formulation.
+
+3.3 gHKLMT Dual Formulation
+
+As mentioned earlier, due to the presence of the (cid:96)ρ -norm term in gHKLMT formulation,
+naive extensions of the pro jected gradient based active set method in Bach (2008) will
+be rendered computationally infeasible on real world data sets. Hence, we ﬁrst re-write
+gHKLMT formulation in an elegant form, which can then be solved eﬃciently. To this end,
+we note the following variational characterization of ΩT (f1 , . . . , fT ).
+Lemma 1 Given ΩT (f1 , . . . , fT ) and Qw (f1 , . . . , fT ) as deﬁned in (6) and (8) respectively,
+(cid:88)
+we have:
+δw (γ , λ)−1Qw (f1 , . . . , fT )2 ,
+ΩT (f1 , . . . , fT )2 = min
+min
+(9)
+γ∈∆
+λv ∈∆v
+ˆρ ∀v∈V
+v∈V zv ≤ 1(cid:9) and
+, ∆1 = (cid:8)z ∈ R|V | | z ≥ 0, (cid:80)
+2−ρ , δw (γ , λ)−1 = (cid:80)
+w∈V
+(cid:110)
+(cid:111)
+z ∈ R|D(v)| | z ≥ 0, (cid:80)
+d2
+where ˆρ = ρ
+v∈A(w)
+v
+γv λvw
+w ≤ 1
+w∈D(v) zr
+∆v
+.
+r =
+Note that ρ ∈ (1, 2) ⇒ ˆρ ∈ (1, ∞). The proof of the above lemma is provided in Ap-
+pendix A.2.
+In order to keep the notations simple, in the remainder of this section, it is assumed
+that the learning tasks at hand are binary classiﬁcation, i.e., yti ∈ {−1, 1} ∀t, i, and the
+loss function is the hinge loss. However, one can easily extend these ideas to other loss
+functions and learning problems. Refer Appendix A.8 for gHKLMT dual formulation with
+general convex loss functions.
+
+Lemma 2 Consider problem (6) with the regularizer term replaced with its variational char-
+acterization (9) and the loss function as the hinge loss (cid:96)(y , Ft (x)) = max (0, 1 − yFt (x)).
+Then the fol lowing is a partial dual of it with respect to the variables ft , bt ∀t = 1, . . . , T :
+max
+αt∈S (yt ,C )∀t
+(cid:32)(cid:88)
+w∈V
+
+G(γ , λ, α) = 1(cid:62)α − 1
+2
+
+G(γ , λ, α),
+(cid:33)
+
+δw (γ , λ)Hw
+
+Yα,
+
+min
+γ∈∆1
+
+min
+λv ∈∆v
+ˆρ ∀v∈V
+
+(10)
+
+where
+
+α(cid:62)Y
+
+625
+
+Jawanpuria, Nath and Ramakrishnan
+T ](cid:62) , S (yt , C ) = {β ∈ Rm | 0 ≤ β ≤ C, (cid:80)m
+i=1 ytiβi = 0}, yt = [yt1 , . . . , ytm ](cid:62) ,
+α = [α(cid:62)
+1 , . . . , α(cid:62)
+, ∆1 = (cid:8)z ∈ R|V | | z ≥ 0, (cid:80)
+v∈V zv ≤ 1(cid:9),
+with entries as unity, δw (γ , λ)−1 = (cid:80)
+T ](cid:62) , 1 is a mT × 1 vector
+Y is the diagonal matrix corresponding to the vector [y(cid:62)
+1 , . . . , y(cid:62)
+(cid:110)
+(cid:111)
+z ∈ R|D(v)| | z ≥ 0, (cid:80)
+d2
+v∈A(w)
+v
+γv λvw
+w ≤ 1
+2−ρ , and Hw ∈ RmT ×mT is the multi-task
+, ˆρ = ρ
+∆v
+w∈D(v) zr
+r =
+kernel matrix corresponding to the multi-task kernel hw ∀w ∈ V . The kernel function hw is
+deﬁned as fol lows:
+
+hw (xt1 i , xt2 j ) = kw (xt1 i , xt2 j )B (t1 , t2 ),
+(11)
+where B is a T × T matrix. B = I (identity matrix) when the multi-task regularizer (7)
+is employed in (6). Alternatively, B = I + 11(cid:62)/µ (here 1 is a T × 1 vector with entries
+as unity) in the case when the regularizer (8) is employed. The prediction function for the
+(cid:33)
+(cid:32)(cid:88)
+task t1 is given by
+m(cid:88)
+T(cid:88)
+δw (¯γ , ¯λ)kw (xt1 i , xt2 j )B (t1 , t2 )
+w∈V
+t2=1
+i=1
+
+Ft1 (xt1 j ) =
+
+¯αt2 iyt2 i
+
+,
+
+where (¯γ , ¯λ, ¯α) is an optimal solution of (10).
+
+Proof The proof follows from the representer theorem (Sch¨olkopf and Smola, 2002). Also
+SVM with the eﬀective multi-task kernel as: h = (cid:80)
+refer to Appendix A.3.
+of the gHKL, the eﬀective kernel is k = (cid:80)
+This lemma shows that gHKLMT essentially constructs the same prediction function as an
+w∈V δw (γ , λ)hw . Similarly, in the case
+w∈V δw (γ , λ)kw (since the terms T and B are
+unity). Here, as well as in the rest of the paper, we employ the symbols ‘h’ and ‘H ’ for the
+multi-task kernel and the corresponding Gram matrix respectively.
+The multi-task kernel (11) consists of two terms: the ﬁrst term corresponds to the
+similarity between two instances xt1 i and xt2 j in the feature space induced by the kernel
+kw . The second term corresponds to the correlation between the tasks t1 and t2 . In the case
+of the regularizer (7), the matrix B simpliﬁes to: B (t1 , t2 ) = 1 if t1 = t2 and B (t1 , t2 ) = 0
+if t1 (cid:54)= t2 , thereby making the kernel matrices Hw (w ∈ V ) block diagonal. Hence, the
+gHKLMT regularizer based on (7) promotes simultaneous sparsity in kernel selection among
+the tasks, without enforcing any additional correlations among the tasks.
+In general, any T × T positive semi-deﬁnite matrix may be employed as B to model
+generic correlations among tasks. The multi-task kernel given by (11) will still remain a
+valid kernel (Sheldon, 2008; ´Alvarez et al., 2012). The matrix B is sometimes referred to as
+the output kernel in the setting of learning vector-valued functions. It is usually constructed
+from the prior domain knowledge.
+We now discuss the nature of the optimal solution of (10). Most of the kernel weights
+δw (γ , λ) are zero at optimality of (10): δw (γ , λ) = 0 whenever γv = 0 or λvw = 0 for
+any v ∈ A(w). The vector γ is sparse due to (cid:96)1 -norm constraint in (10).
+In addition,
+ρ → 1 ⇒ ˆρ → 1. Hence the vectors λv ∀v ∈ V get close to becoming sparse as ρ → 1 due
+to the (cid:96) ˆρ -norm constraint in (10). The superimposition of these two phenomena leads to a
+
+626
+
+Generalized Hierarchical Kernel Learning
+
+ﬂexible4 sparsity pattern in kernel selection. This is explained in detail towards the end of
+this section.
+Note that ρ = 2 ⇒ λvw = 1 ∀v ∈ A(w), w ∈ W at optimality in (10). Hence for
+ρ = 2, the minimization problem in (10) can be eﬃciently solved using a pro jected gradient
+method (Rakotomamonjy et al., 2008; Bach, 2009). However, as established in Liu and Ye
+(2010), pro jection onto the kind of feasibility set in the minimization problem in (10) is
+computationally challenging for ρ ∈ (1, 2). Hence, we wish to re-write this problem in a
+relatively simpler form that can be solved eﬃciently. To this end, we present the following
+important theorem.
+
+g(η),
+
+(12)
+
+ζw (η)
+
+,
+
+(13)
+
+α(cid:62)YHwYα
+
+Theorem 3 The fol lowing is a dual of (6) considered with the hinge loss function, and the
+objectives of (6) (with the hinge loss), (10) and (12) are equal at optimality:
+min
+η∈∆1
+(cid:33) 1
+(cid:32)(cid:88)
+(cid:17) ¯ρ
+(cid:16)
+where g(η) is the optimal objective value of the fol lowing convex problem:
+¯ρ
+1(cid:62)α − 1
+max
+(cid:17) 1
+(cid:16)(cid:80)
+αt∈S (yt ,C )∀t
+2
+w∈V
+β ≤ C, (cid:80)m
+v η1−ρ
+T ](cid:62) , S (yt , C ) = {β ∈ Rm | 0 ≤
+1 , . . . , α(cid:62)
+1−ρ , α = [α(cid:62)
+v∈A(w) dρ
+where ζw (η) =
+v
+i=1 ytiβi = 0}, yt = [yt1 , . . . , ytm ](cid:62) , Y is the diagonal matrix corresponding to
+∆1 = (cid:8)z ∈ R|V | | z ≥ 0, (cid:80)
+v∈V zv ≤ 1(cid:9), and Hw ∈ RmT ×mT is the multi-task kernel matrix
+T ](cid:62) , 1 is a mT × 1 vector with entries as unity, ¯ρ = ˆρ
+1 , . . . , y(cid:62)
+the vector [y(cid:62)
+ˆρ−1 , ˆρ = ρ
+2−ρ ,
+corresponding to the multi-task kernel (11).
+The key idea in the proof of the above theorem is to eliminate the λ variables and the details
+are presented in Appendix A.5. The expression for the prediction function F , in terms of
+the variables η and α, is provided in Appendix A.9.
+This theorem provides some key insights: ﬁrstly, we have that (12) is essentially a (cid:96)1 -
+norm regularized problem and hence it is expected that most η will be zero at optimality.
+Since (ηv = 0) ⇒ (ζw (η) = 0 ∀w ∈ D(v)), it follows that most nodes in V will not
+contribute in the optimization problems (12) and (13). Secondly, in a single task learning
+problem (13) essentially learns an eﬀective kernel of the form h = (cid:80)
+setting (T = 1), the problem in (13) is equivalent to the (cid:96) ˆρ -norm MKL dual problem (Kloft
+¯ρ kv ∀v ∈ V (cid:51) ζv (η) (cid:54)= 0. The optimization
+1
+et al., 2011) with the base kernels as (ζv (η))
+1
+v∈V θv (ζv (η))
+¯ρ hv ,
+where the θ are intermediate optimization variables constrained to be non-negative and lie
+within a (cid:96) ˆρ -norm ball. The expression for θ in terms of the variables η and α is provided in
+Appendix A.9.
+The variable θ inﬂuence the nature of the eﬀective kernel h in two important ways: i)
+(cid:17) 1
+(cid:16)
+it follows from the expression of θ that
+¯ρ ∝ ζv (η)
+( ˆρ−1) .
+1
+
+α(cid:62)YHvYα
+
+θv (ζv (η))
+
+4. The HKL dual formulation (Bach, 2009) is a special case of (10) with ρ = 2, T = 1 and B = 1. When
+ρ = 2, ˆρ = ∞. This implies λvw = 1 ∀ v ∈ A(w), w ∈ V at optimality, resulting in the weight bias
+towards kernels embedded in the ancestor nodes and restricted sparsity pattern in kernel selection
+
+627
+
+Jawanpuria, Nath and Ramakrishnan
+
+Algorithm 1 Active Set Algorithm - Outline
+Input: Training data D, the kernels (kv ) embedded on the DAG (V ), the T × T matrix
+B that models task correlations and tolerance .
+Initialize the active set W with sources(V ).
+Compute η , α by solving (14)
+while Optimal solution for (12) is NOT obtained do
+Add some nodes to W
+Recompute η , α by solving (14)
+end while
+Output: W , η , α
+
+The above relation implies that the weight of the kernel hv in the DAG V is not only
+dependent on the position5 of the node v , but also on the suitability of the kernel hv to
+the problem at hand. This helps in mitigating the kernel weight bias in favour of the nodes
+towards the top of the DAG from gHKLMT , but which is present in HKL, and ii) as ρ → 1
+(and hence as ˆρ → 1), the optimal θ get close to becoming sparse (Szafranski et al., 2007;
+Orabona et al., 2012). This superimposed with the sparsity of η promotes a more ﬂexible
+sparsity pattern in kernel selection that HKL, especially when ρ → 1.
+Next, we propose to solve the problem (12) by exploiting the sparsity pattern of the
+η variables and the corresponding ζ (η) terms at optimality. We discuss it in detail in the
+following section.
+
+4. Optimization Algorithm
+
+Note that problem (12) remains the same whether solved with the original set of variables
+(η) or when solved with only those ηv (cid:54)= 0 at optimality (refer Appendix A.4 for details).
+However the computational eﬀort required in the latter case can be signiﬁcantly lower since
+it involves low number of variables and kernels. This motivates us to explore an active set
+algorithm, which is similar in spirit to that in Bach (2008).
+An outline of the proposed active set algorithm is presented in Algorithm 1. The algo-
+rithm starts with an initial guess for the set W such that ηw (cid:54)= 0 (∀w ∈ W ) at the optimality
+of (12). This set W is called the active set. Since the weight associated with the kernel hw
+will be zero whenever ηv = 0 for any v ∈ A(w), the active set W must contain sources(V ),
+else the problem has a trivial solution. Hence, the active set is initialized with sources(V ).
+At each iteration of the algorithm, (12) is solved with variables restricted to those in W :
+(cid:33) 1
+(cid:32) (cid:88)
+(cid:17) ¯ρ
+(cid:16)
+¯ρ
+w∈W
+
+α(cid:62)YHwYα
+
+1(cid:62)α − 1
+2
+
+min
+η∈∆1
+
+max
+αt∈S (yt ,C )∀t
+
+ζw (η)
+
+.
+
+(14)
+
+i) an eﬃcient algorithm for
+In order to formalize the active set algorithm, we need:
+solving problem (14), ii) a condition for verifying whether a candidate solution is optimal
+5. Similar to the δv function in HKL (3), it follows from the deﬁnition of ζv that ζv (η) ≥ ζw (η) ∀w ∈ D(v)
+(strict inequality holds if ζw (η) > 0).
+
+628
+
+Generalized Hierarchical Kernel Learning
+
+Algorithm 2 Mirror Descent Algorithm for solving (14)
+Input: Gram matrices Hw (w ∈ W ) and the regularization parameter C
+Initialize ηW (w ∈ W ) such that ηW ∈ ∆1 (warm-start may be used)
+Iteration number: i = 0
+while convergence criterion is not met6 do
+i = i + 1
+Compute ζw (ηW ) ∀w ∈ W (Theorem 3)
+Compute step size s = (cid:112)log(|W |)/i·(cid:107)∇g(ηW ))(cid:107)2∞
+Compute αW (13) using (cid:96) ˆρ -norm MKL algorithm with kernels as
+Compute ∇g(ηW ) as in (24)
+Compute ηw = exp (1 + log(ηw ) − s · ∇g(ηW )w ) ∀w ∈ W
+ηw(cid:80)
+∀w ∈ W
+Normalize ηw =
+v∈W ηv
+end while
+Output: ηW , αW
+
+(cid:16)
+
+(ζw (ηW ))
+
+(cid:17)
+
+1
+¯ρ Hw
+
+w∈W
+
+with respect to the optimization problem (12), and iii) a procedure for building/improving
+the active set after each iteration.
+We begin with the ﬁrst. We propose to solve the optimization problem (14) using the
+mirror descent algorithm (Ben-Tal and Nemirovski, 2001; Beck and Teboulle, 2003). Mirror
+descent algorithm is known to eﬃciently solve convex programs with Lipschitz continuous
+and diﬀerentiable ob jectives constrained over a convex compact set.
+It achieves a near-
+optimal convergence rate whenever the feasibility set is a simplex (which is true in our
+optimization problem (14)). Mirror descent is close in spirit to the pro jected gradient
+descent algorithm and hence assumes that an oracle for computing the gradient of the
+ob jective is available.
+Following the common practice of smoothing (Bach, 2009), in the rest of the paper, we
+employ ζw ((1 − ε)η + ε|V | ) instead7 of ζw (η) in (13) with ε > 0. The following theorem
+establishes the applicability of mirror descent for solving (14):
+
+Theorem 4 The function g(η) given by (13) is convex. Also, the expression for the ith
+entry in the gradient (∇g(η))i is given in (24). If al l the eigenvalues of the Gram matrices
+Hw are ﬁnite and non-zero, then g is Lipschitz continuous.
+
+The proof of the above theorem is technical and is provided in Appendix A.6.
+Algorithm 2 summarizes the proposed mirror descent based algorithm for solving (14).
+One of its steps involve computing ∇g(ηW ) (expression provided in (24)), which in turn
+requires solving (13). As noted before, (13) is similar to the (cid:96) ˆρ -norm MKL problem (Kloft
+et al., 2011) but with a diﬀerent feasibility set for the optimization variables α. Hence,
+(13) can be solved by employing a modiﬁed cutting planes algorithm (Kloft et al., 2011) or
+a modiﬁed sequential minimal optimization (SMO) algorithm (Platt, 1999; Vishwanathan
+
+6. Relative ob jective gap between two successive iteration being less than a given tolerance  is taken to be
+the convergence criterion. Ob jective here is the value of g(ηW ), calculated after (cid:96) ˆρ -norm MKL step.
+7. Note that this is equivalent to smoothing the regularizer ΩT while preserving its sparsity inducing
+properties (Bach, 2009).
+
+629
+
+Jawanpuria, Nath and Ramakrishnan
+
+Algorithm 3 Active Set Algorithm
+Input: Training data D, the kernels (kv ) embedded on the DAG (V ), the T × T matrix
+B that models task correlations and tolerance .
+Initialize the active set W with sources(V )
+Compute η , α by solving (14) using Algorithm 2
+while suﬃcient condition for optimality (15) is not met do
+Add those nodes to W that violate (15)
+Recompute η , α by solving (14) using Algorithm 2
+end while
+Output: W , η , α
+
+ζw (ηW )
+
+α(cid:62)
+W YHwYαW
+
+(15)
+
+w∈D(u)
+
++ 2( − W ),
+
+et al., 2010). Empirically, we observed the SMO based algorithm to be much faster than
+the cutting planes algorithm for gHKLMT (and gHKL) with SVM loss functions. In the
+special case of ρ = 2, T = 1 and B = 1, (13) is simply a regular SVM problem.
+Now we turn our attention to the second requirement of the active set algorithm: a
+condition to verify the optimality of a candidate solution. We present the following theorem
+that provides a suﬃcient condition for verifying optimality of a candidate solution.
+Theorem 5 Suppose the active set W is such that W = hull(W ). Let (ηW , αW ) be a W -
+approximate optimal solution of (14), obtained from Algorithm (2). Then, it is an optimal
+(cid:33) 1
+(cid:32) (cid:88)
+(cid:17) ¯ρ
+(cid:16)
+solution for (12) with a duality gap less than  if the fol lowing condition holds:
+¯ρ
+w∈W
+
+W YKuYαW ≤
+α(cid:62)
+max
+where Ku = (cid:80)
+u∈sources(W c )
+((cid:80)
+Hw
+v∈A(w)∩D(u) dv )2 .
+The proof is provided in Appendix A.7. It closely follows that for the case of HKL (Bach,
+2008).
+The summary of the proposed mirror descent based active set algorithm is presented in
+Algorithm 3. At each iteration, Algorithm (3) veriﬁes optimality of the current iterate by
+verifying the condition in (15). In case the current iterate does not satisfy this condition, the
+nodes in sources(W c ) that violate the condition (15) are included in the active set.8 This
+takes care of the third requirement of the active set algorithm. The algorithm terminates
+if the condition (15) is satisﬁed by the iterate.
+In the following, an estimate of the computational complexity of the active set algorithm
+is presented. Let W be the ﬁnal active set size. The optimization problem (14) needs to
+be solved at most W times, assuming the worst case scenario of adding one node per
+active set iteration. Each run of the mirror descent algorithm requires at most O(log(W ))
+iterations (Ben-Tal and Nemirovski, 2001; Beck and Teboulle, 2003). A conservative time
+complexity estimate for computing the gradient ∇g(ηW ) by solving a variant of the (cid:96) ˆρ -
+norm MKL problem (13) is O(m3T 3W 2 ). This amounts to O(m3T 3W 3 log(W )). As for
+the computational cost of the suﬃcient condition, let z denote the maximum out-degree
+8. It is easy to see that with this update scheme, W is always equal to hull(W ), as required in Theorem 5.
+
+630
+
+Generalized Hierarchical Kernel Learning
+
+of a node in G , i.e., z is an upper-bound on the the maximum number of children of any
+node in G . Then the size of sources(W c ) is upper-bounded by W z . Hence, a total of
+O(ωm2T 2W z ) operations are required for evaluating the matrices K in (15), where ω is the
+complexity of computing a single entry in any K. In all the pragmatic examples of kernels
+and the corresponding DAGs provided by Bach (2008), ω is polynomial in the training
+set dimensions. Moreover, caching of K usually renders ω to be a constant (Bach, 2009).
+Further, the total cost of the quadratic computation in (15) is O(m2T 2W 2z ). Thus the
+overall computational complexity is O(m3T 3W 3 log(W ) + ωm2T 2W z + m2T 2W 2z ). More
+importantly, because the suﬃcient condition for optimality (Theorem 5) is independent of
+ρ, we have the following result:
+
+Corollary 6 In a given input setting, HKL algorithm converges in time polynomial in the
+size of the active set and the training set dimensions if and only if the proposed mirror
+descent based active set algorithm (i.e., gHKLMT algorithm) has a polynomial time conver-
+gence in terms of the active set and training set sizes.
+
+The proof is provided in Appendix A.10.
+In the next section, we present an application of the proposed formulation that illustrate
+the beneﬁts of the proposed generalizations over HKL.
+
+5. Rule Ensemble Learning
+
+In this section, we propose a solution to the problem of learning an ensemble of decision rules,
+formally known as Rule Ensemble Learning (REL) (Cohen and Singer, 1999), employing
+the gHKL and gHKLMT formulations. For the sake of simplicity, we only discuss the single
+task REL setting in this section, i.e., REL as an application of gHKL. Similar ideas can
+be applied to perform REL in multi-task learning setting, by employing gHKLMT . In fact,
+we present empirical results of REL in both single and multiple task learning settings in
+Section 6. We begin with a brief introduction to REL.
+If-then decision rules (Rivest, 1987) are one of the most expressive and human readable
+representations for learned hypotheses. It is a simple logical pattern of the form: IF condi-
+tion THEN decision. The condition consists of a conjunction of a small number of simple
+boolean statements (propositions) concerning the values of the individual input variables
+while the decision speciﬁes a value of the function being learned. An instance of a decision
+rule from Quinlan’s play-tennis example (Quinlan, 1986) is:
+
+IF HUMIDITY==normal AND WIND==weak THEN PlayTennis==yes.
+
+The dominant paradigm for induction of rule sets, in the form of decision list (DL) models
+for classiﬁcation (Rivest, 1987; Michalski, 1983; Clark and Niblett, 1989), has been a greedy
+sequential covering procedure.
+REL is a general approach that treats decision rules as base classiﬁers in an ensemble.
+This is in contrast to the more restrictive decision list models that are disjunctive sets of
+rules and use only one in the set for each prediction. As pointed out in Cohen and Singer
+(1999), boosted rule ensembles are in fact simpler, better-understood formally than other
+state-of-the-art rule learners and also produce comparable predictive accuracy.
+
+631
+
+Jawanpuria, Nath and Ramakrishnan
+
+REL approaches like SLIPPER (Cohen and Singer, 1999), LRI (Weiss and Indurkhya,
+2000), RuleFit (Friedman and Popescu, 2008), ENDER/MLRules (Dembczy´nski et al.,
+2008, 2010) have additionally addressed the problem of learning a compact set of rules that
+generalize well in order to maintain their readability. Further, a number of rule learners like
+RuleFit, LRI encourage shorter rules (i.e., fewer conjunctions in the condition part of the
+rule) or rules with a restricted number of conjunctions, again for purposes of interpretability.
+We build upon this and deﬁne our REL problem as that of learning a small set of simple
+rules and their weights that leads to a good generalization over new and unseen data. The
+next section introduces the notations and the setup in context of REL.
+
+5.1 Notations and Setup
+Let D = {(x1 , y1 ), . . . , (xm , ym )} be the training data described using p basic (boolean)
+propositions, i.e., xi ∈ {0, 1}p . In case the input features are not boolean, such propositions
+can be derived using logical operators such as ==, (cid:54)=, ≤ or ≥ over the input features (refer
+Friedman and Popescu, 2008; Dembczy´nski et al., 2008, for details). Let V be an index-
+set for all possible conjunctions with the p basic propositions and let φv : Rn (cid:55)→ {0, 1}
+denote the v th conjunction in V . Let fv ∈ R denote the weight for the conjunction φv .
+F (x) = (cid:80)
+Then, the rule ensemble to be learnt is the weighted combination of these conjunctive rules:
+v∈V fv φv (x) − b, where perhaps many weights (fv ) are equal to zero.
+One way to learn the weights is by performing a (cid:96)1 -norm regularized risk minimization in
+order to select few promising conjunctive rules (Friedman and Popescu, 2008; Dembczy´nski
+et al., 2008, 2010). However, to the best of our knowledge, rule ensemble learners that iden-
+tify the need for sparse f , either approximate such a regularized solution using strategies
+such as shrinkage (Ruleﬁt, ENDER/MLRules) or resort to post-pruning (SLIPPER). This
+is because the size of the minimization problem is exponential in the number of basic propo-
+sitions and hence the problem becomes computationally intractable with even moderately
+sized data sets. Secondly, conjunctive rules involving large number of propositions might
+be selected. However, such conjunctions adversely eﬀect the interpretability. We present
+an approach based on the gHKL framework that addresses these issues.
+We begin by noting that (cid:104)V , ⊆(cid:105) is a subset-lattice; hereafter this will be referred to
+as the conjunction lattice. In a conjunction lattice, ∀ v1 , v2 ∈ V , v1 ⊆ v2 if and only if
+the set of propositions in conjunction v1 is a subset of those in conjunction v2 . As an
+example, (HUMIDITY==normal) is considered to be a subset of (HUMIDITY==normal
+AND WIND==weak). The top node of this lattice is a node with no conjunctions and is
+also sources(V ). Its children, the second level nodes, are all the basic propositions, p in
+propositions. The number of diﬀerent conjunctions of length r is (cid:0)p
+(cid:1) and the total number
+number. The third level nodes, children of these basic propositions, are the conjunctions
+of length two and so on. The bottom node at (p + 1)th level is the conjunction of all basic
+r
+of nodes in this conjunction lattice is 2p . Figure (1) shows a complete conjunction lattice
+with p = 4.
+
+We now discuss how the proposed gHKL regularizer (5) provides an eﬃcient and optimal
+solution to a regularized empirical risk minimization formulation for REL.
+
+632
+
+Generalized Hierarchical Kernel Learning
+
+Figure 1: Example of a conjunction lattice with 4 basic propositions: (x1 = a), (x2 (cid:54)= b),
+(x3 ≥ c) and (x4 ≤ d). The input space consist of four features: x1 , x2 , x3 and
+x4 . The number of nodes in conjunction lattice is exponential in the number of
+basic propositions. In this particular example, the number of nodes is 16 (= 24 ).
+
+5.2 Rule Ensemble Learning with gHKL
+with such a setup, the (cid:96)1/(cid:96)ρ block-norm regularizer in gHKL (ΩS (f ) = (cid:80)
+The key idea is to employ gHKL formulation (5) with the DAG as the conjunction lattice
+and the kernels as kv (xi , xj ) = φv (xi )φv (xj ) for learning an ensemble of rules. Note that
+v∈V dv (cid:107)fD(v)(cid:107)ρ )
+implies: 1) for most v ∈ V , fv = 0, and 2) for most v ∈ V , fw = 0 ∀ w ∈ D(v). In the context
+of the REL problem, the former statement is equivalent to saying: selection of a compact
+set of conjunctions is promoted, while the second reads as: selection of conjunctive rules
+with small number of propositions is encouraged. Thus, gHKL formulation constructs a
+compact ensemble of simple conjunctive rules. In addition, we set dv = a|Sv | (a > 1), where
+Sv is the set of basic propositions involved in the conjunction φv . Such a choice further
+encourages selection of short conjunctions and leads to the following elegant computational
+result:
+
+Theorem 7 The complexity of the proposed gHKL algorithm in solving the REL problem,
+with the DAG, the base kernels and the parameters dv as deﬁned above, is polynomial in the
+size of the active set and the training set dimensions. In particular, if the ﬁnal active set
+size is W , then its complexity is given by O(m3W 3 log(W ) + m2W 2p).
+
+The proof is provided in Appendix A.11.
+We end this section by noting the advantage of the generic regularizer in gHKL formu-
+lation over the that in HKL formulation in the context of REL application. Recall that
+
+633
+
+{ }x1 = ax2 ≠ bx3 ≥ cx4 ≤ dx1 = aΛx2 ≠ bx1=a Λ x2≠b Λ x3≥cx1=a Λ x2≠b Λ x4≤dx1=a Λ x3≥c Λ x4≤dx2≠b Λ x3≥c Λ x ≤dx1=a Λ x2≠b Λ x3≥c Λ x4≤dx1 = aΛx3 ≥ cx1 = aΛx4 ≤ dx2 ≠ bΛx3 ≥ cx2 ≠ bΛx4 ≤ dx3 ≥ cΛx4 ≤ dJawanpuria, Nath and Ramakrishnan
+
+the sparsity pattern allowed by HKL has the following consequence: a conjunction is se-
+lected only after selecting all the conjunctions which are subsets of it. This, particularly
+in the context of REL, is psycho-visually redundant, because a rule with k propositional
+statements, if included in the result, will necessarily entail the inclusion of (2k − 1) more gen-
+eral rules in the result. This violates the important requirement for a small set (Friedman
+and Popescu, 2008; Dembczy´nski et al., 2008, 2010) of human-readable rules. The gHKL
+regularizer, with ρ ∈ (1, 2), alleviates this restriction by promoting additional sparsity in
+selecting the conjunctions. We empirically evaluate the proposed gHKL based solution for
+REL application in the next section.
+
+6. Experimental Results
+
+In this section, we report the results of simulation in REL on several benchmark binary and
+multiclass classiﬁcation data sets from the UCI repository (Blake and Lichman, 2013). The
+goal is to compare various rule ensemble learners on the basis of: (a) generalization, which
+is measured by the predictive performance on unseen test data, and (b) ability to provide
+compact set of simple rules to facilitate their readability and interpretability (Friedman and
+Popescu, 2008; Dembczy´nski et al., 2010; Cohen and Singer, 1999). The latter is judged
+using i) average number of rules learnt, and ii) average number of propositions per rule.
+The following REL approaches were compared.
+• RuleFit: Rule ensemble learning algorithm proposed by Friedman and Popescu
+(2008). All the parameters were set to the default values mentioned by the authors. In
+particular, the model was set in the mixed linear-rule mode, average tree size was set 4
+and maximum number of trees were kept as 500. The same conﬁguration was also used
+by Dembczy´nski et al. (2008, 2010) in their simulations. This REL system cannot han-
+dle multi-class data sets and hence is limited to the simulations on binary classiﬁcation
+data sets. Its code is available at www-stat.stanford.edu/~jhf/R-RuleFit.html.
+• SLI: The SLIPPER algorithm proposed by Cohen and Singer (1999). Following Dem-
+bczy´nski et al. (2008, 2010), all parameters were set to their defaults. We retained
+the internal cross-validation for selecting the optimal number of rules.
+• ENDER: State-of-the-art rule ensemble learning algorithm (Dembczy´nski et al.,
+2010). For classiﬁcation setting, ENDER is same as MLRules (Dembczy´nski et al.,
+2008). The parameters were set to the default values suggested by the authors. The
+second order heuristic was used for minimization. Its code is available at www.cs.
+put.poznan.pl/wkotlowski.
+• HKL-(cid:96)1 -MKL: A two-stage rule ensemble learning approach. In the ﬁrst stage, HKL
+is employed to prune the exponentially large search space of all possible conjunctive
+rules and select a set of candidate rules (kernels). The rule ensemble is learnt by
+employing (cid:96)1 -MKL over the candidate set of rules. In both the stages, a three-fold
+cross validation procedure was employed to tune the C parameter with values in
+{10−3 , 10−2 , . . . , 103}.
+• gHKLρ : The proposed gHKL based REL formulation for binary classiﬁcation prob-
+lem. We considered three diﬀerent values of ρ: 2, 1.5 and 1.1. Note that for binary
+
+634
+
+Generalized Hierarchical Kernel Learning
+
+classiﬁcation, ρ = 2 renders the HKL formulation (Bach, 2008). In each case, a three-
+fold cross validation procedure was employed to tune the C parameter with values in
+{10−3 , 10−2 , . . . , 103}. As mentioned earlier, the parameters dv = 2|v | .
+• gHKLMT−ρ : The proposed gHKLMT based REL formulation for multiclass classi-
+ﬁcation problem. For each class, a one-vs-rest binary classiﬁcation task is created.
+Since we did not have any prior knowledge about the correlation among the classes
+in the data sets, we employed the multi-task regularizer (7) in the gHKLMT primal
+formulation (6).
+
+We considered three diﬀerent values of ρ: 2, 1.5 and 1.1. Its parameters and cross validation
+details are same as that of gHKLρ . The implementations of both gHKLρ and gHKLMT−ρ are
+available at http://www.cse.iitb.ac.in/~pratik.j/ghkl.
+
+Note that the above methods diﬀer in the way they control the number of rules (M ) in
+the ensemble. In the case of gHKLρ (gHKLMT−ρ ), M implicitly depends on the parameters: ρ,
+C and dv . SLI has a parameter for maximum number of rules Mmax and M is decided via a
+internal cross-validation such that M ≤ Mmax . For the sake of fairness in comparison with
+gHKLρ , we set Mmax = max(M1.5 , M1.1 ), where Mρ is the average number of rules obtained
+with gHKLρ (gHKLMT−ρ ). ENDER has an explicit parameter for the number of rules, which is
+also set to max(M1.5 , M1.1 ). In case of RuleFit, the number of rules in the ensemble is
+determined internally and is not changed by us.
+
+6.1 Binary Classiﬁcation in REL
+
+This section summarizes our results on binary REL classiﬁcation. Table 1 provides the
+details of the binary classiﬁcation data sets. For every data set, we created 10 random
+train-test splits with 10% train data (except for MONK-3 data set, whose train-test split
+of 122 − 432 instances respectively was already given in the UCI repository). Since many
+data sets were highly unbalanced, we report the average F1-score along with the standard
+deviation (Table 5 in Appendix A.12 reports the average AUC). The results are presented in
+Table 2. The best result, in terms of the average F1-score, for each data set is highlighted.
+
+Data set
+TIC-TAC-TOE
+B-CANCER-W
+DIABETES
+HABERMAN
+HEARTC
+BLOOD TRANS
+
+(TIC)
+(BCW)
+(DIA)
+(HAB)
+(HTC)
+(BLD)
+
+Num Bias
+1.89
+958
+0.53
+699
+0.54
+768
+0.36
+306
+296
+0.85
+3.20
+748
+
+|V |
+p
+54 ≈ 1016
+72 ≈ 1021
+64 ≈ 1019
+40 ≈ 1012
+78 ≈ 1023
+32 ≈ 109
+
+Data set
+(HTS)
+HEARTSTAT
+(MK3)
+MONK-3
+(VTE)
+VOTE
+(BCC)
+B-CANCER
+(MAM)
+MAM. MASS
+(LIV)
+LIVER
+
+Num Bias
+0.8
+270
+1.08
+554
+0.87
+232
+0.41
+277
+829
+0.94
+1.38
+345
+
+|V |
+p
+76 ≈ 1022
+30 ≈ 109
+32 ≈ 109
+76 ≈ 1022
+46 ≈ 1013
+48 ≈ 1014
+
+Table 1: Data sets used for binary REL classiﬁcation. ‘Num’ is the number of instances in
+the data set while ‘Bias’ denotes the ratio of # of +ve and −ve instances. The
+number of number of basic propositions is ‘p’ and |V | represents the total number
+of possible conjunctions. For each numerical input feature, 8 basic propositions
+were derived. The letters in brackets are the acronym used for the corresponding
+data set in Table 2.
+
+635
+
+Jawanpuria, Nath and Ramakrishnan
+
+RuleFit
+
+SLI
+
+TIC 0.517 ± 0.092
+0.665 ± 0.053
+(57.7, 2.74)
+(10.3, 1.96)
+BCW 0.879 ± 0.025 0.928 ± 0.018
+(4.4, 1.15)
+(17.5, 2.03)
+0.659 ± 0.027
+DIA 0.428 ± 0.052
+(4.9, 1.42)
+(32.9, 2.66)
+0.483 ± 0.057
+HAB 0.175 ± 0.079
+(2.1, 1)
+(7.5, 1)
+0.727 ± 0.05
+HTC 0.581 ± 0.047
+(3.2, 1.23)
+(8.8, 1)
+BLD 0.163 ± 0.088
+0.476 ± 0.057
+(2.0, 1)
+(40.7, 2.26)
+0.721 ± 0.065
+HTS 0.582 ± 0.040
+(9.3, 1)
+(3.5, 1.07)
+
+ENDER
+
+HKL-
+gHKLρ
+(cid:96)1 -MKL
+ρ = 2
+ρ = 1.5
+ρ = 1.1
+0.668 ± 0.032
+0.749 ± 0.040
+0.889 ± 0.093
+0.897 ± 0.093 0.905 ± 0.096∗
+(187, 3.17)
+(74.8, 1.89)
+(161.7, 1.72)
+(157.6, 1.72)
+(186.6, 1.76)
+0.900 ± 0.041
+0.925 ± 0.032
+0.923 ± 0.032
+0.925 ± 0.032
+0.924 ± 0.032
+(21, 1.56)
+(27,1.03)
+(20.4, 1.02)
+(30.9, 1)
+(20, 1.03)
+0.656 ± 0.027
+0.658 ± 0.028
+0.661 ± 0.023
+0.661 ± 0.018 0.663 ± 0.017
+(74.0, 2.65)
+(62.6, 1.27)
+(73.2, 1.17)
+(47.6, 1.40)
+(83.2, 1.31)
+0.474 ± 0.057
+0.521 ± 0.060
+0.521 ± 0.060
+0.506 ± 0.048 0.523 ± 0.062
+(17.1, 1.142)
+(51.2, 1.235)
+(112.1, 1.366)
+(52, 3.59)
+(45.6, 1.48)
+0.736 ± 0.055
+0.735 ± 0.058
+0.743 ± 0.038
+0.724 ± 0.032 0.750 ± 0.038
+(23.9, 1)
+(46.7, 1.06)
+(32.9, 1.09)
+(32, 2.05)
+(32, 1.09)
+0.586 ± 0.029
+0.433 ± 0
+0.572 ± 0.029
+0.587 ± 0.028 0.588 ± 0.027
+(19, 1.29)
+(62.8, 1.79)
+(229.7, 1.98)
+(63, 1.97)
+(175.9, 2.13)
+0.747 ± 0.028
+0.746 ± 0.028
+0.747 ± 0.031
+0.713 ± 0.055 0.752 ± 0.036
+(25, 2.02)
+(24.6, 1.06)
+(34.7, 1.02)
+(25, 1.02)
+(24.4, 1.03)
+
+MK3
+
+0.947
+(52, 2.88)
+VTE 0.913 ± 0.047
+(2.7, 1)
+BCC 0.254 ± 0.089
+(8.1, 1)
+MAM 0.668 ± 0.032
+(26.4, 2.68)
+LIV 0.357 ± 0.016
+(10, 1)
+
+0.802
+0.972
+0.972
+(1, 3)
+(93, 1.96)
+(17, 1.88)
+0.935 ± 0.055 0.951 ± 0.035
+0.927 ± 0.045
+(9, 1.07)
+(1.3, 1.15)
+(23.5, 1.17)
+0.452 ± 0.079 0.588 ± 0.057
+0.476 ± 0.086
+(33.6, 1.17)
+(1.2, 1)
+(31, 2.93)
+0.805 ± 0.028
+0.808 ± 0.022 0.816 ± 0.018
+(38.7, 1.32)
+(48, 2.53)
+(5.3, 1.43)
+0.585 ± 0.071
+0.563 ± 0.058
+0.445 ± 0.083
+(43.4, 1.56)
+(59, 2.35)
+(1.5, 1)
+
+0.972
+0.972
+(200, 2.07)
+(93, 1.84)
+0.93 ± 0.042
+0.929 ± 0.043
+(39, 1.11)
+(8.2, 1)
+0.565 ± 0.059
+0.563 ± 0.061
+(39.6, 1.15)
+(30.2, 1.07)
+0.796 ± 0.026
+0.796 ± 0.026
+(92.2, 1.27)
+(47.6, 1.24)
+0.594 ± 0.046 0.595 ± 0.048
+(242.5, 1.42)
+(58.2, 1.32)
+
+0.972
+(7, 1.43)
+0.934 ± 0.038
+(6.4, 1)
+0.569 ± 0.063
+(29.4, 1.17)
+0.797 ± 0.024
+(40.5, 1.25)
+0.588 ± 0.049
+(45.7, 1.36)
+
+Table 2: Results on binary REL classiﬁcation. We report the F1-score along with standard
+deviation and, in brackets below, the number of the learnt rules as well as the
+average length of the learnt rules. The proposed REL algorithm, gHKLρ (ρ =
+1.5, 1.1), obtains better generalization performance than state-of-the-art ENDER in
+most data sets, with the additional advantage of learning a smaller set of more
+compact rules. The ‘*’ symbol denotes statistically signiﬁcant improvement. The
+results are averaged over ten random train-test splits.
+
+636
+
+Generalized Hierarchical Kernel Learning
+
+Additionally if the best result achieves a statistically signiﬁcant improvement over its nearest
+competitor, it is marked with a ‘*’. Statistical signiﬁcance test is performed using the paired
+t-test at 99% conﬁdence. We also report the average number of rules learnt (r) and the
+average length of the rules (c), speciﬁed below each F1-score as: (r, c). As discussed earlier,
+it is desirable that REL algorithms achieve high F1-score with a compact set of simple rules,
+i.e., low r and c.
+
+We can observe from Table 2 that gHKLρ obtains better generalization performance than
+state-of-the-art ENDER in most of the data sets with the additional advantage of having
+rules with smaller number of conjunctions.
+In fact, when averaged over the data sets,
+gHKL1.1 and gHKL1.5 output the shortest rules among all the methods. gHKL1.1 obtains
+statistically signiﬁcant performance in TIC-TAC-TOE data set. Though the generalization
+obtained by gHKL2 (HKL), gHKL1.5 and gHKL1.1 are similar, the number of rules selected by
+gHKL2 is always higher than gHKL1.1 (by as much as 25 times in a few cases), hampering its
+interpretability.
+
+6.2 Multiclass Classiﬁcation in REL
+
+This section summarizes our results on multiclass REL classiﬁcation. The details of the
+multiclass data sets are provided in Table 3. Within the data sets, classes with too few
+instances (< 3) were not considered for simulations since we perform a three-fold cross
+validation for hyper-parameter selection. The results, averaged over 10 random train-test
+splits with 10% train data are presented in Table 4. Following Dembczy´nski et al. (2008,
+2010), we report the accuracy to compare generalization performance among the algorithms.
+The number of rules as well as the average length of the rules is also reported to judge the
+interpretability of the output.
+We can observe that gHKLMT−ρ obtains the best generalization performance in seven data
+sets, out of which four are statistically signiﬁcant. Moreover, gHKLMT−1.5 and gHKLMT−1.1
+usually select the shortest rules among all the methods. The number of rules as well as
+the average rule length of gHKLMT−2 is generally very large compared to gHKLMT−1.5 and
+gHKLMT−1.1 . This again demonstrates the suitability of the proposed (cid:96)1/(cid:96)ρ regularizer in
+obtaining a compact set of simple rules.
+
+Data set Num c
+625
+3
+BALANCE
+4
+1728
+CAR
+3
+1473
+C.M.C.
+6
+332
+ECOLI
+214
+6
+GLASS
+
+|V |
+p
+32 ≈ 109
+42 ≈ 1012
+54 ≈ 1016
+42 ≈ 1012
+72 ≈ 1021
+
+Data set Num c
+150
+3
+IRIS
+3
+146
+LYMPH
+3
+151
+T.A.E.
+10
+1484
+YEAST
+101
+7
+ZOO
+
+|V |
+p
+≈ 1015
+50
+≈ 1025
+86
+114 ≈ 1034
+≈ 1016
+54
+≈ 1012
+42
+
+Table 3: Data sets used for multiclass REL classiﬁcation. ‘Num’ is the number of instances
+in the data set while ‘c’ denotes the number of classes. The number of number of
+basic propositions is ‘p’ and |V | represents the total number of possible conjunc-
+tions. For each numerical input feature, 8 basic propositions were derived.
+
+637
+
+Jawanpuria, Nath and Ramakrishnan
+
+SLI
+
+ECOLI
+
+GLASS
+
+C.M.C.
+
+ENDER
+
+gHKLMT−ρ
+ρ = 2
+ρ = 1.5
+ρ = 1.1
+BALANCE 0.758 ± 0.025
+0.795 ± 0.034 0.817 ± 0.028
+0.808 ± 0.032
+0.807 ± 0.034
+(10.4, 1.7)
+(2468.9, 2.84)
+(112, 2.4)
+(112, 1.64)
+(85, 1.61)
+0.823 ± 0.029
+0.864 ± 0.020
+0.835 ± 0.024
+0.86 ± 0.028 0.875 ± 0.029∗
+(9571.2, 3.14)
+(18.3, 2.93)
+(270, 3.05)
+(269.3, 1.85)
+(220.3, 1.64)
+0.446 ± 0.016 0.485 ± 0.015∗
+0.472 ± 0.014
+0.463 ± 0.017
+0.465 ± 0.016
+(396.4, 1.88)
+(10299.3, 2.85)
+(513, 4.36)
+(21.1, 1.9)
+(512.9, 1.95)
+0.778 ± 0.054
+0.779 ± 0.057 0.784 ± 0.045∗
+0.636 ± 0.028
+0.726 ± 0.042
+(32.4, 1.16)
+(4790.2, 2.99)
+(35, 2.15)
+(7.8, 1.34)
+(34.3, 1.05)
+0.43 ± 0.061
+0.465 ± 0.052
+0.501 ± 0.049 0.525 ± 0.043∗
+0.524 ± 0.046
+(54.6, 1.04)
+(5663.7, 2.40)
+(70, 3.21)
+(7.4, 1.41)
+(69.1, 1.15)
+0.893 ± 0.091
+0.913 ± 0.083 0.927 ± 0.024∗
+0.835 ± 0.093
+0.766 ± 0.189
+(8.6, 1)
+(9.8, 1)
+(567, 2.44)
+(10, 1.34)
+(2.2, 1.02)
+0.722 ± 0.078
+0.724 ± 0.078
+0.709 ± 0.061
+0.706 ± 0.058
+0.61 ± 0.066
+(33, 1.01)
+(33.7, 1.01)
+(34, 2.2)
+(2.7, 1)
+(4683.8, 2.30)
+0.402 ± 0.046
+0.399 ± 0.049
+0.41 ± 0.065 0.418 ± 0.049
+0.334 ± 0.035
+(38.1, 1.05)
+(38.3, 1.00)
+(5707.4, 2.25)
+(39, 1.86)
+(1.1, 1)
+0.486 ± 0.021
+0.485 ± 0.022
+0.487 ± 0.021
+0.497 ± 0.015
+0.478 ± 0.035
+(179.6, 1.73)
+(217.8, 1.80)
+(8153.6, 2.85)
+(218, 5.78)
+(23.4, 1.63)
+0.556 ± 0.062
+0.938 ± 0.033
+0.877 ± 0.06
+0.928 ± 0.037
+0.927 ± 0.039
+(31.9, 1.01)
+(32.3, 1.00)
+(3322.2, 2.70)
+(33, 1.29)
+(7.1, 1.24)
+
+IRIS
+
+LYMPH
+
+CAR
+
+T.A.E.
+
+YEAST
+
+ZOO
+
+Table 4: Results on multiclass REL classiﬁcation. We report the accuracy along with stan-
+dard deviation and, in the brackets below, the number of learnt rules as well as the
+average length of the learnt rules. The proposed REL algorithm, gHKLMT−ρ , obtains
+the best generalization performance in most data sets. In addition, for ρ = 1.5 and
+1.1, our algorithm learns a smaller set of more compact rules than state-of-the-art
+ENDER. The ‘*’ symbol denotes statistically signiﬁcant improvement. The results
+are averaged over ten random train-test splits.
+
+7. Summary
+
+This paper generalizes the HKL framework in two ways. First, a generic (cid:96)1/(cid:96)ρ block-norm
+regularizer, ρ ∈ (1, 2), is employed that provides a more ﬂexible kernel selection pattern than
+HKL by mitigating the weight bias towards the kernels that are nearer to the sources of the
+DAG. Secondly, the framework is further generalized to the setup of learning a shared feature
+representation among multiple related tasks. We pose the problem of learning shared fea-
+tures across the tasks as that of learning a shared kernel. An eﬃcient mirror descent based
+active set algorithm is proposed to solve the generalized formulations (gHKL/gHKLMT ).
+An interesting computational result is that gHKL/gHKLMT can be solved in time polyno-
+mial in the active set and training set sizes whenever the HKL formulation can be solved in
+polynomial time. The other important contribution in this paper is the application of the
+proposed gHKL/gHKLMT formulations in the setting of Rule Ensemble Learning (REL),
+
+638
+
+Generalized Hierarchical Kernel Learning
+
+where HKL has not been previously explored. We pose the problem of learning an en-
+semble of propositional rules as a kernel learning problem. Empirical results on binary
+as well as multiclass classiﬁcation for REL demonstrate the eﬀectiveness of the proposed
+generalizations.
+
+Acknowledgments
+
+We thank the anonymous reviewers for the valuable comments. We acknowledge Chiran-
+jib Bhattacharyya for initiating discussions on optimal learning of rule ensembles. Pratik
+Jawanpuria acknowledges support from IBM Ph.D. fellowship.
+
+Appendix A.
+
+In the appendix section, we provide the proofs of theorems/lemmas referred to in the main
+paper.
+(cid:111)
+(cid:110)
+z ∈ Rd | z ≥ 0, (cid:80)d
+A.1 Lemma 26 of Micchelli and Pontil (2005)
+i ≤ 1
+Let ai ≥ 0, i = 1, . . . , d, 1 ≤ r < ∞ and ∆d,r =
+i=1 zr
+(cid:33)1+ 1
+(cid:32) d(cid:88)
+. Then, the
+d(cid:88)
+following result holds:
+r
+i=1
+i=1
+(cid:16)(cid:80)d
+j=1 a
+The proof follows from Holder’s inequality.
+
+The minimum is attained at
+
+∀i = 1, . . . , d.
+
+min
+z∈∆d,r
+
+(cid:17) 1
+r
+
+1
+r+1
+a
+i
+
+ai
+zi
+
+=
+
+r
+r+1
+a
+i
+
+.
+
+zi =
+
+r
+r+1
+j
+
+A.2 Proof of Lemma 1
+
+Proof Applying the above lemma (Appendix A.1) on the outermost (cid:96)1 -norm of the regu-
+ 2
+ (cid:88)
+larizer ΩT (f1 , . . . , fT )2 in (6), we get
+(cid:88)
+ρ
+d2
+v
+(Qw (f1 , . . . , fT ))ρ
+ΩT (f1 , . . . , fT )2 = min
+,
+γ∈∆1
+where ∆1 = (cid:8)z ∈ R|V | | z ≥ 0, (cid:80)
+v∈V zv ≤ 1(cid:9). Reapplying the above lemma on the individ-
+γv
+v∈V
+w∈D(v)
+ 2
+ (cid:88)
+ual terms of the above summation gives
+(cid:88)
+ρ
+w∈D(v)
+w∈D(v)
+639
+
+Qw (f1 , . . . , fT )2
+λvw
+
+(Qw (f1 , . . . , fT )2 )
+
+= min
+λv ∈∆v
+ˆρ
+
+ρ
+2
+
+,
+
+Jawanpuria, Nath and Ramakrishnan
+(cid:111)
+(cid:110)
+z ∈ R|D(v)| | z ≥ 0, (cid:80)
+w ≤ 1
+where ˆρ = ρ
+w∈D(v) zr
+2−ρ and ∆v
+r =
+. Using the above two re-
+sults and regrouping the terms will complete the proof.
+
+A.3 Re-parameterization of the Multi-task Regularizer in (8)
+(cid:80)T
+The gHKLMT dual formulation (10) follows from the representer theorem (Sch¨olkopf and
+Smola, 2002) after employing the following re-parameterization in (8).
+t=1 ftw and f tw = ftw − f 0w . Then, Qw (f1 , . . . , fT ) in (8) may be
+(cid:32)
+(cid:33) 1
+Deﬁne f 0w = 1
+T(cid:88)
+T +µ
+rewritten as:
+2
+µ(cid:107)f 0w (cid:107)2 +
+t=1
+
+Qw (f1 , . . . , fT ) =
+
+(cid:107)f tw (cid:107)2
+
+.
+
+,
+
+)
+
+(16)
+
+Further, construct the following feature map (Evgeniou and Pontil, 2004)
+(cid:124) (cid:123)(cid:122) (cid:125)
+(cid:124) (cid:123)(cid:122) (cid:125)
+φw (x)√
+, φw (x), 0, . . . , 0
+0, . . . , 0
+Φw (x, t) = (
+µ
+for tasks before t
+for tasks after t
+√
+prediction function: Qw (f1 , . . . , fT )2 = (cid:107)fw (cid:107)2 and Ft (x) = (cid:80)
+µf 0w , f 1w , . . . , f T w ).
+and deﬁne fw = (
+With the above deﬁnitions, we rewrite the gHKLMT primal regularizer as well as the
+w∈V (cid:104)fw , Φw (x, t)(cid:105) − bt ∀ t. It
+follows from Lemma 1 that the gHKLMT primal problem based on (8) is equivalent to the
+m(cid:88)
+T(cid:88)
+(cid:88)
+following optimization problem:
+w∈V
+t=1
+i=1
+
+δw (γ , λ)−1(cid:107)fw (cid:107)2 + C
+
+ˆρ ∀v∈V min
+min
+λv ∈∆v
+f ,b
+
+(cid:96)(yti , Ft (xti )),
+
+min
+γ∈∆1
+
+(17)
+
+1
+2
+
+where f = (fw )w∈V and b = [b1 , . . . , bT ].
+
+A.4 Motivation for the Active Set Algorithm
+
+Lemma 8 The problem (12) remains the same whether solved with the original set of vari-
+ables (η) or when solved with only those ηv (cid:54)= 0 at optimality.
+
+Proof The above follows from the following reasoning: a) variables η owe their presence
+in (12) only via ζ (η) functions, b) (ηv = 0) ⇒ (ζw (η) = 0 ∀w ∈ D(v)), c) Let (η (cid:48) , α(cid:48) ) be
+v (cid:54)= 0, then (η∗ , α(cid:48) ) is also an
+an optimal solution of the problem (12). If ζv (η (cid:48) ) = 0 and η (cid:48)
+w ∀w ∈ V \ v and η∗
+optimal solution of the problem (12) where η∗
+w = η (cid:48)
+v = 0, and d) min-max
+interchange in (12) yields an equivalent formulation.
+
+Lemma 9 The fol lowing min-max interchange is equivalent:
+
+min
+η∈∆1
+
+max
+αt∈S (yt ,C )∀t
+
+¯G(η , α) =
+
+max
+αt∈S (yt ,C )∀t
+
+min
+η∈∆1
+
+¯G(η , α),
+
+640
+
+Generalized Hierarchical Kernel Learning
+
+where
+
+¯G(η , α) = 1(cid:62)α − 1
+2
+
+(cid:32)(cid:88)
+w∈V
+
+(cid:16)
+
+ζw (η)
+
+(cid:33) 1
+(cid:17) ¯ρ
+¯ρ
+
+.
+
+α(cid:62)YHwYα
+
+Proof Note that G(η , α) is a convex function in η and a concave function in α. The
+min-max interchange follows from Sion-Kakutani minimax theorem (Sion, 1958).
+
+A.5 Proof of Theorem 3
+
+Before stating the proof of Theorem 3, we ﬁrst prove the results in Lemma 10, Proposi-
+(cid:111)
+(cid:110)
+tion 11 and Lemma 12, which will be employed therein (also see Bach, 2009, Lemma 10 and
+z ∈ Rd | z ≥ 0, (cid:80)d
+Proposition 11).
+i=1 zi ≤ 1
+Lemma 10 Let ai > 0 ∀i = 1, . . . , d, 1 < r < ∞ and ∆1 =
+.
+(cid:32) d(cid:88)
+(cid:33)1−r
+d(cid:88)
+Then, the fol lowing holds true:
+aizr
+i =
+i=1
+i=1
+−1
+ d(cid:88)
+j=1
+− 1
+∀ i = 1, . . . , d respectively.
+1
+i zi and a
+Proof Take vectors u1 and u2 as those with entries a
+r
+r
+1 u2 ≤ (cid:107)u1(cid:107)r (cid:107)u2(cid:107) r
+i
+The result follows from the Holder’s inequality: u(cid:62)
+. Note that if any
+r−1
+ai = 0, then the optimal value of the above optimization problem is zero.
+
+and the minimum is attained at
+
+∀ i = 1, . . . , d.
+
+1
+1−r
+zi = a
+i
+
+1
+1−r
+a
+i
+
+1
+1−r
+a
+i
+
+min
+z∈∆1
+
+Proposition 11 The fol lowing convex optimization problems are dual to each other and
+(cid:88)
+there is no duality gap:
+(cid:88)
+δw (γ , λ)Mw ,
+max
+γ∈∆1
+w∈V
+κ2
+uw λuwMw
+min
+max
+,
+where L = {κ ∈ R|V |×|V | | κ ≥ 0, (cid:80)
+u∈V
+κ∈L
+d2
+w∈D(u)
+u
+∆1 = (cid:8)z ∈ R|V | | z ≥ 0, (cid:80)
+v∈V zv ≤ 1(cid:9) and Mw ≥ 0 ∀w ∈ V .
+v∈A(w) κvw = 1, κvw = 0 ∀v ∈ A(w)c , ∀w ∈ V },
+sub ject to A ≥ (cid:88)
+Proof The optimization problem (19) may be equivalently rewritten as:
+w∈D(u)
+
+κ2
+uw λuwMw
+d2
+u
+
+∀u ∈ V ,
+
+min
+A
+
+min
+κ∈L
+
+(19)
+
+(18)
+
+A,
+
+641
+
+Jawanpuria, Nath and Ramakrishnan
+
+(cid:88)
+(cid:88)
+γuκ2
+uw λuwMw
+ (cid:88)
+ Mw
+d2
+(cid:88)
+u∈V
+w∈D(u)
+u
+γuλuw
+κ2
+−1
+ (cid:88)
+(cid:19)−1
+(cid:18) γuλuw
+uw
+d2
+w∈V
+u∈A(w)
+u
+d2
+u∈A(w)
+u
+δw (γ , λ)Mw
+
+Mw
+
+= min
+κ∈L
+
+max
+γ∈∆1
+
+= max
+γ∈∆1
+
+= max
+γ∈∆1
+
+= max
+γ∈∆1
+
+min
+κ∈L
+(cid:88)
+(cid:88)
+w∈V
+w∈V
+
+(Lagrangian dual with respect to A)
+
+(min-max interchange and rearranging terms)
+
+(Lemma 10 with respect to variables κ)
+
+(cid:4)
+
+Lemma 12 The fol lowing min-max interchange is equivalent:
+
+min
+γ∈∆1
+
+min
+λv ∈∆v
+ˆρ ∀v∈V
+
+max
+αt∈S (yt ,C )∀t
+
+G(γ , λ, α) =
+
+max
+αt∈S (yt ,C )∀t
+
+min
+γ∈∆1
+
+min
+ˆρ ∀v∈V G(γ , λ, α),
+λv ∈∆v
+
+where G(γ , λ, α) is as deﬁned in (10).
+
+Proof We proceed by applying a change of variables. Note that γv = 0 implies that the
+variables λvw (∀w ∈ D(v)) do not inﬂuence the ob jective of optimization problem (10). This
+follows from the deﬁnition of the δ(γ , λ) function. Hence, we deﬁne βvw = γv λvw , ∀w ∈ D(v)
+as it is a one-to-one transformation for γv (cid:54)= 0 (see also Szafranski et al., 2010). The gHKL
+dual (10) (the L.H.S. of the proposed lemma) can be equivalently rewritten as:
+(cid:80)
+min
+βvw≥0 ∀w∈D(v),v∈V
+v (cid:107)βvD(v) (cid:107) ˆρ≤1
+
+max
+αt∈S (yt ,C )∀t
+(cid:32)(cid:88)
+w∈V
+
+G(β , α), where βvD(v) = (βvw )w∈D(v) ,
+(cid:33)
+(cid:88)
+v∈A(w)
+
+Yα, and δw (β )−1 =
+
+d2
+v
+βvw
+
+.
+
+G(β , α) = 1(cid:62)α − 1
+2
+
+α(cid:62)Y
+
+δw (β )Hw
+
+Note that δw (β ) is a concave function of β (in the given feasibility set) and hence G(β , α)
+is convex-concave function with convex and compact feasibility sets. Therefore, we obtain
+variables (γ , λ) by substituting γv = ((cid:80)
+minβ maxα G(β , α) = maxα minβ G(β , α) (with constraints over β and α as stated above) by
+applying the Sion-Kakutani minimax theorem (Sion, 1958). Finally, we revert to the original
+∀w ∈
+ˆρ ∀v ∈ V and λvw = βvw
+1
+w∈D(v) (βvw ) ˆρ )
+D(v), ∀v ∈ V s.t. γv (cid:54)= 0. This gives us the equivalent R.H.S.
+γv
+Now we begin the proof of Theorem 3.
+(cid:33)
+(cid:32)(cid:88)
+Proof From Lemma 12, the gHKL dual (10) can be equivalently written as:
+δw (γ , λ)α(cid:62)YHwYα
+(cid:125)
+(cid:124)
+(cid:123)(cid:122)
+max
+,
+γ∈∆1
+w∈V
+O
+
+1(cid:62)α − 1
+2
+
+max
+λv ∈∆v
+ˆρ ∀v∈V
+
+max
+α∈S (y,C )
+
+(20)
+
+642
+
+Generalized Hierarchical Kernel Learning
+
+∀v ∈ V
+
+(Sion-Kakutani theorem)
+
+=
+
+=
+
+max
+u∈V
+
+min
+A
+
+(Proposition 11)
+
+(Eliminating u)
+
+s.t. A ≥ d−2
+v
+
+(Holder’s inequality, ¯ρ= ˆρ
+ˆρ−1 )
+
+where ˆρ = ρ
+2−ρ .
+formulation.
+O =
+ˆρ ∀v∈V max
+max
+γ∈∆1
+λv ∈∆v
+
+(cid:88)
+In the following, we equivalently rewrite the second part of the above
+(cid:123)(cid:122)
+(cid:125)
+(cid:124)
+δw (γ , λ) α(cid:62)YHwYα
+(cid:88)
+w∈V
+Mw
+κ2
+uw λuwMw
+d2
+w∈D(u)
+u
+A
+
+ˆρ ∀v∈V min
+max
+κ∈L
+λv ∈∆v
+s.t. A ≥ (cid:88)
+max
+ˆρ ∀v∈V min
+κ∈L
+λv ∈∆v
+κ2
+vw λvwMw
+d2
+w∈D(v)
+v
+s.t. A ≥ (cid:88)
+max
+min
+= min
+ˆρ ∀v∈V A
+κ∈L
+λv ∈∆v
+A
+κ2
+∀v ∈ V
+vw λvwMw
+d2
+w∈D(v)
+v
+ (cid:88)
+ 1
+A
+min
+= min
+κ∈L
+(cid:0)κ2
+(cid:1) ¯ρ
+A
+¯ρ
+ (cid:88)
+ 1
+vwMw
+w∈D(v)
+(cid:0)κ2
+(cid:1) ¯ρ
+¯ρ
+u∈V d−2
+max
+= min
+(21)
+(Eliminating A)
+uwMw
+(cid:0)κ2
+(cid:1) ¯ρ . Its Lagrangian
+(cid:80)
+κ∈L
+u
+w∈D(u)
+d−2 ¯ρ
+ .
+−2 ¯ρ
+Now consider the problem O ¯ρ = minκ∈L maxu∈V d
+w∈D(u)
+uwMw
+(cid:88)
+(cid:88)
+(cid:0)κ2
+(cid:1) ¯ρ − A
+u
+is
+ηv
+vwMw
+v
+v∈V
+w∈D(v)
+(cid:88)
+(cid:88)
+(cid:0)d−2
+(cid:1) ¯ρ
+Minimization of L with respect to A leads to the constraint η ∈ ∆1 . Hence, we have:
+O ¯ρ = max
+v κ2
+.
+ηv
+min
+vwMw
+κ∈L
+η∈∆1
+v∈V
+w∈D(v)
+ min
+ ,
+(cid:88)
+(cid:88)
+(cid:0)ηv d−2 ¯ρ
+(cid:1) κ2 ¯ρ
+Using the special structure of L, the above can be rewritten as:
+O ¯ρ = max
+(Mw ) ¯ρ
+(cid:110)
+(cid:111)
+η ∈ R|A(w)| | η ≥ 0, (cid:80)
+κw ∈∆|A(w)|
+η∈∆1
+v
+vw
+w∈V
+v∈A(w)
+w∈A(w) ηw ≤ 1
+where ∆|A(w)| =
+. By applying Lemma 10 with re-
+ (cid:88)
+ 1
+spect to variables κ, we obtain the following equivalence:
+(cid:88)
+(cid:1) κ2 ¯ρ
+(cid:0)ηv d−2 ¯ρ
+1−ρ
+vw = ζw (η) =
+v
+v∈A(w)
+v∈A(w)
+
+L(κ, A, η) = A +
+
+v η1−ρ
+dρ
+v
+
+.
+
+(22)
+
+∀v ∈ V
+
+min
+κw ∈∆|A(w)|
+
+643
+
+Jawanpuria, Nath and Ramakrishnan
+
+(cid:32)(cid:88)
+(cid:33) 1
+(cid:16)
+(cid:17) ¯ρ
+From the above two results, we obtain the following equivalent dual of (21):
+¯ρ
+O = max
+α(cid:62)YHwYα
+ζw (η)
+η∈∆1
+w∈V
+Substituting O in (20) by the above (23) and again interchanging the min-max completes
+the proof.
+
+(23)
+
+.
+
+×
+
+dρ
+i
+
+×
+
+ζ s
+w (η)
+
+¯α(cid:62)YHuY ¯α
+
+A.6 Proof of Theorem 4
+Proof We begin by noting that ζv (η) (v ∈ V ) is a concave function of η for all v (this is
+because when ρ ∈ (1, 2], ζv is a weighted q -norm in η , where q ∈ [−1, 0) and hence is concave
+in the ﬁrst quadrant). By simple observations regarding operations preserving convexity we
+have that the ob jective in (13) is a convex function of η for a ﬁxed value of α. Hence g(η),
+which is a point-wise maximum over convex functions, is itself convex. The expression for
+∇g(η) is computed by employing Danskin’s theorem (Bertsekas, 1999, Proposition B.25)
+(cid:123)
+(cid:125)(cid:124)
+(cid:122)
+ (24)
+ (cid:88)
+and is as follows:
+(cid:19)−ρ
+(cid:18)
+(cid:17) ¯ρ
+u (η)ρ (cid:16)
+P1
+(∇g(η))i = − (1 − ε)
+(1 − ε)ηi +
+ε
+ζ s
+|V |
+(cid:32)(cid:88)
+(cid:33) 1
+(cid:17) ¯ρ
+(cid:16)
+2 ¯ρ
+u∈D(i)
+¯ρ −1
+¯α(cid:62)YHwY ¯α
+(cid:125)
+(cid:123)(cid:122)
+(cid:124)
+,
+w∈V
+P2
+w (η) = ζw ((1 − ε)η + ε|V | ), i.e., the smoothed ζw (η) and ¯α is an optimal
+where ¯ρ = ρ
+2(ρ−1) , ζ s
+solution of problem (13) with that η where the gradient is to be computed.
+Next, we show that g is Lipschitz continuous by showing that its gradient is bounded.
+Firstly, ρ ∈ (1, 2] and hence ¯ρ ∈ [1, ∞). Next, let the minimum and maximum eigenvalues
+w (η) (cid:0) ¯α(cid:62)YHwY ¯α(cid:1) ¯ρ ≥ θ ¯ρ(cid:107) ¯α(cid:107)2 ¯ρ (cid:80)
+σ(cid:107) ¯α(cid:107)2 . Using this, we obtain: (cid:80)
+over all Hw (w ∈ V ) be θ and σ respectively. Then we have θ(cid:107) ¯α(cid:107)2 ≤ ¯α(cid:62)YHwY ¯α ≤
+that (cid:80)
+w∈V ζ s
+w∈V ζ s
+w (η). Note
+maximum of dv (v ∈ V ). Thus we obtain: P2 ≤ (cid:0)θ ¯ρ(cid:107) ¯α(cid:107)2 ¯ρε/|V |(cid:1) 1
+r (η) ≥ dρ/(1−ρ)
+r (η) where r ∈ sources(V ) and ζ s
+w (η) ≥ ζ s
+ε|V | where dmax is the
+w∈V ζ s
+max
+2−ρ
+¯ρ −1 d
+ρ−1
+max .
+i ((1 − ε)ηi + ε|V | )−ρ ζu (η)ρ ≤ d
+Now, it is easy to see that ∀u ∈ D(i), dρ
+ρ
+1−ρ
+i
+where dmin is the minimum of dv (v ∈ V ). Hence P1 ≤ |V |σ ¯ρ(cid:107) ¯α(cid:107)2 ¯ρd
+ρ
+1−ρ
+0 ≤ ¯α ≤ C , we have (cid:107) ¯α(cid:107) ≤ √
+min . In addition, since
+mT C . Summarizing these ﬁndings, we obtain the following
+bound on the gradient:
+(cid:107)∇g(η)(cid:107)1 ≤ (1 − ε)
+2 ¯ρ
+The proof will be similar for gHKLMT formulations in other learning settings.
+
+2−ρ
+1− ¯ρ
+¯ρ |V | 2
+ρ
+ρ−1
+1−ρ
+ρ +1d
+min d
+max .
+
+mT C 2θ1− ¯ρσ ¯ρε
+
+≤ d
+ρ
+1−ρ
+min ,
+
+644
+
+Generalized Hierarchical Kernel Learning
+
+A.7 Proof of Theorem 5
+Proof Given a candidate solution η and α = [α(cid:62)
+1 , . . . , α(cid:62)
+T ](cid:62) (with associated primal (f =
+(f1 , . . . , fT ), b, ξ )), the duality gap (D) between the two variational formulations in Lemma 9
+is as follows:
+
+¯G(η , ˆα) − min
+D = max
+ˆη∈∆1
+ˆαt∈S (yt ,C )∀t
+ΩT (f )2 + C 1(cid:62) ξ − min
+≤ 1
+(cid:122)
+(cid:125)(cid:124)
+(cid:123)
+ˆη∈∆1
+2
+Gap in solving with ﬁxed η
+ΩT (f )2 + C 1(cid:62) ξ − 1(cid:62)α +
+
+=
+
+1
+2
+
+¯G( ˆη , α)
+max
+(cid:32)(cid:88)
+¯G( ˆη , α)
+(cid:124)
+ˆη∈∆1
+w∈V
+
+(cid:16)
+
+ζw ( ˆη)
+
+α(cid:62)YHwYα
+(cid:123)(cid:122)
+Gap in solving with ﬁxed α
+
+(cid:33) 1
+(cid:17) ¯ρ
+¯ρ − ΩT (f )2
+
+
+(cid:125)
+
+.
+
+With this upper bound on the duality gap, it is easy to see that the following condition is
+suﬃcient for the reduced solution (with active set W ) to have D ≤ :
+(cid:33) 1
+(cid:32)(cid:88)
+(cid:17) ¯ρ
+(cid:16)
+¯ρ ≤ ΩT (fW )2 + 2( − W ),
+w∈V
+
+α(cid:62)YHwYα
+
+max
+η∈∆1
+
+ζw (η)
+
+(25)
+
+where W is the duality gap9 associated with the computation of the dual variables αW .
+Here as well as in the rest of the proof, the subscript (·)W implies the value of the variable
+obtained when the gHKLMT formulation is solved with V restricted to the active set W . In
+Appendix A.5, we had proved that the L.H.S. of the above inequality is equal to the R.H.S.
+ (cid:88)
+ 1
+of (21), i.e.,
+(cid:33) 1
+(cid:32)(cid:88)
+(cid:0)κ2
+(cid:1) ¯ρ
+¯ρ
+¯ρ
+ζw (η) (Mw ) ¯ρ
+vwMw
+w∈V
+w∈D(v)
+
+v∈V d−2
+max
+v
+
+= min
+κ∈L
+
+max
+η∈∆1
+
+(26)
+
+,
+
+where Mw = α(cid:62)
+W YHwYαW .
+Next, we obtain an upper bound of the above by substituting κ ∈ L in the R.H.S of (26).
+In particular, we employ the following: the value of κvw v , w ∈ W is obtained by solving
+the small10 problem (14). This is ﬁne because W = hull(W ). For v ∈ W c and w ∈ W , by
+deﬁnition of L and W , we have κvw = 0. Next, κvw is set to zero ∀ v ∈ W , w ∈ W c . For the
+(cid:16)(cid:80)
+(cid:17)−1
+remaining κvw , v ∈ W c and w ∈ W c , we use the value of κ obtained by solving (21) with
+u∈A(v)∩W c du
+(also see Section A.5 Bach, 2009). Note that the
+ρ = 1, i.e., κvw = dv
+above constructed value of κ is feasible in the set L. With this choice of κ substituted in
+
+9. This is given by the gap associated with the ˆρ-norm MKL solver employed in the mirror descent algorithm
+LW = {κ ∈ R|W |×|W | | κ ≥ 0, (cid:80)
+for solving the small problem (14).
+10. The value of κvw (∀v , w ∈ W ) obtained in this manner satisfy the constraint set L restricted to W , i.e.,
+v∈A(w) κvw = 1, κvw = 0 ∀ v ∈ A(w)c ∩ W , ∀ w ∈ W }
+
+645
+
+Jawanpuria, Nath and Ramakrishnan
+
+= max
+
+max
+η∈∆1
+
+(cid:17)2
+
+≤ max
+
+max
+u∈sources(W c )
+
+¯ρ 
+ ¯ρ 1
+¯ρ 
+ ¯ρ 1
+(cid:17)2
+¯ρ 
+ ¯ρ 1
+
+(cid:32)(cid:88)
+(cid:33) 1
+the R.H.S. of (26), we have the following inequalities:
+(cid:16)
+(cid:17) ¯ρ
+¯ρ
+α(cid:62)
+ΩT (fW )2 , max
+W YHwYαW
+ α(cid:62)
+ (cid:88)
+ζw (η)
+w∈V
+(cid:16)(cid:80)
+W YHwYαW
+u∈W c
+w∈D(u)
+v∈A(w)∩W c dv
+ΩT (fW )2 ,
+ α(cid:62)
+ (cid:88)
+( Speciﬁc choice of κ)
+(cid:16)(cid:80)
+W YHwYαW
+w∈D(u)
+v∈A(w)∩W c dv
+ΩT (fW )2 ,
+ (cid:88)
+ α(cid:62)
+(∵ W = hull(W ))
+(cid:17)2
+(cid:16)(cid:80)
+W YHwYαW
+≤ max
+max
+v∈A(w)∩W c dv ≥ (cid:80)
+(∵ (cid:80)
+u∈sources(W c )
+w∈D(u)
+v∈A(w)∩D(u) dv
+
+ΩT (fW )2 ,
+(cid:88)
+v∈A(w)∩D(u) dv )
+(cid:16)(cid:80)
+α(cid:62)
+W YHwYαW
+≤ max
+max
+u∈sources(W c )
+w∈D(u)
+v∈A(w)∩D(u) dv
+(∵ (cid:107)β (cid:107)1 ≥ (cid:107)β (cid:107) ¯ρ ∀ ¯ρ ≥ 1)
+Employing the above upper bound in (25) leads to the result in Theorem 5. Note that in
+practice, the last upper bound is not loose for Rule Ensemble Learning (REL) application.
+This is because most of the matrices, especially near the bottom of the lattice, will be (near)
+zero-matrices — larger the conjunctive rule, the fewer are the examples which may satisfy
+it.
+
+(cid:17)2
+
+A.8 gHKLMT with General Convex Loss Functions
+
+In this section, we present extension of the proposed algorithm to other learning settings
+like regression. In particular, we consider the case where the loss function (cid:96)(·, ·) is a general
+convex loss function such as the hinge loss, the square loss, the Huber loss, etc.
+The gHKLMT primal formulation with a general convex loss function (cid:96)(·, ·) was given in
+(cid:32)(cid:88)
+(cid:33) 1
+equation (6). The specialized gHKLMT dual formulation corresponding to (6) is as follows:
+(cid:17) − 1
+(cid:16)− αti
+(cid:16)
+(cid:17) ¯ρ
+T(cid:88)
+m(cid:88)
+¯ρ
+C
+2
+w∈V
+t=1
+i=1
+
+max
+αt∈Rm ,1(cid:62)αt=0 ∀t
+
+α(cid:62)Hw α
+
+min
+η∈∆1
+
+ζw (η)
+
+−C
+
+ϕ∗
+ti
+
+,
+
+646
+
+Generalized Hierarchical Kernel Learning
+(cid:17) 1
+(cid:16)(cid:80)
+v η1−ρ
+where α = [α(cid:62)
+1 , . . . , α(cid:62)
+T ](cid:62) , ζw (η) =
+1−ρ (refer Theorem 3 for details)
+v∈A(w) dρ
+v
+and ϕ∗
+ti denotes the Fenchel11 conjugate (Boyd and Vandenberghe, 2004) of the function
+ϕti : z → (cid:96)(yti , z ).
+
+¯θw =
+
+,
+
+(27)
+
+1
+ˆρ−1
+
+.
+
+(cid:16)
+(ζw ( ¯ηW ))
+
+(ζv ( ¯ηW ))
+
+¯θw (ζw ( ¯ηW ))
+
+¯ρ ¯α(cid:62)
+1
+W YHwY ¯αW
+¯ρ ¯α(cid:62)
+1
+W YHvY ¯αW
+
+A.9 Prediction Function for gHKLMT with the Hinge Loss Function
+Let the ﬁnal active set be W and ( ¯ηW , ¯αW ) be the optimal solution of (12). Then the
+(cid:32) (cid:88)
+(cid:33)
+prediction function for an instance xtj belonging to the tth task is given by
+Ft (x) = ( ¯αW (cid:12) y)(cid:62)
+¯ρ Hw (·, xtj )
+1
+w∈W
+where symbol (cid:12) denote element-wise product, Hw is the kernel matrix corresponding to the
+multi-task kernel (11), Hw (·, xtj ) = ((Hw (xt(cid:48) i , xtj ))m
+
+
+i=1 )T
+t(cid:48)=1 and
+(cid:17) ¯ρ(cid:19) 1
+(cid:18)(cid:80)
+¯ρ
+v∈W
+A.10 Proof of Corollary 6
+Note that proving the computational complexity of the matrix Ku (u ∈ sources(W c )) in
+(15) to be polynomial time in size of the active set and the training set dimensions suﬃces
+to prove the corollary. This is because all the other steps in Algorithms 3 and 2 are of
+polynomial time complexity (discussed in Section 4).
+We begin the proof by introducing some indexing notations related to the multi-task
+matrices. Let the entries in Hw , the mT × mT multi-task kernel matrix, be arranged in the
+following form: the entry corresponding to the input pair (xt1 i , xt2 j ) be in the ((t1 − 1) ∗
+m + i)th row and ((t2 − 1) ∗ m + j )th column of Hw .
+
+ (cid:88)
+Next we observe that the expression for Ku in Theorem 5 may be rewritten as:
+(cid:17)2
+(cid:16)(cid:80)
+(cid:124)
+(cid:123)(cid:122)
+(cid:125)
+w∈D(u)
+v∈A(w)∩D(u) dv
+Tu
+where: i) Kw is a mT × mT matrix corresponding to the base kernel kw and constructed
+from the inputs from all the tasks, ii) KT is a mT × mT such that the entry corresponding
+to the ((t1 − 1) ∗ m + i)th row and ((t2 − 1) ∗ m + j )th column (1 ≤ i, j ≤ m) of KT is
+B (t1 , t2 ), and iii) (cid:12) is the symbol for element-wise product (Hadamard product).
+(cid:26) zy
+11. Fenchel conjugate ϕ∗ (z ) of a convex function ϕ(u) is given by ϕ∗ (z ) = supu z(cid:62)u − ϕ(u). As an example,
+if zy ∈ [−1, 0]
+for hinge loss ϕ(u) = (cid:96)(u, y) = max(0, 1 − uy), ϕ∗ (z ) =
+∞ otherwise
+
+Ku =
+
+Kw
+
+(cid:12)KT ,
+
+647
+
+Jawanpuria, Nath and Ramakrishnan
+
+In the above expression, Ku is computable in polynomial time if and only if Tu is
+computable in polynomial time. The proof of the corollary follows from observing the
+expression of the suﬃcient condition for optimality of the HKL (Bach, 2009, Equation 21),
+which also involves the term Tu .
+
+φc (xi )
+
+·
+
+φc (xj )
+
+=
+
+kc (xi , xj ),
+
+kv (xi , xj ) = φv (xi ) · φv (xj ) =
+
+A.11 Proof of Theorem 7
+Given an active set W of size W , proving that the computational complexity of the veriﬁ-
+cation of the suﬃcient condition of optimality (15) is polynomial in terms of the active set
+and the training set sizes suﬃces to prove Theorem 7. This is because all the other steps
+in Algorithms 3 and 2 are of polynomial time complexity (discussed in Section 4).
+In the REL setup, the DAG is the conjunction lattice and the embedded kernels kv v ∈ V
+(cid:32) (cid:89)
+(cid:33)
+(cid:32) (cid:89)
+(cid:33)
+(cid:75)
+may be rewritten as:
+c∈Sv
+c∈Sv
+c∈Sv
+where Sv is the set of basic propositions involved in the conjunction φv and (cid:12) is the symbol
+for element-wise product (Hadamard product). The kernels corresponding to the basic
+propositions are in fact the base kernels embedded in the second level nodes of the lattice
+V . Employing the above deﬁnition of kv (xi , xj ), the matrices Ku (in L.H.S. of (15)) are
+ (cid:75)
+(1 + a)2 + 11(cid:62)(cid:19) ,
+(cid:33)
+(cid:32)(cid:75)
+(cid:18) Kc
+computed as:
+(cid:88)
+(cid:17)2 =
+(cid:16)(cid:80)
+c∈Su
+w∈D(u)
+c∈B/Su
+v∈A(w)∩D(u) dv
+where Kc is the kernel matrix corresponding to the basic proposition φc , B is the set of all
+basic propositions and the parameters dv (v ∈ V ) are deﬁned as dv = a|Sv | (a > 0).
+It is obvious that a trivial computational complexity of computing Ku (u ∈ V ) is O(pm2 ).
+In practice, this complexity can be reduced to O(m2 ) by caching the matrices Ku . For
+illustration, suppose Ku1 needs to be computed, given that Ku0 is cached and u0 is a parent
+of u1 . Let the extra basic proposition contained in φu1 (with respect to φu0 ) be φe . Then
+(cid:18) Ke
+(cid:19)
+(1 + a)2 + 11(cid:62)(cid:19)
+(cid:18) Ke
+Ku1 can be calculated as follows:
+Ku1 = Ku0 (cid:12)
+a2
+where (cid:11) is the symbol for element-wise division of matrices.
+Hence, plugging the REL speciﬁc values in the runtime complexity of the gHKL algo-
+rithm, ω =constant and z = p, the runtime complexity of the gHKL based REL algorithm
+is O(m3W 3 log(W ) + m2W 2p).
+
+Kc
+a2
+
+(cid:12)
+
+Ku =
+
+Kw
+
+(cid:11)
+
+,
+
+A.12 REL Binary Classiﬁcation Results in AUC
+
+Table 5 reports the REL binary classiﬁcation results in AUC (area under the ROC curve).
+The experimental details (and results measured in F1-score) are discussed in Section 6.
+
+648
+
+Generalized Hierarchical Kernel Learning
+
+RuleFit
+
+SLI
+
+ENDER
+
+0.783 ± 0.036
+0.482 ± 0.21
+0.736 ± 0.05
+TIC
+0.958 ± 0.039
+BCW 0.941 ± 0.011 0.917 ± 0.051
+0.67 ± 0.027 0.576 ± 0.115
+0.761 ± 0.02
+DIA
+HAB 0.537 ± 0.054
+0.17 ± 0.155 0.575 ± 0.039
+0.805 ± 0.031
+0.764 ± 0.03 0.541 ± 0.215
+0.68 ± 0.028
+0.546 ± 0.06 0.175 ± 0.256
+BLD
+HTS 0.765 ± 0.028 0.712 ± 0.085
+0.801 ± 0.022
+
+HTC
+
+gHKLρ
+HKL-
+ρ = 1.5
+(cid:96)1 -MKL
+ρ = 2
+ρ = 1.1
+0.973 ± 0.02 0.975 ± 0.018
+0.967 ± 0.023
+0.836 ± 0.024
+0.93 ± 0.099
+0.981 ± 0.008 0.984 ± 0.005 0.93 ± 0.099
+0.636 ± 0.118
+0.746 ± 0.050 0.766 ± 0.046 0.733 ± 0.058
+0.524 ± 0.078
+0.556 ± 0.07
+0.482 ± 0.11
+0.383 ± 0.166
+0.753 ± 0.118
+0.802 ± 0.085 0.837 ± 0.035 0.763 ± 0.12
+0.519 ± 0.079
+0.660 ± 0.025
+0.667 ± 0.034 0.634 ± 0.028
+0.825 ± 0.032 0.849 ± 0.021 0.83 ± 0.027
+0.811 ± 0.056
+
+0.998
+0.995
+1
+0.998
+0.972
+0.632
+MK3
+0.972 ± 0.016 0.948 ± 0.015
+0.965 ± 0.014 0.977 ± 0.009
+VTE 0.955 ± 0.022 0.919 ± 0.048
+0.627 ± 0.063 0.637 ± 0.055 0.576 ± 0.089
+0.578 ± 0.05 0.469 ± 0.078
+0.622 ± 0.043
+0.866 ± 0.028
+0.763 ± 0.08 0.887 ± 0.006
+0.818 ± 0.02
+0.882 ± 0.023
+0.85 ± 0.032
+MAM
+LIV 0.607 ± 0.017 0.093 ± 0.168
+0.619 ± 0.038
+0.619 ± 0.074 0.623 ± 0.038 0.583 ± 0.11
+
+BCC
+
+0.957
+0.945 ± 0.016
+0.513 ± 0.124
+0.839 ± 0.03
+0.565 ± 0.109
+
+Table 5: Results on binary REL classiﬁcation. We report the average AUC along with
+standard deviation, over ten random train-test splits.
+
+References
+
+J. Aﬂalo, A. Ben-Tal, C. Bhattacharyya, J. Saketha Nath, and S. Raman. Variable sparsity
+kernel learning. Journal of Machine Learning Research, 12:565–592, 2011.
+
+M. A. ´Alvarez, L. Rosasco, and N. D. Lawrence. Kernels for vector-valued functions: a
+review. Foundations and Trends in Machine Learning, 4:195–266, 2012.
+
+R. K. Ando and T. Zhang. A framework for learning predictive structures from multiple
+tasks and unlabeled data. Journal of Machine Learning Research, 6:1817–1853, 2005.
+
+A. Argyriou, T. Evgeniou, and M. Pontil. Convex multi-task feature learning. Machine
+Learning, 73:243–272, 2008.
+
+F. Bach. Exploring large feature spaces with hierarchical multiple kernel learning.
+Advances in Neural Information Processing Systems, 2008.
+
+In
+
+F. Bach. High-dimensional non-linear variable selection through hierarchical kernel learning.
+Technical report, INRIA, France, 2009.
+
+F. Bach, G. R. G. Lanckriet, and M. I. Jordan. Multiple kernel learning, conic duality, and
+the SMO algorithm. In Proceedings of International Conference on Machine Learning,
+2004.
+
+649
+
+Jawanpuria, Nath and Ramakrishnan
+
+J. Baxter. A model of inductive bias learning. Journal of Artiﬁcial Intel ligence Research,
+12:149–198, 2000.
+
+A. Beck and M. Teboulle. Mirror descent and nonlinear pro jected subgradient methods for
+convex optimization. Operations Research Letters, 31(3):167–175, 2003.
+
+S. Ben-David and R. Schuller. A notion of task relatedness yielding provable multiple-task
+learning guarantees. Machine Learning, 73:273–287, 2008.
+
+A. Ben-Tal and A. Nemirovski. Lectures on modern convex optimization: Analysis, algo-
+rithms and engineering applications. MPS/ SIAM Series on Optimization, 1, 2001.
+
+D. Bertsekas. Nonlinear Programming. Athena Scientiﬁc, 1999.
+
+K. Blake and M. Lichman. UCI machine learning repository, 2013. URL http://archive.
+ics.uci.edu/ml.
+
+S. Boyd and L. Vandenberghe. Convex Optimization. Cambridge University Press, 2004.
+
+R. Caruana. Mutitask learning. Machine Learning, 28:41–75, 1997.
+
+P. Clark and T. Niblett. The CN2 induction algorithm. Machine Learning, 3:261–283, 1989.
+
+W. W. Cohen and Y. Singer. A simple, fast, and eﬀective rule learner. In AAAI Conference
+on Artiﬁcial Intel ligence, 1999.
+
+T. H. Cormen, C. E. Leiserson, R. L. Rivest, and C. Stein. Introduction to Algorithms (3.
+ed.). MIT Press, 2009.
+
+K. Dembczy´nski, W. Kot(cid:32)lowski, and R. S(cid:32)lowi´nski. Maximum likelihood rule ensembles. In
+Proceedings of the International Conference of Machine Learning, 2008.
+
+K. Dembczy´nski, W. Kot(cid:32)lowski, and R. S(cid:32)lowi´nski. ENDER - A statistical framework for
+boosting decision rules. Data Mining and Know ledge Discovery, 21:52–90, 2010.
+
+T. Evgeniou and M. Pontil. Regularized multi-task learning. In Proceedings of the ACM
+SIGKDD International Conference on Know ledge Discovery and Data Mining, 2004.
+
+T. Evgeniou, C. A. Micchelli, and M. Pontil. Learning multiple tasks with kernel methods.
+Journal of Machine Learning Research, 6:615–637, 2005.
+
+J. H. Friedman and B. E. Popescu. Predictive learning via rule ensembles. Annals of Applied
+Statistics, 2:916–954, 2008.
+
+L. Jacob, F. Bach, and J.-P. Vert. Clustered multi-task learning: A convex formulation. In
+Advances in Neural Information Processing Systems, 2008.
+
+A. Jain, S. V. N. Vishwanathan, and M. Varma. SPG-GMKL: Generalized multiple ker-
+nel learning with a million kernels. In Proceedings of the ACM SIGKDD International
+Conference on Know ledge Discovery and Data Mining, 2012.
+
+650
+
+Generalized Hierarchical Kernel Learning
+
+P. Jawanpuria and J. S. Nath. Multi-task multiple kernel learning. In SIAM International
+Conference on Data Mining, 2011.
+
+P. Jawanpuria and J. S. Nath. A convex feature learning formulation for latent task structure
+discovery. In Proceedings of the International Conference on Machine Learning, 2012.
+
+P. Jawanpuria, J. S. Nath, and G. Ramakrishnan. Eﬃcient rule ensemble learning using
+hierarchical kernels. In Proceedings of the International Conference of Machine Learning,
+2011.
+
+P. Jawanpuria, M. Varma, and J. S. Nath. On p-norm path following in multiple kernel
+learning for non-linear feature selection. In Proceedings of the International Conference
+of Machine Learning, 2014.
+
+M. Kloft, U. Brefeld, S. Sonnenburg, and A. Zien. (cid:96)p -norm multiple kernel learning. Journal
+of Maching Learning Research, 12:953–997, 2011.
+
+G. R. G. Lanckriet, N. Cristianini, P. Bartlett, L. El Ghaoui, and M. I. Jordan. Learning the
+kernel matrix with semideﬁnite programming. Journal of Machine Learning Research, 5:
+27–72, 2004.
+
+H. Lee, A. Battle, R. Raina, and A. Y. Ng. Eﬃcient sparse coding algorithms. In Advances
+in Neural Information Processing Systems, 2007.
+
+J. Liu and J. Ye. Eﬃcient (cid:96)1/(cid:96)q norm regularization. Technical Report arXiv:1009.4766,
+2010.
+
+K. Lounici, M. Pontil, A. B. Tsybakov, and S. van de Geer. Taking advantage of sparsity in
+multi-task learning. In Proceedings of the Annual Conference on Learning Theory, 2009.
+
+C. A. Micchelli and M. Pontil. Learning the kernel function via regularization. Journal of
+Machine Learning Research, 6:1099–1125, 2005.
+
+R. S. Michalski. A theory and methodology of inductive learning. Artiﬁcial Intel ligence,
+20:111–161, 1983.
+
+S. Negahban and M. Wainwright. Phase transitions for high-dimensional joint support
+recovery. In Advances in Neural Information Processing Systems, 2009.
+
+G. Obozinski, Martin J. Wainwright, and M.I. Jordan. Support union recovery in high-
+dimensional multivariate regression. Annals of Statistics, 39:1–17, 2011.
+
+F. Orabona, J. Luo, and B. Caputo. Multi kernel learning with online-batch optimization.
+Journal of Machine Learning Research, 13:227–253, 2012.
+
+J. C. Platt. Fast training of support vector machines using sequential minimal optimization.
+In Advances in Kernel Methods - Support Vector Learning, 1999.
+
+J. R. Quinlan. Induction of decision trees. Machine Learning, 1:81–106, 1986.
+
+651
+
+Jawanpuria, Nath and Ramakrishnan
+
+A. Rakotomamonjy, F. Bach, S. Canu, and Y. Grandvalet. SimpleMKL. Journal of Machine
+Learning Research, 9:2491–2521, 2008.
+
+R. L. Rivest. Learning decision lists. Machine Learning, 2:229–246, 1987.
+
+B. Sch¨olkopf and A. Smola. Learning with Kernels. MIT press, Cambridge, 2002.
+
+D. Sheldon. Graphical multi-task learning. Technical report, Cornell University, 2008.
+
+M. Sion. On general minimax theorem. Paciﬁc Journal of Mathematics, 1958.
+
+M. Szafranski, Y. Grandvalet, and P. M. Mahoudeaux. Hierarchical penalization. In Ad-
+vances in Neural Information Processing Systems, 2007.
+
+M. Szafranski, Y. Grandvalet, and A. Rakotomamonjy. Composite kernel learning. Machine
+Learning, 79:73–103, 2010.
+
+B. A. Turlach, W. N. Venables, and S. J. Wright. Simultaneous variable selection. Techno-
+metrics, 47:349–363, 2005.
+
+V. Vapnik. Statistical Learning Theory. Wiley-Interscience, 1998.
+
+S. V. N. Vishwanathan, Z. Sun, N. T.-Ampornpunt, and M. Varma. Multiple kernel learning
+and the SMO algorithm. In Advances in Neural Information Processing Systems, 2010.
+
+S. M. Weiss and N. Indurkhya. Lightweight rule induction. In Proceedings of the Interna-
+tional Conference of Machine Learning, 2000.
+
+Y. Xue, X. Liao, L. Carin, and B. Krishnapuram. Multi-task learning for classiﬁcation with
+dirichlet process priors. Journal of Maching Learning Research, 8:35–63, 2007.
+
+M. Yuan and Y. Lin. Model selection and estimation in regression with grouped variables.
+Journal of the Royal Statistical Society: Series B (Statistical Methodology), 68:49–67,
+2006.
+
+652
+
+

@@ -1,0 +1,3370 @@
+Journal of Machine Learning Research 16 (2015) 913-960
+
+Submitted 10/13; Revised 9/14; Published 4/15
+
+Distributed Matrix Completion and Robust Factorization
+
+Lester Mackey†
+Stanford University
+Department of Statistics
+390 Serra Mal l
+Stanford, CA 94305
+Ameet Talwalkar†
+University of California, Los Angeles
+Computer Science Department
+4732 Boelter Hal l
+Los Angeles, CA 90095
+
+lmackey@stanford.edu
+
+atalwalkar@gmail.com
+
+Michael I. Jordan
+University of California, Berkeley
+Department of Electrical Engineering and Computer Science and Department of Statistics
+465 Soda Hal l
+Berkeley, CA 94720
+
+jordan@cs.berkeley.edu
+
+Editor: Nathan Srebro
+† These authors contributed equally.
+
+Abstract
+If learning methods are to scale to the massive sizes of modern data sets, it is essential for
+the ﬁeld of machine learning to embrace parallel and distributed computing. Inspired by
+the recent development of matrix factorization methods with rich theory but poor compu-
+tational complexity and by the relative ease of mapping matrices onto distributed architec-
+tures, we introduce a scalable divide-and-conquer framework for noisy matrix factorization.
+We present a thorough theoretical analysis of this framework in which we characterize the
+statistical errors introduced by the “divide” step and control their magnitude in the “con-
+quer” step, so that the overall algorithm enjoys high-probability estimation guarantees
+comparable to those of its base algorithm. We also present experiments in collaborative
+ﬁltering and video background modeling that demonstrate the near-linear to superlinear
+speed-ups attainable with this approach.
+Keywords:
+collaborative ﬁltering, divide-and-conquer, matrix completion, matrix fac-
+torization, parallel and distributed algorithms, randomized algorithms, robust matrix fac-
+torization, video surveillance
+
+1. Introduction
+
+The scale of modern scientiﬁc and technological data sets poses ma jor new challenges for
+computational and statistical science. Data analyses and learning algorithms suitable for
+modest-sized data sets are often entirely infeasible for the terabyte and petabyte data sets
+that are fast becoming the norm. There are two basic responses to this challenge. One
+response is to abandon algorithms that have superlinear complexity, focusing attention on
+simpliﬁed algorithms that—in the setting of massive data—may achieve satisfactory results
+
+c(cid:13)2015 Lester Mackey, Ameet Talwalkar and Michael I. Jordan.
+
+Mackey, Talwalkar and Jordan
+
+because of the statistical strength of the data. While this is a reasonable research strategy,
+it requires developing suites of algorithms of varying computational complexity for each
+inferential task and calibrating statistical and computational eﬃciencies. There are many
+open problems that need to be solved if such an eﬀort is to bear fruit.
+The other response to the massive data problem is to retain existing algorithms but to
+apply them to subsets of the data. To obtain useful results under this approach, one em-
+braces parallel and distributed computing architectures, applying existing base algorithms
+to multiple subsets of the data in parallel and then combining the results. Such a divide-
+and-conquer methodology has two main virtues: (1) it builds directly on algorithms that
+have proven their value at smaller scales and that often have strong theoretical guarantees,
+and (2) it requires little in the way of new algorithmic development. The ma jor challenge,
+however, is in preserving the theoretical guarantees of the base algorithm once one em-
+beds the algorithm in a computationally-motivated divide-and-conquer procedure. Indeed,
+the theoretical guarantees often refer to subtle statistical properties of the data-generating
+mechanism (e.g., sparsity, information spread, and near low-rankedness). These may or
+may not be retained under the “divide” step of a putative divide-and-conquer solution. In
+fact, we generally would expect subsampling operations to damage the relevant statisti-
+cal structures. Even if these properties are preserved, we face the diﬃculty of combining
+the intermediary results of the “divide” step into a ﬁnal consilient solution to the original
+problem. The question, therefore, is whether we can design divide-and-conquer algorithms
+that manage the tradeoﬀs relating these statistical properties to the computational degrees
+of freedom such that the overall algorithm provides a scalable solution that retains the
+theoretical guarantees of the base algorithm.
+In this paper,1 we explore this issue in the context of an important class of machine
+learning algorithms—the matrix factorization algorithms underlying a wide variety of prac-
+tical applications, including collaborative ﬁltering for recommender systems , e.g., Koren
+et al. (2009) and the references therein, link prediction for social networks (Hoﬀ, 2005),
+click prediction for web search (Das et al., 2007), video surveillance (Cand`es et al., 2011),
+graphical model selection (Chandrasekaran et al., 2009), document modeling (Min et al.,
+2010), and image alignment (Peng et al., 2010). We focus on two instances of the general
+matrix factorization problem: noisy matrix completion (Cand`es and Plan, 2010), where the
+goal is to recover a low-rank matrix from a small subset of noisy entries, and noisy robust
+matrix factorization (Cand`es et al., 2011; Chandrasekaran et al., 2009), where the aim is
+to recover a low-rank matrix from corruption by noise and outliers of arbitrary magnitude.
+These two classes of matrix factorization problems have attracted signiﬁcant interest in the
+research community.
+Various approaches have been proposed for scalable noisy matrix factorization prob-
+lems, in particular for noisy matrix completion, though the vast ma jority tackle rank-
+constrained non-convex formulations of these problems with no assurance of ﬁnding optimal
+solutions (Zhou et al., 2008; Gemulla et al., 2011; Recht and R´e, 2011; F. Niu et al., 2011; Yu
+et al., 2012). In contrast, convex formulations of noisy matrix factorization relying on the
+nuclear norm have been shown to admit strong theoretical estimation guarantees (Agarwal
+et al., 2011; Cand`es et al., 2011; Cand`es and Plan, 2010; Negahban and Wainwright, 2012),
+
+1. A preliminary form of this work appears in Mackey et al. (2011).
+
+914
+
+Distributed Matrix Completion and Robust Factorization
+
+and a variety of algorithms (e.g., Lin et al., 2009b; Ma et al., 2011; Toh and Yun, 2010) have
+been developed for solving both matrix completion and robust matrix factorization via con-
+vex relaxation. Unfortunately, however, all of these methods are inherently sequential, and
+all rely on the repeated and costly computation of truncated singular value decompositions
+(SVDs), factors that severely limit the scalability of the algorithms. Moreover, previous
+attempts at reducing this computational burden have introduced approximations without
+theoretical justiﬁcation (Mu et al., 2011).
+
+To address this key problem of noisy matrix factorization in a scalable and theoret-
+ically sound manner, we propose a divide-and-conquer framework for large-scale matrix
+factorization. Our framework, entitled Divide-Factor-Combine (DFC), randomly divides
+the original matrix factorization task into cheaper subproblems, solves those subproblems
+in parallel using a base matrix factorization algorithm for nuclear norm regularized for-
+mulations, and combines the solutions to the subproblems using eﬃcient techniques from
+randomized matrix approximation. We develop a thoroughgoing theoretical analysis for the
+DFC framework, linking statistical properties of the underlying matrix to computational
+choices in the algorithms and thereby providing conditions under which statistical estima-
+tion of the underlying matrix is possible. We also present experimental results for several
+DFC variants demonstrating that DFC can provide near-linear to superlinear speed-ups in
+practice. Indeed, DFC naturally handles massive data sets that are too large to ﬁt on a
+single machine, as DFC’s minimal communication footprint is particularly well-suited for
+distributed computing environments.
+
+The remainder of the paper is organized as follows. In Section 2, we deﬁne the setting of
+noisy matrix factorization and introduce the components of the DFC framework. Secs. 3,
+4, and 5 present our theoretical analysis of DFC, along with a new analysis of convex
+noisy matrix completion and a novel characterization of randomized matrix approximation
+algorithms. To illustrate the practical speed-up and robustness of DFC, we present exper-
+imental results on collaborative ﬁltering, video background modeling, and simulated data
+in Section 6. Finally, we conclude in Section 7.
+Notation : For a matrix M ∈ Rm×n , we deﬁne M(i) as the ith row vector, M(j ) as the j th
+column vector, and Mij as the ij th entry. If rank(M) = r, we write the compact singular
+value decomposition (SVD) of M as UM ΣM V(cid:62)
+M , where ΣM is diagonal and contains the
+r non-zero singular values of M, and UM ∈ Rm×r and VM ∈ Rn×r are the corresponding
+left and right singular vectors of M. We deﬁne M+ = VM Σ−1
+M U(cid:62)
+M as the Moore-Penrose
+pseudoinverse of M and PM = MM+ as the orthogonal pro jection onto the column space
+of M. We let (cid:107)·(cid:107)2 , (cid:107)·(cid:107)F , and (cid:107)·(cid:107)∗ respectively denote the spectral, Frobenius, and nuclear
+norms of a matrix, (cid:107)·(cid:107)∞ denote the maximum entry of a matrix, and (cid:107)·(cid:107) represent the (cid:96)2
+norm of a vector.
+
+2. The Divide-Factor-Combine Framework
+
+In this section, we present a general divide-and-conquer framework for scalable noisy matrix
+factorization. We begin by deﬁning the problem setting of interest.
+
+915
+
+Mackey, Talwalkar and Jordan
+
+2.1 Noisy Matrix Factorization (MF)
+
+In the setting of noisy matrix factorization, we observe a subset of the entries of a matrix
+M = L0 + S0 + Z0 ∈ Rm×n , where L0 has rank r (cid:28) m, n, S0 represents a sparse matrix
+of outliers of arbitrary magnitude, and Z0 is a dense noise matrix. We let Ω represent the
+locations of the observed entries and PΩ be the orthogonal pro jection onto the space of
+m × n matrices with support Ω, so that
+(PΩ (M))ij = Mij , if (i, j ) ∈ Ω and (PΩ (M))ij = 0 otherwise.2
+Our goal is to estimate the low-rank matrix L0 from PΩ (M) with error proportional to the
+noise level ∆ (cid:44) (cid:107)Z0(cid:107)F . We will focus on two speciﬁc instances of this general problem:
+• Noisy Matrix Completion (MC): s (cid:44) |Ω| entries of M are revealed uniformly
+without replacement, along with their locations. There are no outliers, so that S0 is
+identically zero.
+• Noisy Robust Matrix Factorization (RMF): S0 is identically zero save for s
+outlier entries of arbitrary magnitude with unknown locations distributed uniformly
+without replacement. All entries of M are observed, so that PΩ (M) = M.
+
+2.2 Divide-Factor-Combine
+The Divide-Factor-Combine (DFC) framework divides the expensive task of matrix factor-
+ization into smaller subproblems, executes those subproblems in parallel, and then eﬃciently
+combines the results into a ﬁnal low-rank estimate of L0 . We highlight three variants of this
+general framework in Algorithms 1, 2, and 3. These algorithms, which we refer to as DFC-
+Proj, DFC-RP, and DFC-Nys, diﬀer in their strategies for division and recombination
+but adhere to a common pattern of three simple steps:
+
+(D step) Divide input matrix into submatrices: DFC-Proj and DFC-RP randomly
+partition PΩ (M) into t l-column submatrices, {PΩ (C1 ), . . . , PΩ (Ct )},3 while DFC-
+Nys selects an l-column submatrix, PΩ (C), and a d-row submatrix, PΩ (R), uniformly
+at random.
+
+(F step) Factor each submatrix in parallel using any base MF algorithm: DFC-
+Proj and DFC-RP perform t parallel submatrix factorizations, while DFC-Nys
+performs two such parallel factorizations. Standard base MF algorithms output the
+following low-rank approximations: { ˆC1 , . . . , ˆCt} for DFC-Proj and DFC-RP; ˆC
+and ˆR for DFC-Nys. All matrices are retained in factored form.
+
+(C step) Combine submatrix estimates: DFC-Proj generates a ﬁnal low-rank esti-
+mate ˆLproj by pro jecting [ ˆC1 , . . . , ˆCt ] onto the column space of ˆC1 , DFC-RP uses
+random pro jection to compute a rank-k estimate ˆLrp of [ ˆC1 · · · ˆCt ] where k is the me-
+dian rank of the returned subproblem estimates, and DFC-Nys forms the low-rank
+2. When Q is a submatrix of M we abuse notation and let PΩ (Q) be the corresponding submatrix of
+PΩ (M).
+3. For ease of discussion, we assume that t evenly divides n so that l = n/t. In general, PΩ (M) can always
+be partitioned into t submatrices, each with either (cid:98)n/t(cid:99) or (cid:100)n/t(cid:101) columns.
+
+916
+
+Distributed Matrix Completion and Robust Factorization
+
+Algorithm 1 DFC-Proj
+Input: PΩ (M), t
+{PΩ (Ci )}1≤i≤t = SampCol(PΩ (M), t)
+do in parallel
+ˆC1 = Base-MF-Alg(PΩ (C1 ))
+...
+ˆCt = Base-MF-Alg(PΩ (Ct ))
+end do
+ˆLproj = ColProjection( ˆC1 , . . . , ˆCt )
+
+Algorithm 2 DFC-RP
+Input: PΩ (M), t
+{PΩ (Ci )}1≤i≤t = SampCol(PΩ (M), t)
+do in parallel
+ˆC1 = Base-MF-Alg(PΩ (C1 ))
+...
+ˆCt = Base-MF-Alg(PΩ (Ct ))
+k = mediani∈{1...t}(cid:0)rank( ˆCi )(cid:1)
+end do
+ˆLproj = RandProjection( ˆC1 , . . . , ˆCt , k)
+
+Algorithm 3 DFC-Nys
+Input: PΩ (M), l, d
+PΩ (C) , PΩ (R) = SampColRow(PΩ (M), l, d)
+do in parallel
+ˆC = Base-MF-Alg(PΩ (C))
+ˆR = Base-MF-Alg(PΩ (R))
+end do
+ˆLnys = GenNystr¨om( ˆC, ˆR)
+
+estimate ˆLnys from ˆC and ˆR via the generalized Nystr¨om method. These matrix
+approximation techniques are described in more detail in Section 2.3.
+
+2.3 Randomized Matrix Approximations
+
+Underlying the C step of each DFC algorithm is a method for generating randomized low-
+rank approximations to an arbitrary matrix M.
+Column Projection : DFC-Proj (Algorithm 1) uses the column pro jection method of
+Frieze et al. (1998). Suppose that C is a matrix of l columns sampled uniformly and
+without replacement from the columns of M. Then, column pro jection generates a “matrix
+pro jection” approximation (Kumar et al., 2009a) of M via
+Lproj = CC+M = UC U(cid:62)
+CM.
+In practice, we do not reconstruct Lproj but rather maintain low-rank factors, e.g., UC and
+U(cid:62)
+CM.
+Random Projection : The celebrated result of Johnson and Lindenstrauss (1984) shows
+that random low-dimensional embeddings preserve Euclidean geometry. Inspired by this
+result, several random pro jection algorithms (e.g., Papadimitriou et al., 1998; Liberty, 2009;
+Rokhlin et al., 2009) have been introduced for approximating a matrix by pro jecting it onto
+a random low-dimensional subspace (see Halko et al. 2011 for further discussion). DFC-RP
+(Algorithm 2) uses such a random pro jection method due to Halko et al. (2011). Given a
+
+917
+
+Mackey, Talwalkar and Jordan
+
+target low-rank parameter k , let G be an n × (k + p) standard Gaussian matrix G, where
+p is an oversampling parameter. Next, let Y = (MM(cid:62) )qMG, and deﬁne Q ∈ Rm×k as the
+top k left singular vectors of Y . The random pro jection approximation of M is then given
+by
+
+Lrp = QQ+M.
+
+We work with an implementation (Tygert, 2009) of a numerically stable variant of this
+algorithm described in Algorithm 4.4 of Halko et al. (2011). Moreover, the parameters p
+and q are typically set to small positive constants (Tygert, 2009; Halko et al., 2011), and
+we set p = 5 and q = 2.
+Generalized Nystr¨om Method : The Nystr¨om method was developed for the discretization
+of integral equations (Nystr¨om, 1930) and has since been used to speed up large-scale learn-
+ing applications involving symmetric positive semideﬁnite matrices (Williams and Seeger,
+2000). DFC-Nys (Algorithm 3) makes use of a generalization of the Nystr¨om method for
+arbitrary real matrices (Goreinov et al., 1997). Suppose that C consists of l columns of M,
+sampled uniformly without replacement, and that R consists of d rows of M, independently
+sampled uniformly and without replacement. Let W be the d× l matrix formed by sampling
+the corresponding rows of C.4 Then, the generalized Nystr¨om method computes a “spectral
+reconstruction” approximation (Kumar et al., 2009a) of M via
+W U(cid:62)
+Lnys = CW+R = CVW Σ+
+W R .
+W and U(cid:62)
+As with Mproj , we store low-rank factors of Lnys , such as CVW Σ+
+W R.
+
+Algorithm
+
+Base Alg
+DFC-Proj
+DFC-RP
+DFC-Nys
+
+Factorization (Per Iteration)
+Parallel
+Serial
+O(mnˆk)
+O(mnˆk)
+O(mlˆk)
+O(tmlˆk)
+O(tmlˆk)
+O(mlˆk)
+O((ml + nd)ˆk) O(max(ml, nd)ˆk)
+
+Combine Step
+Parallel
+Serial
+-
+-
+O(mˆk2 )
+O(tmˆk2 )
+O(tmˆk2 + nˆk) O(mˆk2 + tmˆk + nˆk)
+O(mˆk2 )
+O(mˆk2 )
+
+Table 1: Summary of running time complexity of DFC variants in contrast to many stan-
+dard start-of-the-art MF algorithms. This running time analysis assumes that
+l ≤ m ≤ n and that all low-rank matrices considered have rank ˆk . See Section 2.4
+for a more detailed analysis.
+
+2.4 Running Time of DFC
+
+Many state-of-the-art MF algorithms have Ω(mnkM ) per-iteration time complexity due to
+the rank-kM truncated SVD performed on each iteration. DFC signiﬁcantly reduces the
+per-iteration complexity to O(mlkCi ) time for Ci (or C) and O(ndkR ) time for R. The cost
+of combining the submatrix estimates is even smaller when using column pro jection or the
+generalized Nystr¨om method, since the outputs of standard MF algorithms are returned
+
+4. This choice is arbitrary: W could also be deﬁned as a submatrix of R.
+
+918
+
+Distributed Matrix Completion and Robust Factorization
+
+in factored form. Indeed, if we deﬁne k (cid:48) (cid:44) maxi kCi , then the column pro jection step of
+DFC-Proj requires only O(mk (cid:48)2 + lk (cid:48)2 ) time: O(mk (cid:48)2 + lk (cid:48)2 ) time for the pseudoinversion
+of ˆC1 and O(mk (cid:48)2 + lk (cid:48)2 ) time for matrix multiplication with each ˆCi in parallel. Similarly,
+the generalized Nystr¨om step of DFC-Nys requires only O(l¯k2 + d¯k2 + min(m, n)¯k2 ) time,
+where ¯k (cid:44) max(kC , kR ).
+DFC-RP also beneﬁts from the factored form of the outputs of standard MF algorithms.
+Assuming that p and q are positive constants, the random pro jection step of DFC-RP
+requires O(mkt + mkk (cid:48) + lkk (cid:48) + nk) time where k is the low-rank parameter of Q: O(nk)
+time to generate G, O(mkk (cid:48) + lkk (cid:48) + mkt) to compute Y in parallel, O(mk2 ) to compute
+the SVD of Y , and O(mk (cid:48)2 + lk (cid:48)2 ) time for matrix multiplication with each ˆCi in parallel
+in the ﬁnal pro jection step. Note that the running time of the random pro jection step
+depends on t (even when executed in parallel) and thus has a larger complexity than the
+column pro jection and generalized Nystr¨om variants. Nevertheless, the random pro jection
+step need be performed only once and thus yields a signiﬁcant savings over the repeated
+computation of SVDs required by typical base algorithms.
+A summary of these running times is presented in Table 1.
+
+2.5 Ensemble Methods
+
+Ensemble methods have been shown to improve performance of matrix approximation al-
+gorithms, while straightforwardly leveraging the parallelism of modern many-core and dis-
+tributed architectures (Kumar et al., 2009b). As such, we propose ensemble variants of
+the DFC algorithms that demonstrably reduce estimation error while introducing a negli-
+gible cost to the parallel running time. For DFC-Proj-Ens, rather than pro jecting only
+onto the column space of ˆC1 , we pro ject [ ˆC1 , . . . , ˆCt ] onto the column space of each ˆCi
+in parallel and then average the t resulting low-rank approximations. For DFC-RP-Ens,
+rather than pro jecting only onto a column space derived from a single random matrix G,
+we pro ject [ ˆC1 , . . . , ˆCt ] onto t column spaces derived from t random matrices in parallel
+and then average the t resulting low-rank approximations. For DFC-Nys-Ens, we choose a
+random d-row submatrix PΩ (R) as in DFC-Nys and independently partition the columns
+of PΩ (M) into {PΩ (C1 ), . . . , PΩ (Ct )} as in DFC-Proj and DFC-RP. After running the
+base MF algorithm on each submatrix, we apply the generalized Nystr¨om method to each
+( ˆCi , ˆR) pair in parallel and average the t resulting low-rank approximations. Section 6
+highlights the empirical eﬀectiveness of ensembling.
+
+3. Roadmap of Theoretical Analysis
+
+While DFC in principle can work with any base matrix factorization algorithm, it oﬀers the
+greatest beneﬁts when united with accurate but computationally expensive base procedures.
+Convex optimization approaches to matrix completion and robust matrix factorization (e.g.,
+Lin et al., 2009b; Ma et al., 2011; Toh and Yun, 2010) are prime examples of this class,
+since they admit strong theoretical estimation guarantees (Agarwal et al., 2011; Cand`es
+et al., 2011; Cand`es and Plan, 2010; Negahban and Wainwright, 2012) but suﬀer from poor
+computational complexity due to the repeated and costly computation of truncated SVDs.
+Section 6 will provide empirical evidence that DFC provides an attractive framework to
+
+919
+
+Mackey, Talwalkar and Jordan
+
+improve the scalability of these algorithms, but we ﬁrst present a thorough theoretical
+analysis of the estimation properties of DFC.
+Over the course of the next three sections, we will show that the same assumptions
+that give rise to strong estimation guarantees for standard MF formulations also guarantee
+strong estimation properties for DFC. While these results represent an important ﬁrst step
+toward understanding the theoretical behavior of DFC, we will see that certain gaps remain
+between our theoretical characterization and the practical performance of DFC. We will
+reﬂect on these gaps and the attendant opportunities for tightened theoretical analysis in
+Section 6.4. In the remainder of this section, we ﬁrst introduce these standard assumptions
+and then present simpliﬁed bounds to build intuition for our theoretical results and our
+underlying proof techniques.
+
+3.1 Standard Assumptions for Noisy Matrix Factorization
+
+Since not all matrices can be recovered from missing entries or gross outliers, recent theo-
+retical advances have studied suﬃcient conditions for accurate noisy MC (Cand`es and Plan,
+2010; Keshavan et al., 2010; Negahban and Wainwright, 2012) and RMF (Agarwal et al.,
+2011; Zhou et al., 2010). Informally, these conditions capture the degree to which informa-
+tion about a single entry is “spread out” across a matrix. The ease of matrix estimation is
+correlated with this spread of information. The most prevalent set of conditions are matrix
+coherence conditions, which limit the extent to which the singular vectors of a matrix are
+correlated with the standard basis. However, there exist classes of matrices that violate the
+coherence conditions but can nonetheless be recovered from missing entries or gross outliers.
+Negahban and Wainwright (2012) deﬁne an alternative notion of matrix spikiness in part
+to handle these classes.
+
+3.1.1 Matrix Coherence
+
+Letting ei be the ith column of the standard basis, we deﬁne two standard notions of
+coherence (Recht, 2011):
+Deﬁnition 1 (µ0 -Coherence) Let V ∈ Rn×r contain orthonormal columns with r ≤ n.
+Then the µ0 -coherence of V is:
+r max1≤i≤n (cid:107)PV ei(cid:107)2 = n
+r max1≤i≤n (cid:107)V(i)(cid:107)2 .
+µ0 (V) (cid:44) n
+Deﬁnition 2 (µ1 -Coherence) Let L ∈ Rm×n have rank r. Then, the µ1 -coherence of L
+µ1 (L) (cid:44) (cid:112) mn
+is:
+L ej | .
+r maxij |e(cid:62)
+i ULV(cid:62)
+For conciseness, we extend the deﬁnition of µ0 -coherence to an arbitrary matrix L ∈ Rm×n
+with rank r via µ0 (L) (cid:44) max(µ0 (UL ), µ0 (VL )). Further, for any µ > 0, we will call a matrix
+L (µ, r)-coherent if rank(L) = r, µ0 (L) ≤ µ, and µ1 (L) ≤ √
+µ. Our analysis in Section 4
+will focus on base MC and RMF algorithms that express their estimation guarantees in
+terms of the (µ, r)-coherence of the target low-rank matrix L0 . For such algorithms, lower
+values of µ correspond to better estimation properties.
+
+920
+
+Distributed Matrix Completion and Robust Factorization
+
+3.1.2 Matrix Spikiness
+
+The matrix spikiness condition of Negahban and Wainwright (2012) captures the intuition
+that a matrix is easier to estimate if its maximum entry is not much larger than its average
+entry (in the root mean square sense):
+Deﬁnition 3 (Spikiness) The spikiness of L ∈ Rm×n is:
+α(L) (cid:44) √
+mn(cid:107)L(cid:107)∞/(cid:107)L(cid:107)F .
+We cal l a matrix α-spiky if α(L) ≤ α.
+
+Our analysis in Section 5 will focus on base MC algorithms that express their estimation
+guarantees in terms of the α-spikiness of the target low-rank matrix L0 . For such algorithms,
+lower values of α correspond to better estimation properties.
+
+3.2 Prototypical Estimation Bounds
+We now present a prototypical estimation bound for DFC. Suppose that a base MC algo-
+rithm solves the noisy nuclear norm heuristic, studied in Cand`es and Plan (2010):
+sub ject to (cid:107)PΩ (M − L)(cid:107)F ≤ ∆,
+minimizeL (cid:107)L(cid:107)∗
+
+and that, for simplicity, M is square. The following prototype bound, derived from a new
+noisy MC guarantee in Theorem 10, describes the behavior of this estimator under matrix
+coherence assumptions. Note that the bound implies exact recovery in the noiseless setting,
+i.e., when ∆ = 0.
+
+Proto-Bound 1 (MC under Incoherence) Suppose that L0 is (µ, r)-coherent, s en-
+tries of M ∈ Rn×n are observed uniformly at random where s = Ω(µrn log2 (n)), and
+(cid:107)M − L0(cid:107)F ≤ ∆. If ˆL solves the noisy nuclear norm heuristic, then
+(cid:107)L0 − ˆL(cid:107)F ≤ f (n)∆
+
+with high probability, where f is a function of n.
+
+Now we present a corresponding prototype bound for DFC-Proj, a simpliﬁed version
+of our Corollary 14, under precisely the same coherence assumptions. Notably, this bound
+i) preserves accuracy with a ﬂexible (2 + ) degradation in estimation error over the base
+algorithm, ii) allows for speed-up by requiring only a vanishingly small fraction of columns
+to be sampled (i.e., l/n → 0) whenever s = ω(n log2 (n)) entries are revealed, and iii)
+maintains exact recovery in the noiseless setting.
+
+Proto-Bound 2 (DFC-MC under Incoherence) Suppose that L0 is (µ, r)-coherent, s
+entries of M ∈ Rn×n are observed uniformly at random, and (cid:107)M − L0(cid:107)F ≤ ∆. Then it
+suﬃces to choose
+
+l ≥ c
+
+µ2 r2n2 log2 (n)
+s2
+
+921
+
+Mackey, Talwalkar and Jordan
+
+random columns suﬃce to have
+(cid:107)L0 − ˆLproj (cid:107)F ≤ (2 + )f (n)∆
+
+with high probability when the noisy nuclear norm heuristic is used as a base algorithm,
+where f is the same function of n deﬁned in Proto. 1 and c is a ﬁxed positive constant.
+
+The proof of Proto. 2, and indeed of each of our main DFC results, consists of three high-
+level steps:
+
+1. Bound coherence of submatrices : Recall that the F step of DFC operates by applying
+a base MF algorithm to submatrices. We show that, with high probability, uniformly
+sampled submatrices are only moderately more coherent and moderately more spiky
+than the matrix from which they are drawn. This allows for accurate estimation
+of submatrices using base algorithms with standard coherence or spikiness require-
+ments. The conservation of incoherence result is summarized in Lemma 4, while the
+conservation of non-spikiness is presented in Lemma 17.
+
+2. Bound error of randomized matrix approximations : The error introduced by the C
+step of DFC depends on the framework variant. Drawing upon tools from random-
+ized (cid:96)2 regression (Drineas et al., 2008), randomized matrix multiplication (Drineas
+et al., 2006a,b), and matrix concentration (Hsu et al., 2012), we show that the same
+assumptions on the spread of information responsible for accurate MC and RMF also
+yield high ﬁdelity reconstructions for column pro jection (Corollary 6 and Theorem 18)
+and the Nystr¨om method (Corollary 7 and Corollary 8). We additionally present gen-
+eral approximation guarantees for random pro jection due to Halko et al. (2011) in
+Corollary 9. These results give rise to “master theorems” for coherence (Theorem 12)
+and spikiness (Theorem 20) that generically relate the estimation error of DFC to
+the error of any base algorithm.
+
+3. Bound error of submatrix factorizations : The ﬁnal step combines a master theorem
+with a base estimation guarantee applied to each DFC subproblem. We study both
+new (Theorem 10) and established bounds (Theorem 11 and Corollary 19) for MC and
+RMF and prove that DFC submatrices satisfy the base guarantee preconditions with
+high probability. We present the resulting coherence-based estimation guarantees for
+DFC in Corollary 14 and Corollary 16 and the spikiness-based estimation guarantee
+in Corollary 22.
+
+The next two sections present the main results contributing to each of these proof steps,
+as well as their consequences for MC and RMF. Section 4 presents our analysis under
+coherence assumptions, while Section 5 contains our spikiness analysis.
+
+4. Coherence-based Theoretical Analysis
+
+This section presents our analysis of DFC under standard coherence assumptions encoun-
+tered in the MC and RMF literature.
+
+922
+
+Distributed Matrix Completion and Robust Factorization
+
+4.1 Coherence Analysis of Randomized Approximation Algorithms
+
+We begin our coherence-based analysis by characterizing the behavior of randomized ap-
+proximation algorithms under standard coherence assumptions. The derived properties will
+aid us in deriving DFC estimation guarantees. Hereafter,  ∈ (0, 1] represents a prescribed
+error tolerance, and δ, δ (cid:48) ∈ (0, 1] denote target failure probabilities.
+
+4.1.1 Conservation of Incoherence
+
+Our ﬁrst result bounds the µ0 and µ1 -coherence of a uniformly sampled submatrix in terms
+of the coherence of the full matrix. This conservation of incoherence allows for accurate
+submatrix completion or submatrix outlier removal when using standard MC and RMF
+algorithms. Its proof is given in Section B.
+Lemma 4 (Conservation of Incoherence) Let L ∈ Rm×n be a rank-r matrix and deﬁne
+LC ∈ Rm×l as a matrix of l columns of L sampled uniformly without replacement.
+If
+l ≥ crµ0 (VL ) log(n) log(1/δ)/2 , where c is a ﬁxed positive constant deﬁned in Corol lary 6,
+then
+
+i) rank(LC ) = rank(L)
+
+ii) µ0 (ULC ) = µ0 (UL )
+iii) µ0 (VLC ) ≤ µ0 (VL )
+1 − /2
+1 (LC ) ≤ rµ0 (UL )µ0 (VL )
+iv) µ2
+1 − /2
+al l hold jointly with probability at least 1 − δ/n.
+
+4.1.2 Column Projection Analysis
+
+Our next result shows that pro jection based on uniform column sampling leads to near
+optimal estimation in matrix regression when the covariate matrix has small coherence.
+This statement will immediately give rise to estimation guarantees for column pro jection
+and the generalized Nystr¨om method.
+Theorem 5 (Subsampled Regression under Incoherence) Given a target matrix B ∈
+Rp×n and a rank-r matrix of covariates L ∈ Rm×n , choose l ≥ 3200rµ0 (VL ) log(4n/δ)/2 ,
+let BC ∈ Rp×l be a matrix of l columns of B sampled uniformly without replacement, and
+let LC ∈ Rm×l consist of the corresponding columns of L. Then,
+(cid:107)B − BC L+
+C L(cid:107)F ≤ (1 + )(cid:107)B − BL+L(cid:107)F
+with probability at least 1 − δ − 0.2.
+
+Fundamentally, Theorem 5 links the notion of coherence, common in matrix estimation
+communities, to the randomized approximation concept of leverage score sampling (Ma-
+honey and Drineas, 2009). The proof of Theorem 5, given in Section A, builds upon the
+
+923
+
+Mackey, Talwalkar and Jordan
+
+randomized (cid:96)2 regression work of Drineas et al. (2008) and the matrix concentration re-
+sults of Hsu et al. (2012) to yield a subsampled regression guarantee with better sampling
+complexity than that of Drineas et al. (2008, Theorem 5).
+A ﬁrst consequence of Theorem 5 shows that, with high probability, column pro jection
+produces an estimate nearly as good as a given rank-r target by sampling a number of
+columns proportional to the coherence and r log n.
+Corollary 6 (Column Pro jection under Incoherence) Given a matrix M ∈ Rm×n
+and a rank-r approximation L ∈ Rm×n , choose l ≥ crµ0 (VL ) log(n) log(1/δ)/2 , where c is
+a ﬁxed positive constant, and let C ∈ Rm×l be a matrix of l columns of M sampled uniformly
+without replacement. Then,
+(cid:107)M − CC+M(cid:107)F ≤ (1 + )(cid:107)M − L(cid:107)F
+with probability at least 1 − δ .
+Our result generalizes Theorem 1 of Drineas et al. (2008) by providing improved sampling
+complexity and guarantees relative to an arbitrary low-rank approximation. Notably, in the
+“noiseless” setting, when M = L, Corollary 6 guarantees exact recovery of M with high
+probability. The proof of Corollary 6 is given in Section C.
+
+4.1.3 Generalized Nystr¨om Analysis
+
+Theorem 5 and Corollary 6 together imply an estimation guarantee for the generalized
+Nystr¨om method relative to an arbitrary low-rank approximation L.
+Indeed, if the ma-
+trix of sampled columns is denoted by C, then, with appropriately reduced probability,
+O(µ0 (VL )r log n) columns and O(µ0 (UC )r log m) rows suﬃce to match the reconstruction
+error of L up to any ﬁxed precision. The proof can be found in Section D.
+Corollary 7 (Generalized Nystr¨om under Incoherence) Given a matrix M ∈ Rm×n
+and a rank-r approximation L ∈ Rm×n , choose l ≥ crµ0 (VL ) log(n) log(1/δ)/2 with c a
+constant as in Corol lary 6, and let C ∈ Rm×l be a matrix of l columns of M sampled
+uniformly without replacement. Further choose d ≥ clµ0 (UC ) log(m) log(1/δ (cid:48) )/2 , and let
+R ∈ Rd×n be a matrix of d rows of M sampled independently and uniformly without re-
+placement. Then,
+(cid:107)M − CW+R(cid:107)F ≤ (1 + )2(cid:107)M − L(cid:107)F
+with probability at least (1 − δ)(1 − δ (cid:48) − 0.2).
+Like the generalized Nystr¨om bound of Drineas et al. (2008, Theorem 4) and unlike our
+column pro jection result, Corollary 7 depends on the coherence of the submatrix C and
+holds only with probability bounded away from 1. Our next contribution shows that we
+can do away with these restrictions in the noiseless setting, where M = L.
+Corollary 8 (Noiseless Generalized Nystr¨om under Incoherence) Let L ∈ Rm×n
+be a rank-r matrix. Choose l ≥ 48rµ0 (VL ) log(4n/(1−√
+1 − δ)) and d ≥ 48rµ0 (UL ) log(4m/(1−
+√
+1 − δ)). Let C ∈ Rm×l be a matrix of l columns of L sampled uniformly without replace-
+ment, and let R ∈ Rd×n be a matrix of d rows of L sampled independently and uniformly
+without replacement. Then,
+
+L = CW+R
+
+924
+
+Distributed Matrix Completion and Robust Factorization
+
+with probability at least 1 − δ .
+
+This result may appear surprising at ﬁrst sight, since only vanishingly small fractions of
+rows and columns may participate in the generalized Nystr¨om reconstruction. The intuition
+for the method’s success that when the rank of L is small, only a small number of well-
+chosen rows and columns are needed to reconstruct the row and column space of L and
+that, when L is incoherent, uniform random sampling is likely produce well-chosen rows
+and columns. The proof of Corollary 8, given in Section E, adapts a strategy of Talwalkar
+and Rostamizadeh (2010) developed for the analysis of positive semideﬁnite matrices.
+
+4.1.4 Random Projection Analysis
+
+We next present an estimation guarantee for the random pro jection method relative to an
+arbitrary low-rank approximation L. The result implies that using a random matrix with
+oversampled columns proportional to r log(1/δ) suﬃces to match the reconstruction error
+of L up to any ﬁxed precision with probability 1 − δ . The result is a direct consequence of
+the random pro jection analysis of Halko et al. (2011, Theorem 10.7), and the proof can be
+found in Section F.
+Corollary 9 (Random Pro jection) Given a matrix M ∈ Rm×n and a rank-r approxi-
+mation L ∈ Rm×n with r ≥ 2, choose an oversampling parameter
+p ≥ 242 r log(7/δ)/2 .
+Draw an n × (r + p) standard Gaussian matrix G and deﬁne Y = MG. Then, with
+probability at least 1 − δ ,
+
+(cid:107)M − PY M(cid:107)F ≤ (1 + )(cid:107)M − L(cid:107)F .
+Moreover, deﬁne Lrp as the best rank-r approximation of PY M with respect to the Frobenius
+norm. Then, with probability at least 1 − δ ,
+(cid:107)M − Lrp(cid:107)F ≤ (2 + )(cid:107)M − L(cid:107)F .
+
+We note that, in contrast to Corollary 6 and Corollary 7, Corollary 9 does not depend on
+the coherence of L and hence can be fruitfully applied even in the absence of an incoherence
+assumption. We demonstrate such a use case in Section 5. We note moreover that past
+empirical studies have demonstrated excellent estimation error with p ≤ 10 irrespective of
+the target matrix rank (Halko et al., 2011); bridging the gap between theory and practice
+in this instance represents an interesting open problem.
+
+4.2 Base Algorithm Guarantees
+
+As prototypical examples of the coherence-based estimation guarantees available for noisy
+MC and noisy RMF, consider the following two theorems. The ﬁrst bounds the estimation
+error of a convex optimization approach to noisy matrix completion, under the assumptions
+of incoherence and uniform sampling.
+
+925
+
+Mackey, Talwalkar and Jordan
+
+Theorem 10 (Noisy MC under Incoherence) Suppose that L0 ∈ Rm×n is (µ, r)-coherent
+and that, for some target rate parameter β > 1,
+s ≥ 32µr(m + n)β log2 (m + n)
+
+entries of M are observed with locations Ω sampled uniformly without replacement. Then,
+if m ≤ n and (cid:107)PΩ (M) − PΩ (L0 )(cid:107)F ≤ ∆ a.s., the minimizer ˆL of the problem
+(cid:107)PΩ (M − L)(cid:107)F ≤ ∆.
+minimizeL (cid:107)L(cid:107)∗
+
+subject to
+
+(1)
+
+satisﬁes
+
+(cid:114)
+2m2n
+∆ ≤ ce
+(cid:107)L0 − ˆL(cid:107)F ≤ 8
+1
++ m +
+mn∆
+16
+s
+with probability at least 1 − 4 log(n)n2−2β for ce a positive constant.
+
+√
+
+A similar estimation guarantee was obtained by Cand`es and Plan (2010) under stronger
+assumptions. We give the proof of Theorem 10 in Section J.
+The second result, due to Zhou et al. (2010) and reformulated for a generic rate pa-
+rameter β , as described in Cand`es et al. (2011, Section 3.1), bounds the estimation error of
+a convex optimization approach to noisy RMF, under the assumptions of incoherence and
+uniformly distributed outliers.
+
+minimizeL,S
+
+Theorem 11 (Noisy RMF under Incoherence, Zhou et al. 2010, Theorem 2) Suppose
+that L0 is (µ, r)-coherent and that the support set of S0 is uniformly distributed among al l
+sets of cardinality s. Then, if m ≤ n and (cid:107)M − L0 − S0(cid:107)F ≤ ∆ a.s., there is a constant cp
+such that with probability at least 1 − cpn−β , the minimizer ( ˆL, ˆS) of the problem
+(cid:107)L(cid:107)∗ + λ(cid:107)S(cid:107)1
+subject to (cid:107)M − L − S(cid:107)F ≤ ∆ with λ = 1/
+F + (cid:107)S0 − ˆS(cid:107)2
+F ≤ c(cid:48)2
+satisﬁes (cid:107)L0 − ˆL(cid:107)2
+e mn∆2 , provided that
+r ≤ ρrm
+and s ≤ (1 − ρsβ )mn
+µ log2 (n)
+for target rate parameter β > 2, and positive constants ρr , ρs , and c(cid:48)
+e .
+
+√
+
+(2)
+
+n
+
+4.3 Coherence Master Theorem
+
+We now show that the same coherence conditions that allow for accurate MC and RMF
+also imply high-probability estimation guarantees for DFC. To make this precise, we let
+M = L0 + S0 + Z0 ∈ Rm×n , where L0 is (µ, r)-coherent and (cid:107)PΩ (Z0 )(cid:107)F ≤ ∆. Then, our
+next theorem provides a generic bound on the estimation error of DFC used in combination
+with an arbitrary base algorithm. The proof, which builds upon the results of Section 4.1,
+is given in Section G.
+
+926
+
+Distributed Matrix Completion and Robust Factorization
+
+Theorem 12 (Coherence Master Theorem) Choose t = n/l, l ≥ crµ log(n) log(2/δ)/2 ,
+where c is a ﬁxed positive constant, and p ≥ 242 r log(14/δ)/2 . Under the notation of Al-
+gorithms 1 and 2, let {C0,1 , · · · , C0,t} be the corresponding partition of L0 . Then, with
+probability at least 1 − δ , C0,i is ( rµ2
+(cid:113)(cid:80)t
+1−/2 , r)-coherent for al l i, and
+i=1(cid:107)C0,i − ˆCi(cid:107)2
+(cid:107)L0 − ˆL∗(cid:107)F ≤ (2 + )
+F ,
+where ˆL∗ is the estimate returned by either DFC-Proj or DFC-RP.
+Under the notation of Algorithm 3, let C0 and R0 be the corresponding column and row
+submatrices of L0 . If in addition d ≥ clµ0 ( ˆC) log(m) log(4/δ)/2 , then, with probability at
+(cid:113)
+least (1 − δ)(1 − δ − 0.2), DFC-Nys guarantees that C0 and R0 are ( rµ2
+1−/2 , r)-coherent and
+that
+F + (cid:107)R0 − ˆR(cid:107)2
+(cid:107)L0 − ˆLnys(cid:107)F ≤ (2 + 3)
+(cid:107)C0 − ˆC(cid:107)2
+F .
+Remark 13 The DFC-Nys guarantee requires the number of rows sampled to grow in
+proportion to µ0 ( ˆC), a quantity always bounded by µ in our simulations. Here and in the
+consequences to fol low, the DFC-Nys result can be strengthened in the noiseless setting
+(∆ = 0) by utilizing Corol lary 8 in place of Corol lary 7 in the proof of Theorem 12.
+
+When a target matrix is incoherent, Theorem 12 asserts that – with high probability
+for DFC-Proj and DFC-RP and with ﬁxed probability for DFC-Nys – the estimation
+error of DFC is not much larger than the error sustained by the base algorithm on each
+subproblem. Because Theorem 12 further bounds the coherence of each submatrix, we can
+use any coherence-based matrix estimation guarantee to control the estimation error on
+each subproblem. The next two sections demonstrate how Theorem 12 can be applied to
+derive speciﬁc DFC estimation guarantees for noisy MC and noisy RMF. In these sections,
+we let ¯n (cid:44) max(m, n).
+
+4.4 Consequences for Noisy MC
+As a ﬁrst consequence of Theorem 12, we will show that DFC retains the high-probability
+estimation guarantees of a standard MC solver while operating on matrices of much smaller
+dimension. Suppose that a base MC algorithm solves the convex optimization problem of
+Eq. (1). Then, Corollary 14 follows from the Coherence Master Theorem (Theorem 12) and
+the base algorithm guarantee of Theorem 10.
+
+Corollary 14 (DFC-MC under Incoherence) Suppose that L0 is (µ, r)-coherent and
+that s entries of M are observed, with locations Ω distributed uniformly. Fix any target rate
+parameter β > 1. Then, if (cid:107)PΩ (M) − PΩ (L0 )(cid:107)F ≤ ∆ a.s., and the base algorithm solves
+the optimization problem of Eq. (1), it suﬃces to choose t = n/l,
+d ≥ clµ0 ( ˆC)(2β − 1) log2 (4¯n)¯n/(n2 ),
+l ≥ cµ2 r2 (m + n)nβ log2 (m + n)/(s2 ),
+and p ≥ 242 r log(14¯n2β−2 )/2 to achieve
+DFC-Pro j : (cid:107)L0 − ˆLproj (cid:107)F ≤ (2 + )ce
+
+mn∆
+
+√
+
+927
+
+Mackey, Talwalkar and Jordan
+
+√
+
+DFC-RP : (cid:107)L0 − ˆLrp(cid:107)F ≤ (2 + )ce
+mn∆
+√
+DFC-Nys : (cid:107)L0 − ˆLnys(cid:107)F ≤ (2 + 3)ce
+with probability at least
+DFC-Pro j / DFC-RP : 1 − (5t log(¯n) + 1) ¯n2−2β ≥ 1 − ¯n3−2β
+DFC-Nys : 1 − (10 log( ¯n) + 2) ¯n2−2β − 0.2,
+
+ml + dn∆
+
+respectively, with c as in Theorem 12 and ce as in Theorem 10.
+
+Remark 15 Corol lary 14 al lows for the fraction of columns and rows sampled to decrease
+as the number of revealed entries, s, increases. Only a vanishingly smal l fraction of columns
+(l/n → 0) and rows (d/ ¯n → 0) need be sampled whenever s = ω((m + n) log2 (m + n)).
+
+To understand the conclusions of Corollary 14, consider the base algorithm of The-
+orem 10, which, when applied to PΩ (M), recovers an estimate ˆL satisfying (cid:107)L0 − ˆL(cid:107)F ≤
+√
+mn∆ with high probability. Corollary 14 asserts that, with appropriately reduced prob-
+ce
+ability, DFC-Proj and DFC-RP exhibit the same estimation error scaled by an adjustable
+factor of 2 + , while DFC-Nys exhibits a somewhat smaller error scaled by 2 + 3.
+The key take-away is that DFC introduces a controlled increase in error and a controlled
+decrement in the probability of success, allowing the user to interpolate between maximum
+speed and maximum accuracy. Thus, DFC can quickly provide near-optimal estimation in
+the noisy setting and exact recovery in the noiseless setting (∆ = 0), even when entries are
+missing. The proof of Corollary 14 can be found in Section H.
+
+4.5 Consequences for Noisy RMF
+
+Our next corollary shows that DFC retains the high-probability estimation guarantees of a
+standard RMF solver while operating on matrices of much smaller dimension. Suppose that
+a base RMF algorithm solves the convex optimization problem of Eq. (2). Then, Corol-
+lary 16 follows from the Coherence Master Theorem (Theorem 12) and the base algorithm
+guarantee of Theorem 11.
+
+Corollary 16 (DFC-RMF under Incoherence) Suppose that L0 is (µ, r)-coherent with
+
+r2 ≤ min(m, n)ρr
+2µ2 log2 (¯n)
+for a positive constant ρr . Suppose moreover that the uniformly distributed support set of
+(cid:17)
+βs (cid:44) (cid:16)
+S0 has cardinality s. For a ﬁxed positive constant ρs , deﬁne the undersampling parameter
+1 − s
+mn
+and ﬁx any target rate parameter β > 2 with rescaling β (cid:48) (cid:44) β log(¯n)/ log(m) satisfying
+4βs − 3/ρs ≤ β (cid:48) ≤ βs . Then, if (cid:107)M − L0 − S0(cid:107)F ≤ ∆ a.s., and the base algorithm solves
+
+/ρs ,
+
+928
+
+Distributed Matrix Completion and Robust Factorization
+
+(cid:19)
+(cid:18) cr2µ2β log2 (2¯n)
+the optimization problem of Eq. (2), it suﬃces to choose t = n/l,
+4 log(¯n)β (1 − ρsβs )
+(cid:32)
+m(ρsβs − ρsβ (cid:48) )2
+,
+2ρr
+4 log(¯n)β (1 − ρsβs )
+clµ0 ( ˆC)β log2 (4¯n)
+n(ρsβs − ρsβ (cid:48) )2
+2
+
+d ≥ max
+
+l ≥ max
+
+,
+
+,
+
+(cid:33)
+
+√
+
+mn∆
+
+and p ≥ 242 r log(14¯nβ )/2 to have
+DFC-Pro j : (cid:107)L0 − ˆLproj (cid:107)F ≤ (2 + )c(cid:48)
+e
+√
+DFC-RP : (cid:107)L0 − ˆLrp(cid:107)F ≤ (2 + )c(cid:48)
+mn∆
+e
+√
+DFC-Nys : (cid:107)L0 − ˆLnys(cid:107)F ≤ (2 + 3)c(cid:48)
+e
+with probability at least
+DFC-Pro j / DFC-RP : 1 − (t(cp + 1) + 1)¯n−β ≥ 1 − cp ¯n1−β
+DFC-Nys : 1 − (2cp + 3)¯n−β − 0.2,
+respectively, with c as in Theorem 12 and ρr , c(cid:48)
+e , and cp as in Theorem 11.
+
+ml + dn∆
+
+Note that Corollary 16 places only very mild restrictions on the number of columns and
+rows to be sampled.
+Indeed, l and d need only grow poly-logarithmically in the matrix
+dimensions to achieve estimation guarantees comparable to those of the RMF base algorithm
+(Theorem 11). Hence, DFC can quickly provide near-optimal estimation in the noisy setting
+and exact recovery in the noiseless setting (∆ = 0), even when entries are grossly corrupted.
+The proof of Corollary 16 can be found in Section I.
+
+5. Theoretical Analysis under Spikiness Conditions
+
+This section presents our analysis of DFC under standard spikiness assumptions from the
+MC and RMF literature.
+
+5.1 Spikiness Analysis of Randomized Approximation Algorithms
+
+We begin our spikiness analysis by characterizing the behavior of randomized approximation
+algorithms under standard spikiness assumptions. The derived properties will aid us in
+developing DFC estimation guarantees. Hereafter,  ∈ (0, 1] represents a prescribed error
+tolerance, and δ, δ (cid:48) ∈ (0, 1] designates a target failure probability.
+
+5.1.1 Conservation of Non-Spikiness
+
+Our ﬁrst lemma establishes that the uniformly sampled submatrices of an α-spiky matrix
+are themselves nearly α-spiky with high probability. This property will allow for accurate
+submatrix completion or outlier removal using standard MC and RMF algorithms. Its proof
+is given in Section K.
+
+929
+
+Mackey, Talwalkar and Jordan
+
+Lemma 17 (Conservation of Non-Spikiness) Let LC ∈ Rm×l be a matrix of l columns
+of L ∈ Rm×n sampled uniformly without replacement. If l ≥ α4 (L) log(1/δ)/(22 ), then
+α(LC ) ≤ α(L)√
+1 − 
+
+with probability at least 1 − δ .
+
+5.1.2 Column Projection Analysis
+
+Our ﬁrst theorem asserts that, with high probability, column pro jection produces an ap-
+proximation nearly as good as a given rank-r target by sampling a number of columns
+proportional to the spikiness and r log(mn).
+Theorem 18 (Column Pro jection under Non-Spikiness) Given a matrix M ∈ Rm×n
+and a rank-r, α-spiky approximation L ∈ Rm×n , choose
+l ≥ 8rα4 log(2mn/δ)/2 ,
+and let C ∈ Rm×l be a matrix of l columns of M sampled uniformly without replacement.
+Then,
+(cid:107)M − Lproj (cid:107)F ≤ (cid:107)M − L(cid:107)F + 
+√
+with probability at least 1 − δ , whenever (cid:107)M(cid:107)∞ ≤ α/
+mn.
+The proof of Theorem 18 builds upon the randomized matrix multiplication work of
+Drineas et al. (2006a,b) and will be given in Section L.
+
+5.2 Base Algorithm Guarantee
+
+The next result, a reformulation of Negahban and Wainwright (2012, Corollary 1), is a
+prototypical example of a spikiness-based estimation guarantee for noisy MC. Corollary 19
+bounds the estimation error of a convex optimization approach to noisy matrix completion,
+under non-spikiness and uniform sampling assumptions.
+
+Corollary 19 (Noisy MC under Non-Spikiness) (Negahban and Wainwright, 2012)
+Suppose that L0 ∈ Rm×n is α-spiky with rank r and (cid:107)L0(cid:107)F ≤ 1 and that Z0 ∈ Rm×n
+has i.i.d. zero-mean, sub-exponential entries with variance ν 2/mn. If, for an oversampling
+parameter β > 0,
+s ≥ α2β r(m + n) log(m + n)
+entries of M = L0 + Z0 are observed with locations Ω sampled uniformly with replacement,
+then any solution ˆL of the problem
+with λ = 4ν(cid:112)(m + n) log(m + n)/s
+(cid:107)PΩ (M − L)(cid:107)2
+F + λ(cid:107)L(cid:107)∗
+mn
+minimizeL
+subject to
+2s
+F ≤ c1 max(cid:0)ν 2 , 1(cid:1)/β
+(cid:107)L0 − ˆL(cid:107)2
+with probability at least 1 − c2 exp(−c3 log(m + n)) for positive constants c1 , c2 , and c3 .
+
+(cid:107)L(cid:107)∞ ≤ α√
+mn
+
+(3)
+
+satisﬁes
+
+930
+
+Distributed Matrix Completion and Robust Factorization
+
+5.3 Spikiness Master Theorem
+
+We now show that the same spikiness conditions that allow for accurate MC also imply high-
+probability estimation guarantees for DFC. To make this precise, we let M = L0 + Z0 ∈
+Rm×n , where L0 is α-spiky with rank r and that Z0 ∈ Rm×n has i.i.d. zero-mean, sub-
+exponential entries with variance ν 2/mn. We further ﬁx any , δ ∈ (0, 1]. Then, our
+Theorem 20 provides a generic bound on estimation error for DFC when used in combination
+with an arbitrary base algorithm. The proof, which builds upon the results of Section 5.1,
+is deferred to Section M.
+Theorem 20 (Spikiness Master Theorem) Choose t = n/l, l ≥ 13rα4 log(4mn/δ)/2 ,
+and p ≥ 242 r log(14/δ)/2 . Under the notation of Algorithms 1 and 2, let {C0,1 , · · · , C0,t}
+be the corresponding partition of L0 . Then, with probability at least 1 − δ , DFC-Proj and
+√
+(cid:113)(cid:80)t
+DFC-RP guarantee that C0,i is (
+1.25α)-spiky for al l i and that
+(cid:113)(cid:80)t
+i=1(cid:107)C0,i − ˆCi(cid:107)2
+(cid:107)L0 − ˆLproj (cid:107)F ≤ 2
+F + 
+(cid:107)L0 − ˆLrp(cid:107)F ≤ (2 + )
+i=1(cid:107)C0,i − ˆCi(cid:107)2
+F
+√
+whenever (cid:107) ˆCi(cid:107)∞ ≤ √
+1.25 can be replaced with the smal ler term (cid:112)1 + /(4
+1.25α/
+ml for al l i.
+√
+√
+Remark 21 The factor of
+When a target matrix is non-spiky, Theorem 20 asserts that, with high probability, the
+estimation error of DFC is not much larger than the error sustained by the base algorithm
+on each subproblem. Theorem 20 further bounds the spikiness of each submatrix with
+high probability, and hence we can use any spikiness-based matrix estimation guarantee
+to control the estimation error on each subproblem. The next section demonstrates how
+Theorem 20 can be applied to derive speciﬁc DFC estimation guarantees for noisy MC.
+
+and
+
+r).
+
+5.4 Consequences for Noisy MC
+Our corollary of Theorem 20 shows that DFC retains the high-probability estimation guar-
+antees of a standard MC solver while operating on matrices of much smaller dimension.
+Suppose that a base MC algorithm solves the convex optimization problem of Eq. (3).
+Then, Corollary 22 follows from the Spikiness Master Theorem (Theorem 20) and the base
+algorithm guarantee of Corollary 19.
+Corollary 22 (DFC-MC under Non-Spikiness) Suppose that L0 ∈ Rm×n is α-spiky
+with rank r and (cid:107)L0(cid:107)F ≤ 1 and that Z0 ∈ Rm×n has i.i.d. zero-mean, sub-exponential
+entries with variance ν 2/mn. Let c1 , c2 , and c3 be positive constants as in Corol lary 19. If
+s entries of M = L0 + Z0 are observed with locations Ω sampled uniformly with replacement,
+and the base algorithm solves the optimization problem of Eq. (3), then it suﬃces to choose
+(cid:114)
+t = n/l,
+
+nrα4 log(4mn)/2 ,
+
+l ≥ 13(c3 + 1)
+
+(m + n) log(m + n)β
+s
+
+931
+
+Mackey, Talwalkar and Jordan
+
+(cid:112)
+and p ≥ 242 r log(14(m + l)c3 )/2 to achieve
+(cid:112)
+(cid:107)L0 − ˆLproj (cid:107)F ≤ 2
+c1 max((l/n)ν 2 , 1)/β +  and
+(cid:107)L0 − ˆLrp(cid:107)F ≤ (2 + )
+c1 max((l/n)ν 2 , 1)/β
+of Eq. (3) is used with λ = 4ν(cid:112)(m + n) log(m + n)/s.
+with respective probability at least 1− (t+ 1)(c2 + 1) exp(−c3 log(m + l)), if the base algorithm
+Remark 23 Corol lary 22 al lows for the fraction of columns sampled to decrease as the
+number of revealed entries, s, increases. Only a vanishingly smal l fraction of columns
+(l/n → 0) need be sampled whenever s = ω((m + n) log3 (m + n)).
+To understand the conclusions of Corollary 22, consider the base algorithm of Corol-
+(cid:107)L0 − ˆL(cid:107)F ≤ (cid:112)
+lary 19, which, when applied to M, recovers an estimate ˆL satisfying
+c1 max(ν 2 , 1)/β
+with high probability. Corollary 14 asserts that, with appropriately reduced probability,
+DFC-RP exhibits the same estimation error scaled by an adjustable factor of 2 + , while
+DFC-Proj exhibits at most twice this error plus an adjustable factor of . Hence, DFC
+can quickly provide near-optimal estimation for non-spiky matrices as well as incoherent
+matrices, even when entries are missing. The proof of Corollary 22 can be found in Section N.
+
+6. Experimental Evaluation
+
+We now explore the accuracy and speed-up of DFC on a variety of simulated and real-world
+data sets. We use the Accelerated Proximal Gradient (APG) algorithm of Toh and Yun
+(2010) as our base noisy MC algorithm5 and the APG algorithm of Lin et al. (2009b) as our
+base noisy RMF algorithm. In order to provide a fair comparison with baseline algorithms,
+we perform all experiments on an x86-64 architecture using a single 2.60 Ghz core and 30GB
+of main memory. In practice, one will typically run DFC jobs in a distributed fashion across
+a cluster; our released code supports this standard use case. We use the default parameter
+settings suggested by Toh and Yun (2010) and Lin et al. (2009b), and measure estimation
+error via root mean square error (RMSE). To achieve a fair running time comparison, we
+execute each subproblem in the F step of DFC in a serial fashion on the same machine
+using a single core. Since, in practice, each of these subproblems would be executed in
+parallel, the paral lel running time of DFC is calculated as the time to complete the D and
+C steps of DFC plus the running time of the longest running subproblem in the F step.
+We compare DFC with two baseline methods: the base algorithm APG applied to the full
+matrix M and Partition, which carries out the D and F steps of DFC-Proj but omits
+the ﬁnal C step (pro jection). We denote a particular sampling method along with the size
+of its partitions as ‘method-xx %,’ e.g., Proj-25% refers to DFC-Proj with partitioned
+submatrices containing 25% of the columns of the full matrix (i.e., t = 4). For Partition,
+DFC-Proj, and DFC-RP, we orient our data matrices such that n ≥ m and partition by
+column. Moreover, for DFC-RP we set p = 5 and q = 2.
+
+5. Our experiments with the Augmented Lagrange Multiplier (ALM) algorithm of Lin et al. (2009a) as a
+base algorithm (not reported) yield comparable relative speedups and performance for DFC.
+
+932
+
+Distributed Matrix Completion and Robust Factorization
+
+6.1 Simulations
+For our simulations, we focused on square matrices (m = n) and generated random low-rank
+AB(cid:62) , where A and B are m × r matrices with independent N (0, (cid:112)1/r) entries such that
+and sparse decompositions, similar to the schemes used in related work (Cand`es et al., 2011;
+Keshavan et al., 2010; Zhou et al., 2010). We created L0 ∈ Rm×m as a random product,
+each entry of L0 has unit variance. Z0 contained independent N (0, 0.1) entries. In the MC
+setting, s entries of L0 + Z0 were revealed uniformly at random. In the RMF setting, the
+support of S0 was generated uniformly at random, and the s corrupted entries took values
+in [0, 1] with uniform probability. For each algorithm, we report error between L0 and the
+estimated low-rank matrix, and all reported results are averages over ten trials.
+
+(a)
+
+(b)
+
+(c)
+
+(d)
+
+Figure 1: Recovery error of DFC relative to base algorithms.
+
+We ﬁrst explored the estimation error of DFC as a function of s, using (m = 10K,
+r = 10) with varying observation sparsity for MC and (m = 1K, r = 10) with a varying
+percentage of outliers for RMF. The results are summarized in Figure 1. In both MC and
+RMF, the gaps in estimation between APG and DFC are small when sampling only 10%
+of rows and columns. Moreover, of the standard DFC algorithms, DFC-RP performs the
+best, as shown in Figures 1(a) and (b). Ensembling improves the performance of DFC-
+Nys and DFC-Proj, as shown in Figures 1(c) and (d), and DFC-Proj-Ens in particular
+consistently outperforms Partition and DFC-Nys-Ens, slightly outperforms DFC-RP,
+and matches the performance of APG for most settings of s. In practice we observe that Lrp
+equals the optimal (with respect to the spectral or Frobenius norm) rank-k approximation
+
+933
+
+024681000.050.10.150.20.25MCRMSE% revealed entries  Part−10%Proj−10%Nys−10%RP−10%Base−MC01020304050607000.050.10.150.20.25RMFRMSE% of outliers  Part−10%Proj−10%Nys−10%RP−10%Base−RMF024681000.050.10.150.20.25MC EnsembleRMSE% revealed entries  Part−10%Proj−Ens−10%Nys−Ens−10%RP−Ens−10%Proj−Ens−25%Base−MC01020304050607000.050.10.150.20.25RMF EnsembleRMSE% of outliers  Part−10%Proj−Ens−10%Nys−Ens−10%RP−Ens−10%Base−RMFMackey, Talwalkar and Jordan
+
+of [ ˆC1 , . . . , ˆCt ], and thus the performance of DFC-RP consistently matches that of DFC-
+RP-Ens. We therefore omit the DFC-RP-Ens results in the remainder this section.
+We next explored the speed-up of DFC as a function of matrix size. For MC, we revealed
+4% of the matrix entries and set r = 0.001 · m, while for RMF we ﬁxed the percentage of
+outliers to 10% and set r = 0.01 ·m. We sampled 10% of rows and columns and observed that
+estimation errors were comparable to the errors presented in Figure 1 for similar settings
+of s; in particular, at all values of n for both MC and RMF, the errors of APG and DFC-
+Proj-Ens were nearly identical. Our timing results, presented in Figure 2, illustrate a
+near-linear speed-up for MC and a superlinear speed-up for RMF across varying matrix
+sizes. Note that the timing curves of the DFC algorithms and Partition all overlap, a
+fact that highlights the minimal computational cost of the ﬁnal matrix approximation step.
+
+Figure 2: Speed-up of DFC relative to base algorithms.
+
+6.2 Collaborative Filtering
+
+Collaborative ﬁltering for recommender systems is one prevalent real-world application of
+noisy matrix completion. A collaborative ﬁltering data set can be interpreted as the in-
+complete observation of a ratings matrix with columns corresponding to users and rows
+corresponding to items. The goal is to infer the unobserved entries of this ratings matrix.
+We evaluate DFC on two of the largest publicly available collaborative ﬁltering data sets:
+MovieLens 10M (http://www.grouplens.org/) with m = 10K, n = 72K, s > 10M, and
+the Netﬂix Prize data set (http://www.netflixprize.com/) with m = 18K, n = 480K,
+s > 100M. To generate test sets drawn from the training distribution, for each data set,
+we aggregated all available rating data into a single training set and withheld test entries
+uniformly at random, while ensuring that at least one training observation remained in
+each row and column. The algorithms were then run on the remaining training portions
+and evaluated on the test portions of each split. The results, averaged over three train-test
+splits, are summarized in Table 2. Notably, DFC-Proj, DFC-Proj-Ens, DFC-Nys-Ens,
+and DFC-RP all outperform Partition, and DFC-Proj-Ens performs comparably to
+APG while providing a nearly linear parallel time speed-up. Similar to the simulation re-
+sults presented in Figure 1, DFC-RP performs the best of the standard DFC algorithms,
+though DFC-Proj-Ens slightly outperforms DFC-RP. Moreover, the poorer performance
+of DFC-Nys can be in part explained by the asymmetry of these problems. Since these
+matrices have many more columns than rows, MF on column submatrices is inherently
+
+934
+
+12345x 1040500100015002000250030003500MCtime (s)m  Part−10%RP−10%Proj−Ens−10%Nys−Ens−10%Base−RMF1000200030004000500000.511.522.5x 104RMFtime (s)m  Part−10%RP−10%Proj−Ens−10%Nys−Ens−10%Base−RMFDistributed Matrix Completion and Robust Factorization
+
+Method
+
+MovieLens 10M
+RMSE
+Time
+
+Netﬂix
+RMSE
+Time
+
+Base algorithm (APG) 0.8005
+
+552.3s
+
+0.8433 4775.4s
+
+Partition-25%
+Partition-10%
+
+DFC-Nys-25%
+DFC-Nys-10%
+
+DFC-Nys-Ens-25%
+DFC-Nys-Ens-10%
+
+DFC-Proj-25%
+DFC-Proj-10%
+
+0.8146
+0.8461
+
+0.8449
+0.8776
+
+0.8085
+0.8328
+
+0.8061
+0.8270
+
+146.2s
+56.0s
+
+141.9s
+82.5s
+
+153.5s
+96.2s
+
+146.3s
+56.0s
+
+0.8451
+0.8491
+
+0.8832
+0.9228
+
+0.8486
+0.8613
+
+0.8436
+0.8486
+
+1274.6s
+548.0s
+
+1541.2s
+797.4s
+
+1661.2s
+909.8s
+
+1274.8s
+548.1s
+
+DFC-Pro j-Ens-25%
+DFC-Pro j-Ens-10%
+
+0.7944
+0.8117
+
+146.3s
+56.0s
+
+0.8411 1274.8s
+0.8434
+548.1s
+
+DFC-RP-25%
+DFC-RP-10%
+
+0.8027
+0.8074
+
+147.4s
+56.2s
+
+0.8438
+0.8448
+
+1283.6s
+550.1s
+
+Table 2: Performance of DFC relative to base algorithm APG on collaborative ﬁltering
+tasks.
+
+easier than MF on row submatrices, and for DFC-Nys, we observe that ˆC is an accurate
+estimate while ˆR is not.
+
+6.3 Background Modeling in Computer Vision
+
+Background modeling has important practical ramiﬁcations for detecting activity in surveil-
+lance video. This problem can be framed as an application of noisy RMF, where each video
+frame is a column of some matrix (M), the background model is low-rank (L0 ), and moving
+ob jects and background variations, e.g., changes in illumination, are outliers (S0 ). We evalu-
+ate DFC on two videos (treating each frame as a row): ‘Hall’ (200 frames of size 176 × 144)
+contains signiﬁcant foreground variation and was studied by Cand`es et al. (2011), while
+‘Lobby’ (1546 frames of size 168 × 120) includes many changes in illumination (a smaller
+video with 250 frames was studied by Cand`es et al. 2011). We focused on DFC-Proj-Ens,
+due to its superior performance in previous experiments, and measured the RMSE between
+the background model estimated by DFC and that of APG. On both videos, DFC-Proj-
+Ens estimated nearly the same background model as the full APG algorithm in a small
+fraction of the time. On ‘Hall,’ the DFC-Proj-Ens-5% and DFC-Proj-Ens-0.5% models
+exhibited RMSEs of 0.564 and 1.55, quite small given pixels with 256 intensity values. The
+associated running time was reduced from 342.5s for APG to real-time (5.2s for a 13s video)
+for DFC-Proj-Ens-0.5%. Snapshots of the results are presented in Figure 3. On ‘Lobby,’
+
+935
+
+Mackey, Talwalkar and Jordan
+
+Original frame
+
+APG
+(342.5s)
+
+5% sampled
+(24.2s)
+
+0.5% sampled
+(5.2s)
+
+Figure 3: Sample ‘Hall’ estimation by APG, DFC-Proj-Ens-5%, and DFC-Proj-Ens-
+.5%.
+
+the RMSE of DFC-Proj-Ens-4% was 0.64, and the speed-up over APG was more than
+20X, i.e., the running time reduced from 16557s to 792s.
+
+6.4 From Theory to Practice
+
+Our experimental results suggest that the theoretical error bounds of Secs. 4 and 5 can be
+further tightened. In particular, our master theorems Theorems 12 and 20 guarantee that
+DFC-Proj-Ens and DFC-RP are never more than a constant factor worse than Par-
+tition, yet in both real data experiments and simulations we observe signiﬁcant gains in
+accuracy over Partition due to the incorporation of pro jection and ensembling. More-
+over, our theory gives rise to comparable estimation guarantees for DFC-Nys, albeit under
+stronger assumptions as noted in Remark 13. This is a surprising fact given that DFC-Nys
+may make use of only a vanishingly small subset of all available matrix entries; however, we
+ﬁnd that for data sets with high noise levels, methods that make use of all available data
+like DFC-Proj and DFC-RP are unsurprisingly more accurate than DFC-Nys. We view
+addressing these gaps between theory and practice as important directions for future work.
+
+7. Conclusions
+
+To improve the scalability of existing matrix factorization algorithms while leveraging the
+ubiquity of parallel computing architectures, we introduced, evaluated, and analyzed DFC,
+a divide-and-conquer framework for noisy matrix factorization with missing entries or out-
+liers. DFC is trivially parallelized and particularly well suited for distributed environments
+given its low communication footprint. Moreover, DFC provably maintains the estimation
+guarantees of its base algorithm, even in the presence of noise, and yields linear to super-
+linear speedups in practice. A number of natural follow-up questions suggest themselves:
+
+• Can the sampling complexities and conclusions of our theoretical analyses be strength-
+ened? For example, can the (2 + ) approximation guarantees of our master theorems
+be sharpened to (1 + )? More generally, can we close the gaps between theory and
+practice described in Section 6.4?
+
+936
+
+Distributed Matrix Completion and Robust Factorization
+
+• How does DFC compare empirically with scalable heuristics for MC and RMF that
+have little theoretical backing (see, e.g., Zhou et al., 2008; Gemulla et al., 2011; Recht
+and R´e, 2011; F. Niu et al., 2011; Yu et al., 2012; Mu et al., 2011)? Is improved perfor-
+mance obtained by pairing DFC with base algorithms lacking theoretical guarantees
+but displaying other practical beneﬁts?
+• Which algorithmic reﬁnements lead to enhanced performance for DFC? For instance,
+could ensemble variants of DFC be improved by learning combination weights in a
+manner analogous to that of Kumar et al. (2009b)? In the matrix completion setting,
+could one use held-out entries to determine the optimal dimension (via rows or via
+columns) for partitioning in DFC-Proj or DFC-RP?
+
+These open questions are fertile ground for future work.
+
+Acknowledgments
+
+Lester Mackey gratefully acknowledges the support of DARPA through the National De-
+fense Science and Engineering Graduate Fellowship Program. Ameet Talwalkar gratefully
+acknowledges support from NSF award No. 1122732.
+
+Appendix A. Proof of Theorem 5: Subsampled Regression under
+Incoherence
+
+We now give a proof of Theorem 5. While the results of this section are stated in terms of
+i.i.d. with-replacement sampling of columns and rows, a concise argument due to Hoeﬀding
+(1963, Section 6) implies the same conclusions when columns and rows are sampled without
+replacement.
+Our proof of Theorem 5 will require a strengthened version of the randomized (cid:96)2 regres-
+sion work of Drineas et al. (2008, Theorem 5). The proof of Theorem 5 of Drineas et al.
+(2008) relies heavily on the fact that (cid:107)AB − GH(cid:107)F ≤ 
+2 (cid:107)A(cid:107)F (cid:107)B(cid:107)F with probability at
+least 0.9, when G and H contain suﬃciently many rescaled columns and rows of A and
+B, sampled according to a particular non-uniform probability distribution. A result of Hsu
+et al. (2012), modiﬁed to allow for slack in the probabilities, establishes a related claim with
+improved sampling complexity.6
+
+Lemma 24 (Hsu et al. 2012, Example 4.3) Given a matrix A ∈ Rm×k with r ≥ rank(A),
+an error tolerance  ∈ (0, 1], and a failure probability δ ∈ (0, 1], deﬁne probabilities pj sat-
+(cid:88)
+and (cid:80)k
+isfying
+j=1pj = 1
+j
+
+(cid:107)A(j )(cid:107)2 , Z =
+
+pj ≥ β
+Z
+
+(cid:107)A(j )(cid:107)2 ,
+
+6. The general conclusion of (Hsu et al., 2012, Example 4.3) is incorrectly stated as noted in Hsu (2012).
+However, the original statement is correct in the special case when a matrix is multiplied by its own
+transpose, which is the case of interest here.
+
+937
+
+Mackey, Talwalkar and Jordan
+
+for some β ∈ (0, 1]. Let G ∈ Rm×l be a column submatrix of A in which exactly l ≥
+1/(cid:112)lpj whenever the j -th column of A is selected on the t-th sampling trial, for t = 1, . . . , l.
+48r log(4r/(β δ))/(β 2 ) columns are selected in i.i.d. trials in which the j -th column is chosen
+with probability pj . Further, let D ∈ Rl×l be a diagonal rescaling matrix with entry Dtt =
+Then, with probability at least 1 − δ ,
+(cid:107)AA(cid:62) − GDDG(cid:62)(cid:107)2 ≤ 
+(cid:107)A(cid:107)2
+2 .
+2
+
+Using Lemma 24, we now establish a stronger version of Lemma 1 of Drineas et al.
+(2008). For a given β ∈ (0, 1] and L ∈ Rm×n with rank r, we ﬁrst deﬁne column sampling
+and (cid:80)n
+probabilities pj satisfying
+pj ≥ β
+(cid:107)(VL )(j )(cid:107)2
+j=1pj = 1.
+(4)
+r
+We further let S ∈ Rn×l be a random binary matrix with independent columns, where a
+Moreover, let D ∈ Rl×l be a diagonal rescaling matrix with entry Dtt = 1/(cid:112)lpj whenever
+single 1 appears in each column, and Sj t = 1 with probability pj for each t ∈ {1, . . . , l}.
+Sj t = 1. Postmultiplication by S is equivalent to selecting l random columns of a matrix,
+independently and with replacement. Under this notation, we establish the following lemma:
+
+l D)+ − (V(cid:62)
+Lemma 25 Let  ∈ (0, 1], and deﬁne V(cid:62)
+l D)(cid:62) .
+L S and Γ = (V(cid:62)
+l = V(cid:62)
+l ≥ 48r log(4r/(β δ))/(β 2 ) for δ ∈ (0, 1] then with probability at least 1 − δ :
+
+If
+
+rank(Vl ) = rank(VL ) = rank(L)
+(cid:107)Γ(cid:107)2 = (cid:107)Σ−1
+− ΣV (cid:62)
+l D (cid:107)
+V (cid:62)
+l D
+2
+l D)+Σ−1
+(LSD)+ = (V(cid:62)
+L U(cid:62)
+√
+L
+(cid:107)Σ−1
+l D (cid:107)
+− ΣV (cid:62)
+≤ /
+2.
+V (cid:62)
+l D
+2
+Proof By Lemma 24, for all 1 ≤ i ≤ r,
+l DDVl )|
+l D)| = |σi (V(cid:62)
+L VL ) − σi (V(cid:62)
+|1 − σ2
+i (V(cid:62)
+≤ (cid:107)V(cid:62)
+L VL − V(cid:62)
+L SDDS(cid:62)VL(cid:107)2
+L (cid:107)2
+≤ /2(cid:107)V(cid:62)
+2 = /2,
+where σi (·) is the i-th largest singular value of a given matrix. Since /2 ≤ 1/2, each singu-
+lar value of Vl is positive, and so rank(Vl ) = rank(VL ) = rank(L). The remainder of the
+proof is identical to that of Lemma 1 of Drineas et al. (2008).
+
+Lemma 25 immediately yields improved sampling complexity for the randomized (cid:96)2
+regression of Drineas et al. (2008):
+Proposition 26 Suppose B ∈ Rp×n and  ∈ (0, 1]. If l ≥ 3200r log(4r/(β δ))/(β 2 ) for
+δ ∈ (0, 1], then with probability at least 1 − δ − 0.2:
+(cid:107)B − BSD(LSD)+L(cid:107)F ≤ (1 + )(cid:107)B − BL+L(cid:107)F .
+
+938
+
+Distributed Matrix Completion and Robust Factorization
+
+Proof The proof is identical to that of Theorem 5 of Drineas et al. (2008) once Lemma 25
+is substituted for Lemma 1 of Drineas et al. (2008).
+
+A typical application of Prop. 26 would involve performing a truncated SVD of M to
+obtain the statistical leverage scores, (cid:107)(VL )(j )(cid:107)2 , used to compute the column sampling
+probabilities of Eq. (4). Here, we will take advantage of the slack term, β , allowed in the
+sampling probabilities of Eq. (4) to show that uniform column sampling gives rise to the
+same estimation guarantees for column pro jection approximations when L is suﬃciently
+incoherent.
+To prove Theorem 5, we ﬁrst notice that n ≥ rµ0 (VL ) and hence
+l ≥ 3200rµ0 (VL ) log(4rµ0 (VL )/δ)/2
+≥ 3200r log(4r/(β δ))/(β 2 )
+whenever β ≥ 1/µ0 (VL ). Thus, we may apply Prop. 26 with β = 1/µ0 (VL ) ∈ (0, 1] and
+pj = 1/n by noting that
+(cid:107)(VL )(j )(cid:107)2 ≤ β
+β
+1
+r
+for all j , by the deﬁnition of µ0 (VL ). By our choice of probabilities, D = I(cid:112)n/l, and hence
+µ0 (VL ) =
+= pj
+n
+n
+r
+r
+C L(cid:107)F = (cid:107)B − BC D(LC D)+L(cid:107)F ≤ (1 + )(cid:107)B − BL+L(cid:107)F
+(cid:107)B − BC L+
+with probability at least 1 − δ − 0.2, as desired.
+
+Appendix B. Proof of Lemma 4: Conservation of Incoherence
+
+Since for all n > 1,
+c log(n) log(1/δ) = (c/4) log(n4 ) log(1/δ) ≥ 48 log(4n2/δ) ≥ 48 log(4rµ0 (VL )/(δ/n))
+for all j , and D = I(cid:112)n/l. When rank(LC ) = rank(L), Lemma 1 of Mohri and Talwalkar
+as n ≥ rµ0 (VL ), claim i follows immediately from Lemma 25 with β = 1/µ0 (VL ), pj = 1/n
+(2011) implies that PULC
+= PUL , which in turn implies claim ii.
+To prove claim iii given the conclusions of Lemma 25, assume, without loss of generality,
+that Vl consists of the ﬁrst l rows of VL . Then if LC = ULΣLV(cid:62)
+l has rank(LC ) =
+rank(L) = r, the matrix Vl must have full column rank. Thus we can write
+C LC = (ULΣLV(cid:62)
+l )+ULΣLV(cid:62)
+L+
+l
+L ULΣLV(cid:62)
+= (ΣLV(cid:62)
+l )+U+
+l
+l )+ΣLV(cid:62)
+= (ΣLV(cid:62)
+l
+= (V(cid:62)
+L ΣLV(cid:62)
+l )+Σ+
+l
+l )+V(cid:62)
+= (V(cid:62)
+l
+l Vl )−1V(cid:62)
+= Vl (V(cid:62)
+l ,
+
+939
+
+Mackey, Talwalkar and Jordan
+
+where the second and third equalities follow from UL having orthonormal columns, the
+fourth and ﬁfth result from ΣL having full rank and Vl having full column rank, and the
+sixth follows from V(cid:62)
+l having full row rank.
+Now, denote the right singular vectors of LC by VLC ∈ Rl×r . Observe that PVLC
+=
+VLC V(cid:62)
+= L+
+C LC , and deﬁne ei,l as the ith column of Il and ei,n as the ith column of In .
+LC
+Then we have,
+
+µ0 (VLC ) =
+
+=
+
+=
+
+=
+
+=
+
+l
+r
+l
+r
+l
+r
+l
+r
+l
+r
+
+max
+1≤i≤l
+
+max
+1≤i≤l
+
+max
+1≤i≤l
+
+max
+1≤i≤l
+
+max
+1≤i≤l
+
+ei,l (cid:107)2
+
+(cid:107)PVLC
+e(cid:62)
+i,lL+
+C LC ei,l
+l )+V(cid:62)
+i,l (V(cid:62)
+e(cid:62)
+l ei,l
+i,lVl (V(cid:62)
+l Vl )−1V(cid:62)
+e(cid:62)
+l ei,l
+l Vl )−1V(cid:62)
+e(cid:62)
+i,nVL (V(cid:62)
+L ei,n ,
+
+L ei,n for all 1 ≤ i ≤ l.
+l ei,l = V(cid:62)
+where the ﬁnal equality follows from V(cid:62)
+Now, deﬁning Q = V(cid:62)
+l Vl we have
+
+µ0 (VLC ) =
+
+=
+
+l
+r
+l
+r
+l
+r
+≤ l
+r
+
+=
+
+Tr
+
+max
+1≤i≤l
+
+max
+1≤i≤l
+
+(cid:105)
+(cid:104)
+i,nVLQ−1V(cid:62)
+e(cid:62)
+L ei,n
+(cid:105)
+(cid:104)
+i,nVLQ−1V(cid:62)
+e(cid:62)
+L ei,n
+L ei,ne(cid:62)
+Q−1V(cid:62)
+max
+i,nVL
+Tr
+1≤i≤l
+(cid:107)V(cid:62)
+(cid:107)Q−1(cid:107)2 max
+i,nVL(cid:107)∗ ,
+L ei,ne(cid:62)
+1≤i≤l
+
+L ei,ne(cid:62)
+by H¨older’s inequality for Schatten p-norms. Since V(cid:62)
+i,nVL has rank one, we can
+explicitly compute its trace norm as (cid:107)V(cid:62)
+L ei,n(cid:107)2 = (cid:107)PVL ei,n(cid:107)2 . Hence,
+(cid:18) n
+(cid:19)
+(cid:107)Q−1(cid:107)2 max
+1≤i≤l
+(cid:107)Q−1(cid:107)2
+r
+max
+1≤i≤n
+n
+r
+(cid:107)Q−1(cid:107)2µ0 (VL ) ,
+
+(cid:107)PVL ei,n(cid:107)2
+(cid:107)PVL ei,n(cid:107)2
+
+µ0 (VLC ) ≤ l
+r
+≤ l
+r
+l
+n
+
+=
+
+by the deﬁnition of µ0 -coherence. The proof of Lemma 25 established that the smallest
+l DDVl is lower bounded by 1 − 
+2 and hence (cid:107)Q−1(cid:107)2 ≤
+l Q = V(cid:62)
+singular value of n
+n
+l(1−/2) .
+Thus, we conclude that µ0 (VLC ) ≤ µ0 (VL )/(1 − /2).
+
+940
+
+Distributed Matrix Completion and Robust Factorization
+
+µ1 (LC ) =
+
+|e(cid:62)
+i,mULC V(cid:62)
+LC
+
+(cid:114)
+To prove claim iv under Lemma 25, we note that
+ej,l |
+ml
+(cid:114)
+max
+1≤i≤m
+r
+1≤j≤l
+(cid:19)(cid:18)(cid:114)
+(cid:18)(cid:114) m
+(cid:19)
+(cid:107)U(cid:62)
+(cid:107)V(cid:62)
+ei,m(cid:107) max
+ej,l (cid:107)
+ml
+max
+1≤i≤m
+1≤j≤l
+LC
+LC
+r
+√
+(cid:113)
+ej,l (cid:107)
+(cid:107)PVLC
+ei,m(cid:107)
+(cid:107)PULC
+l
+rµ0 (ULC )µ0 (VLC ) ≤ (cid:112)rµ0 (UL )µ0 (VL )/(1 − /2)
+max
+max
+r
+1≤i≤m
+1≤j≤l
+r
+r
+by H¨older’s inequality for Schatten p-norms, the deﬁnition of µ0 -coherence, and claims ii
+and iii.
+
+≤
+
+=
+
+=
+
+Appendix C. Proof of Corollary 6: Column Pro jection under Incoherence
+
+Fix c = 48000/ log(1/0.45), and notice that for n > 1,
+
+48000 log(n) ≥ 3200 log(n5 ) ≥ 3200 log(16n).
+Hence l ≥ 3200rµ0 (VL ) log(16n)(log(δ)/ log(0.45))/2 .
+Now partition the columns of C into b = log(δ)/ log(0.45) submatrices, C = [C1 , · · · , Cb ],
+each with a = l/b columns,7 and let [LC1 , · · · , LCb ] be the corresponding partition of LC .
+Since
+a ≥ 3200rµ0 (VL ) log(4n/0.25)/2 ,
+
+we may apply Prop. 26 independently for each i to yield
+≤ (1 + )(cid:107)M − ML+L(cid:107)F ≤ (1 + )(cid:107)M − L(cid:107)F
+(cid:107)M − CiL+
+Ci
+F
+with probability at least 0.55, since ML+ minimizes (cid:107)M − YL(cid:107)F over all Y ∈ Rm×m .
+Since each Ci = CSi for some matrix Si and C+M minimizes (cid:107)M − CX(cid:107)F over all
+X ∈ Rl×n , it follows that
+
+L(cid:107)
+
+(5)
+
+for each i. Hence, if
+
+(cid:107)M − CC+M(cid:107)F ≤ (cid:107)M − CiL+
+Ci
+
+L(cid:107)
+F
+
+,
+
+(cid:107)M − CC+M(cid:107)F ≤ (1 + )(cid:107)M − L(cid:107)F ,
+
+fails to hold, then, for each i, Eq. (5) also fails to hold. The desired conclusion therefore
+must hold with probability at least 1 − 0.45b = 1 − δ .
+
+7. For simplicity, we assume that b divides l evenly.
+
+941
+
+Mackey, Talwalkar and Jordan
+
+Appendix D. Proof of Corollary 7: Generalized Nystr¨om Method under
+Incoherence
+
+With c = 48000/ log(1/0.45) as in Corollary 6, we notice that for m > 1,
+48000 log(m) = 16000 log(m3 ) ≥ 16000 log(4m).
+
+Therefore,
+
+d ≥ 16000rµ0 (UC ) log(4m)(log(δ (cid:48) )/ log(0.45))/2
+≥ 3200rµ0 (UC ) log(4m/δ (cid:48) )/2 ,
+for all m > 1 and δ (cid:48) ≤ 0.8. Hence, we may apply Theorem 5 and Corollary 6 in turn to
+obtain
+(cid:107)M − CW+R(cid:107)F ≤ (1 + )(cid:107)M − CC+M(cid:107)F ≤ (1 + )2(cid:107)M − L(cid:107)
+with probability at least (1 − δ)(1 − δ (cid:48) − 0.2) by independence.
+
+Appendix E. Proof of Corollary 8: Noiseless Generalized Nystr¨om
+Method under Incoherence
+Since rank(L) = r, L admits a decomposition L = Y(cid:62)Z for some matrices Y ∈ Rr×m
+Y and Z as Y = (cid:2)Y1 Y2
+(cid:3) and Z = (cid:2)Z1 Z2
+(cid:3) for Y1 ∈ Rr×d and Z1 ∈ Rr×l , we may
+and Z ∈ Rr×n . In particular, let Y(cid:62) = ULΣ
+LV(cid:62)
+1
+1
+L and Z = Σ
+L . By block partitioning
+2
+2
+write W = Y(cid:62)
+1 Z1 , C = Y(cid:62)Z1 , and R = Y(cid:62)
+1 Z. Note that we assume that the generalized
+Nystr¨om approximation is generated from sampling the ﬁrst l columns and the ﬁrst d rows
+of L, which we do without loss of generality since the rows and columns of the original
+low-rank matrix can always be permuted to match this assumption.
+Prop. 27 shows that, like the Nystr¨om method (Kumar et al., 2009a), the generalized
+Nystr¨om method yields exact recovery of L whenever rank(L) = rank(W). The same result
+was established in Wang et al. (2009) with a diﬀerent proof.
+Proposition 27 Suppose r = rank(L) ≤ min(d, l) and rank(W) = r. Then L = Lnys .
+
+Proof By appealing to our factorized block decomposition, we may rewrite the generalized
+Nystr¨om approximation as Lnys = CW+R = Y(cid:62)Z1 (Y(cid:62)
+1 Z1 )+Y(cid:62)
+1 Z. We ﬁrst note that
+rank(W) = r implies that rank(Y1 ) = r and rank(Z1 ) = r so that Z1Z(cid:62)
+1 and Y1Y(cid:62)
+1 are
+full-rank. Hence, (Y(cid:62)
+1 Z1 )+ = Z(cid:62)
+1 (Z1Z(cid:62)
+1 )−1 (Y1Y(cid:62)
+1 )−1Y1 , yielding
+1 )−1Y1Y(cid:62)
+1 )−1 (Y1Y(cid:62)
+1 (Z1Z(cid:62)
+Lnys = Y(cid:62)Z1Z(cid:62)
+1 Z = Y(cid:62)Z = L.
+
+Prop. 27 allows us to lower bound the probability of exact recovery with the probability
+of randomly selecting a rank-r submatrix. As rank(W) = r iﬀ both rank(Y1 ) = r and
+rank(Z1 ) = r, it suﬃces to characterize the probability of selecting full rank submatrices of
+Y and Z. Following the treatment of the Nystr¨om method in Talwalkar and Rostamizadeh
+
+942
+
+Distributed Matrix Completion and Robust Factorization
+
+− 1
+− 1
+L = Vl where Vl ∈ Rl×r contains
+L Z = V(cid:62)
+L and hence that Z(cid:62)
+(2010), we note that Σ
+1 Σ
+2
+2
+the ﬁrst l components of the leading r right singular vectors of L. It follows that rank(Z1 ) =
+− 1
+L ) = rank(Vl ). Similarly, rank(Y1 ) = rank(Ud ) where Ud ∈ Rd×r contains the
+rank(Z(cid:62)
+1 Σ
+2
+ﬁrst d components of the leading r left singular vectors of L. Thus, we have
+
+P(rank(Z1 ) = r) = P(rank(Vl ) = r)
+P(rank(Y1 ) = r) = P(rank(Ud ) = r).
+
+and
+
+(6)
+
+(7)
+
+Next we can apply the ﬁrst result of Lemma 25 to lower bound the RHSs of Eq. (6)
+and Eq. (7) by selecting  = 1, S such that its diagonal entries equal 1, and β = 1
+µ0 (VL ) for
+the RHS of Eq. (6) and β = 1
+µ0 (UL ) for the RHS of Eq. (7). In particular, given the lower
+√
+bounds on d and l in the statement of the corollary, the RHSs are each lower bounded by
+1 − δ . Furthermore, by the independence of row and column sampling and Eq. (6) and
+Eq. (7), we see that
+
+1 − δ ≤ P(rank(Ud ) = r)P(rank(Vl ) = r)
+= P(rank(Y1 ) = r)P(rank(Z1 ) = r)
+= P(rank(W) = r).
+
+Finally, Prop. 27 implies that
+
+P(L = Lnys ) ≥ P(rank(W) = r) ≥ 1 − δ,
+
+which proves the statement of the theorem.
+
+Appendix F. Proof of Corollary 9: Random Pro jection
+
+Our proof rests upon the following random pro jection guarantee of Halko et al. (2011):
+
+Theorem 28 (Halko et al. 2011, Theorem 10.7) Given a matrix M ∈ Rm×n and a
+rank-r approximation L ∈ Rm×n with r ≥ 2, choose an oversampling parameter p ≥ 4,
+where r + p ≤ min(m, n). Draw an n × (r + p) standard Gaussian matrix G, let Y = MG.
+For al l u, t ≥ 1,
+(cid:107)M − PY M(cid:107)F ≤ (1 + t(cid:112)12r/p)(cid:107)M − Mr (cid:107)F + ut · e
+√
+with probability at least 1 − 5t−p − 2e−u2 /2 .
+Fix (u, t) = ((cid:112)2 log(7/δ), e), and note that
+1 − 5e−p − 2e−u2 /2 = 1 − 5e−p − 2δ/7 ≥ 1 − δ,
+
+(cid:107)M − Mr (cid:107)
+
+r + p
+p + 1
+
+943
+
+Mackey, Talwalkar and Jordan
+
+(cid:107)M − Mr (cid:107)2
+
+e2(cid:112)2(r + p) log(7/δ)
+since p ≥ log(7/δ). Hence, Theorem 28 implies that
+(cid:107)M − PY M(cid:107)F ≤ (1 + e(cid:112)12r/p)(cid:107)M − Mr (cid:107)F +
+(cid:33)
+(cid:32)
+e2(cid:112)2(r + p) log(7/δ)
+1 + e(cid:112)12r/p +
+p + 1
+(cid:107)M − L(cid:107)F
+≤
+≤ (cid:16)
+(cid:17)(cid:107)M − L(cid:107)F
+1 + e(cid:112)12r/p + e2(cid:112)2r log(7/δ)/p
+p + 1
+≤ (cid:16)
+(cid:17)(cid:107)M − L(cid:107)F ≤ (1 + )(cid:107)M − L(cid:107)F
+1 + 11(cid:112)2r log(7/δ)/p
+with probability at least 1 − δ , where the second inequality follows from (cid:107)M − Mr (cid:107)2 ≤
+√
+√
+√
+(cid:107)M − Mr (cid:107)F ≤ (cid:107)M − L(cid:107)F , the third follows from
+p ≤ (p + 1)
+r + p
+r for all r and p,
+and the ﬁnal follows from our choice of p ≥ 242 r log(7/δ)/2 .
+Next, we note, as in the proof of Theorem 9.3 of Halko et al. (2011), that
+(cid:107)PY M − Lrp(cid:107)F ≤ (cid:107)PY M − PY Mr (cid:107)F ≤ (cid:107)M − Mr (cid:107)F ≤ (cid:107)M − L(cid:107)F .
+The ﬁrst inequality holds because Lrp is by deﬁnition the best rank-r approximation to
+PY M and rank(PY Mr ) ≤ r. The second inequality holds since
+(cid:107)M − Mr (cid:107)F = (cid:107)PY (M − Mr )(cid:107)F + (cid:107)P⊥
+Y (M − Mr )(cid:107)F .
+The ﬁnal inequality holds since Mr is the best rank-r approximation to M and rank(L) = r.
+Moreover, by the triangle inequality,
+(cid:107)M − Lrp(cid:107)F ≤ (cid:107)M − PY M(cid:107)F + (cid:107)PY M − Lrp(cid:107)F
+≤ (cid:107)M − PY M(cid:107)F + (cid:107)M − L(cid:107)F .
+Combining Eq. (8) with the ﬁrst statement of the corollary yields the second statement.
+
+(8)
+
+Appendix G. Proof of Theorem 12: Coherence Master Theorem
+
+G.1 Proof of DFC-Pro j and DFC-RP Bounds
+Let L0 = [C0,1 , . . . , C0,t ] and ˜L = [ ˆC1 , . . . , ˆCt ]. Deﬁne A(X) as the event that a matrix
+1−/2 , r)-coherent and K as the event (cid:107) ˜L − ˆLproj (cid:107)F ≤ (1 + )(cid:107)L0 − ˜L(cid:107)F . When K
+X is ( rµ2
+holds, we have that
+(cid:113)(cid:80)t
+(cid:107)L0 − ˆLproj (cid:107)F ≤ (cid:107)L0 − ˜L(cid:107)F + (cid:107) ˜L − ˆLproj (cid:107)F ≤ (2 + )(cid:107)L0 − ˜L(cid:107)F
+by the triangle inequality, and hence it suﬃces to lower bound P(K ∩ (cid:84)
+i=1(cid:107)C0,i − ˆCi(cid:107)2
+= (2 + )
+F ,
+iA(C0,i )). Our
+choice of l, with a factor of log(2/δ), implies that each A(C0,i ) holds with probability at
+least 1 − δ/(2n) by Lemma 4, while K holds with probability at least 1 − δ/2 by Corollary 6.
+iA(C0,i )) ≥ 1 − P(K c ) − (cid:80)
+P(K ∩ (cid:84)
+Hence, by the union bound,
+iP(A(C0,i )c ) ≥ 1 − δ/2 − tδ/(2n) ≥ 1 − δ.
+An identical proof with Corollary 9 substituted for Corollary 6 yields the random pro jection
+result.
+
+944
+
+Distributed Matrix Completion and Robust Factorization
+
+˜L =
+
+G.2 Proof of DFC-Nys Bound
+(cid:21)
+(cid:20) ˆC1
+(cid:21)
+(cid:20) ˆC1
+To prove the generalized Nystr¨om result, we redeﬁne ˜L and write it in block notation as:
+(cid:3)
+ˆR = (cid:2) ˆR1
+ˆR2
+ˆC2 L0,22
+ˆC2
+and L0,22 ∈ R(m−d)×(n−l) is the bottom right submatrix of L0 . We further redeﬁne K as
+the event (cid:107) ˜L − ˆLnys(cid:107)F ≤ (1 + )2(cid:107)L0 − ˜L(cid:107)F . As above,
+(cid:107)L0 − ˆLnys(cid:107)F ≤ (cid:107)L0 − ˜L(cid:107)F + (cid:107) ˜L − ˆLnys(cid:107)F ≤ (2 + 2 + 2 )(cid:107)L0 − ˜L(cid:107)F ≤ (2 + 3)(cid:107)L0 − ˜L(cid:107)F ,
+
+, where
+
+ˆC =
+
+,
+
+ˆR2
+
+when K holds, by the triangle inequality. Our choices of l and
+d ≥ clµ0 ( ˆC) log(m) log(4/δ)/2 ≥ crµ log(m) log(1/δ)/2
+imply that A(C) and A(R) hold with probability at least 1 − δ/(2n) and 1 − δ/(4n) re-
+spectively by Lemma 4, while K holds with probability at least (1 − δ/2)(1 − δ/4 − 0.2) by
+Corollary 7. Hence, by the union bound,
+P(K ∩ A(C) ∩ A(R)) ≥ 1 − P(K c ) − P(A(C)c ) − P(A(R)c )
+≥ 1 − (1 − (1 − δ/2)(1 − δ/4 − 0.2)) − δ/(2n) − δ/(4n)
+≥ (1 − δ/2)(1 − δ/4 − 0.2) − 3δ/8
+≥ (1 − δ)(1 − δ − 0.2)
+
+for all n ≥ 2 and δ ≤ 0.8.
+
+Appendix H. Proof of Corollary 14: DFC-MC under Incoherence
+
+H.1 Proof of DFC-Pro j and DFC-RP Bounds
+
+mn∆,
+
+H be the event that
+
+We begin by proving the DFC-Proj bound. Let G be the event that
+√
+(cid:107)L0 − ˆLproj (cid:107)F ≤ (2 + )ce
+(cid:113)(cid:80)t
+(cid:107)L0 − ˆLproj (cid:107)F ≤ (2 + )
+i=1(cid:107)C0,i − ˆCi(cid:107)2
+F ,
+1−/2 , r)-coherent, and, for each i ∈ {1, . . . , t}, Bi
+A(X) be the event that a matrix X is ( rµ2
+√
+be the event that (cid:107)C0,i − ˆCi(cid:107)F > ce
+ml∆.
+Note that, by assumption,
+l ≥ cµ2 r2 (m + n)nβ log2 (m + n)/(s2 ) ≥ crµ log(n)2β log(m + n)/2
+≥ crµ log(n)((2β − 2) log(¯n) + log(2))/2 = crµ log(n) log(2¯n2β−2 )/2 .
+
+945
+
+Mackey, Talwalkar and Jordan
+
+Hence the Coherence Master Theorem (Theorem 12) guarantees that, with probability at
+least 1 − ¯n2−2β , H holds and the event A(C0,i ) holds for each i. Since G holds whenever H
+iA(C0,i ) ∩ (cid:84)
+i ) ≥ P(H ∩ (cid:84)
+P(G) ≥ P(H ∩ (cid:84)
+holds and B c
+i holds for each i, we have
+= P(H ∩ (cid:84)
+iA(C0,i ))P((cid:84)
+i | H ∩ (cid:84)
+iB c
+iB c
+= P(H ∩ (cid:84)
+iA(C0,i ))(1 − P((cid:83)
+iBi | H ∩ (cid:84)
+i )
+iB c
+iA(C0,i ))
+≥ (1 − ¯n2−2β )(1 − (cid:80)
+iA(C0,i )))
+≥ 1 − ¯n2−2β − (cid:80)
+iP(Bi | A(C0,i )))
+iP(Bi | A(C0,i )).
+To prove our desired claim, it therefore suﬃces to show
+P(Bi | A(C0,i )) ≤ 4 log(¯n)¯n2−2β + ¯n−2β ≤ 5 log(¯n)¯n2−2β
+
+.
+
+and
+
+β (cid:48) (cid:44)
+
+β log(¯n)
+log(max(m, l))
+
+for each i.
+For each i, let Di be the event that si < 32µ(cid:48) r(m + l)β (cid:48) log2 (m + l), where si is the
+number of revealed entries in C0,i ,
+µ(cid:48) (cid:44) µ2 r
+1 − /2
+,
+By Theorem 10 and our choice of β (cid:48) ,
+P(Bi | A(C0,i )) ≤ P(Bi | A(C0,i ), Dc
+i ) + P(Di | A(C0,i ))
+≤ 4 log(max(m, l)) max(m, l)2−2β (cid:48)
++ P(Di )
+≤ 4 log(¯n)¯n2−2β + P(Di ).
+Further, since the support of S0 is uniformly distributed and of cardinality s, the variable si
+has a hypergeometric distribution with E(si ) = sl
+P(si ≤ E(si ) − st) ≤ exp(cid:0)−2st2(cid:1).
+n and hence satisﬁes Hoeﬀding’s inequality
+for the hypergeometric distribution (Hoeﬀding, 1963, Section 6):
+Since, by assumption,
+s ≥ cµ2 r2 (m + n)nβ log2 (m + n)/(l2 ) ≥ 64µ(cid:48) r(m + l)nβ (cid:48) log2 (m + l)/l,
+sl2/n2 ≥ cµ2 r2 (m + n)lβ log2 (m + n)/(n2 ) ≥ 4 log(¯n)β ,
+(cid:18)
+(cid:18) l
+(cid:19)(cid:19)
+− 32µ(cid:48) r(m + l)β (cid:48) log2 (m + l)
+(cid:19)
+(cid:18)
+(cid:19)(cid:19)
+(cid:18) l
+(cid:18)
+si < E(si ) − s
+s
+n
+(cid:18)
+(cid:19)
+si < E(si ) − s
+− l
+si < E(si ) − s
+= P
+2n
+n
+− sl2
+≤ exp
+≤ exp(−2 log( ¯n)β ) = ¯n−2β .
+2n2
+Hence, P(Bi | A(C0,i )) ≤ 4 log(¯n)¯n2−2β + ¯n−2β for each i, and the DFC-Proj result follows.
+Since, p ≥ 242 r log(14¯n2β−2 )/2 , the DFC-RP bound follows in an identical manner
+from the Coherence Master Theorem (Theorem 12).
+
+it follows that
+
+l
+2n
+
+and
+
+P(Di ) = P
+
+≤ P
+
+946
+
+Distributed Matrix Completion and Robust Factorization
+
+√
+
+H.2 Proof of DFC-Nys Bound
+For DFC-Nys, let BC be the event that (cid:107)C0 − ˆC(cid:107)F > ce
+√
+ml∆ and BR be the event that
+(cid:107)R0 − ˆR(cid:107)F > ce
+dn∆. The Coherence Master Theorem (Theorem 12) and our choice of
+d ≥ clµ0 ( ˆC)(2β − 1) log2 (4¯n)¯n/(n2 ) ≥ clµ0 ( ˆC) log(m) log(4¯n2β−2 )/2
+(cid:113)
+guarantee that, with probability at least (1 − ¯n2−2β )(1 − ¯n2−2β − 0.2) ≥ 1 − 2¯n2−2β − 0.2,
+F + (cid:107)R0 − ˆR(cid:107)2
+(cid:107)C0 − ˆC(cid:107)2
+(cid:107)L0 − ˆLnys(cid:107)F ≤ (2 + 3)
+F ,
+and both A(C) and A(R) hold. Moreover, since
+d ≥ clµ0 ( ˆC)(2β − 1) log2 (4¯n)¯n/(n2 ) ≥ cµ2 r2 (m + n)¯nβ log2 (m + n)/(s2 ),
+reasoning identical to the DFC-Proj case yields P(BC | A(C)) ≤ 4 log(¯n)¯n2−2β + ¯n−2β and
+P(BR | A(R)) ≤ 4 log( ¯n)¯n2−2β + ¯n−2β , and the DFC-Nys bound follows as above.
+
+Appendix I. Proof of Corollary 16: DFC-RMF under Incoherence
+
+I.1 Proof of DFC-Pro j and DFC-RP Bounds
+We begin by proving the DFC-Proj bound. Let G be the event that
+√
+(cid:107)L0 − ˆLproj (cid:107)F ≤ (2 + )c(cid:48)
+mn∆
+e
+(cid:113)(cid:80)t
+for the constant c(cid:48)
+e deﬁned in Theorem 11, H be the event that
+(cid:107)L0 − ˆLproj (cid:107)F ≤ (2 + )
+i=1(cid:107)C0,i − ˆCi(cid:107)2
+F ,
+1−/2 , r)-coherent, and, for each i ∈ {1, . . . , t}, Bi
+A(X) be the event that a matrix X is ( rµ2
+√
+be the event that (cid:107)C0,i − ˆCi(cid:107)F > c(cid:48)
+ml∆.
+e
+We may take ρr ≤ 1, and hence, by assumption,
+l ≥ cr2µ2β log2 (2¯n)/(2ρr ) ≥ crµ log(n) log(2¯nβ )/2 .
+
+Hence the Coherence Master Theorem (Theorem 12) guarantees that, with probability at
+least 1 − ¯n−β , H holds and the event A(C0,i ) holds for each i. Since G holds whenever H
+P(G) ≥ P(H ∩ (cid:84)
+i ) ≥ P(H ∩ (cid:84)
+iA(C0,i ) ∩ (cid:84)
+holds and B c
+i holds for each i, we have
+= P(H ∩ (cid:84)
+iA(C0,i ))P((cid:84)
+i | H ∩ (cid:84)
+iB c
+iB c
+= P(H ∩ (cid:84)
+iA(C0,i ))(1 − P((cid:83)
+iBi | H ∩ (cid:84)
+i )
+iB c
+iA(C0,i ))
+≥ (1 − ¯n−β )(1 − (cid:80)
+iA(C0,i )))
+≥ 1 − ¯n−β − (cid:80)
+iP(Bi | A(C0,i )))
+iP(Bi | A(C0,i )).
+To prove our desired claim, it therefore suﬃces to show
+P(Bi | A(C0,i )) ≤ (cp + 1) ¯n−β
+
+947
+
+Mackey, Talwalkar and Jordan
+
+for each i.
+Deﬁne ¯m (cid:44) max(m, l) and β (cid:48)(cid:48) (cid:44) β log(¯n)/ log( ¯m) ≤ β (cid:48) . By assumption,
+≤ ρr l(1 − /2)
+≤ ρrm(1 − /2)
+ρr l2
+r ≤
+and r ≤
+ρrm
+.
+cµ2 rβ log2 (2¯n)
+µ2 r log2 ( ¯m)
+2µ2 r log2 (¯n)
+µ2 r log2 ( ¯m)
+P(Bi | A(C0,i )) ≤ P(cid:0)Bi | A(C0,i ), si ≤ (1 − ρsβ (cid:48)(cid:48) )ml(cid:1) + P(cid:0)si > (1 − ρsβ (cid:48)(cid:48) )ml | A(C0,i )(cid:1)
+Hence, by Theorem 11 and the deﬁnitions of β (cid:48) and β (cid:48)(cid:48) ,
++ P(cid:0)si > (1 − ρsβ (cid:48)(cid:48) )ml(cid:1)
+≤ cp ¯n−β + P(cid:0)si > (1 − ρsβ (cid:48) )ml(cid:1),
+≤ cp ¯m−β (cid:48)(cid:48)
+where si is the number of corrupted entries in C0,i . Further, since the support of S0 is
+uniformly distributed and of cardinality s, the variable si has a hypergeometric distribution
+with E(si ) = sl
+n and hence satisﬁes Bernstein’s inequality for the hypergeometric (Hoeﬀding,
+P(si ≥ E(si ) + st) ≤ exp(cid:0)−st2/(2σ2 + 2t/3)(cid:1) ≤ exp(cid:0)−st2n/4l(cid:1),
+1963, Section 6):
+(cid:19)(cid:19)
+(cid:18)
+(cid:18) (1 − ρsβ (cid:48) )ml
+n ) ≤ l
+n (1 − l
+for all 0 ≤ t ≤ 3l/n and σ2 (cid:44) l
+P(cid:0)si > (1 − ρsβ (cid:48) )ml(cid:1) = P
+n . It therefore follows that
+(cid:18) (1 − ρsβ (cid:48) )
+(cid:18)
+(cid:19)(cid:19)
+− l
+si > E(si ) + s
+n
+s
+(cid:19)2(cid:33)
+(cid:32)
+− 1
+l
+(cid:18) (1 − ρsβ (cid:48) )
+(1 − ρsβs )
+= P
+si > E(si ) + s
+n
+− 1
+−s
+l
+(cid:18)
+(cid:19)
+(1 − ρsβs )
+4n
+(ρsβs − ρsβ (cid:48) )2
+− ml
+≤ ¯n−β
+(cid:16) (1−ρs β (cid:48) )
+(cid:17) ≤ 3l/n whenever 4βs −
+(1 − ρsβs )
+= exp
+4
+(1−ρs βs ) − 1
+by our assumptions on s and l and the fact that l
+n
+3/ρs ≤ β (cid:48) . Hence, P(Bi | A(C0,i )) ≤ (cp + 1)¯n−β for each i, and the DFC-Proj result
+follows.
+Since, p ≥ 242 r log(14¯nβ )/2 , the DFC-RP bound follows in an identical manner from
+the Coherence Master Theorem (Theorem 12).
+
+≤ exp
+
+I.2 Proof of DFC-Nys Bound
+For DFC-Nys, let BC be the event that (cid:107)C0 − ˆC(cid:107)F > c(cid:48)
+√
+ml∆ and BR be the event that
+e
+(cid:107)R0 − ˆR(cid:107)F > c(cid:48)
+dn∆. The Coherence Master Theorem (Theorem 12) and our choice of
+e
+d ≥ clµ0 ( ˆC)β log2 (4¯n)/2 guarantee that, with probability at least (1− ¯n−β )(1− ¯n−β −0.2) ≥
+(cid:113)
+1 − 2¯n−β − 0.2,
+F + (cid:107)R0 − ˆR(cid:107)2
+(cid:107)C0 − ˆC(cid:107)2
+F ,
+
+(cid:107)L0 − ˆLnys(cid:107)F ≤ (2 + 3)
+
+√
+
+948
+
+Distributed Matrix Completion and Robust Factorization
+
+and both A(C) and A(R) hold. Moreover, since
+d ≥ clµ0 ( ˆC)β log2 (4¯n)/2 ≥ cµ2 r2β log2 (¯n)/(2ρr ),
+reasoning identical to the DFC-Proj case yields
+P(BC | A(C)) ≤ (cp + 1)¯n−β
+and P(BR | A(R)) ≤ (cp + 1) ¯n−β ,
+and the DFC-Nys bound follows as above.
+
+Appendix J. Proof of Theorem 10: Noisy MC under Incoherence
+
+In the spirit of Cand`es and Plan (2010), our proof will extend the noiseless analysis of Recht
+(2011) to the noisy matrix completion setting. As suggested in Gross and Nesme (2010),
+we will obtain strengthened results, even in the noiseless case, by reasoning directly about
+the without-replacement sampling model, rather than appealing to a with-replacement sur-
+rogate, as done in Recht (2011).
+: X ∈ Rr×n , Y ∈
+the compact SVD of L0 , we let T = {UL0 X + YV(cid:62)
+For UL0 ΣL0 V(cid:62)
+Rm×r }, PT denote orthogonal pro jection onto the space T , and PT ⊥ represent orthogonal
+L0
+L0
+pro jection onto the orthogonal complement of T . We further deﬁne I as the identity
+operator on Rm×n and the spectral norm of an operator A : Rm×n → Rm×n as (cid:107)A(cid:107)2 =
+sup(cid:107)X(cid:107)F ≤1 (cid:107)A(X)(cid:107)F .
+We begin with a theorem providing suﬃcient conditions for our desired estimation guar-
+antee.
+(cid:13)(cid:13)(cid:13)PT PΩPT − s
+(cid:13)(cid:13)(cid:13)2
+Theorem 29 Under the assumptions of Theorem 10, suppose that
+≤ 1
+PT
+mn
+2
+s
+mn
+(cid:114) s
+and that there exists a Y = PΩ (Y) ∈ Rm×n satisfying
+(cid:107)PT (Y) − UL0 V(cid:62)
+L0 (cid:107)F ≤
+(cid:114)
+32mn
+2m2n
+∆ ≤ c(cid:48)(cid:48)
+(cid:107)L0 − ˆL(cid:107)F ≤ 8
+1
++ m +
+mn∆.
+e
+16
+s
+Proof We may write ˆL as L0 + G + H, where PΩ (G) = G and PΩ (H) = 0. Then, under
+ΩPT (H)(cid:11) ≥ (cid:104)H, PT PΩPT (H)(cid:105) ≥ s
+F = (cid:10)H, PT P 2
+Eq. (9),
+(cid:107)PT (H)(cid:107)2
+(cid:107)PΩPT (H)(cid:107)2
+F .
+2mn
+Furthermore, by the triangle inequality, 0 = (cid:107)PΩ (H)(cid:107)F ≥ (cid:107)PΩPT (H)(cid:107)F − (cid:107)PΩPT ⊥ (H)(cid:107)F .
+(cid:114) s
+Hence, we have
+2mn
+
+(cid:107)PT (H)(cid:107)F ≤ (cid:107)PΩPT (H)(cid:107)F ≤ (cid:107)PΩPT ⊥ (H)(cid:107)F ≤ (cid:107)PT ⊥ (H)(cid:107)F ≤ (cid:107)PT ⊥ (H)(cid:107)∗ ,
+
+(cid:107)PT ⊥ (Y)(cid:107)2 <
+
+Then,
+
+(9)
+
+(10)
+
+(11)
+
+and
+
+1
+2
+
+.
+
+√
+
+949
+
+Mackey, Talwalkar and Jordan
+
+where the penultimate inequality follows as PΩ is an orthogonal pro jection operator.
+(cid:10)U⊥V(cid:62)
+⊥ , PT ⊥ (H)(cid:11) = (cid:107)PT ⊥ (H)(cid:107)∗ and note that
+Next we select U⊥ and V⊥ such that [UL0 , U⊥ ] and [VL0 , V⊥ ] are orthonormal and
+(cid:107)L0 + H(cid:107)∗ ≥ (cid:68)
+(cid:69)
+(cid:69)
+(cid:68)
+L0 + U⊥V(cid:62)
+UL0 V(cid:62)
+⊥ , L0 + H
+(cid:68)
+(cid:69)
+(cid:69) − (cid:104)PT ⊥ (Y), PT ⊥ (H)(cid:105)
+(cid:68)
+⊥ − Y , H
+= (cid:107)L0(cid:107)∗ +
+UL0 V(cid:62)
+L0 + U⊥V(cid:62)
+⊥ , PT ⊥ (H)
+L0 − PT (Y), PT (H)
+= (cid:107)L0(cid:107)∗ +
+UL0 V(cid:62)
+U⊥V(cid:62)
++
+(cid:114) s
+L0 − PT (Y)(cid:107)F (cid:107)PT (H)(cid:107)F + (cid:107)PT ⊥ (H)(cid:107)∗ − (cid:107)PT ⊥ (Y)(cid:107)2(cid:107)PT ⊥ (H)(cid:107)∗
+≥ (cid:107)L0(cid:107)∗ − (cid:107)UL0 V(cid:62)
+> (cid:107)L0(cid:107)∗ +
+(cid:107)PT ⊥ (H)(cid:107)∗ −
+(cid:107)PT (H)(cid:107)F
+1
+2
+32mn
+(cid:107)PT ⊥ (H)(cid:107)F
+≥ (cid:107)L0(cid:107)∗ +
+1
+4
+
+where the ﬁrst inequality follows from the variational representation of the trace norm,
+(cid:107)A(cid:107)∗ = sup(cid:107)B(cid:107)2≤1 (cid:104)A, B(cid:105), the ﬁrst equality follows from the fact that (cid:104)Y , H(cid:105) = 0 for
+Y = PΩ (Y), the second inequality follows from H¨older’s inequality for Schatten p-norms,
+the third inequality follows from Eq. (10), and the ﬁnal inequality follows from Eq. (11).
+Since L0 is feasible for Eq. (1), (cid:107)L0(cid:107)∗ ≥ (cid:107) ˆL(cid:107)∗ , and, by the triangle inequality, (cid:107) ˆL(cid:107)∗ ≥
+(cid:107)L0 + H(cid:107)∗−(cid:107)G(cid:107)∗ . Since (cid:107)G(cid:107)∗ ≤ √
+m(cid:107)G(cid:107)F and (cid:107)G(cid:107)F ≤ (cid:107)PΩ ( ˆL − M)(cid:107)F +(cid:107)PΩ (M − L0 )(cid:107)F ≤
+2∆, we conclude that
+(cid:18) 2mn
+(cid:19)
+F + (cid:107)PT ⊥ (H)(cid:107)2
+F = (cid:107)PT (H)(cid:107)2
+F + (cid:107)G(cid:107)2
+(cid:107)L0 − ˆL(cid:107)2
+F
+(cid:19)
+(cid:18) 2mn
+≤
+F + (cid:107)G(cid:107)2
+(cid:107)PT ⊥ (H)(cid:107)2
++ 1
+F
+s
+(cid:19)
+(cid:18) 2m2n
+(cid:107)G(cid:107)2∗ + (cid:107)G(cid:107)2
+≤ 16
++ 1
+F
+s
+≤ 64
+1
+(cid:114)
+16
+s
+
++ m +
+
+Hence
+
+∆2 .
+
+√
+
+mn∆
+
+2m2n
+(cid:107)L0 − ˆL(cid:107)F ≤ 8
+s
+for some constant c(cid:48)(cid:48)
+e , by our assumption on s.
+
++ m +
+
+∆ ≤ c(cid:48)(cid:48)
+e
+
+1
+16
+
+To show that the suﬃcient conditions of Theorem 29 hold with high probability, we will
+require four lemmas. The ﬁrst establishes that the operator PT PΩPT is nearly an isometry
+on T when suﬃciently many entries are sampled.
+(cid:114)
+(cid:13)(cid:13)(cid:13)PT PΩPT − s
+(cid:13)(cid:13)(cid:13)2
+Lemma 30 For al l β > 1,
+PT
+≤
+mn
+s
+mn
+with probability at least 1 − 2n2−2β provided that s > 16
+3 µr(n + m)β log(n).
+
+16µr(m + n)β log(n)
+3s
+
+950
+
+Distributed Matrix Completion and Robust Factorization
+
+The second states that a sparsely but uniformly observed matrix is close to a multiple
+of the original matrix under the spectral norm.
+(cid:114)
+(cid:13)(cid:13)(cid:13)(cid:16) mn
+(cid:13)(cid:13)(cid:13)2
+PΩ − I (cid:17)
+Lemma 31 Let Z be a ﬁxed matrix in Rm×n . Then for al l β > 1,
+8βmn2 log(m + n)
+(cid:107)Z(cid:107)∞
+≤
+(Z)
+3s
+s
+with probability at least 1 − (m + n)1−β provided that s > 6βm log(m + n).
+The third asserts that the matrix inﬁnity norm of a matrix in T does not increase under
+the operator PT PΩ .
+(cid:114)
+(cid:13)(cid:13)(cid:13) mn
+(cid:13)(cid:13)(cid:13)∞
+Lemma 32 Let Z ∈ T be a ﬁxed matrix. Then for al l β > 2
+≤
+PT PΩ (Z) − Z
+s
+with probability at least 1 − 2n2−β provided that s > 8
+3 βµr(m + n) log(n).
+These three lemmas were proved in Recht (2011, Theorem 6, Theorem 7, and Lemma 8)
+under the assumption that entry locations in Ω were sampled with replacement. They
+admit identical proofs under the sampling without replacement model by noting that the
+referenced Noncommutative Bernstein Inequality (Recht, 2011, Theorem 4) also holds under
+sampling without replacement, as shown in Gross and Nesme (2010).
+Lemma 30 guarantees that Eq. (9) holds with high probability. To construct a matrix
+Y = PΩ (Y) satisfying Eq. (10), we consider a sampling with batch replacement scheme rec-
+ommended in Gross and Nesme (2010) and developed in Chen et al. (2011). Let ˜Ω1 , . . . , ˜Ωp
+be independent sets, each consisting of q random entry locations sampled without replace-
+ment, where pq = s. Let ˜Ω = ∪p
+˜Ωi , and note that there exist p and q satisfying
+i=1
+and p ≥ 3
+q ≥ 128
+3
+4
+
+8βµr(m + n) log(n)
+3s
+
+µr(m + n)β log(m + n)
+
+(cid:107)Z(cid:107)∞
+
+log(n/2).
+
+It suﬃces to establish Eq. (10) under this batch replacement scheme, as shown in the next
+lemma.
+Lemma 33 For any location set Ω0 ⊂ {1, . . . , m} × {1, . . . , n}, let A(Ω0 ) be the event that
+there exists Y = PΩ0 (Y) ∈ Rm×n satisfying Eq. (10). If Ω(s) consists of s locations sampled
+uniformly without replacement and ˜Ω(s) is sampled via batch replacement with p batches of
+size q for pq = s, then P(A( ˜Ω(s))) ≤ P(A(Ω(s))).
+(cid:17)
+(cid:16)
+s(cid:88)
+Proof As sketched in Gross and Nesme (2010)
+A( ˜Ω(s))
+=
+≤ s(cid:88)
+i=1
+≤ s(cid:88)
+i=1
+i=1
+
+P(| ˜Ω| = i)P(A(Ω(s))) = P(A(Ω(s))),
+
+P(| ˜Ω| = i)P(A( ˜Ω(i)) | | ˜Ω| = i)
+
+P(| ˜Ω| = i)P(A(Ω(i)))
+
+P
+
+951
+
+Mackey, Talwalkar and Jordan
+
+≤ 1
+2
+
+=
+
+(12)
+
+(cid:13)(cid:13)(cid:13)(cid:13)F
+
+≤ 1
+2
+
+(cid:107)Wk−1(cid:107)F
+
+PT P ˜Ωk
+PT )(Wk−1 )
+(cid:112)32rmn/s ,
+
+since the probability of existence never decreases with more entries sampled without replace-
+ment and, given the size of ˜Ω, the locations of ˜Ω are conditionally distributed uniformly
+(without replacement).
+(cid:80)k
+We now follow the construction of Recht (2011) to obtain Y = P ˜Ω (Y) satisfying
+−
+j=1 P ˜Ωj
+Eq. (10). Let W0 = UL0 V(cid:62)
+(Wj−1 ) and Wk = UL0 V(cid:62)
+and deﬁne Yk = mn
+L0
+L0
+q
+(cid:13)(cid:13)(cid:13)2
+(cid:13)(cid:13)(cid:13)PT P ˜Ωk
+PT (Yk ) for k = 1, . . . , p. Assume that
+PT − q
+PT
+mn
+q
+mn
+(cid:13)(cid:13)(cid:13)(cid:13)(PT − mn
+(cid:13)(cid:13)(cid:13)(cid:13)F
+(cid:13)(cid:13)(cid:13)(cid:13)Wk−1 − mn
+for all k . Then
+PT P ˜Ωk
+(cid:107)Wk (cid:107)F =
+(Wk−1 )
+q
+q
+and hence (cid:107)Wk (cid:107)F ≤ 2−k (cid:107)W0(cid:107)F = 2−k√
+r . Since
+log2 (n/2) ≥ log2
+log(n/2) ≥ 1
+p ≥ 3
+4
+2
+Y (cid:44) Yp satisﬁes the ﬁrst condition of Eq. (10).
+(cid:13)(cid:13)(cid:13)(cid:13)∞
+(cid:13)(cid:13)(cid:13)(cid:13)Wk−1 − mn
+The second condition of Eq. (10) follows from the assumptions
+(cid:115)
+≤ 1
+(cid:107)Wk−1(cid:107)∞
+PT P ˜Ωk
+(cid:13)(cid:13)(cid:13)(cid:13)(cid:18) mn
+(cid:13)(cid:13)(cid:13)(cid:13)2
+(cid:19)
+(Wk−1 )
+2
+q
+8mn2β log(m + n)
+P ˜Ωk
+(Wk−1 )
+q
+3q
+for all k , since Eq. (13) implies (cid:107)Wk (cid:107)∞ ≤ 2−k (cid:107)UL0 V(cid:62)
+(cid:107)∞ , and thus
+(cid:13)(cid:13)(cid:13)(cid:13)PT ⊥ (
+(cid:13)(cid:13)(cid:13)(cid:13)2
+(cid:13)(cid:13)(cid:13)(cid:13) mn
+p(cid:88)
+(cid:107)PT ⊥ (Yp )(cid:107)2 ≤ p(cid:88)
+L0
+(cid:13)(cid:13)(cid:13)(cid:13)2
+(cid:13)(cid:13)(cid:13)(cid:13)(
+=
+≤ p(cid:88)
+q
+j=1
+j=1
+− I )(Wj−1 )
+mn
+(cid:115)
+≤ p(cid:88)
+q
+j=1
+(cid:107)Wj−1(cid:107)∞
+p(cid:88)
+j=1
+j=1
+
+(cid:13)(cid:13)(cid:13)(cid:13)2
+(Wj−1 ) − Wj−1 )
+
+8mn2β log(m + n)
+(cid:115)
+3q
+
+32µrnβ log(m + n)
+3q
+
+PT ⊥ P ˜Ωj
+
+(Wj−1 )
+
+(cid:107)Wk−1(cid:107)∞
+
+2−j
+
+8mn2β log(m + n)
+3q
+
+(cid:107)UW V(cid:62)
+W (cid:107)∞ <
+
+(13)
+
+(14)
+
+− I
+
+≤
+
+mn
+q
+
+P ˜Ωj
+
+= 2
+
+< 1/2
+
+P ˜Ωj
+
+(cid:115)
+
+by our assumption on q . The ﬁrst line applies the triangle inequality; the second holds since
+Wj−1 ∈ T for each j ; the third follows because PT ⊥ is an orthogonal pro jection; and the
+ﬁnal line exploits (µ, r)-coherence.
+
+952
+
+Distributed Matrix Completion and Robust Factorization
+
+We conclude by bounding the probability of any assumed event failing. Lemma 30
+implies that Eq. (9) fails to hold with probability at most 2n2−2β . For each k , Eq. (12)
+fails to hold with probability at most 2n2−2β by Lemma 30, Eq. (13) fails to hold with
+probability at most 2n2−2β by Lemma 32, and Eq. (14) fails to hold with probability at
+most (m + n)1−2β by Lemma 31. Hence, by the union bound, the conclusion of Theorem 29
+holds with probability at least
+1 − 2n2−2β − 3
+log(n/2)(4n2−2β + (m + n)1−2β ) ≥ 1 − 15
+4
+4
+
+log(n)n2−2β ≥ 1 − 4 log(n)n2−2β .
+
+= Tr
+
+= Tr
+
+1
+n
+
+P
+
+By assumption,
+
+Appendix K. Proof of Lemma 17: Conservation of Non-Spikiness
+l(cid:88)
+LC L(cid:62)
+L(ja ) (L(ja ) )(cid:62)
+C =
+a=1
+where {j1 , . . . , jl } are random indices drawn uniformly and without replacement from {1, . . . , n}.
+(cid:34)
+(cid:34) l(cid:88)
+(cid:35)(cid:35)
+(cid:105)(cid:105)
+(cid:104)
+(cid:104)
+(cid:105)
+(cid:104)(cid:107)LC (cid:107)2
+Hence, we have that
+LC L(cid:62)
+L(ja ) (L(ja ) )(cid:62)
+ l(cid:88)
+ =
+E
+Tr
+= E
+E
+LL(cid:62)(cid:105)
+(cid:104)
+n(cid:88)
+C
+F
+a=1
+L(j ) (L(j ) )(cid:62)
+l
+Tr
+n
+a=1
+j=1
+Since (cid:107)L(j )(cid:107)4 ≤ m2(cid:107)L(cid:107)4∞ for all j ∈ {1, . . . , n}, Hoeﬀding’s inequality for sampling
+(cid:16)−22(cid:107)L(cid:107)4
+(cid:16)
+(cid:17) ≤ exp
+(cid:17)
+without replacement (Hoeﬀding, 1963, Section 6) implies
+= exp(cid:0)−22 l/α4 (L)(cid:1) ≤ δ,
+F l2/(n2 lm2(cid:107)L(cid:107)4∞ )
+F ≥ (cid:107)LC (cid:107)2
+(1 − )(l/n)(cid:107)L(cid:107)2
+F
+√
+n√
+≤
+1
+1
+(cid:107)L(cid:107)F
+(cid:107)LC (cid:107)F
+l
+1 − 
+with probability at least 1 − δ . Since, (cid:107)LC (cid:107)∞ ≤ (cid:107)L(cid:107)∞ almost surely, we have that
+√
+√
+ml(cid:107)LC (cid:107)∞
+mn(cid:107)L(cid:107)∞
+α(L)√
+√
+≤
+(cid:107)LC (cid:107)F
+1 − (cid:107)L(cid:107)F
+1 − 
+with probability at least 1 − δ as desired.
+
+by our choice of l. Hence,
+
+α(LC ) =
+
+=
+
+(cid:107)L(cid:107)2
+F .
+
+l
+n
+
+√
+
+=
+
+Appendix L. Proof of Theorem 18: Column Pro jection under
+Non-Spikiness
+
+We now give a proof of Theorem 18. While the results of this section are stated in terms of
+i.i.d. with-replacement sampling of columns and rows, a simple argument due to (Hoeﬀding,
+
+953
+
+Mackey, Talwalkar and Jordan
+
+1963, Section 6) implies the same conclusions when columns and rows are sampled without
+replacement.
+Our proof builds upon two key results from the randomized matrix approximation lit-
+erature. The ﬁrst relates column pro jection to randomized matrix multiplication:
+Theorem 34 (Theorem 2 of Drineas et al. 2006b) Let G ∈ Rm×l be a matrix of l
+columns of A ∈ Rm×n , and let r be a nonnegative integer. Then,
+√
+r(cid:107)AA(cid:62) − (n/l)GG(cid:62)(cid:107)F .
+(cid:107)A − GrG+
+r A(cid:107)F ≤ (cid:107)A − Ar (cid:107)F +
+The second allows us to bound (cid:107)AA(cid:62) − (n/l)GG(cid:62)(cid:107)F in probability when entries are
+bounded:
+Lemma 35 (Lemma 2 of Drineas et al. 2006a) Given a failure probability δ ∈ (0, 1]
+and matrices A ∈ Rm×k and B ∈ Rk×n with (cid:107)A(cid:107)∞ ≤ b and (cid:107)B(cid:107)∞ ≤ b, suppose that G is
+a matrix of l columns drawn uniformly with replacement from A and that H is a matrix of
+the corresponding l rows of B. Then, with probability at least 1 − δ ,
+(cid:112)8 log(2mn/δ) ∀i, j.
+|(AB)ij − (n/l)(GH)ij | ≤ kb2√
+l
+√
+Under our assumption, (cid:107)M(cid:107)∞ is bounded by α/
+mn. Hence, Lemma 35 with A = M
+and B = M(cid:62) guarantees
+
+F ≤ m2n2α48 log(2mn/δ)
+(cid:107)MM(cid:62) − (n/l)CC(cid:62)(cid:107)2
+m2n2 l
+with probability at least 1 − δ , by our choice of l.
+Now, Theorem 34 implies that
+r M(cid:107)F ≤ (cid:107)M − Mr (cid:107)F +
+(cid:107)M − CC+M(cid:107)F ≤ (cid:107)M − CrC+
+≤ (cid:107)M − L(cid:107)F + 
+
+√
+
+≤ 2/r
+
+r(cid:107)MM(cid:62) − (n/l)CC(cid:62)(cid:107)F
+
+with probability at least 1 − δ , as desired.
+r))-spiky. Since (cid:112)1 + /(4
+Deﬁne A(X) as the event that a matrix X is (α(cid:112)1 + /(4
+Appendix M. Proof of Theorem 20: Spikiness Master Theorem
+√
+√
+r) ≤
+√
+√
+1.25 for all  ∈ (0, 1] and r ≥ 1, X is (
+1.25α)-spiky whenever A(X) holds.
+Let L0 = [C0,1 , . . . , C0,t ] and ˜L = [ ˆC1 , . . . , ˆCt ], and deﬁne H as the event (cid:107) ˜L − ˆLproj (cid:107)F ≤
+(cid:107)L0 − ˜L(cid:107)F + . When H holds, we have that
+(cid:113)(cid:80)t
+(cid:107)L0 − ˆLproj (cid:107)F ≤ (cid:107)L0 − ˜L(cid:107)F + (cid:107) ˜L − ˆLproj (cid:107)F ≤ 2(cid:107)L0 − ˜L(cid:107)F + 
+by the triangle inequality, and hence it suﬃces to lower bound P(H ∩ (cid:84)
+i=1(cid:107)C0,i − ˆCi(cid:107)2
+= 2
+F + ,
+By assumption,
+l ≥ 13rα4 log(4mn/δ)/2 ≥ α4 log(2n/δ)/(2˜2 )
+
+iA(C0,i )).
+
+954
+
+Distributed Matrix Completion and Robust Factorization
+
+it follows that
+
+r) ≥ 1
+
+1 − ˜ with
+
+√
+√
+r). Hence, for each i, Lemma 17 implies that α(C0,i ) ≤ α/
+where ˜ (cid:44) /(5
+probability at least 1 − δ/(2n). Since
+√
+√
+√
+√
+r)) = 1 + (1 − /
+(1 − /(5
+≤ (cid:113)
+r)/(20
+r))(1 + /(4
+1(cid:112)1 − /(5
+√
+1√
+√
+1 + /(4
+=
+r),
+1 − ˜
+r)
+so that each event A(C0,i ) also holds with probability at least 1 − δ/(2n).
+mn for all i implies that (cid:107) ˜L(cid:107)∞ ≤ √
+Our assumption that (cid:107) ˆCi(cid:107)∞ ≤ √
+√
+√
+mn.
+1.25α/
+1.25α/
+Our choice of l, with a factor of log(4mn/δ), therefore implies that H holds with probability
+P(H ∩ (cid:84)
+iA(C0,i )) ≥ 1 − P(H c ) − (cid:80)
+at least 1 − δ/2 by Theorem 18. Hence, by the union bound,
+iP(A(C0,i )c ) ≥ 1 − δ/2 − tδ/(2n) ≥ 1 − δ.
+To establish the DFC-RP bound, redeﬁne H as the event (cid:107) ˜L − Lrp(cid:107)F ≤ (2+)(cid:107)L0 − ˜L(cid:107)F .
+Since p ≥ 242 r log(14/δ)/2 , H holds with probability at least 1 − δ/2 by Corollary 9, and
+the DFC-RP bound follows as above.
+
+H be the event that
+
+Appendix N. Proof of Corollary 22: Noisy MC under Non-Spikiness
+N.1 Proof of DFC-Pro j Bound
+(cid:112)
+We begin by proving the DFC-Proj bound. Let G be the event that
+(cid:107)L0 − ˆLproj (cid:107)F ≤ 2
+c1 max((l/n)ν 2 , 1)/β + ,
+(cid:113)(cid:80)t
+i=1(cid:107)C0,i − ˆCi(cid:107)2
+(cid:107)L0 − ˆLproj (cid:107)F ≤ 2
+F + ,
+F > (l/n)c1 max(cid:0)(l/n)ν 2 , 1(cid:1)/β .
+√
+1.25α)-spiky, and, for each i ∈ {1, . . . , t}, Bi be
+A(X) be the event that a matrix X is (
+the event that (cid:107)C0,i − ˆCi(cid:107)2
+√
+By deﬁnition, (cid:107) ˆCi(cid:107)∞ ≤ √
+(cid:114)
+1.25α/
+ml for all i. Furthermore, we have assumed that
+l ≥ 13(c3 + 1)
+(m + n) log(m + n)β
+nrα4 log(4mn)/2
+s
+≥ 13rα4 (log(4mn) + c3 log(m + n))/2 ≥ 13rα4 log(4mn(m + l)c3 )/2 .
+Hence the Spikiness Master Theorem (Theorem 20) guarantees that, with probability at
+least 1 − exp(−c3 log(m + l)), H holds and the event A(C0,i ) holds for each i. Since G holds
+P(G) ≥ P(H ∩ (cid:84)
+i ) ≥ P(H ∩ (cid:84)
+iA(C0,i ) ∩ (cid:84)
+whenever H holds and B c
+i holds for each i, we have
+= P(H ∩ (cid:84)
+iA(C0,i ))P((cid:84)
+i | H ∩ (cid:84)
+iB c
+iB c
+= P(H ∩ (cid:84)
+iA(C0,i ))(1 − P((cid:83)
+iBi | H ∩ (cid:84)
+i )
+iB c
+≥ (1 − exp(−c3 log(m + l)))(1 − (cid:80)
+iA(C0,i ))
+≥ 1 − (c2 + 1) exp(−c3 log(m + l)) − (cid:80)
+iA(C0,i )))
+iP(Bi | A(C0,i )))
+iP(Bi | A(C0,i )).
+955
+
+Mackey, Talwalkar and Jordan
+
+To prove our desired claim, it therefore suﬃces to show
+P(Bi | A(C0,i )) ≤ (c2 + 1) exp(−c3 log(m + l))
+
+for each i.
+For each i, let Di be the event that si < 1.25α2β (n/l)r(m + l) log(m + l), where si is
+the number of revealed entries in C0,i . Since rank(C0,i ) ≤ rank(L0 ) = r and (cid:107)C0,i(cid:107)F ≤
+(cid:107)L0(cid:107)F ≤ 1, Corollary 19 implies that
+P(Bi | A(C0,i )) ≤ P(Bi | A(C0,i ), Dc
+i ) + P(Di | A(C0,i ))
+≤ c2 exp(−c3 log(m + l)) + P(Di ).
+
+(15)
+
+Further, since the support of S0 is uniformly distributed and of cardinality s, the vari-
+able si has a hypergeometric distribution with E(si ) = sl
+n and hence satisﬁes Hoeﬀding’s
+P(si ≤ E(si ) − st) ≤ exp(cid:0)−2st2(cid:1).
+inequality for the hypergeometric distribution (Hoeﬀding, 1963, Section 6):
+Our assumption on l implies that
+r(m + l) log(m + l) + (cid:112)c3 log(m + l)/(2s),
+≥ 169(c3 + 1)2α8β
+n
+r2 (m + n) log(m + n) log2 (4mn)/4
+ls
+≥ 1.25α2β
+n
+ls
+(cid:18) l
+(cid:18)
+(cid:19)(cid:19)
+(cid:16)
+(cid:17)
+si < E(si ) − s(cid:112)c3 log(m + l)/(2s)
+− 1.25α2β
+si < E(si ) − s
+n
+r(m + l) log(m + l)
+ls
+n
+= P
+≤ exp(−2sc3 log(m + l)/(2s)) = exp(−c3 log(m + l)).
+Combined with Eq. (15), this yields P(Bi | A(C0,i )) ≤ (c2 + 1) exp(−c3 log(m + l)) for each
+i, and the DFC-Proj result follows.
+
+and therefore
+
+l
+n
+
+P(Di ) = P
+
+N.2 Proof of DFC-RP Bound
+
+Let G be the event that
+(cid:107)L0 − ˆLrp(cid:107)F ≤ (2 + )
+
+(cid:112)
+c1 max((l/n)ν 2 , 1)/β
+(cid:113)(cid:80)t
+and H be the event that
+i=1(cid:107)C0,i − ˆCi(cid:107)2
+(cid:107)L0 − ˆLrp(cid:107)F ≤ (2 + )
+F .
+Since p ≥ 242 r log(14(m + l)c3 )/2 , the DFC-RP bound follows in an identical manner
+from the Spikiness Master Theorem (Theorem 20).
+
+956
+
+Distributed Matrix Completion and Robust Factorization
+
+References
+
+A. Agarwal, S. Negahban, and M. J. Wainwright. Noisy matrix decomposition via convex
+relaxation: Optimal rates in high dimensions. In International Conference on Machine
+Learning, 2011.
+
+E. J. Cand`es, X. Li, Y. Ma, and J. Wright. Robust principal component analysis? Journal
+of the ACM, 58(3):1–37, 2011.
+
+E.J. Cand`es and Y. Plan. Matrix completion with noise. Proceedings of the IEEE, 98(6):
+925 –936, 2010.
+
+V. Chandrasekaran, S. Sanghavi, P. A. Parrilo, and A. S. Willsky. Sparse and low-rank
+matrix decompositions. In Al lerton Conference on Communication, Control, and Com-
+puting, 2009.
+
+Y. Chen, H. Xu, C. Caramanis, and S. Sanghavi. Robust matrix completion and corrupted
+columns. In International Conference on Machine Learning, 2011.
+
+A. Das, M. Datar, A. Garg, and S. Ra jaram. Google news personalization: scalable online
+collaborative ﬁltering. In WWW, 2007.
+
+P. Drineas, R. Kannan, and M. W. Mahoney. Fast monte carlo algorithms for matrices
+ii: Computing a low-rank approximation to a matrix. SIAM J. Comput., 36(1):158–183,
+2006a.
+
+P. Drineas, R. Kannan, and M. W. Mahoney. Fast monte carlo algorithms for matrices i:
+Approximating matrix multiplication. SIAM J. Comput., 36(1):132–157, 2006b.
+
+P. Drineas, M. W. Mahoney, and S. Muthukrishnan. Relative-error CUR matrix decompo-
+sitions. SIAM Journal on Matrix Analysis and Applications, 30:844–881, 2008.
+
+B. Recht F. Niu, C. R´e, and S. J. Wright. Hogwild!: A lock-free approach to parallelizing
+stochastic gradient descent. In NIPS, 2011.
+
+A. Frieze, R. Kannan, and S. Vempala. Fast Monte-Carlo algorithms for ﬁnding low-rank
+approximations. In Foundations of Computer Science, 1998.
+
+R. Gemulla, E. Nijkamp, P. J. Haas, and Y. Sismanis. Large-scale matrix factorization with
+distributed stochastic gradient descent. In KDD, 2011.
+
+S. A. Goreinov, E. E. Tyrtyshnikov, and N. L. Zamarashkin. A theory of pseudoskeleton
+approximations. Linear Algebra and its Applications, 261(1-3):1 – 21, 1997.
+
+D. Gross and V. Nesme. Note on sampling without replacing from a ﬁnite collection of
+matrices. CoRR, abs/1001.2738, 2010.
+
+N. Halko, P. G. Martinsson, and J. A. Tropp. Finding structure with randomness: Prob-
+abilistic algorithms for constructing approximate matrix decompositions. SIAM Review,
+53(2):217–288, 2011.
+
+957
+
+Mackey, Talwalkar and Jordan
+
+W. Hoeﬀding. Probability inequalities for sums of bounded random variables. Journal of
+the American Statistical Association, 58(301):13–30, 1963.
+
+P. D. Hoﬀ. Bilinear mixed-eﬀects models for dyadic data. Journal of the American Statistical
+Association, 100:286–295, March 2005.
+
+D. Hsu. http://www.cs.columbia.edu/~djhsu/papers/randmatrix-errata.txt, 2012.
+
+D. Hsu, S. Kakade, and T. Zhang. Tail inequalities for sums of random matrices that depend
+on the intrinsic dimension. Electron. Commun. Probab., 17:no. 14, 1–13, 2012.
+
+W. B. Johnson and J. Lindenstrauss. Extensions of Lipschitz mappings into a Hilbert space.
+Contemporary Mathematics, 26:189–206, 1984.
+
+R. H. Keshavan, A. Montanari, and S. Oh. Matrix completion from noisy entries. Journal
+of Machine Learning Research, 99:2057–2078, 2010.
+
+Y. Koren, R. M. Bell, and C. Volinsky. Matrix factorization techniques for recommender
+systems. IEEE Computer, 42(8):30–37, 2009.
+
+S. Kumar, M. Mohri, and A. Talwalkar. On sampling-based approximate spectral decom-
+position. In International Conference on Machine Learning, 2009a.
+
+S. Kumar, M. Mohri, and A. Talwalkar. Ensemble Nystr¨om method. In Advances in Neural
+Information Processing Systems, 2009b.
+
+E. Liberty. Accelerated Dense Random Projections. Ph.D. thesis, computer science depart-
+ment, Yale University, New Haven, CT, 2009.
+
+Z. Lin, M. Chen, L. Wu, and Y. Ma. The augmented lagrange multiplier method for exact
+recovery of corrupted low-rank matrices. UIUC Technical Report UILU-ENG-09-2215,
+2009a.
+
+Z. Lin, A. Ganesh, J. Wright, L. Wu, M. Chen, and Y. Ma. Fast convex optimization
+algorithms for exact recovery of a corrupted low-rank matrix. UIUC Technical Report
+UILU-ENG-09-2214, 2009b.
+
+S. Ma, D. Goldfarb, and L. Chen. Fixed point and bregman iterative methods for matrix
+rank minimization. Mathematical Programming, 128(1-2):321–353, 2011.
+
+L. Mackey, A. Talwalkar, and M. I. Jordan. Divide-and-conquer matrix factorization. In
+J. Shawe-Taylor, R. S. Zemel, P. L. Bartlett, F. C. N. Pereira, and K. Q. Weinberger,
+editors, Advances in Neural Information Processing Systems 24, pages 1134–1142. 2011.
+
+M. W. Mahoney and P. Drineas. Cur matrix decompositions for improved data analysis.
+Proceedings of the National Academy of Sciences, 106(3):697–702, 2009.
+
+K. Min, Z. Zhang, J. Wright, and Y. Ma. Decomposing background topics from keywords by
+principal component pursuit. In Conference on Information and Know ledge Management,
+2010.
+
+958
+
+Distributed Matrix Completion and Robust Factorization
+
+M. Mohri and A. Talwalkar. Can matrix coherence be eﬃciently and accurately estimated?
+In Conference on Artiﬁcial Intel ligence and Statistics, 2011.
+
+Y. Mu, J. Dong, X. Yuan, and S. Yan. Accelerated low-rank visual recovery by random
+pro jection. In Conference on Computer Vision and Pattern Recognition, 2011.
+
+S. Negahban and M. J. Wainwright. Restricted strong convexity and weighted matrix
+completion: Optimal bounds with noise. J. Mach. Learn. Res., 13:1665–1697, 2012.
+
+E. J. Nystr¨om. ¨Uber die praktische auﬂ¨osung von integralgleichungen mit anwendungen
+auf randwertaufgaben. Acta Mathematica, 54(1):185–204, 1930.
+
+C. H. Papadimitriou, H. Tamaki, P. Raghavan, and S. Vempala. Latent Semantic Indexing:
+a probabilistic analysis. In Principles of Database Systems, 1998.
+
+Y. Peng, A. Ganesh, J. Wright, W. Xu, and Y. Ma. Rasl: Robust alignment by sparse
+and low-rank decomposition for linearly correlated images. In Conference on Computer
+Vision and Pattern Recognition, 2010.
+
+B. Recht. Simpler approach to matrix completion. J. Mach. Learn. Res., 12:3413–3430,
+2011.
+
+B. Recht and C. R´e. Parallel stochastic gradient algorithms for large-scale matrix comple-
+tion. In Optimization Online, 2011.
+
+V. Rokhlin, A. Szlam, and M. Tygert. A randomized algorithm for Principal Component
+Analysis. SIAM Journal on Matrix Analysis and Applications, 31(3):1100–1124, 2009.
+
+A. Talwalkar and A. Rostamizadeh. Matrix coherence and the Nystr¨om method. In Pro-
+ceedings of the Twenty-Sixth Conference on Uncertainty in Artiﬁcial Intel ligence, 2010.
+
+K. Toh and S. Yun. An accelerated proximal gradient algorithm for nuclear norm regularized
+least squares problems. Paciﬁc Journal of Optimization, 6(3):615–640, 2010.
+
+M. Tygert.
+http://www.mathworks.com/matlabcentral/ﬁleexchange/21524-principal-
+component-analysis, 2009.
+
+J. Wang, Y. Dong, X. Tong, Z. Lin, and B. Guo. Kernel Nystr¨om method for light transport.
+ACM Transactions on Graphics, 28(3), 2009.
+
+C.K. Williams and M. Seeger. Using the Nystr¨om method to speed up kernel machines. In
+Advances in Neural Information Processing Systems, 2000.
+
+H.-F. Yu, C.-J. Hsieh, S. Si, and I. Dhillon. Scalable coordinate descent approaches to
+parallel matrix factorization for recommender systems. In ICDM, 2012.
+
+Y. Zhou, D. Wilkinson, R. Schreiber, and R. Pan. Large-scale parallel collaborative ﬁltering
+for the netﬂix prize. In Proceedings of the 4th international conference on Algorithmic
+Aspects in Information and Management, 2008.
+
+959
+
+Mackey, Talwalkar and Jordan
+
+Z. Zhou, X. Li, J. Wright, E. J. Cand`es, and Y. Ma. Stable principal component pursuit. In
+IEEE International Symposium on Information Theory Proceedings (ISIT), pages 1518
+–1522, 2010.
+
+960
+
+

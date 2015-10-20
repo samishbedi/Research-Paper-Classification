@@ -1,0 +1,3678 @@
+Journal of Machine Learning Research 15 (2014) 59-98
+
+Submitted 3/12; Revised 5/13; Published 1/14
+
+Fast SVM Training Using Approximate Extreme Points
+
+Manu Nandan
+Department of Computer and Information Science and Engineering
+University of Florida
+Gainesvil le, FL 32611, USA
+
+Pramod P. Khargonekar
+Department of Electrical and Computer Engineering
+University of Florida
+Gainesvil le, FL 32611, USA
+
+Sachin S. Talathi
+Qualcomm Research Center
+5775 Morehouse Dr
+San Diego, CA 92121, USA
+
+Editor: Sathiya Keerthi
+
+mnandan@ufl.edu
+
+ppk@ece.ufl.edu
+
+talathi@gmail.com
+
+Abstract
+
+Applications of non-linear kernel support vector machines (SVMs) to large data sets is
+seriously hampered by its excessive training time. We propose a modiﬁcation, called the
+approximate extreme points support vector machine (AESVM), that is aimed at overcoming
+this burden. Our approach relies on conducting the SVM optimization over a carefully
+selected subset, called the representative set, of the training data set. We present analytical
+results that indicate the similarity of AESVM and SVM solutions. A linear time algorithm
+based on convex hulls and extreme points is used to compute the representative set in
+kernel space. Extensive computational experiments on nine data sets compared AESVM
+to LIBSVM (Chang and Lin, 2011), CVM (Tsang et al., 2005) , BVM (Tsang et al.,
+2007), LASVM (Bordes et al., 2005), SVMperf (Joachims and Yu, 2009), and the random
+features method (Rahimi and Recht, 2007). Our AESVM implementation was found to
+train much faster than the other methods, while its classiﬁcation accuracy was similar
+to that of LIBSVM in all cases. In particular, for a seizure detection data set, AESVM
+training was almost 500 times faster than LIBSVM and LASVM and 20 times faster than
+CVM and BVM. Additionally, AESVM also gave competitively fast classiﬁcation times.
+
+Keywords:
+support vector machines, convex hulls, large scale classiﬁcation, non-linear
+kernels, extreme points
+
+1. Introduction
+
+Several real world applications require solutions of classiﬁcation problems on large data sets.
+Even though SVMs are known to give excellent classiﬁcation results, their application to
+problems with large data sets is impeded by the burdensome training time requirements.
+Recently, much progress has been made in the design of fast training algorithms (Fan et al.,
+2008; Shalev-Shwartz et al., 2011) for SVMs with the linear kernel (linear SVMs). However,
+many applications require SVMs with non-linear kernels for accurate classiﬁcation. Training
+
+c(cid:13)2014 Manu Nandan, Pramod P. Khargonekar and Sachin S. Talathi.
+
+Nandan, Khargonekar and Talathi
+
+time complexity for SVMs with non-linear kernels is typically quadratic in the size of the
+training data set (Shalev-Shwartz and Srebro, 2008). The diﬃculty of the long training
+time is exacerbated when grid search with cross-validation is used to derive the optimal
+hyper-parameters, since this requires multiple SVM training runs. Another problem that
+sometimes restricts the applicability of SVMs is the long classiﬁcation time. The time
+complexity of SVM classiﬁcation is linear in the number of support vectors and in some
+applications the number of support vectors is found to be very large (Guo et al., 2005).
+In this paper, we propose a new approach for fast SVM training. Consider a two class
+data set of N data vectors, X = {xi : xi ∈ RD , i = 1, 2, ..., N }, and the corresponding target
+labels Y = {yi : yi ∈ [−1, 1], i = 1, 2, ..., N }. The SVM primal problem can be represented
+as the following unconstrained optimization problem (Teo et al., 2010; Shalev-Shwartz et al.,
+N(cid:88)
+2011):
+(cid:107)w(cid:107)2 +
+1
+C
+min
+F1 (w, b) =
+l(w, b, φ(xi )),
+N
+2
+w,b
+i=1
+where l(w, b, φ(xi )) = max{0, 1 − yi (wT φ(xi ) + b)}, ∀xi ∈ X
+and φ : RD → H, b ∈ R, and w ∈ H, a Hilbert space.
+
+(1)
+
+Here l(w, b, φ(xi )) is the hinge loss of xi . Note that SVM formulations where the penalty
+parameter C is divided by N have been used extensively (Sch¨olkopf et al., 2000; Franc and
+Sonnenburg, 2008; Joachims and Yu, 2009). These formulations enable better analysis of
+the scaling of C with N (Joachims, 2006). The problem in (1) requires optimization over
+N variables. In general, for SVM training algorithms, the training time will reduce if the
+size of the training data set is reduced.
+In this paper, we present an alternative to (1), cal led approximate extreme points support
+vector machines (AESVM), that requires optimization over only a subset of the training data
+M(cid:88)
+set. The AESVM formulation is:
+(cid:107)w(cid:107)2 +
+1
+C
+min
+F2 (w, b) =
+βt l(w, b, φ(xt )),
+N
+2
+w,b
+t=1
+where xt ∈ X∗ , w ∈ H, and b ∈ R.
+
+(2)
+
+Here M is the number of vectors in the selected subset of X, called the representative set
+X∗ . The constants βt are deﬁned in (9). We will prove in Section 3.2 that:
+√
+• F1 (w∗
+1 ) − F2 (w∗
+2 ) ≤ C
+2 , b∗
+1 , b∗
+2 , b∗
+1 ) and (w∗
+1 , b∗
+C , where (w∗
+2 ) are the solutions of (1)
+and (2) respectively.
+√
+2 ) − F1 (w∗
+• Under the assumptions given in corollary 4, F1 (w∗
+1 ) ≤ 2C
+1 , b∗
+2 , b∗
+C .
+• The AESVM problem minimizes an upper bound of a low rank Gram matrix approx-
+imation of the SVM ob jective function.
+
+Based on these results we claim that solving the problem in (2) yields a solution close
+to that of (1) for a small value of , the approximation error bound. As a by-product of the
+
+60
+
+Fast SVM Training Using Approximate Extreme Points
+
+reduction in size of the training set, AESVM is also observed to result in fast classiﬁcation.
+Considering that the representative set will have to be computed several times if grid search
+is used to ﬁnd the optimum hyper-parameter combination, we also propose fast algorithms
+to compute Z∗ .
+In particular, we present an algorithm of time complexity O(N ) and
+P ) to compute Z∗ , where P is a
+N
+an alternative algorithm of time complexity O(N log2
+predeﬁned large integer.
+Our main contribution is the new AESVM formulation that can be used for fast SVM
+training. We develop and analyze our technique along the following lines:
+
+• Theoretical: Theorems 1 and 2 and Corollaries 3 to 5 provide some theoretical basis
+for the use of AESVM as a computationally less demanding alternative to the SVM
+formulation.
+
+• Algorithmic: The algorithm DeriveRS, described in Section 4, computes the represen-
+tative set in linear time.
+
+• Experimental: Our extensive experiments on nine data sets of varying characteristics
+illustrate the suitability of applying AESVM to classiﬁcation on large data sets.
+
+in Section 2, we brieﬂy discuss recent research on
+This paper is organized as follows:
+fast SVM training that is closely related to this work. Next, we provide the deﬁnition of
+the representative set and discuss properties of AESVM. In Section 4, we present eﬃcient
+algorithms to compute the representative set and analyze its computational complexity.
+Section 5 describes the results of our computational experiments. We compared AESVM
+to the widely used LIBSVM library, core vector machines (CVM), ball vector machines
+(BVM), LASVM, SVMperf , and the random features method by Rahimi and Recht (2007).
+Our experiments used eight publicly available data sets and a data set on EEG from an
+animal model of epilepsy (Talathi et al., 2008; Nandan et al., 2010). We conclude with a
+discussion of the results of this paper in Section 6.
+
+2. Related Work
+
+Several methods have been proposed to eﬃciently solve the SVM optimization problem.
+SVMs require special algorithms, as standard optimization algorithms such as interior point
+methods (Boyd and Vandenberghe, 2004; Shalev-Shwartz et al., 2011) have large memory
+and training time requirements that make it infeasible for large data sets. In the following
+sections we discuss the most widely used strategies to solve the SVM optimization problem.
+We present a comparison of some of these methods to AESVM in Section 6. SVM solvers
+can be broadly divided into two categories as described below.
+
+2.1 Dual Optimization
+
+The SVM primal problem is a convex optimization problem with strong duality (Boyd and
+Vandenberghe, 2004). Hence its solution can be arrived at by solving its dual formulation
+
+61
+
+Nandan, Khargonekar and Talathi
+
+given below:
+
+max
+α
+
+L1 (α) =
+
+N(cid:88)
+i=1
+sub ject to 0 ≤ αi ≤ C
+N
+
+αi − 1
+2
+
+N(cid:88)
+i=1
+
+and
+
+N(cid:88)
+αiαj yiyj K (xi , xj ),
+N(cid:88)
+j=1
+αiyi = 0.
+i=1
+
+(3)
+
+Here K (xi , xj ) = φ(xi )T φ(xj ), is the kernel product (Sch¨olkopf and Smola, 2001) of the
+data vectors xi and xj , and α is a vector of all variables αi . Solving the dual problem is
+computationally simpler, especially for non-linear kernels and a ma jority of the SVM solvers
+use dual optimization. Some of the ma jor dual optimization algorithms are discussed below.
+Decomposition methods (Osuna et al., 1997) have been widely used to solve (3). These
+methods optimize over a subset of the training data set, called the ‘working set’, at each al-
+gorithm iteration. SVMlight (Joachims, 1999) and SMO (Platt, 1999) are popular examples
+of decomposition methods. Both these methods have a quadratic time complexity for linear
+and non-linear SVM kernels (Shalev-Shwartz and Srebro, 2008). Heuristics such as shrink-
+ing and caching (Joachims, 1999) enable fast convergence of decomposition methods and
+reduce their memory requirements. LIBSVM (Chang and Lin, 2011) is a very popular im-
+plementation of SMO. A dual coordinate descent (Hsieh et al., 2008) SVM solver computes
+the optimal α value by modifying one variable αi per algorithm iteration. Dual coordinate
+descent SVM solvers, such as LIBLINEAR (Fan et al., 2008), have been proposed primarily
+for the linear kernel.
+Approximations of the Gram matrix (Fine and Scheinberg, 2002; Drineas and Mahoney,
+2005), have been proposed to increase training speed and reduce memory requirements of
+SVM solvers. The Gram matrix is the N xN square matrix composed of the kernel products
+K (xi , xj ), ∀xi , xj ∈ X. Training set selection methods attempt to reduce the SVM training
+time by optimizing over a selected subset of the training set. Several distinct approaches
+have been used to select the subset. Some methods use clustering based approaches (Pavlov
+et al., 2000) to select the subsets. In Yu et al. (2003), hierarchical clustering is performed
+to derive a data set that has more data vectors near the classiﬁcation boundary than away
+from it. Minimum enclosing ball clustering is used in Cervantes et al. (2008) to remove data
+vectors that are unlikely to contribute to the SVM training. Random sampling of training
+data is another approach followed by approximate SVM solvers. Lee and Mangasarian
+(2001) proposed reduced support vector machines (RSVM), in which only a random subset
+of the training data set is used. Bordes et al. (2005) proposed the LASVM algorithm that
+uses active selection techniques to train SVMs on a subset of the training data set.
+A core set (Clarkson, 2010) can be loosely deﬁned as the subset of X for which the
+solution of an optimization problem such as (3) has a solution similar to that for the entire
+data set X. Tsang et al. (2005) proved that the L2-SVM is a reformulation of the minimum
+enclosing ball problem for some kernels. They proposed core vector machine (CVM) that
+approximately solves the L2-SVM formulation using core sets. A simpliﬁed version of CVM
+called ball vector machine (BVM) was proposed in Tsang et al. (2007), where only an
+enclosing ball is computed. G¨artner and Jaggi (2009) proposed an algorithm to solve the
+L1-SVM problem, by computing the shortest distance between two polytopes (Bennett and
+
+62
+
+Fast SVM Training Using Approximate Extreme Points
+
+Bredensteiner, 2000) using core sets. However, there are no published results on solving
+L1-SVM with non-linear kernels using their algorithm.
+Another method used to approximately solve the SVM problem is to map the data
+vectors into a randomized feature space that is relatively low dimensional compared to the
+kernel space H (Rahimi and Recht, 2007). Inner products of the pro jections of the data
+vectors are approximations of their kernel product. This eﬀectively reduces the non-linear
+SVM problem into the simpler linear SVM problem, enabling the use of fast linear SVM
+solvers. This method is referred as RfeatSVM in the following sections of this document.
+
+2.2 Primal Optimization
+
+In recent years, linear SVMs have found increased use in applications with high-dimensional
+data sets. This has led to a surge in publications on eﬃcient primal SVM solvers, which are
+mostly used for linear SVMs. To overcome the diﬃculties caused by the non-diﬀerentiability
+of the primal problem, the following methods are used.
+Stochastic sub-gradient descent (Zhang, 2004) uses the sub-gradient computed at some
+data vector xi to iteratively update w. Shalev-Shwartz et al. (2011) proposed a stochastic
+sub-gradient descent SVM solver, Pegasos, that is reported to be among the fastest linear
+SVM solvers. Cutting plane algorithms (Kelley, 1960) solve the primal problem by succes-
+sively tightening a piecewise linear approximation. It was employed by Joachims (2006)
+to solve linear SVMs with their implementation SVMperf . This work was generalized in
+Joachims and Yu (2009) to include non-linear SVMs by approximately estimating w with
+arbitrary basis vectors using the ﬁx-point iteration method (Sch¨olkopf and Smola, 2001).
+Teo et al. (2010) proposed a related method for linear SVMs, that corrected some stability
+issues in the cutting plane methods.
+
+3. Analysis of AESVM
+
+As mentioned in the introduction, AESVM is an optimization problem on a subset of the
+training data set called the representative set. In this section we ﬁrst deﬁne the representa-
+tive set. Then we present some properties of AESVM. These results are intended to provide
+theoretical justiﬁcations for the use of AESVM as an approximation to the SVM problem
+(1).
+
+3.1 Deﬁnition of the Representative Set
+
+The convex hull of a set X is the smallest convex set containing X (Rockafellar, 1996) and
+can be obtained by taking all possible convex combinations of elements of X. Assuming X
+is ﬁnite, the convex hull is a polygon. The extreme points of X, EP (X), are deﬁned to be
+the vertices of the convex polygon formed by the convex hull of X. Any vector xi in X can
+(cid:88)
+(cid:88)
+be represented as a convex combination of vectors in EP (X):
+πi,txt , where 0 ≤ πi,t ≤ 1, and
+xt∈EP (X)
+xt∈EP (X)
+
+πi,t = 1.
+
+xi =
+
+We can see that functions of any data vector in X can be computed using only EP (X)
+and the convex combination weights {πi,t}. The design of AESVM is motivated by the
+
+63
+
+Nandan, Khargonekar and Talathi
+
+intuition that the use of extreme points may provide computational eﬃciency. However,
+extreme points are not useful in all cases, as for some kernels all data vectors are extreme
+points in kernel space. For example, for the Gaussian kernel, K (xi , xi ) = φ(xi )T φ(xi ) = 1.
+This implies that all the data vectors lie on the surface of the unit ball in the Gaussian kernel
+space1 and therefore are extreme points. Hence, we introduce the concept of approximate
+extreme points.
+Consider the set of transformed data vectors:
+Z = {zi : zi = φ(xi ), ∀xi ∈ X}.
+
+(4)
+
+Here, the explicit representation of vectors in kernel space is only for the ease of under-
+standing and all the computations are performed using kernel products. Let V be a positive
+integer that is much smaller than N and  be a small positive real number. For notational
+simplicity, we assume N is divisible by V . Let Zl be subsets of Z for l = 1, 2, ..., ( N
+V ), such
+that Z = ∪
+Zl and Zl ∩ Zm = ∅ for l (cid:54)= m, where m = 1, 2, ..., ( N
+V ). We require that the
+subsets Zl satisfy |Zl | = V , ∀l and
+l
+∀zi , zj ∈ Zl , we have yi = yj ,
+(5)
+where |Zl | denotes the cardinality of Zl . Let Zlq be an arbitrary subset of Zl , Zlq ⊆ Zl .
+(cid:107)zi − (cid:88)
+Next, for any zi ∈ Zl we deﬁne:
+(cid:88)
+f (zi , Zlq ) = min
+µi
+zt∈Zlq
+s.t. 0 ≤ µi,t ≤ 1, and
+zt∈Zlq
+
+µi,tzt(cid:107)2 ,
+
+µi,t = 1.
+
+(6)
+
+A subset Z ∗
+l
+
+is said to be an  - approximate extreme points subset of Zl if:
+l ) ≤ .
+f (zi , Z ∗
+max
+zi∈Zl
+We will drop the preﬁx  for simplicity and refer to Z ∗
+l as approximate extreme points subset.
+Note that it is not unique. Intuitively, its cardinality will be related to computational savings
+obtained using the approach proposed in this paper. We have chosen to not use approximate
+extreme points subset of smallest cardinality to maintain ﬂexibility.
+It can be seen that µi,t for zt ∈ Z∗
+l are analogous to the convex combination weights
+πi,t for xt ∈ EP (X). The representative set Z∗ of Z is the union of the sets of approximate
+extreme points of its subsets Zl .
+
+N
+V∪
+Z∗ =
+Z∗
+l .
+l=1
+The representative set has properties that are similar to EP (X). Given any zi ∈ Z, we
+can ﬁnd Zl such that zi ∈ Zl . Let γi,t = {µi,t for zt ∈ Z∗
+l and zi ∈ Zl , and 0 otherwise}.
+(cid:88)
+Now using (6), we can write:
+zt∈Z∗
+
+γi,tzt + τi .
+
+zi =
+
+(7)
+
+1. We deﬁne the square of the distance of x from origin in kernel space as K (x, x).
+
+64
+
+Fast SVM Training Using Approximate Extreme Points
+
+Here τi is a vector that accounts for the approximation error f (zi , Zlq ) in (6). From (6) and
+(7) we can conclude that:
+
+(cid:107)τi(cid:107)2 ≤  ∀ zi ∈ Z.
+
+(8)
+
+Since  will be set to a very small positive constant, we can infer that τi is a very small
+vector. The weights γi,t are used to deﬁne βt in (2) as:
+N(cid:88)
+i=1
+
+βt =
+
+γi,t .
+
+(9)
+
+For ease of notation, we refer to the set X∗ := {xt : zt ∈ Z∗} as the representative
+set of X in the remainder of this paper. For the sake of simplicity, we assume that all
+γi,t , βt , X, and X∗ are arranged so that X∗ is positioned as the ﬁrst M vectors of X, where
+M = |Z∗ |.
+
+3.2 Properties of AESVM
+
+Consider the following optimization problem.
+
+(10)
+
+(cid:107)w(cid:107)2 +
+
+N(cid:88)
+F3 (w, b) =
+M(cid:88)
+i=1
+γi,tzt , zt ∈ Z∗ , w ∈ H, and b ∈ R.
+t=1
+
+l(w, b, ui ),
+
+C
+N
+
+1
+2
+
+min
+w,b
+
+where ui =
+
+We use the problem in (10) as an intermediary between (1) and (2). The intermediate
+problem (10) has a direct relation to the AESVM problem, as given in the following theorem.
+The properties of the max function given below are relevant to the following discussion:
+
+max(0, A + B ) ≤ max(0, A) + max(0, B ),
+max(0, A − B ) ≥ max(0, A) − max(0, B ),
+N(cid:88)
+N(cid:88)
+ci ,
+i=1
+i=1
+for A, B , ci ∈ R and ci ≥ 0.
+Theorem 1 Let F3 (w, b) and F2 (w, b) be as deﬁned in (10) and (2) respectively. Then,
+
+max(0, ciA) = max(0, A)
+
+(11)
+
+(12)
+
+(13)
+
+F3 (w, b) ≤ F2 (w, b) , ∀w ∈ H and b ∈ R.
+
+65
+
+C
+N
+
+C
+N
+
+=
+
+max
+
+ui =
+
+L3 (w, b, X∗ ) =
+
+Nandan, Khargonekar and Talathi
+N(cid:80)
+M(cid:80)
+N(cid:80)
+γi,t and L3 (w, b, X∗ ) = C
+Proof Let L2 (w, b, X∗ ) = C
+M(cid:80)
+l(w, b, zt )
+l(w, b, ui ), where
+N
+N
+t=1
+i=1
+i=1
+(cid:40)
+(cid:34)
+(cid:41)(cid:35)
+γi,tzt . From the properties of γi,t in (6), and from (5) we get:
+N(cid:88)
+M(cid:88)
+t=1
+1 − yi (wT
+(cid:8)1 − yt (wT zt + b)(cid:9)(cid:35)
+(cid:34)
+γi,tzt + b)
+0,
+M(cid:88)
+N(cid:88)
+t=1
+i=1
+0,
+t=1
+i=1
+N(cid:88)
+M(cid:88)
+Using properties (11) and (13) we get:
+max (cid:2)0, γi,t
+(cid:8)1 − yt (wT zt + b)(cid:9)(cid:3)
+max (cid:2)0, 1 − yt (wT zt + b)(cid:3) N(cid:88)
+M(cid:88)
+t=1
+i=1
+C
+=
+γi,t
+N
+t=1
+i=1
+= L2 (w, b, X∗ ).
+2 (cid:107)w(cid:107)2 to both sides of the inequality above we get
+Adding 1
+F3 (w, b) ≤ F2 (w, b).
+
+L3 (w, b, X∗ ) ≤ C
+N
+
+max
+
+γi,t
+
+.
+
+The following theorem gives a relationship between the SVM problem and the interme-
+diate problem.
+N(cid:88)
+N(cid:88)
+Theorem 2 Let F1 (w, b) and F3 (w, b) be as deﬁned in (1) and (10) respectively. Then,
+max (cid:8)0, yiwT τi
+max (cid:8)0, −yiwT τi
+(cid:9) ≤ F1 (w, b) − F3 (w, b) ≤ C
+(cid:9) ,
+− C
+N
+N
+i=1
+i=1
+∀w ∈ H and b ∈ R, where τi ∈ H is the vector deﬁned in (7).
+N(cid:80)
+Proof Let L1 (w, b, X) = C
+l(w, b, zi ), denote the average hinge loss that is minimized
+N
+in (1) and L3 (w, b, X∗ ) be as deﬁned in Theorem 1. Using (7) and (1) we get:
+i=1
+N(cid:88)
+max (cid:8)0, 1 − yi (wT zi + b)(cid:9)
+(cid:41)
+(cid:40)
+M(cid:88)
+N(cid:88)
+i=1
+0, 1 − yi (wT (
+γi,tzt + τi ) + b)
+max
+t=1
+i=1
+
+L1 (w, b, X) =
+
+C
+N
+
+C
+N
+
+=
+
+.
+
+66
+
+Fast SVM Training Using Approximate Extreme Points
+
+C
+N
+
+max
+
+max
+
+0,
+
++
+
+C
+N
+
+L1 (w, b, X) =
+
+L1 (w, b, X) ≤ C
+N
+
+Using (11) on (14), we get:
+N(cid:88)
+M(cid:88)
+t=1
+i=1
+= L3 (w, b, X∗ ) +
+(cid:34)
+0,
+
+(cid:40)
+From the properties of γi,t in (6), and from (5) we get:
+N(cid:88)
+M(cid:88)
+γi,t (1 − yt (wT zt + b)) − yiwT τi
+0,
+t=1
+i=1
+(cid:8)1 − yt (wT zt + b)(cid:9)(cid:35)
+(cid:34)
+γi,t
+N(cid:88)
+(cid:9) .
+max (cid:8)0, −yiwT τi
+C
+N
+i=1
+(cid:8)1 − yt (wT zt + b)(cid:9)(cid:35)
+Using (12) on (14), we get:
+M(cid:88)
+N(cid:88)
+γi,t
+N(cid:88)
+(cid:9) .
+max (cid:8)0, yiwT τi
+t=1
+i=1
+= L3 (w, b, X∗ ) − C
+N
+i=1
+From the two inequalities above we get,
+N(cid:88)
+max (cid:8)0, yiwT τi
+i=1
+
+L3 (w, b, X∗ ) − C
+N
+
+L1 (w, b, X) ≥ C
+N
+
+N(cid:88)
+i=1
+
+− C
+N
+
+max
+
+(cid:9) ≤ L1 (w, b, X)
+≤ L3 (w, b, X∗ ) +
+
+2 (cid:107)w(cid:107)2 to the inequality above we get
+Adding 1
+N(cid:88)
+(cid:9) ≤ F1 (w, b) ≤ F3 (w, b) +
+max (cid:8)0, yiwT τi
+i=1
+
+F3 (w, b) − C
+N
+
+(cid:41)
+
+.
+
+(14)
+
+(cid:9)
+
+N(cid:88)
+max (cid:8)0, −yiwT τi
+i=1
+
+max (cid:8)0, yiwT τi
+
+(cid:9)
+
+C
+N
+
+(cid:9) .
+
+max (cid:8)0, −yiwT τi
+
+N(cid:88)
+i=1
+N(cid:88)
+max (cid:8)0, −yiwT τi
+i=1
+
+C
+N
+
+(cid:9) .
+
+Using the above theorems we derive the following corollaries. These results provide the
+theoretical justiﬁcation for AESVM.
+2 , b∗
+1 ) be the solution of (1) and (w∗
+1 , b∗
+Corollary 3 Let (w∗
+2 ) be the solution of (2). Then,
+√
+2 ) ≤ C
+1 ) − F2 (w∗
+2 , b∗
+1 , b∗
+F1 (w∗
+
+C .
+
+67
+
+Nandan, Khargonekar and Talathi
+
+1 (cid:107) ≤ √
+Proof It is known that (cid:107)w∗
+2 (cid:107) ≤ √
+C (see Shalev-Shwartz et al., 2011, Theorem 1). It is
+straight forward to see that the same result also applies to AESVM, (cid:107)w∗
+on (8) we know that (cid:107)τi(cid:107) ≤ √
+C . Based
+N(cid:88)
+N(cid:88)
+max (cid:8)0, −yiw∗T
+(cid:9) ≤ C
+. From Theorem 2 we get:
+2 ) ≤ C
+2 ) − F3 (w∗
+2 , b∗
+2 , b∗
+F1 (w∗
+2 τi
+N(cid:88)
+N
+N
+i=1
+i=1
+√
+√
+≤ C
+N
+i=1
+1 ) ≤ F1 (w∗
+2 , b∗
+1 , b∗
+1 ) is the solution of (1), F1 (w∗
+1 , b∗
+Since (w∗
+2 ). Using this property and
+Theorem 1 in the inequality above, we get:
+1 ) − F3 (w∗
+2 ) ≤ F1 (w∗
+1 ) − F2 (w∗
+2 , b∗
+1 , b∗
+F1 (w∗
+1 , b∗
+2 , b∗
+2 )
+≤ F1 (w∗
+2 ) − F3 (w∗
+2 ) ≤ C
+2 , b∗
+2 , b∗
+
+(cid:107)w∗
+2 (cid:107)(cid:107)τi(cid:107)
+
+C  = C
+
+C .
+
+C .
+
+√
+
+max
+ˆα
+
+max
+˘α
+
+L3 ( ˘α) =
+
+L2 ( ˆα) =
+
+˘αi − 1
+2
+
+ˆαt ˆαsytyszT
+t zs ,
+M(cid:88)
+ˆαtyt = 0.
+t=1
+
+Now we demonstrate some properties of AESVM using the dual problem formulations
+M(cid:88)
+M(cid:88)
+M(cid:88)
+of AESVM and the intermediate problem. The dual form of AESVM is given by:
+ˆαt − 1
+N(cid:88)
+2
+t=1
+s=1
+t=1
+sub ject to 0 ≤ ˆαt ≤ C
+γi,t and
+N
+i=1
+N(cid:88)
+N(cid:88)
+N(cid:88)
+The dual form of the intermediate problem is given by:
+˘αi ˘αj yiyj uT
+i uj ,
+N(cid:88)
+i=1
+i=1
+j=1
+sub ject to 0 ≤ ˘αi ≤ C
+and
+N
+i=1
+Consider the mapping function h : RN → RM , deﬁned as
+N(cid:88)
+h( ˘α) = { ˜αt : ˜αt =
+γi,t ˘αi}.
+i=1
+M(cid:88)
+M(cid:88)
+M(cid:88)
+It can be seen that the ob jective functions L2 (h( ˘α)) and L3 ( ˘α) are identical.
+˜αt − 1
+N(cid:88)
+N(cid:88)
+N(cid:88)
+2
+s=1
+t=1
+t=1
+˘αi − 1
+˘αi ˘αj yiyj uT
+i uj
+2
+i=1
+j=1
+i=1
+= L3 ( ˘α).
+
+˜αt ˜αsytyszT
+t zs
+
+L2 (h( ˘α)) =
+
+˘αiyi = 0.
+
+(15)
+
+(16)
+
+(17)
+
+=
+
+68
+
+Fast SVM Training Using Approximate Extreme Points
+
+It is also straight forward to see that, for any feasible ˘α of (16), h( ˘α) is a feasible point of
+(15) as it satisﬁes the constraints in (15). However, the converse is not always true. With
+that clariﬁcation, we present the following corollary.
+1 ) be the solution of (1) and (w∗
+Corollary 4 Let (w∗
+2 , b∗
+1 , b∗
+2 ) be the solution of (2). Let ˆα2 be
+the dual variable corresponding to (w∗
+2 , b∗
+2 ). Let h( ˘α2 ) be as deﬁned in (17). If there exists
+an ˘α2 such that h( ˘α2 ) = ˆα2 and ˘α2 is a feasible point of (16), then,
+√
+2 ) − F1 (w∗
+1 ) ≤ 2C
+1 , b∗
+2 , b∗
+F1 (w∗
+
+C .
+
+Proof Let (w∗
+3 , b∗
+3 ) be the solution of (10) and ˘α3 the solution of (16). We know that
+3 ). Since L3 ( ˘α3 ) ≥ L3 ( ˘α2 ), we get
+3 , b∗
+2 ) and L3 ( ˘α3 ) = F3 (w∗
+2 , b∗
+L3 ( ˘α2 ) = L2 ( ˆα2 ) = F2 (w∗
+3 ) ≥ F2 (w∗
+2 , b∗
+F3 (w∗
+3 , b∗
+2 ).
+3 ) ≤ F3 (w∗
+2 ) ≤ F2 (w∗
+2 , b∗
+3 , b∗
+But, from Theorem 1 we know F3 (w∗
+2 , b∗
+2 ). Hence
+2 , b∗
+F3 (w∗
+3 , b∗
+3 ) = F3 (w∗
+2 ).
+
+From the above result we get
+
+(18)
+
+(19)
+
+(20)
+
+(21)
+
+− C
+N
+
+Adding (19) and (20) we get:
+
+2 ) − F1 (w∗
+1 ) ≤ R +
+1 , b∗
+2 , b∗
+F1 (w∗
+
+2 ) − F3 (w∗
+1 ) ≤ 0.
+1 , b∗
+2 , b∗
+F3 (w∗
+N(cid:88)
+(cid:9) ≤ F1 (w∗
+max (cid:8)0, yiw∗T
+From Theorem 2 we have the following inequalities:
+1 ) − F3 (w∗
+1 , b∗
+1 , b∗
+1 τi
+1 ), and
+N(cid:88)
+max (cid:8)0, −yiw∗T
+(cid:9) .
+i=1
+2 ) − F3 (w∗
+2 ) ≤ C
+2 , b∗
+2 , b∗
+F1 (w∗
+2 τi
+N
+i=1
+N(cid:88)
+(cid:9) + max (cid:8)0, yiw∗T
+(cid:2)max (cid:8)0, −yiw∗T
+(cid:9)(cid:3) ,
+C
+2 τi
+1 τi
+N
+i=1
+2 (cid:107) ≤ √
+C and (cid:107)w∗
+1 (cid:107) ≤
+1 ). Using (18) and the properties (cid:107)w∗
+2 ) − F3 (w∗
+where R = F3 (w∗
+1 , b∗
+2 , b∗
+√
+N(cid:88)
+C in (21) we get
+(cid:9)(cid:3)
+(cid:9) + max (cid:8)0, yiw∗T
+(cid:2)max (cid:8)0, −yiw∗T
+2 τi
+1 τi
+N(cid:88)
+i=1
+2 (cid:107)(cid:107)τi(cid:107) + (cid:107)w∗
+(cid:107)w∗
+1 (cid:107)(cid:107)τi(cid:107)
+N(cid:88)
+i=1
+√
+√
+2
+i=1
+
+1 ) ≤ C
+2 ) − F1 (w∗
+1 , b∗
+2 , b∗
+F1 (w∗
+N
+
+≤ C
+N
+
+≤ C
+N
+
+C  = 2C
+
+C .
+
+69
+
+Nandan, Khargonekar and Talathi
+
+Now we prove a relationship between AESVM and the Gram matrix approximation
+methods mentioned in Section 2.1.
+Corollary 5 Let L1 (α), L3 ( ˘α), and F2 (w, b) be the objective functions of the SVM dual
+(3), intermediate dual (16) and AESVM (2) respectively. Let zi , τi , and ui be as deﬁned
+in (4), (7), and (10) respectively. Let G and ˜G be the N xN matrices with Gij = yiyj zT
+i zj
+N(cid:80)
+N(cid:80)
+and ˜Gij = yiyj uT
+i uj respectively. Then for any feasible ˘α, α, w, and b:
+αi − 1
+˘αi − 1
+2 ˘α ˜G ˘αT , and
+2 αGαT , L3 ( ˘α) =
+M(cid:88)
+N(cid:88)
+i=1
+i=1
+t=1
+i=1
+
+Trace(G − ˜G) ≤ N  + 2
+
+1. Rank of ˜G = M , L1 (α) =
+
+γi,t τi .
+
+zT
+t
+
+L1 (α) =
+
+2. F2 (w, b) ≥ L3 ( ˘α).
+N(cid:88)
+Proof Using G, the SVM dual ob jective function L1 (α) can be represented as:
+αi − 1
+2
+i=1
+N(cid:88)
+Similarly, L3 ( ˘α) can be represented using ˜G as:
+˘αi − 1
+M(cid:80)
+2
+i=1
+γi,tzt , ∀zt ∈ Z∗ to the deﬁnition of ˜G, we get:
+t=1
+
+Applying ui =
+
+L3 ( ˘α) =
+
+αGαT .
+
+˘α ˜G ˘αT .
+
+˜G = ΓAΓT .
+
+Trace(G − ˜G) =
+
+t zs , ∀zt , zs ∈ Z∗ and Γ is the N xM
+Here A is the M xM matrix comprised of Ats = ytyszT
+matrix with the elements Γit = γi,t . Hence the rank of ˜G = M and intermediate dual
+problem (16) is a low rank approximation of the SVM dual problem (3).
+(cid:34)
+(cid:35)
+N(cid:88)
+M(cid:88)
+M(cid:88)
+The Gram matrix approximation error can be quantiﬁed using (7) and (8) as:
+i zi − (
+(cid:35)
+(cid:34)
+γi,tzt )T (
+zT
+γi,szs )
+N(cid:88)
+M(cid:88)
+M(cid:88)
+N(cid:88)
+s=1
+t=1
+i=1
+≤ N  + 2
+zT
+γi,tzT
+γi,t τi .
+t τi
+t
+t=1
+t=1
+i=1
+i=1
+By the principle of duality, we know that F3 (w, b) ≥ L3 ( ˘α), ∀w ∈ H and b ∈ R, where
+˘α is any feasible point of (16). Using Theorem 1 on the inequality above, we get
+F2 (w, b) ≥ L3 ( ˘α), ∀w ∈ H, b ∈ R and feasible ˘α.
+
+τ T
+i τi + 2
+
+=
+
+70
+
+Fast SVM Training Using Approximate Extreme Points
+
+Thus the AESVM problem minimizes an upper bound F2 (w, b), of a rank M Gram matrix
+approximation of L1 (α).
+
+Based on the theoretical results in this section, it is reasonable to suggest that for small
+values of , the solution of AESVM is close to the solution of SVM.
+
+4. Computation of the Representative Set
+
+In this section, we present algorithms to compute the representative set. The AESVM
+formulation can be solved with any standard SVM solver such as SMO and hence we do
+not discuss methods to solve it. As described in Section 3.1, we require an algorithm to
+compute approximate extreme points in kernel space. Osuna and Castro (2002) proposed
+an algorithm to derive extreme points of the convex hull of a data set in kernel space.
+Their algorithm is computationally intensive, with a time complexity of O(N S (N )), and
+is unsuitable for large data sets as S (N ) typically has a super-linear dependence on N. The
+function S (N ) denotes the time complexity of a SVM solver (required by their algorithm),
+to train on a data set of size N. We next propose two algorithms leveraging the work by
+Osuna and Castro (2002) to compute the representative set in kernel space Z∗ with much
+smaller time complexities.
+We followed the divide and conquer approach to develop our algorithms. The data
+set is ﬁrst divided into subsets Xq , q = 1, 2, .., Q, where |Xq | < P , Q ≥ N
+P and X =
+{X1 , X2 , .., XQ}. The parameter P is a predeﬁned large integer. It is desired that each
+subset Xq contains data vectors that are more similar to each other than data vectors in
+other subsets. Our notion of similarity of data vectors in a subset, is that the distances be-
+tween data vectors within a subset is less than the distances between data vectors in distinct
+subsets. Since performing such a segregation is computationally expensive, heuristics are
+used to greatly simplify the process. Instead of computing the distance of all data vectors
+from each other, only the distance from a few selected data vectors are used to segregate
+the data in the methods FLS2 and SLS described below.
+The ﬁrst level of segregation is followed by another level of segregation. We can regard
+the ﬁrst level of segregation as coarse segregation and the second as ﬁne segregation. Finally,
+the approximate extreme points of the subsets obtained after segregation, are computed.
+The two diﬀerent algorithms to compute the representative set diﬀer only in the ﬁrst level
+of segregation as described below.
+
+4.1 First Level of Segregation
+
+We propose the methods, FLS1 and FLS2 given below to perform a ﬁrst level of segregation.
+In the following description we use arrays ∆(cid:48) and ∆(cid:48)
+2 of N elements. Each element of ∆(cid:48)
+(∆(cid:48)
+2 ), δi (δ2
+i ) , contains the index in X of the last data vector of the subset to which xi
+belongs. It is straight forward to replace this N element array with a smaller array of size
+equal to the number of subsets. We use a N element array for ease of description. The set
+X(cid:48) denotes any set of data vectors.
+1. FLS1(X(cid:48) , P )
+
+71
+
+Nandan, Khargonekar and Talathi
+
+For some applications, such as anomaly detection on sequential data, data vectors are
+found to be homogeneous within intervals. For example, the atmospheric conditions typi-
+cally do not change within a few minutes and hence weather data is homogeneous for a short
+span. For such data sets it is enough to segregate the data vectors based on its position in
+the training data set. The same method can also be used on very large data sets without
+any homogeneity, in order to reduce computation time. The complexity of this method is
+O(N (cid:48) ), where N (cid:48) = |X(cid:48) | .
+
+[X(cid:48) ,∆(cid:48) ] = FLS1(X(cid:48) , P )
+
+|X(cid:48) |
+1. For outerIndex = 1 t o ceiling(
+P )
+2. For innerIndex = (outerIndex - 1)P t o min((outerIndex)P ,|X(cid:48) |)
+Set δinnerI ndex = min((outerI ndex)P , |X(cid:48) |)
+3.
+
+2. FLS2(X(cid:48) , P )
+When the data set is not homogeneous within intervals or it is not excessively large we
+N (cid:48)
+use the more sophisticated algorithm, FLS2, of time complexity O(N (cid:48) log2
+P ) given below.
+In step 1 of FLS2, the distance di in kernel space of all xi ∈ X(cid:48) from xj is computed as
+di = (cid:107)φ(xi ) − φ(xj )(cid:107)2 = k(xi , xi ) + k(xj , xj ) − 2k(xi , xj ). The algorithm FLS2(X(cid:48) , P ), in
+eﬀect builds a binary search tree, with each node containing the data vector xk selected in
+step 2 that partitions a subset of the data set into two. The size of the subsets successively
+halve, on downward traversal from the root of the tree to the other nodes. When the size of
+all the subsets at a level become ≤ P the algorithm halts. The complexity of FLS2 can be
+derived easily when the algorithm is considered as an incomplete binary search tree building
+method. The last level of such a tree will have O( N (cid:48)
+P ) nodes and consequently the height
+N (cid:48)
+of the tree is O(log2
+P ). At each level of the tree the calls to the BFPRT algorithm (Blum
+et al., 1973) and the rearrangement of the data vectors in steps 2 and 3 are of O(N (cid:48) ) time
+N (cid:48)
+complexity. Hence the overall time complexity of FLS2(X(cid:48) , P ) is O(N (cid:48) log2
+P ).
+
+4.2 Second Level of Segregation
+After the initial segregation, another method SLS(X(cid:48) , V , ∆(cid:48) ) is used to further segregate each
+set Xq into smaller subsets Xqr of maximum size V , Xq = {Xq1 , Xq2 , ...., XqR }, where V is
+|Xq |
+V ). The algorithm SLS(X(cid:48) , V , ∆(cid:48) ) is given below.
+predeﬁned (V < P ) and R = ceiling(
+In step 2.b, xt is the data vector in Xq that is farthest from the origin in the space of the
+data vectors. For some kernels, such as the Gaussian kernel, all data vectors are equidistant
+from the origin in kernel space. If the algorithm chooses al in step 2.b based on distances in
+such kernel spaces, the choice would be arbitrary and such a situation is avoided here. Each
+iteration of the For loop in step 2 involves several runs of the BFPRT algorithm, with each
+run followed by a rearrangement of Xq . Speciﬁcally, the BFPRT algorithm is ﬁrst run on P
+data vectors, then on P − V data vectors, then on P − 2V data vectors and so on. The time
+complexity of each iteration of the For loop including the BFPRT algorithm run and the
+rearrangement of data vectors is: O(P + (P − V ) + (P − 2V ) + .. + V ) ⇒ O( P 2
+V ). The overall
+
+72
+
+Fast SVM Training Using Approximate Extreme Points
+
+[X(cid:48) ,∆(cid:48) ] = FLS2(X(cid:48) , P )
+1. Compute distance di in kernel space of all xi ∈ X(cid:48) from the ﬁrst vector xj in X(cid:48)
+|X(cid:48) |
+2 data vectors xi ∈ X(cid:48) with di < dk , using the
+2. Select xk such that there exists
+linear time BFPRT algorithm
+3. Using xk , rearrange X(cid:48) as X(cid:48) = {X1 , X2}, where X1 = {xi : di < dk , xi ∈ X(cid:48)} and
+X2 = {xi : xi ∈ X(cid:48) and xi (cid:54)∈ X1}
+|X(cid:48) |
+2 ≤ P
+4. If
+For i where xi ∈ X1 , set δi = index of last data vector in X1 .
+For i where xi ∈ X2 , set δi = index of last data vector in X2 .
+|X(cid:48) |
+2 > P
+Run FLS2(X1 , P ) and FLS2(X2 , P )
+
+5. If
+
+complexity of SLS(X(cid:48) , V , ∆(cid:48) ) considering the Q For loop iterations is O( N (cid:48)
+P
+since Q = O( N (cid:48)
+P ).
+[X(cid:48) ,∆(cid:48)
+2 ] = SLS(X(cid:48) , V , ∆(cid:48) )
+1. Initialize l = 1
+
+V ) ⇒ O( N (cid:48)P
+P 2
+V ),
+
+2. For q = 1 t o Q
+(a) Identify subset Xq of X(cid:48) using ∆(cid:48)
+(b) Set al = φ(xt ), where xt ∈ argmax
+(cid:107)xi(cid:107)2 , xi ∈ Xq
+i
+(c) Compute distance di in kernel space of all xi ∈ Xq from al
+(d) Select xk such that, there exists V data vectors xi ∈ Xq with di < dk , using the
+BFPRT algorithm
+(e) Using xk , rearrange Xq as Xq = {X1 , X2}, where X1 = {xi : di < dk , xi ∈ Xq }
+and X2 = {xi : xi ∈ Xq and xi (cid:54)∈ X1}
+(f ) For i where xi ∈ X1 , set δ2
+i = index of last data vector in X1 , where δ2
+i is the ith
+element of ∆(cid:48)
+2
+(g) Remove X1 from Xq
+(h) If |X2 | > V
+Set: l = l + 1 and al = xk
+Repeat steps 2.c to 2.h
+(i) If |X2 | ≤ V
+For i where xi ∈ X2 , set δ2
+i = index of last data vector in X2
+
+73
+
+Nandan, Khargonekar and Talathi
+
+4.3 Computation of the Approximate Extreme Points
+
+After computing the subsets Xqr , the algorithm DeriveAE is applied to each Xqr to compute
+its approximate extreme points. The algorithm DeriveAE is described below. DeriveAE uses
+three routines. SphereSet(Xqr ) returns all xi ∈ Xqr that lie on the surface of the smallest
+hypersphere in kernel space that contains Xqr .
+It computes the hypersphere as a hard
+margin support vector data descriptor (SVDD) (Tax and Duin, 2004). SphereSort(Xqr )
+returns data vectors xi ∈ Xqr sorted in descending order of distance in the kernel space
+from the center of the SVDD hypersphere. CheckPoint(xi , Ψ) returns TRUE if xi is an
+approximate extreme point of the set Ψ in kernel space. The operator A\B indicates a
+set operation that returns the set of the members of A excluding A ∩ B . The matrix X∗
+qr
+contains the approximate extreme points of Xqr and βqr is a |X∗
+qr | sized vector.
+[X∗
+qr , βqr ] = DeriveAE(Xqr )
+qr = SphereSet(Xqr ) and Ψ = ∅
+1. Initialize: X∗
+2. Set ζ = SphereSort(Xqr \X∗
+qr )
+qr ∪ Ψ)
+3. For each xi taken in order from ζ , call the routine CheckPoint(xi , X∗
+If it returns F ALSE , then set Ψ = Ψ ∪ xi
+4. Initialize a matrix Γ of size |Xqr |x|X∗
+qr | with all elements set to 0
+Set µk,k = 1 ∀xk ∈ X∗
+qr , where µi,j is the element in the ith row and j th column
+
+of Γ
+5. For each xi ∈ Xqr and xi (cid:54)∈ X∗
+qr , execute CheckPoint(xi , X∗
+qr )
+Set the ith row of Γ = µi , where µi is the result of CheckPoint(xi , X∗
+qr )
+6. For j = 1 t o |X∗
+qr |
+|Xqr |(cid:80)
+k=1
+
+Set β j
+qr =
+
+µk,j
+
+min
+µi
+
+p(xi , Ψ) = (cid:107)φ(xi ) −
+
+CheckPoint(xi , Ψ) is computed by solving the following quadratic optimization problem:
+|Ψ|(cid:88)
+t=1
+s.t. xt ∈ Ψ, 0 ≤ µi,t ≤ 1 and
+where (cid:107)φ(xi ) − |Ψ|(cid:80)
+|Ψ|(cid:80)
+|Ψ|(cid:80)
+|Ψ|(cid:80)
+µi,tφ(xt )(cid:107)2 = K (xt , xt ) +
+µi,tµi,sK (xt , xs ) − 2
+µi,tK (xi , xt ). If the
+optimized value of p(xi , Ψ) ≤ , CheckPoint(xi , Ψ) returns TRUE and otherwise it returns
+t=1
+s=1
+t=1
+t=1
+FALSE. It can be seen that the formulation of p(xi , Ψ) is similar to (6). The value of µi
+computed by CheckPoint(zi , Ψ0 ), is used in step 5 of DeriveAE.
+
+µi,tφ(xt )(cid:107)2 ,
+|Ψ|(cid:88)
+µi,t = 1,
+t=1
+
+74
+
+Fast SVM Training Using Approximate Extreme Points
+
+Now we compute the time complexity of DeriveAE. We use the fact that the opti-
+mization problem in CheckPoint(xi , Ψ) is essentially the same as the dual optimization
+problem of SVM given in (3). Since DeriveAE solves several SVM training problems in
+steps 1,3, and 5, it is necessary to know the training time complexity of a SVM. As any
+SVM solver method can be used, we denote the training time complexity of each step
+of DeriveAE that solves an SVM problem as O(S (Aqr )). Here Aqr is the largest value
+qr ∪ Ψ during the run of DeriveAE(Xqr ). This enables us to derive a generic ex-
+of X∗
+pression for the complexity of DeriveAE, independent of the SVM solver method used.
+Hence the time complexity of step 1 is O(S (Aqr )). The time complexity of steps 3 and
+5 are O(V S (Aqr )) and O(Aqr S (Aqr )) respectively. The time complexity of step 2 is
+O(V |Ψ1 | + V log2V ), where Ψ1 = SphereSet(Xqr ). Hence the time complexity of De-
+riveAE is O(V |Ψ1 | + V log2V + V S (Aqr ). Since |Ψ1 | is typically very small, we denote the
+time complexity of DeriveAE by O(V log2V + V S (Aqr )). For SMO based implementations
+of DeriveAE, such as the implementation we used for Section 5, typically S (Aqr ) = O(A2
+qr ).
+
+4.4 Combining All the Methods to Compute X ∗
+To derive X ∗ , it is required to ﬁrst rearrange X, so that data vectors from each class
+are grouped together as X = {X+ , X−}. Here X+ = {xi : yi = 1, xi ∈ X} and X− =
+{xi
+: yi = −1, xi ∈ X}. Then the selected segregation methods are run on X+ and
+X− separately. The algorithm DeriveRS given below, combines all the algorithms deﬁned
+earlier in this section with a few additional steps, to compute the representative set of
+X. The complexity of DeriveRS2 can easily be computed by summing the complexities of
+its steps. The complexity of steps 1 and 6 is O(N). The complexity of step 2 is O(N ) if
+N
+In step 3, the O( N P
+FLS1 is run or O(N log2
+P ) if FLS2 is run.
+V ) method SLS is run.
+Q(cid:80)
+R(cid:80)
+In steps 4 and 5, DeriveAE is run on all the subsets Xqr giving a total complexity of
+R(cid:80)
+Q(cid:80)
+S (Aqr )). Here we use the fact that the number of subsets Xqr is
+r=1
+q=1
+Q(cid:80)
+R(cid:80)
+V ). Thus the complexity of DeriveRS is O(N ( P
+O( N
+S (Aqr )) when FLS1
+V + log2V ) + V
+q=1
+r=1
+S (Aqr )) when FLS2 is used.
+r=1
+q=1
+
+N
+P + P
+V + log2V ) + V
+
+O(N log2V + V
+
+is used and O(N (log2
+
+5. Experiments
+
+We focused our experiments on an SMO (Fan et al., 2005) based implementation of AESVM
+and DeriveRS. We evaluated the classiﬁcation performance of AESVM using the nine data
+sets, described below. Next, we present an evaluation of the algorithm DeriveRS, followed
+by an evaluation of AESVM.
+
+2. We present DeriveRS as one algorithm in spite of its two variants that use FLS1 or FLS2, for simplicity
+and to conserve space.
+
+75
+
+Nandan, Khargonekar and Talathi
+
+[X∗ , Y∗ , β ] = DeriveRS(X,Y ,P,V)
+1. Set X+ = {xi : xi ∈ X, yi = 1} and X− = {xi : xi ∈ X, yi = −1}
+2. Run [X+ , ∆+ ] = FLS(X+ ,P) and [X− , ∆− ] = FLS(X− ,P), where FLS is FLS1 or
+FLS2
+
+2 ] = SLS(X+ ,V,∆+ ) and [X− , ∆−
+2 ] = SLS(X− ,V,∆− )
+3. Run [X+ , ∆+
+2 , identify each subset Xqr of X+ and run [X∗
+4. Using ∆+
+qr , βqr ] = DeriveAE(Xqr )
+Set N +∗ = sum of number of data vectors in all X∗
+qr derived from X+
+5. Using ∆−
+2 , identify each subset Xqr of X− and run [X∗
+qr , βqr ] = DeriveAE(Xqr )
+Set N −∗ = sum of number of data vectors in all X∗
+qr derived from X−
+qr to obtain X∗ and all βqr to obtain β
+6. Combine in the same order, all X∗
+Set Y∗ = {yi : yi = 1 for i = 1, 2, .., N +∗ ; and yi = −1 for i = 1 + N +∗ , 2 +
+N +∗ , .., N −∗ + N +∗}
+
+5.1 Data Sets
+
+Nine data sets of varied size, dimensionality and density were used to evaluate DeriveRS
+and our AESVM implementation. For data sets D2, D3 and D4, we performed ﬁve fold cross
+validation. We did not perform ﬁve fold cross-validation on the other data sets, because
+they have been widely used in their native form with a separate training and testing set.
+
+D1 KDD’99 intrusion detection data set:3 This data set is available as a training set of
+4898431 data vectors and a testing set of 311027 data vectors, with forty one features
+(D = 41). As described in Tavallaee et al. (2009), a huge portion of this data set is
+comprised of repeated data vectors. Experiments were conducted only on the distinct
+data vectors. The number of distinct training set vectors was N = 1074974 and the
+number of distinct testing set vectors was N = 77216. The training set density =
+33%.
+
+D2 Localization data for person activity:4 This data set has been used in a study on agent-
+based care for independent living (Kaluˇza et al., 2010). It has N = 164860 data vectors
+of seven features. It is comprised of continuous recordings from sensors attached to
+ﬁve people and can be used to predict the activity that was performed by each person
+at the time of data collection. In our experiments we used this data set to validate
+a binary problem of classifying the activities ‘lying’ and ‘lying down’ from the other
+activities. Features 3 and 4, that gives the time information, were not used in our
+experiments. Hence for this data set D = 5. The data set density = 96%.
+
+3. D1 is available for download at http://archive.ics.uci.edu/ml/datasets/KDD+Cup+1999+Data.
+4. D2 is available for download at http://archive.ics.uci.edu/ml/datasets/Localization+Data+for+
+Person+Activity.
+
+76
+
+Fast SVM Training Using Approximate Extreme Points
+
+D3 Seizure detection data set: This data set has N = 982863 data vectors, three features
+(D = 3) and density = 100%. It is comprised of continuous EEG recordings from rats
+induced with status epilepticus and is used to evaluate algorithms that classify seizure
+events from seizure-free EEG. An important characteristic of this data set is that it
+is highly unbalanced, the total number of data vectors corresponding to seizures is
+minuscule compared to the remaining data. Details of the data set can be found in
+Nandan et al. (2010), where it is used as data set A.
+
+D4 Forest cover type data set:5 This data set has N = 581012 data vectors and ﬁfty four
+features (D = 54) and density = 22%. It is used to classify the forest cover of areas
+of 30mx30m size into one of seven types. We followed the method used in Collobert
+et al. (2002), where a classiﬁcation of forest cover type 2 from the other cover types
+was performed.
+
+D5 IJCNN1 data set:6 This data set was used in IJCNN 2001 generalization ability chal-
+lenge (Chang and Lin, 2001). The training set and testing set have 49990 (N = 49990)
+and 91701 data vectors respectively. It has 22 features (D = 22) and training set den-
+sity = 59%
+
+D6 Adult income data set:7 This data set derived from the 1994 Census database, was used
+to classify incomes over $50000 from those below it. The training set has N = 32561
+with D = 123 and density = 11%, while the testing set has 16281 data vectors. The
+data is pre-processed as described in Platt (1999).
+
+D7 Epsilon data set:8 This is a data set that was used for 2008 Pascal large scale learning
+challenge and in Yuan et al. (2011). It is comprised of 400000 data vectors that are
+100% dense with D = 2000. Since this is too large for our experiments, we used the
+ﬁrst 10% of the training set9 giving N = 40000. The testing set has 100000 data
+vectors.
+
+D8 MNIST character recognition data set:10 The widely used data set (Lecun et al., 1998)
+of hand written characters has a training set of N = 60000, D = 780 and density =
+19%. We performed the binary classiﬁcation task of classifying the character ‘0’ from
+the others. The testing set has 10000 data vectors.
+
+5. D4 is available for download at http://archive.ics.uci.edu/ml/datasets/Covertype.
+6. D5 is available for download at http://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/binary.
+html#ijcnn1.
+7. D6 is available for download at http://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/binary.
+html#a9a.
+8. D7 is available for download at http://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/binary.
+html#epsilon.
+9. AESVM and the other SVM solvers are fully capable of training on this data set. However, the excessive
+training time makes it impractical to train the solvers on the entire data set for this paper.
+10. D8 is available for download at http://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/
+multiclass.html#mnist.
+
+77
+
+Nandan, Khargonekar and Talathi
+
+D9 w8a data set:11 This artiﬁcial data set used in Platt (1999) was randomly generated
+and has D = 300 features. The training set has N = 49749 with a density = 4% and
+the testing set has 14951 data vectors.
+
+5.2 Evaluation of DeriveRS
+
+We began our experiments with an evaluation of the algorithm DeriveRS, described in
+Section 4. The performance of the two methods FLS1 and FLS2 were compared ﬁrst.
+DeriveRS was run on D1, D2, D4 and D5 with the parameters P = 104 , V = 103 ,  = 10−2 ,
+and g = [2−4 , 2−3 , 2−2 , ..., 22 ], ﬁrst with FLS1 and then FLS2. For D2, DeriveRS was run
+on the entire data set for this particular experiment, instead of performing ﬁve fold cross-
+validation. This was done because, D2 is a small data set and the diﬀerence between the
+two ﬁrst level segregation methods can be better observed when the data set is as large as
+possible. The relatively small value of P = 104 was also chosen considering the small size
+of D2 and D5. To evaluate the eﬀectiveness of FLS1 and FLS2, we also ran DeriveRS with
+FLS1 and FLS2 after randomly reordering each data set. The results are shown in Figure
+1.
+
+Figure 1: Performance of variants of DeriveRS with g = [2−4 , 2−3 , 2−2 , ..., 22 ], for data sets
+D1, D2, D4, and D5. The results of DeriveRS with FLS1 and FLS2, after ran-
+domly reordering the data sets are shown as Random+FLS1 and Random+FLS2,
+respectively
+
+11. D9 is available for download at http://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/binary.
+html#w8a.
+
+78
+
+Fast SVM Training Using Approximate Extreme Points
+
+For all data sets, FLS2 gave smaller representative sets than FLS1. For D1, DeriveRS
+with FLS2 was signiﬁcantly faster and gave much smaller results than FLS1. For D2, D4
+and D5, even though the representative sets derived by FLS1 and FLS2 are almost equal
+in size, FLS1 took noticeably less time. The results of DeriveRS obtained after randomly
+rearranging the data sets, indicate the utility of FLS2. For all the data sets, the results of
+FLS2 after random reordering was seen to be signiﬁcantly better than the results of FLS1
+after random rearrangement. Hence we can infer that the good results obtained with FLS2
+are not caused by any pre-existing order in the data sets. A sharp increase was observed in
+representative set sizes and computation times for FLS1, when the data sets were randomly
+rearranged.
+Next we investigated the impact of changes in the values of the parameters P and
+V on the performance of DeriveRS. All combinations of P = {104 , 5x104 , 105 , 2x105} and
+V = {102 , 5x102 , 103 , 2x103 , 3x103} were used to compute the representative set of D1. The
+computations were performed for  = 10−2 and g = 1. The method FLS2 was used for the
+Q(cid:80)
+R(cid:80)
+ﬁrst level segregation in DeriveRS. The results are shown in Table 1. As expected for an
+N
+P + P
+V + log2V ) + V
+q=1
+r=1
+time was generally observed to increase for an increase in the value of V or P . It should be
+noted that our implementation of DeriveRS was based on SMO and hence S (Aqr ) = O(A2
+qr ).
+Q(cid:80)
+R(cid:80)
+In some cases the computation time decreased when P or V increased. This is caused by a
+R(cid:80)
+size of the representative set M (M ≈ Q(cid:80)
+A2
+qr ), which is inferred from the observed decrease of the
+decrease in the value of O(
+r=1
+q=1
+Aqr ). A sharp decrease in M was observed
+r=1
+q=1
+when V was increased. The impact of increasing P on the size of the representative set was
+found to be less drastic. This observation indicates that DeriveAE selects fewer approximate
+extreme points when V is larger.
+
+algorithm of time complexity O(N (log2
+
+S (Aqr )), the computation
+
+M
+N x100% (Computation time in seconds)
+V = 2x103
+V = 103
+V = 5x102
+V = 102
+2.2(161)
+2.5(87)
+7(27)
+3(51)
+2.9(59)
+6.9(66)
+2.4(92)
+2.1(166)
+2.1(169)
+2.3(98)
+2.9(69)
+7(121)
+6.9(237)
+2.9(94)
+2.3(110)
+2(176)
+
+P
+104
+5x104
+105
+2x105
+
+V = 3x103
+2.1(233)
+2(239)
+1.9(248)
+1.9(250)
+
+Table 1: The impact of varying P and V on the result of DeriveRS
+
+As described in Section 5.3, we compared several SVM training algorithms with our
+implementation of AESVM. We performed a grid search with all combinations of the SVM
+hyper-parameters C (cid:48) = {2−4 , 2−3 , ..., 26 , 27} and g = {2−4 , 2−3 , 2−2 , ..., 21 , 22}. The hyper-
+parameter C (cid:48) is related to the hyper-parameter C as C (cid:48) = C
+N . We represent the grid in
+terms of C (cid:48) as it is used in several SVM solvers such as LIBSVM, LASVM, CVM and
+BVM. Furthermore, the use of C (cid:48) enables the application of the same hyper-parameter grid
+to all data sets. To train AESVM with all the hyper-parameter combinations in the grid,
+
+79
+
+Nandan, Khargonekar and Talathi
+
+the representative set has to be computed using DeriveRS for all values of kernel hyper-
+parameter g in the grid. This is because the kernel space varies when the value of g is
+varied. For all the computations, the input parameters were set as P = 105 and V = 103 .
+The ﬁrst level segregation in DeriveRS was performed using FLS2. Three values of the
+tolerance parameter  were investigated,  = 10−2 , 10−3 or 10−4 .
+The results of the computation for data sets D1 - D5, are shown in the Table 2. The
+percentage of data vectors in the representative set was found to increase with increasing
+values of g . This is intuitive, as when g increases the distance between the data vectors in
+kernel space increases. With increased distances, more data vectors xi become approximate
+extreme points. The increase in the number of approximate extreme points with g causes
+the rising trend of computation time shown in Table 2. For a decrease in the value of ,
+M increases. This is because, for smaller  fewer xi would satisfy the condition: optimized
+p(xi , Ψ) ≤  in CheckPoint(xi , Ψ). This results in the selection of a larger number of
+approximate extreme points in DeriveAE.
+
+
+
+10−2
+
+10−3
+
+10−4
+
+Data
+set
+D1
+D2
+D3
+D4
+D5
+D1
+D2
+D3
+D4
+D5
+D1
+D2
+D3
+D4
+D5
+
+g = 1
+24
+
+M
+N x100% (Computation time in seconds)
+g = 1
+g = 1
+g = 1
+g = 1
+23
+22
+2
+
+g = 21
+
+g = 22
+
+4.6(163)
+3.3(157)
+2.4(151)
+1.3(140) 1.7(147)
+0.9(139) 1(138)
+4.7(17)
+2.8(15)
+1.8(14)
+1.2(13)
+0.8(13)
+0.7(13)
+0.6(12)
+0.6(78)
+0.6(79)
+0.6(79)
+0.6(80)
+0.6(79)
+0.6(79)
+0.6(80)
+25.2(111)
+14.5(91)
+8.5(78)
+3.1(61)
+5.1(68)
+1.9(58)
+1.3(55)
+71(15)
+58(15)
+42.1(14)
+17.7(10) 28.1(12)
+5.6(7)
+10.4(8)
+12.1(231)
+8.5(208)
+6(188)
+1.6(142) 2.2(149) 3(160)
+4.2(168)
+14.4(35)
+8.8(29)
+5.7(23)
+3.8(19)
+2.6(16)
+1.8(14)
+1.3(13)
+0.5(80)
+0.6(81)
+0.5(80)
+0.6(79)
+0.6(79)
+0.6(79)
+0.6(80)
+31.1(172) 48.7(203) 71.3(204)
+5.5(71)
+8.6(86)
+13(106)
+19.9(136)
+76.2(22)
+86.1(21)
+93.5(19)
+25.8(15) 36.4(19) 49.5(22) 63.5(23)
+15.2(358) 20.4(418) 26.8(479)
+3.8(189) 5.4(217) 7.7(253) 10.9(304)
+35.8(100)
+22.8(79)
+14.3(61)
+9.6(52)
+6.9(40)
+5.1(28)
+3.8(21)
+0.5(78)
+0.7(83)
+0.9(86)
+1.2(90)
+0.5(79)
+0.5(80)
+0.6(81)
+19.4(175) 27.1(249) 38.1(333) 54.3(394.3) 75.5(387) 92.6(310) 98.8(244)
+99.7(22)
+98.3(26)
+94.9(32)
+56.9(40) 69.1(43) 80.1(41) 88.6(38)
+
+Table 2: The percentage of the data vectors in X∗ (given by M
+N x100) and its computation
+time for data sets D1-D5
+
+The results of applying DeriveRS to the high-dimensional data sets D6-D9 are shown in
+Table 3. It was observed that M
+N was much larger for D6-D9 than for the other data sets.
+We computed the representative set with  = 10−2 only, as for smaller values of  we expect
+the representative set to be close to 100% of the training set. The increasing trend of the
+size of the representative set with increasing g values can be observed in Table 3 also.
+
+80
+
+Fast SVM Training Using Approximate Extreme Points
+
+g = 1
+24
+
+M
+N x100% (Computation time in seconds)
+g = 1
+g = 1
+g = 1
+g = 1
+23
+22
+2
+
+g = 21
+
+g = 22
+
+83.1(12)
+86(9)
+82.7(9)
+83.1(9)
+83.1(12)
+83.1(13)
+83.1(12)
+97.2(317) 99.7(309) 100(325) 100(332) 100(360) 100(330) 100(280)
+100(64)
+100(64)
+100(67)
+100(63)
+100(62)
+100(75)
+100(97)
+72.2(21)
+72.2(22)
+72.2(21)
+72.7(17)
+72.8(15)
+74.4(14)
+76.1(15)
+
+Data
+set
+D6
+D7
+D8
+D9
+
+Table 3: The percentage of data vectors in X∗ and its computation time for data sets D6-D9
+with  = 10−2
+
+5.3 Comparison of AESVM to SVM Solvers
+
+To judge the accuracy and eﬃciency of AESVM, its classiﬁcation performance was compared
+with the SMO implementation in LIBSVM, ver. 3.1. We chose LIBSVM because it is a state-
+of-the-art SMO implementation that is routinely used in similar comparison studies. To
+compare the eﬃciency of AESVM to other popular approximate SVM solvers we chose CVM,
+BVM, LASVM, SVMperf , and RfeatSVM. A description of these methods is given in Section
+2. We chose these methods because they are widely cited, their software implementations
+are freely available and other studies (Shalev-Shwartz et al., 2011) have reported fast SVM
+training using some of these methods. LASVM is also an eﬃcient method for online SVM
+training. However, since we do not investigate online SVM learning in this paper, we did not
+test the online SVM training performance of LASVM. We compared AESVM with CVM
+and BVM even though they are L2-SVM solvers, as they has been reported to be faster
+alternatives to SVM implementations such as LIBSVM.
+The implementation of AESVM and DeriveRS were built upon the LIBSVM implemen-
+tation. All methods except SVMperf were allocated a cache of size 600 MB. The parameters
+for DeriveRS were P = 105 and V = 103 , and the ﬁrst level segregation was performed
+using FLS2. To reﬂect a typical SVM training scenario, we performed a grid search with
+all eighty four combinations of the SVM hyper-parameters C (cid:48) = {2−4 , 2−3 , ..., 26 , 27} and
+g = {2−4 , 2−3 , 2−2 , ..., 21 , 22}. As mentioned earlier, for data sets D2, D3 and D4, ﬁve
+fold cross-validation was performed. The results of the comparison have been split into
+sub-sections given below, due to the large number of SVM solvers and data sets used.
+
+5.3.1 Comparison to CVM, BVM, LASVM and LIBSVM
+
+First we present the results of the performance comparison for D2 in Figures 2 and 3.
+For ease of representation, only the results of grid points corresponding to combinations of
+C (cid:48) = {2−4 , 2−2 , 1, 22 , 24 , 26} and g = {2−4 , 2−2 , 1, 22} are shown in Figures 2 and 3. Figure
+2 shows the graph between training time and classiﬁcation accuracy for the ﬁve algorithms.
+Figure 3 shows the graph between the number of support vectors and classiﬁcation accuracy.
+We present classiﬁcation accuracy as the ratio of the number of correct classiﬁcations to the
+total number of classiﬁcations performed. Since the classiﬁcation time of an SVM algorithm
+is directly proportional to the number of support vectors, we represent it in terms of the
+
+81
+
+Nandan, Khargonekar and Talathi
+
+number of support vectors.
+It can be seen that, AESVM generally gave more accurate
+results for a fraction of the training time of the other algorithms, and also resulted in less
+classiﬁcation time. The training time and classiﬁcation times of AESVM increased when 
+was reduced. This is expected given the inverse relation of M to  shown in Tables 2 and
+3. The variation in accuracy with  is not very noticeable.
+
+Figure 2: Plot of training time against classiﬁcation accuracy of the SVM algorithms on D2
+
+Figures 2 and 3 indicate that AESVM gave better results than the other algorithms for
+SVM training and classiﬁcation on D2, in terms of standard metrics. To present a more
+quantitative and easily interpretable comparison of the algorithms, we deﬁne the seven
+performance metrics given below. These metrics combine the results of all runs of each
+algorithm into a single value, for each data set. For the ﬁrst ﬁve metrics, we take LIBSVM
+as a baseline of comparison, as it gives the most accurate solution among the tested methods.
+Furthermore, an important ob jective of these experiments is to show the similarity of the
+results of AESVM and LIBSVM. In the description given below, F can refer to any SVM
+algorithm such as AESVM, CVM, LASVM etc.
+
+82
+
+0.40.50.60.70.8−4−2024681012log(Training time)Classification accuracyAESVM, ε= 10−2AESVM, ε= 10−3AESVM, ε= 10−4CVMBVMLASVMLIBSVMFast SVM Training Using Approximate Extreme Points
+
+Figure 3: Plot of classiﬁcation time, represented by the number of support vectors, against
+classiﬁcation accuracy of the SVM algorithms on D2
+
+.
+
+ET S =
+
+1. Expected training time speedup, ET S : The expected speedup in training time is indi-
+R(cid:88)
+S(cid:88)
+cated by:
+T Lr
+1
+s
+T Fr
+RS
+s
+s=1
+r=1
+s and T Fr
+s are the training times of LIBSVM and F respectively, in the sth
+Here T Lr
+cross-validation fold with the rth set of hyper-parameters of grid search.
+2. Overal l training time speedup, OT S : It indicates overall training time speedup for
+the entire grid search with cross-validation, including the time taken to compute the
+representative set. The total time taken by DeriveRS to compute the representative
+set for all values of g is represented as TX∗ . For methods other than AESVM and
+RfeatSVM2 (see Section 5.3.3), TX∗ = 0.
+S(cid:80)
+R(cid:80)
+R(cid:80)
+S(cid:80)
+T Lr
+s
+s=1
+r=1
+s + TX∗
+T Fr
+s=1
+r=1
+
+OT S =
+
+.
+
+83
+
+0.40.50.60.70.86789101112log(Number of support vectors)Classification accuracyAESVM, ε= 10−2AESVM, ε= 10−3AESVM, ε= 10−4CVMBVMLASVMLIBSVMNandan, Khargonekar and Talathi
+
+.
+
+1
+RS
+
+EC S =
+
+N Lr
+s
+N Fr
+s
+
+3. Expected classiﬁcation time speedup, EC S : The expected speedup in classiﬁcation
+R(cid:88)
+S(cid:88)
+time is indicated by:
+r=1
+s=1
+s and N Fr
+Here N Lr
+s are the number of support vectors in the solution of LIBSVM and
+F respectively.
+4. Classiﬁcation time speedup for optimal hyper-parameters, C T S : The speedup in classi-
+ﬁcation time for the optimal hyper-parameters (hyper-parameters that result in max-
+S(cid:80)
+imum classiﬁcation accuracy) chosen by grid search is indicated by:
+S(cid:80)
+N Lr
+s
+s=1
+N Fr
+s
+s=1
+
+max
+r
+
+max
+r
+
+C T S =
+
+.
+
+.
+
+1
+S
+
+RM SE =
+
+s − C Fr
+(C Lr
+s )2
+
+max. acc. = max
+r
+
+5. Root mean squared error of classiﬁcation accuracy, RM SE : The similarity of the
+(cid:33)0.5
+(cid:32)
+solution of F to LIBSVM, in terms of its classiﬁcation accuracy, is indicated by:
+R(cid:88)
+S(cid:88)
+1
+RS
+r=1
+s=1
+s and C Fr
+s are the classiﬁcation accuracy of LIBSVM and F respectively.
+Here C Lr
+6. Maximum classiﬁcation accuracy: It gives the best classiﬁcation results of an SVM
+S(cid:88)
+solver, for the set of SVM hyper-parameters that are tested.
+s=1
+7. Mean and standard deviation of classiﬁcation accuracies: It indicates the classiﬁcation
+performance of an SVM solver, that can be expected for arbitrary hyper-parameter
+(cid:118)(cid:117)(cid:117)(cid:116) 1
+(cid:33)2
+(cid:32)
+values.
+S(cid:88)
+R(cid:88)
+S(cid:88)
+R(cid:88)
+C Fr
+s , and std. acc. =
+R
+s=1
+r=1
+s=1
+r=1
+The results of the classiﬁcation performance comparison on data sets D1-D5, are shown
+in Table 4. It was observed that for all tested values of , AESVM resulted in large reductions
+in training and classiﬁcation times when compared to LIBSVM for a very small diﬀerence
+in classiﬁcation accuracy. Most notably, for D3 the expected and overall training time
+speedups were 41728.8 and 488.5 respectively, which is outstanding. Comparing the results
+of AESVM for diﬀerent  values, we see that RM SE generally improves by decreasing when
+ decreases, while the metrics improve by increasing when  increases. The increase in ET S
+and OT S is of a larger order than the increase in RM SE when  increases.
+
+s − mean acc.
+C Fr
+
+mean acc. =
+
+C Fr
+s .
+
+1
+RS
+
+1
+S
+
+.
+
+84
+
+Fast SVM Training Using Approximate Extreme Points
+
+Data
+set
+
+D1
+
+D2
+
+D3
+
+D4
+
+D5
+
+Solver
+
+ET S
+
+OT S EC S C T S RM SE
+(x102 )
+0.22
+0.14
+0.06
+0.44
+0.6
+0.12
+
+156
+50.4
+14.7
+6.2
+21.6
+0.8
+
+5.8
+3.8
+2.4
+1.2
+2
+1.1
+
+3.3
+2.6
+1.8
+2.3
+1.9
+1
+
+134.5 77.7 17.8 3.85
+86.1
+29
+9.4
+2.43
+1.73
+6.2
+10.9
+21.8
+26.59
+4.3
+4.7
+0.5
+0.5
+5
+5.6
+24.06
+2.18
+1
+1
+0.1
+
+AESVM1 1188.9
+AESVM2 314.8
+AESVM3 72.7
+8.9
+CVM
+BVM
+28.6
+LASVM 0.8
+LIBSVM
+AESVM1 6067.6
+AESVM2 1202.5
+AESVM3 164.5
+0.7
+CVM
+BVM
+0.8
+LASVM 0.2
+LIBSVM
+AESVM1 41728.8 488.5 71.5 64.4 0.2
+AESVM2 21689.3
+468
+39.5
+51.5
+0.1
+0.09
+36
+17.1
+429.9
+AESVM3 12792
+0.33
+0.1
+0.4
+23.9
+60.4
+CVM
+0.39
+0.2
+0.6
+22.8
+BVM
+76.8
+LASVM 0.9
+0.5
+0.6
+0.7
+55.2
+LIBSVM
+AESVM1 962
+AESVM2 68.8
+AESVM3 6.7
+8
+CVM
+BVM
+6.6
+LASVM -
+LIBSVM
+AESVM1 26.6
+AESVM2 3.1
+AESVM3 1.3
+0.3
+CVM
+BVM
+0.5
+LASVM 0.6
+LIBSVM
+
+24.5 72.8 1.5
+6.3
+17.1
+0.7
+0.3
+5
+2.3
+9.4
+28
+12.4
+9.44
+8.9
+12.1
+-
+-
+-
+
+34.6
+6.1
+2.3
+6.2
+4.4
+-
+
+0.5
+0.39
+0.25
+0.74
+0.84
+0.13
+
+4.1
+1.8
+1.1
+0.2
+0.3
+0.5
+
+3.3
+1.5
+1.1
+0.8
+1
+1
+
+1.6
+0.9
+0.9
+0.6
+0.9
+1.1
+
+max. acc.
+(x102 )
+94.2
+93.6
+93.8
+94.1
+94.4
+94.3
+93.9
+76.5
+76.7
+77.4
+70.3
+67.1
+78.1
+78.2
+99.9
+99.9
+99.9
+99.9
+99.9
+99.9
+99.9
+68.3
+68.1
+68.1
+63.7
+62.3
+-
+68.2
+98.8
+98.9
+99
+99
+99.1
+99.2
+99
+
+mean & std.
+acc. (x102 )
+92.4, 0.8
+92.3, 0.7
+92.4, 0.8
+92.7, 0.8
+92.6, 0.9
+92.5, 0.8
+92.4, 0.8
+71.1, 3.3
+72.4, 3.6
+73.1, 3.6
+52.2, 0.8
+54.6, 0.7
+73.5, 0.5
+74.1, 3.5
+99.8, 0.1
+99.8, 0.1
+99.8, 0.1
+99.8, 0.2
+99.8, 0.2
+69.3, 29.9
+99.8, 0.1
+61.6, 3.1
+61, 3.3
+60.8, 3.2
+55.5, 3.1
+54.9, 3.4
+-
+60.6, 3.2
+96.2, 2.6
+96.3, 2.6
+96.4, 2.6
+96.6, 2.5
+97, 2
+97, 2
+96.6, 2.4
+
+Table 4: Performance comparison of AESVM, CVM, BVM, LASVM and LIBSVM on data
+sets D1-D5. AESVM1, AESVM2 and AESVM3 represent the results of AESVM
+with  = 10−2 , 10−3 , and 10−4 respectively.
+
+85
+
+Nandan, Khargonekar and Talathi
+
+Comparing AESVM to CVM, BVM and LASVM, we see that AESVM in general gave
+the least values of RM SE and the largest values of ET S , OT S , EC S and C T S .
+In a
+few cases LASVM gave low RM SE values. However, in all our experiments LASVM took
+longer to train than the other algorithms including LIBSVM. We could not complete the
+evaluation of LASVM for D4 due to its large training time, which was more than 40 hours
+for some hyper-parameter combinations. The ﬁve algorithms under comparison were found
+to give similar maximum classiﬁcation accuracies for D1, D3 and D5. For D2 and D4, CVM
+and BVM gave signiﬁcantly smaller maximum classiﬁcation accuracies. Another interesting
+result is that for D3, the mean and standard deviation of classiﬁcation accuracy of LASVM
+was found to be widely diﬀerent from the other algorithms. For all the tested values of
+ the maximum, mean and standard deviation of the classiﬁcation accuracies of AESVM
+were found to be similar.
+Next we present the results of performance comparison of CVM, BVM, LASVM, AESVM,
+and LIBSVM on the high-dimensional data sets D6-D9. As described in Section 5.2, De-
+riveRS was run with only  = 10−2 for these data sets. The results of the performance
+comparison are shown in Table 5. CVM was found to take longer than 40 hours to train
+on D6, D7 and D8 with some hyper-parameter values and hence we could not complete its
+evaluation for those data sets. BVM also took longer than 40 hours to train on D7 and it
+was also not evaluated for D7. AESVM consistently reported ET S , OT S , EC S and C T S
+values that are larger than 1 unlike the other algorithms, except for D9 where the C T S
+value for AESVM was 0.6. However it should be noted that the other methods also had sim-
+ilarly low C T S values for D9. Similar to the results in Table 4, LASVM and BVM resulted
+in very large RM SE values for some data sets. The maximum classiﬁcation accuracies of
+all algorithms were similar. On some data sets, BVM and LASVM were observed to give
+signiﬁcantly lower mean and higher standard deviation of classiﬁcation accuracy.
+
+5.3.2 Comparison to SVMperf
+
+SVMperf diﬀers from the other SVM solvers in its ability to compute a solution close to
+the SVM solution for a given number of support vectors (k). The algorithm complexity
+depends on k as O(k2 ) per iteration. We ﬁrst used a value of k = 1000 for our experiments,
+as it has been reported to give good performance (Joachims and Yu, 2009). SVMperf was
+tested on data sets D1, D4, D5, D6, D8 and D9, with the Gaussian kernel12 and the same
+hyper-parameter grid as described earlier. The results of the grid search are presented in
+Table 6. The results of our experiments on AESVM (with  = 10−2 ) and LIBSVM are
+repeated in Table 6 for ease of reference. The maximum, mean and standard deviation of
+classiﬁcation accuracies are represented as max. acc., mean & std. acc. respectively.
+Based on the results obtained for k = 1000, other values of k were also tested. For data
+sets D1, D4 and D5, though SVMperf gave classiﬁcation accuracies similar to the that of
+LIBSVM and AESVM, the training times were similar to or higher than the training times of
+LIBSVM. To test the ability of SVMperf to give fast training, we also tested it with k = 400
+for D1, D4 and D5. For the high dimensional data sets (D6, D8 and D9), the RM SE values
+were signiﬁcantly higher for SVMperf , while the mean classiﬁcation accuracy was noticeably
+lower than AESVM. Considering the possibility that the value of k = 1000 is insuﬃcient to
+
+12. We used the software parameters ‘-t 2 -w 9 –i 2 –b 0’ as suggested in the author’s website.
+
+86
+
+Fast SVM Training Using Approximate Extreme Points
+
+Data
+set
+
+Solver
+
+ET S OT S EC S C T S RM SE
+(x102 )
+0
+-
+7.8
+0.85
+
+1.2
+-
+1.2
+1.1
+
+D6
+
+D7
+
+D8
+
+D9
+
+1.4
+-
+0.6
+0.5
+
+1.1
+-
+1.5
+1
+
+AESVM 1.5
+-
+CVM
+BVM
+0.6
+LASVM 0.8
+LIBSVM
+AESVM 1
+-
+CVM
+BVM
+-
+LASVM 0.9
+LIBSVM
+AESVM 1
+CVM
+-
+BVM
+4.7
+LASVM 1
+LIBSVM
+1.1
+1.3
+AESVM 1.4
+1.4
+CVM
+1.8
+1.2
+17.5 16.9 4.9
+BVM
+LASVM 0.6
+0.5
+2.3
+LIBSVM
+
+1
+-
+3.2
+1
+
+1
+-
+-
+1
+
+1
+-
+-
+0.7
+
+1
+-
+2.6
+0.9
+
+max. acc.
+(x102 )
+85.1
+-
+85.2
+85
+85.1
+88.3
+-
+-
+88.4
+88.6
+99.7
+-
+99.7
+99.7
+99.7
+99.5
+99.5
+99.5
+99.5
+99.5
+
+mean & std.
+acc. (x102 )
+81.4, 2.8
+-
+80.2, 8.9
+81.1, 2.9
+81.4, 2.8
+85.3, 5.7
+-
+-
+85.2, 6.2
+85.7, 4.8
+92.3, 3.6
+-
+88.5, 18.1
+92.3, 3.6
+92.3, 3.6
+98.8, 0.8
+98.9 , 0.8
+98.9 , 0.8
+85.5, 23.9
+98.8, 0.8
+
+1.1
+-
+-
+0.9
+
+1
+-
+3.1
+1
+
+0.6
+0.3
+0.6
+0.1
+
+0.01
+-
+-
+2.37
+
+0
+-
+17.55
+0
+
+0
+1
+0.09
+27.5
+
+Table 5: Performance comparison of AESVM (with  = 10−2 ), CVM, BVM, LASVM and
+LIBSVM on data sets D6-D9
+
+result in an accurate solution for these data sets, we tested D6 and D9 with k = 2000 and
+D8 with k = 3000. Even though the training time increased signiﬁcantly with an increase in
+k , the values of RM SE and the mean and standard deviation of accuracies did not improve
+signiﬁcantly. The training time speedup values of SVMperf are much lower than AESVM
+for all tested k values for all data sets, except for D8. The maximum accuracies of all the
+algorithms were similar. Due to the ability of SVMperf to approximate w with a small set of
+k vectors, the classiﬁcation time speedups of SVMperf are signiﬁcantly higher than AESVM.
+However, this approximation comes at the cost of increased training time and sometimes
+results in a loss of accuracy, as illustrated in Table 6.
+
+5.3.3 Comparison to RfeatSVM
+
+Rahimi and Recht (2007) proposed a promising method to approximate non-linear kernel
+SVM solutions using simpler linear kernel SVMs. This is accomplished by ﬁrst pro jecting
+the training data set into a randomized feature space and then using any SVM solver with
+the linear kernel on the pro jected data set. We ﬁrst investigated the classiﬁcation accuracy
+of the solution of RfeatSVM and its similarity to the SVM solution. LIBSVM with the
+
+87
+
+Nandan, Khargonekar and Talathi
+
+OT S EC S C T S RM SE
+(x102 )
+0.22
+0.89
+
+3.3
+6.6
+
+5.8
+17
+
+max. acc.
+(x102 )
+94.2
+93.9
+
+mean & std.
+acc. (x102 )
+92.4, 0.8
+92.7, 0.4
+
+3.7
+
+0.9
+
+2.6
+
+2.6
+
+0.74
+
+94
+
+92.7, 0.5
+
+34.6 24.5
+1.5
+72.8
+467.1 694.3 3.7
+3.7
+
+93.9
+68.3
+68.4
+
+92.4, 0.8
+61.6, 3.1
+62.9, 2.2
+
+Data
+set
+
+D1
+
+D4
+
+D5
+
+D6
+
+D8
+
+D9
+
+Solver
+
+ET S
+
+3.1
+
+1.2
+
+0.2
+
+0.1
+
+4.1
+0.4
+
+AESVM 1188.9 156
+SVMperf
+1.6
+6.7
+k = 400
+SVMperf
+k = 1000
+LIBSVM
+AESVM 962
+SVMperf
+10.2
+k = 400
+SVMperf
+k = 1000
+LIBSVM
+AESVM 26.6
+SVMperf
+0.8
+k = 400
+SVMperf
+k = 1000
+LIBSVM
+AESVM 1.5
+SVMperf
+1.1
+k = 1000
+SVMperf
+k = 2000
+LIBSVM
+AESVM 1
+SVMperf
+37.6
+k = 1000
+SVMperf
+k = 3000
+LIBSVM
+AESVM 1.4
+SVMperf
+1.2
+k =1000
+SVMperf
+k =2000
+LIBSVM
+
+1.4
+0.9
+
+1.3
+0.9
+
+0.3
+
+0.4
+
+0.3
+
+3.5
+
+1.2
+
+186.8
+
+277.7
+
+2.14
+
+68.1
+
+61.8, 2.7
+
+3.3
+14.6
+
+1.6
+8.2
+
+0.5
+2.9
+
+68.2
+98.8
+98.8
+
+60.6, 3.2
+96.2, 2.6
+96.5, 2.4
+
+5.8
+
+3.3
+
+0.26
+
+99
+
+96.7, 2.4
+
+1.1
+20
+
+10
+
+0.2
+
+1
+1
+23.8 49
+
+1.2
+12.1
+
+0
+9.39
+
+99
+85.1
+85.2
+
+96.6, 2.4
+81.4, 2.8
+79.6, 10.7
+
+6
+
+6.5
+
+85.1
+
+80.1, 7.8
+
+1
+9.9
+
+0
+54.2
+
+85.1
+99.7
+99.9
+
+81.4, 2.8
+92.3, 3.6
+55.7, 42.3
+
+16.3
+
+3.3
+
+51.4
+
+99.8
+
+59.2, 41.6
+
+1.1
+21.3
+
+0.6
+3
+
+0
+22.6
+
+99.7
+99.5
+99.2
+
+92.3, 3.6
+98.8, 0.8
+86.1, 18.8
+
+10.7
+
+1.5
+
+20.6
+
+99.4
+
+87.3, 17.3
+
+99.5
+
+98.8, 0.8
+
+Table 6: Performance comparison of SVMperf , AESVM (with  = 10−2 ), and LIBSVM
+
+linear kernel was used to compute the RfeatSVM solution on the pro jected data sets. This
+combination of RfeatSVM and LIBSVM is denoted as RfeatSVM1. We used LIBSVM,
+
+88
+
+Fast SVM Training Using Approximate Extreme Points
+
+in spite of the availability of faster linear SVM implementations, as it is an exact SVM
+solver. Hence only the performance metrics related to accuracy were used to compare the
+performance of AESVM, LIBSVM and RfeatSVM1. The random Fourier features method,
+described in Algorithm 1 of Rahimi and Recht (2007), was used to pro ject the data sets
+D1, D5, D6 and D9 into a randomized feature space of dimension E.
+
+Data
+set
+
+D1
+
+D5
+
+D6
+
+D9
+
+Solver
+
+AESVM
+RfeatSVM1
+E = 100
+LIBSVM
+AESVM
+RfeatSVM1
+E = 100
+LIBSVM
+AESVM
+RfeatSVM1
+E = 1000
+LIBSVM
+AESVM
+RfeatSVM1
+E = 1000
+LIBSVM
+
+RM SE
+(x102 )
+0.25
+56.18
+
+max. acc.
+(x102 )
+93.5
+37.8
+
+mean & std.
+acc. (x102 )
+92.2,0.9
+36.1,1.3
+
+0.9
+5.3
+
+0.16
+4
+
+0.15
+0.6
+
+93.6
+98.6
+94.7
+
+98.9
+85.1
+81.6
+
+85
+99.3
+98.7
+
+92.3,0.9
+95.7,2.8
+91.6,1.4
+
+96.2 ,2.7
+81.2,2.9
+78,2.2
+
+81.3,3
+98.6,0.8
+97.4,0.6
+
+99.5
+
+98.8,0.9
+
+Table 7: Performance comparison of RfeatSVM1 (RfeatSVM solved using LIBSVM),
+AESVM (with  = 10−2 ), and LIBSVM
+
+The results of the accuracy comparison are given in Table 7. We used a smaller hyper-
+parameter grid of all twenty four combinations of C (cid:48) = {2−4 , 2−2 , 1, 22 , 24 , 26} and g =
+{2−4 , 2−2 , 1, 22} for our experiments. The results reported in Table 7 for AESVM and
+LIBSVM were computed for this smaller grid. We selected the number of dimensions (E)
+of the randomized feature space for D1 and D6 based on Rahimi and Recht (2007). The
+maximum accuracy for RfeatSVM1 was found to be much less than AESVM and LIBSVM
+for all data sets. The RM SE values for RfeatSVM1 were signiﬁcantly higher than AESVM
+and mean accuracy noticeably lower for most data sets, especially for D1 and D6.
+
+Next we investigated the training and classiﬁcation time requirements of RfeatSVM by
+solving it using the fast linear SVM solver LIBLINEAR (Fan et al., 2008), referred to as
+RfeatSVM2 in the remainder of this paper. The entire hyper-parameter grid used in the
+previous sections were used in this experiment. The results of the performance comparison
+of RfeatSVM2, AESVM and LIBSVM are presented in Table 8. The classiﬁcation time
+shown in Table 8 is the time taken for classiﬁcation when the SVM solver was trained with
+
+89
+
+Nandan, Khargonekar and Talathi
+
+Data
+set
+
+D1
+
+D5
+
+D6
+
+D9
+
+Solver
+
+AESVM
+RfeatSVM2
+E = 100
+RfeatSVM2
+E = 500
+LIBSVM
+AESVM
+RfeatSVM2
+E = 100
+RfeatSVM2
+E = 500
+RfeatSVM2
+E = 1000
+RfeatSVM2
+E = 5000
+LIBSVM
+AESVM
+RfeatSVM2
+E = 1000
+RfeatSVM2
+E = 5000
+RfeatSVM2
+E = 10000
+LIBSVM
+AESVM
+RfeatSVM2
+E = 1000
+RfeatSVM2
+E = 5000
+RfeatSVM2
+E = 10000
+LIBSVM
+
+ET S OT S Classiﬁcation
+time (s)
+6.1
+0.9
+
+1188.9 156
+56.4
+176.3
+
+RM SE
+(x102 )
+0.22
+50.3
+
+max. acc.
+(x102 )
+94.2
+63.5
+
+mean & std.
+acc. (x102 )
+92.4,0.8
+43.7,12.9
+
+77.5
+
+47.7
+
+4.4
+
+43.4
+
+89.3
+
+56,24.1
+
+26.6
+80.7
+
+4.1
+9.2
+
+15
+9.7
+0.9
+
+0.5
+38.6
+
+93.9
+98.8
+90.5
+
+92.4,0.8
+96.2,2.6
+64.4,20
+
+33.2
+
+6.5
+
+4.5
+
+30.9
+
+90.5
+
+70.8,15.5
+
+18.4
+
+3.6
+
+13.8
+
+31.5
+
+90.5
+
+70.2,17.8
+
+3.9
+
+0.85
+
+64.5
+
+33.8
+
+90.5
+
+70.2,19.8
+
+1.5
+1.4
+205.7 43.9
+
+16.8
+16
+2.1
+
+0
+27.8
+
+99
+85.1
+75.3
+
+96.6 ,2.4
+81.4,2.8
+54.9,9.7
+
+48.8
+
+8.9
+
+10.7
+
+29.1
+
+76.4
+
+53.1,8.1
+
+24.8
+
+5.1
+
+30.9
+
+28.5
+
+76.4
+
+54,9.2
+
+1.4
+1.3
+245.1 50
+
+30.5
+10.5
+2.9
+
+0
+36.9
+
+85.1
+99.5
+92.8
+
+81.4,2.8
+98.8,0.8
+63.3,9.9
+
+57.4
+
+12
+
+15.3
+
+39
+
+95.1
+
+61.5,11.2
+
+28.9
+
+6.5
+
+45.5
+
+37.4
+
+96.3
+
+63.8,12.9
+
+5.1
+
+99.5
+
+98.8,0.8
+
+Table 8: Performance comparison of RfeatSVM2 (RfeatSVM solved using LIBLINEAR),
+AESVM (with  = 10−2 ), and LIBSVM
+
+its optimal hyper-parameters. For RfeatSVM2 the classiﬁcation time includes the time
+taken to derive the random Fourier features of the test vectors.
+
+The classiﬁcation time for RfeatSVM2 was generally less than AESVM, for small val-
+ues of E. Moreover, it was found that RfeatSVM2 has signiﬁcantly higher training time
+
+90
+
+Fast SVM Training Using Approximate Extreme Points
+
+speed-ups than AESVM for small values of E, except for D1 where AESVM was much
+faster. However, with increasing E the classiﬁcation time and training time increased to
+more than AESVM for most data sets. For all data sets, the RM SE , and maximum, mean
+and standard deviation of accuracy of RfeatSVM2 were signiﬁcantly worse than AESVM.
+Increasing the number of dimensions E, resulted in only a slight improvement in the clas-
+siﬁcation performance of RfeatSVM2. An important observation was that the pro jected
+data sets were found to be almost 100% dense, which results in large memory requirements
+for RfeatSVM1 and RfeatSVM2. Even though, technically the value of E can be increased
+arbitrarily, its value is practically limited by the memory requirements of RfeatSVM.
+
+5.4 Performance with the Polynomial Kernel
+
+To validate our proposal of AESVM as a fast alternative to SVM for all non-linear kernels,
+we performed a few experiments with the polynomial kernel, k(x1 , x2 ) = (1 + xT
+1 x2 )d . The
+hyper-parameter grid composed of all twelve combinations of C (cid:48) = {2−4 , 2−2 , 1, 22} and
+d = {2, 3, 4} was used to compute the solutions of AESVM and LIBSVM on the data sets
+D1, D4 and D6. The results of the computation of the representative set using DeriveRS
+are shown in Table 9. The parameters for DeriveRS were P = 105 , V = 103 and  = 10−2 ,
+and the ﬁrst level segregation was performed using FLS2. The performance comparison of
+AESVM and LIBSVM with the polynomial kernel is shown in Table 10. Like in the case
+of the Gaussian kernel, we found that AESVM gave results similar to LIBSVM with the
+polynomial kernel, while taking shorter training and classiﬁcation times.
+
+M
+N x100% (Computation time in seconds)
+Data
+d = 2
+d = 3
+d = 4
+set
+D1
+D4
+D6
+
+8(109)
+13.2(199) 26(638)
+20.1(67) 48(260.1) 81.3(1166.4)
+87.8(11) 84(12.5)
+91(13.7)
+
+Table 9: Results of DeriveRS for the polynomial kernel
+
+6. Discussion
+
+AESVM is a new problem formulation that is almost identical to, but less complex than, the
+SVM primal problem. AESVM optimizes over only a subset of the training data set called
+the representative set, and consequently, is expected to give fast convergence with most
+SVM solvers. In contrast, the other studies mentioned in Section 2 are mostly algorithms
+that solve the SVM primal or related problems. Methods such as RSVM also use diﬀerent
+problem formulations. However, they require special algorithms to solve, unlike AESVM.
+In fact, AESVM can be solved using many of the methods in Section 2. As described in
+Corollary 5, there are some similarities between AESVM and the Gram matrix approxi-
+mation methods discussed earlier. It would be interesting to see a comparison of AESVM,
+with the core set based method proposed by G¨artner and Jaggi (2009). However, due to the
+
+91
+
+Nandan, Khargonekar and Talathi
+
+Data
+set
+
+Solver
+
+ET S OT S EC S C T S RM SE
+(x102 )
+0.13
+
+6.4
+
+2.7
+
+2.6
+
+D1
+
+D4
+
+D6
+
+AESVM 21.1
+LIBSVM
+AESVM 7
+LIBSVM
+AESVM 3.8
+LIBSVM
+
+1.6
+
+2.6
+
+1.9
+
+0.8
+
+5.3
+
+1.1
+
+1.1
+
+0.04
+
+max. acc.
+(x102 )
+93.9
+94.1
+64.9
+64.5
+84.6
+84.6
+
+mean & std.
+acc. (x102 )
+93.4, 0.4
+93.5, 0.4
+61.2, 2.7
+60.7, 2.5
+81, 2.4
+81, 2.3
+
+Table 10: Performance comparison of AESVM (with  = 10−2 ), and LIBSVM with the
+polynomial kernel
+
+Figure 4: Plot of mean classiﬁcation accuracy of all SVM solvers
+
+lack of availability of a software implementation and of published results on L1-SVM with
+non-linear kernels using their approach, the authors ﬁnd such a comparison study beyond
+the scope of this paper.
+The theoretical and experimental results presented in this paper demonstrate that the
+solutions of AESVM and SVM are similar in terms of the resulting classiﬁcation accuracy.
+A summary of the experiments in Section 5, that compared an SMO based AESVM im-
+plementation, CVM, BVM, LASVM, LIBSVM, SVMperf (with k = 1000) and RfeatSVM1,
+is presented in Figures 4 to 7. The results of RfeatSVM2 are omitted from Figures 4 to
+7, for ease of representation. It can be seen that AESVM typical ly gave classiﬁcation per-
+
+92
+
+D1D2D3D4D5D6D7D8D9020406080100Mean Accuracy x 102DatasetsAESVM, ε= 10−2CVMBVMLASVMSVMperfRfeatSVM1LIBSVMFast SVM Training Using Approximate Extreme Points
+
+Figure 5: Plot of maximum classiﬁcation accuracy of all SVM solvers
+
+formance similar to LIBSVM, while giving highest overal l training time speedup (OT S ).
+Even though RfeatSVM2 gave higher OT S values in some cases, the degradation in clas-
+siﬁcation accuracy was worse than in RfeatSVM1 as shown in Tables 7 and 8. AESVM
+also gave competitively high classiﬁcation time speedup for the optimal hyper-parameters
+(C T S ) in comparison with the other algorithms except SVMperf and RfeatSVM2. It was
+found that the maximum classiﬁcation accuracies of all the algorithms except RfeatSVM1
+and RfeatSVM2 were similar. RfeatSVM1 and RfeatSVM2, and in some cases CVM and
+BVM, gave lower maximum classiﬁcation accuracies. Apart from the excellent experimen-
+tal results for AESVM with the Gaussian kernel, AESVM also gave good results with the
+polynomial kernel as described in Section 5.4.
+The algorithm DeriveRS was generally found to be eﬃcient, especially for the lower
+dimensional data sets D1-D5. For the high dimensional data sets D6-D9, the representative
+set was almost the same size as the training data set, resulting in small gains in training and
+classiﬁcation time speedups for AESVM. In particular, for D7 and D8 the representative set
+computed by DeriveRS was almost 100% of the training set. A similar result was reported
+for this data set in Beygelzimer et al. (2006), where a divide and conquer method was used
+to speed up nearest neighbor search. Data set D8 is reported to have resulted in nearly
+no speedup, compared to a speedup of almost one thousand for other data sets when their
+method was used. Their analysis found that the data vectors in D8 were very distant
+from each other in comparison with the other data sets.13 This observation can explain
+the performance of DeriveRS on D8, as data vectors that are very distant from each other
+
+13. This is indicated by the large expansion constant for D8 illustrated in Beygelzimer et al. (2006).
+
+93
+
+D1D2D3D4D5D6D7D8D9405060708090100Maximum Accuracy x 102DatasetsAESVM, ε= 10−2CVMBVMLASVMSVMperfRfeatSVM1LIBSVMNandan, Khargonekar and Talathi
+
+Figure 6: Plot of overall training time speedup (compared to LIBSVM) of all SVM solvers
+
+are expected to have large representative sets. It should be noted that irrespective of the
+dimensionality of the data sets, AESVM always resulted in excellent performance in terms
+of classiﬁcation accuracy. There seems to be no relation between data set density and the
+performance of DeriveRS and AESVM.
+
+The authors will provide the software implementation of AESVM and DeriveRS upon
+request. Based on the presented results, we suggest the parameters  = 10−2 , P = 105
+and V = 103 for DeriveRS. A possible extension of this paper is to apply the idea of
+the representative set to other SVM variants and support vector clustering. It would be
+interesting to investigate AESVM solvers implemented using methods other than SMO.
+Modiﬁcations to DeriveRS using the methods in Section 2 might improve its performance
+on high dimensional data sets. The authors will investigate improvements to DeriveRS and
+the application of AESVM to the linear kernel in their future work.
+
+Acknowledgments
+
+Dr. Khargonekar acknowledges support from the Eckis professor endowment at the Uni-
+versity of Florida. Dr. Talathi was partially supported by the Children’s Miracle Network,
+and the Wilder Center of Excellence in Epilepsy Research. The authors acknowledge Mr.
+Shivakeshavan R. Giridharan, for providing assistance with computational resources.
+
+94
+
+D1D2D3D4D5D6D7D8D9020406080100120140160180↑OTS value of AESVM for D3 is 488.5Overall Training Time SpeedupDatasetsAESVM, ε= 10−2CVMBVMLASVMSVMperfFast SVM Training Using Approximate Extreme Points
+
+Figure 7: Plot of classiﬁcation time speedup for optimal hyper-parameters (compared to
+LIBSVM) of all SVM solvers
+
+References
+
+K. P. Bennett and E. J. Bredensteiner. Duality and geometry in SVM classiﬁers.
+In
+Proceedings of the Seventeenth International Conference on Machine Learning, pages 57–
+64, 2000.
+
+A. Beygelzimer, S. Kakade, and J. Langford. Cover trees for nearest neighbor. In Proceedings
+of the 23rd International Conference on Machine Learning, pages 97–104, 2006.
+
+M. Blum, R. W. Floyd, V. Pratt, R. L. Rivest, and R. E. Tarjan. Time bounds for selection.
+Journal of Computer and System Sciences, 7:448–461, August 1973.
+
+A. Bordes, S. Ertekin, J. Weston, and L. Bottou. Fast kernel classiﬁers with online and
+active learning. Journal of Machine Learning Research, 6:1579–1619, December 2005.
+
+S. Boyd and L. Vandenberghe. Convex Optimization. Cambridge University Press, 2004.
+
+J. Cervantes, X. Li, W. Yu, and K. Li. Support vector machine classiﬁcation for large data
+sets via minimum enclosing ball clustering. Neurocomputing, 71:611–619, January 2008.
+
+C. C. Chang and C. J. Lin. IJCNN 2001 challenge: Generalization ability and text decoding.
+In Proceedings of International Joint Conference on Neural Networks, volume 2, pages
+1031 –1036, 2001.
+
+95
+
+D1D2D3D4D5D6D7D8D901020304050607080←CTS value of SVMperffor D4 is 277.7Classification Time SpeedupDatasetsAESVM, ε= 10−2CVMBVMLASVMSVMperfNandan, Khargonekar and Talathi
+
+C.C Chang and C.J Lin. LIBSVM: A library for support vector machines. ACM Trans-
+actions on Intel ligent Systems and Technology, 2:1–27, 2011. Software available at
+http://www.csie.ntu.edu.tw/~cjlin/libsvm.
+
+K. L. Clarkson. Coresets, sparse greedy approximation, and the Frank-Wolfe algorithm.
+ACM Transaction on Algorithms, 6(4):63:1–63:30, September 2010.
+
+R. Collobert, S. Bengio, and Y. Bengio. A parallel mixture of SVMs for very large scale
+problems. Neural Computing, 14(5):1105–1114, 2002.
+
+P. Drineas and M. W. Mahoney. On the Nystr¨om method for approximating a gram matrix
+for improved kernel-based learning. Journal of Machine Learning Research, 6:2153–2175,
+December 2005.
+
+R. E. Fan, P. H. Chen, and C. J. Lin. Working set selection using second order information
+for training support vector machines. Journal of Machine Learning Research, 6:1889–
+1918, 2005.
+
+R. E. Fan, K. W. Chang, C. J. Hsieh, X. R. Wang, and C. J. Lin. LIBLINEAR: A library
+for large linear classiﬁcation. Journal of Machine Learning Research, 9:1871–1874, June
+2008.
+
+S. Fine and K. Scheinberg. Eﬃcient SVM training using low-rank kernel representations.
+Journal of Machine Learning Research, 2:243–264, 2002.
+
+V. Franc and S. Sonnenburg. Optimized cutting plane algorithm for support vector ma-
+chines. In Proceedings of the 25th International Conference on Machine Learning, pages
+320–327, 2008.
+
+B. G¨artner and M. Jaggi. Coresets for polytope distance. In Proceedings of the 25th Annual
+Symposium on Computational Geometry, pages 33–42, 2009.
+
+J. Guo, N. Takahashi, and T. Nishi. A learning algorithm for improving the classiﬁcation
+speed of support vector machines. In Proceedings of the 2005 European Conference on
+Circuit Theory and Design, volume 3, pages 381 – 384, 2005.
+
+C. J. Hsieh, K. W. Chang, C. J. Lin, S. S. Keerthi, and S. Sundarara jan. A dual coordinate
+descent method for large-scale linear SVM.
+In Proceedings of the 25th International
+Conference on Machine Learning, pages 408–415, 2008.
+
+T. Joachims. Making large-scale support vector machine learning practical. In Advances in
+Kernel Methods, pages 169–184. MIT Press, 1999.
+
+T. Joachims. Training linear SVMs in linear time. In Proceedings of the 12th ACM SIGKDD
+International Conference on Know ledge Discovery and Data Mining, pages 217–226.
+ACM, 2006.
+
+T. Joachims and C. N. J. Yu. Sparse kernel SVMs via cutting-plane training. Machine
+Learning, 76:179–193, September 2009.
+
+96
+
+Fast SVM Training Using Approximate Extreme Points
+
+B. Kaluˇza, V. Mirchevska, E. Dovgan, M. Luˇstrek, and M. Gams. An agent-based approach
+to care in independent living. In Ambient Intel ligence, pages 177–186. Springer, 2010.
+
+J. Kelley. The cutting-plane method for solving convex programs. Journal of the Society
+for Industrial and Applied Mathematics, 8(4):703–712, 1960.
+
+Y. Lecun, L. Bottou, Y. Bengio, and P. Haﬀner. Gradient-based learning applied to docu-
+ment recognition. Proceedings of the IEEE, 86(11):2278 –2324, 1998.
+
+Y. J. Lee and O. L. Mangasarian. Rsvm: Reduced support vector machines.
+In Pro-
+ceedings of the First SIAM International Conference on Data Mining, pages 5–7. SIAM
+Philadelphia, 2001.
+
+M. Nandan, S. S. Talathi, S. Myers, W. L. Ditto, P. P. Khargonekar, and P. R. Carney.
+Support vector machines for seizure detection in an animal model of chronic epilepsy.
+Journal of Neural Engineering, 7(3), 2010.
+
+E. Osuna and O. Castro. Convex hull in feature space for support vector machines. In Pro-
+ceedings of the 8th Ibero-American Conference on AI: Advances in Artiﬁcial Intel ligence,
+pages 411–419, 2002.
+
+E. Osuna, R. Freund, and F. Girosi. Training support vector machines: An application to
+face detection. In IEEE Computer Society Conference on Computer Vision and Pattern
+Recognition, pages 130 –136, 1997.
+
+D. Pavlov, D. Chudova, and P. Smyth. Towards scalable support vector machines us-
+ing squashing. In Proceedings of the Sixth ACM SIGKDD International Conference on
+Know ledge Discovery and Data Mining, pages 295–299. ACM, 2000.
+
+J. C. Platt. Fast training of support vector machines using sequential minimal optimization.
+In Advances in Kernel Methods, pages 185–208. MIT Press, 1999.
+
+A. Rahimi and B. Recht. Random features for large-scale kernel machines. Advances in
+Neural Information Processing Systems, pages 1177–1184, 2007.
+
+R. T. Rockafellar. Convex Analysis. Princeton University Press, 1996.
+
+B. Sch¨olkopf and A. J. Smola. Learning with Kernels: Support Vector Machines, Regular-
+ization, Optimization, and Beyond. MIT Press, 2001.
+
+B. Sch¨olkopf, A. J. Smola, R. C. Williamson, and P. L. Bartlett. New support vector
+algorithms. Neural Computation, 12(5):1207–1245, 2000.
+
+S. Shalev-Shwartz and N. Srebro. SVM optimization: Inverse dependence on training set
+size. In Proceedings of the 25th International Conference on Machine Learning, pages
+928–935, 2008.
+
+S. Shalev-Shwartz, Y. Singer, N. Srebro, and A. Cotter. Pegasos: Primal estimated sub-
+gradient solver for SVM. Mathematical Programming, 127:3–30, March 2011.
+
+97
+
+Nandan, Khargonekar and Talathi
+
+S. S. Talathi, D. U. Hwang, M. L. Spano, J. Simonotto, M. D. Furman, S. M. Myers, J. T.
+Winters, W. L. Ditto, and P. R. Carney. Non-parametric early seizure detection in an
+animal model of temporal lobe epilepsy. Journal of Neural Engineering, 5:85–98, 2008.
+
+M. Tavallaee, E. Bagheri, W. Lu, and A. A. Ghorbani. A detailed analysis of the KDD CUP
+99 data set. In Proceedings of the 2009 IEEE Symposium Computational Intel ligence for
+Security and Defense Applications, pages 53–58, 2009.
+
+D. Tax and R. Duin. Support vector data description. Machine Learning, 54(1):45–66,
+2004.
+
+C. H. Teo, S. V. N. Vishwanthan, A. J. Smola, and Q. V. Le. Bundle methods for regularized
+risk minimization. Journal of Machine Learning Research, 11:311–365, 2010.
+
+I. W. Tsang, J. T. Kwok, P. Cheung, and N. Cristianini. Core vector machines: Fast SVM
+training on very large data sets. Journal of Machine Learning Research, 6:363–392, 2005.
+
+I. W. Tsang, A. Kocsor, and J. T. Kwok. Simpler core vector machines with enclosing
+balls. In Proceedings of the 24th International Conference on Machine Learning, pages
+911–918, 2007.
+
+H. Yu, J. Yang, and J. Han. Classifying large data sets using SVMs with hierarchical clus-
+ters. In Proceedings of the Ninth ACM SIGKDD International Conference on Know ledge
+Discovery and Data Mining, pages 306–315, 2003.
+
+G. X. Yuan, C. H. Ho, and C. J. Lin. An improved GLMNET for l1-regularized logis-
+tic regression. In Proceedings of the 17th ACM SIGKDD International Conference on
+Know ledge Discovery and Data Mining, pages 33–41, 2011.
+
+T. Zhang. Solving large scale linear prediction problems using stochastic gradient descent
+algorithms. In Proceedings of the 21st International Conference on Machine Learning,
+pages 919–926, 2004.
+
+98
+
+

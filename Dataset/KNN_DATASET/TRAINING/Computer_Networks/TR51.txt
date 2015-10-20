@@ -1,0 +1,663 @@
+
+
+  
+
+1 
+Microsoft  
+
+ 
+
+                                                           1
+
+Abstract 
+  
+1  Introduction 
+
+locks, and  
+
+'
+seldom needed and either expensive or hard to replace.  
+
+'
+'
+
+'
+'
+What'
+
+* * 
+
+'
+
+'
+complicated. 
+
+'
+
+'
+user'
+disks. 
+problems. * 
+
+* 
+
+* 
+
+* 
+
+'
+
+* 
+
+* 
+
+ers'
+
+1.1 
+
+'"real"
+
+''
+
+* 
+
+* 
+
+' "real"
+
+* 
+
+*  't 
+
+* 
+
+net. 
+most of these things are unlikely to happen. '
+
+'
+1.2  Outline 
+
+2 
+
+'
+2.1 
+
+*  Secrecy* 
+
+Integrity
+
+*  Availabilityand resources. 
+
+*  Accountability
+
+are: 
+
+---- integrity availability 
+
+----
+
+'
+
+'
+
+"
+ees"ees 
+
+should ple 
+
+' 2
+
+2.2 
+
+' '
+
+1)  programs. 
+                                                           
+2 "obvious"
+
+won'
+
+2) 
+
+peopleprograms. 
+
+3)  communications. 
+
+gullible. 
+1) 
+
+2)  '
+3) 
+
+'
+4) 
+
+3 
+
+  Reference 
+
+monitor   Object 
+
+Resource 
+
+Principal 
+
+Guard 
+
+Authentication 
+Source 
+
+Authorization 
+Request 
+
+ 
+'
+
+principal
+
+authentication
+
+authorization 
+
+' ''
+                                                           
+3 " "
+
+1)  '
+2)  '
+
+'s 
+read write
+
+informa  Reference 
+
+monitor   Principal 
+
+Sink 
+
+Information
+
+Guard Source   
+
+*  Authenticating" " "
+
+tion?"
+
+*  Authorizing "Who ". 
+
+*  Auditing 's 
+
+2.3 
+
+  (Hoare) 
+
+* 
+
+4
+                                                           4
+
+5 
+
+* 
+
+cludes /etc/passwd 
+
+--
+
+''
+
+* * 
+
+*  directly. 
+
+setup
+1) 
+
+' "Software"
+
+                                                           5 '
+
+2) 
+
+database. 3) 
+chines. 4) 
+
+5)  'of. 
+
+'
+6
+
+It'
+
+" ". 
+
+Users
+
+' 'it'
+                                                           6
+
+unsafe. Administrators
+
+'
+policies7
+
+* 
+
+* 
+
+members'* 
+
+*  authority. 
+
+'
+
+can'
+
+groups "roles"
+
+'
+
+'
+
+                                                           7
+
+Developers
+3 
+
+(Wheeler) 
+
+3.1 
+
+*  It'
+
+* 
+
+* 
+
+" ". 
+
+* 
+
+setuid 
+
+program' '
+
+"impersonation". 
+
+* 
+
+process' '
+
+'
+tabase. 
+
+"domain"
+
+'
+
+'
+
+" ". 
+
+"ticket"8 
+                                                           
+8
+
+doesn'
+
+'
+3.2 
+
+Atom
+Spectra
+1) 
+
+KSSL. 2)  '
+
+KAlice 9 
+3)  KAlice Alice@Intel. 
+
+com. 4)  Microsoft'
+
+Alice@Intel. 
+com Atom5) 
+
+Spectra Atom
+
+.com
+
+key Ktemp
+
+                                                                                              
+9 KAlice
+
+' KAlice
+
+Ktempsystem. 
+
+'
+
+Ktemp
+
+sion: 
+
+* 
+
+*  '
+
+*  '
+
+* 
+
+Spectra* 
+
+3.3 
+
+Spectra  re"Principal P Q T." 
+
+KSSL KAlice
+Atom@Microsoft Spectrawrite. 
+
+" " Pabout 
+T Q Q
+
+P T
+P Q
+
+T P'
+
+Q'
+
+statements.  "
+
+T" T
+
+P Q
+T
+
+T "all subjects" "
+requests" '
+
+T
+T'
+
+P  T\Theta  Q  P \Theta  Q T" "
+
+KSSL \Theta  Ktemp \Theta  KAlice \Theta  Alice@Intel \Theta  
+Atom@Microsoft r/w\Theta  Spectra 
+
+"speaks for"
+
+ 
+
+says 
+
+Spectra ACL 
+
+KSSL 
+
+says 
+says 
+
+Alice's  system  Spectra 
+
+Ktemp KAlice 
+
+Alice@Intel  Atom@Microsoft 
+
+Microsoft Intel 
+
+ 
+'
+3.4 
+P \Theta  Q '
+
+"verifier" "principal "
+form  P  T\Theta  Q.10
+
+trust
+
+says
+willing
+
+Q P \Theta  Q Q 
+Q P  T\Theta  Q, Qfor 
+T P
+
+P T
+Q Q, 
+
+                                                           10 "handoff"
+"delegate"
+
+"axioms"
+
+Alice@Intel
+that  Q P  T\Theta  Q Q
+
+*  If Q "Q X" Q
+
+X
+
+Ktemp \Theta  
+KAlice KAlice KAlice 
+
+above. *  If 
+
+Q P  T\Theta  Q
+
+Atom  \Theta   Spectra
+
+directly 
+
+" "
+KAlice  \Theta   Alice@Intel
+
+for  Alice@Intel Intel  delegate\Theta   
+Alice@Intel ' KAlice \Theta  
+
+Alice@Intel Intel. 
+
+KIntel \Theta  Intel
+
+KIntel
+
+' KIntel KIntel  \Theta  
+Intel.  '
+
+KIntel \Theta  Intel
+
+' KMSDir
+KMSDir"
+
+KMSDir \Theta  *  *.Microsoft.com"  
+
+bership Alice@Intel \Theta  Atom@Microsoft Intel  delegate\Theta    Alice@Intel Microsoft  delegate\Theta    Atom@ 
+Microsoft '
+
+KIntel \Theta  Intel
+Atom r/w\Theta  Spectra
+
+KDH ' KDH, 
+"KDH \Theta 
+
+KDH '
+KDH ' KDH"  
+
+KDH  \Theta   Kme
+tocol.11 
+
+S
+SQLServer71 
+.exe S C from this process, it 
+
+C  \Theta   SQLServer71
+
+S SQLServer71lieves 
+S  \Theta   SQLServer71 S'
+
+Shash 
+HSQL7.1 "
+
+HSQL71 \Theta  SQLServer71"ticating 
+C
+
+3.5  Names 
+
+Intel delegate\Theta   Alice@Intel
+
+Alice@Intel, 
+
+P delegate\Theta   
+P/N12 P Nrepeatedly, 
+
+P can delegate from any path name that starts with 
+P
+
+K delegate\Theta   K/N K
+
+'
+K P \Theta  K/N
+
+                                                           11 K
+
+DH
+
+12 Alice@Intel.com   com/Intel/Alice. 
+
+P \Theta  K/N.  '
+
+KIntel  \Theta   Intel
+KIntel "KAlice  \Theta   Alice@Intel"
+
+KIntel \Theta  Intel
+
+believe KIntel \Theta  Intel.com Kcomknow 
+
+Kcom  \Theta com
+
+'
+
+'
+P P/N1, 
+P/N2 " ". 
+
+" " 
+
+3.6  Variations 
+
+How big objects are and how expressive T
+
+'
+
+'
+'
+
+'
+'
+" ' "
+
+'t '
+'s 
+
+Push
+Pull
+
+'
+P \Theta  Q \Theta  R P \Theta  
+R R
+
+'
+
+'
+uses  "tags"
+
+"Alice  \Theta   Atomnamed 
+*.doc "
+
+T
+.doc 'them. 
+
+*  Conjunctions: 
+
+'" "
+
+"kof 
+n"  *  Disjunctions:   
+
+FlakyProgram
+
+" "
+
+FlakyProgram
+
+ 
+
+3.7  Auditing 
+
+proof
+
+4  Conclusion 
+doesn'* 
+
+ishment. * 
+
+" "
+"Alice@Intel Atom.Microsoft *.doc". 
+
+setuid
+
+References 
+1.   22, 
+
+reports/abstracts/src-rr-25.html 2. 
+
+  37ceedings/commsec/168588/p215-anderson 3. 
+
+4. 
+
+04.html 5. 
+
+Privacy 6. 
+
+ 19  
+
+7.  Extensions
+
+rfcs/rfc2065.html 8. 
+
+9. 10. 
+
+proceedings/osdi00/howell.html 11. 
+
+ACM    8
+
+Protection/Abstract.html 12. 
+
+  10
+journals/tocs/1992-10-4/p265-lampson 13. 
+
+Principlespubs/citations/proceedings/ops/268998/p129-myers 
+14. 
+
+21rsapaper.ps 
+15. 
+
+16. 
+17.  Multics.  17
+18.  ACM  2
+
+mit.edu/Saltzer/www/publications/endtoend/endtoend.pdf 19. 
+Schneier, World
+
+20.  '
+
+www.acm.org/pubs/citations/proceedings/commsec/ 288090/p132-schneier 
+21.  ACM
+
+ 12www.acm.org/pubs/citations/journals/tocs/1994-12-1/p3-
+
+wobber 22. 
+
+2421377,00.html 23. 
+4586,2469820,00.html 

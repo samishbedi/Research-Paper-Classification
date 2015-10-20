@@ -1,0 +1,401 @@
+EngOpt 2008 - International Conference on Engineering Optimization 
+Rio de Janeiro, Brazil, 01 - 05 June 2008.  
+ 
+ 
+ 
+ 
+THE CORPORATE NETWORK OPTIMALIZATION IN IMPLEMENTATION OF COMPUTER SUPPORTED 
+COLLABORATIVE WORK 
+ 
+Pawe ł Kobis 
+ 
+Department of Management Information Systems  
+Management Faculty  
+Czestochowa University of Technology  
+Al. Armii Krajowej 19B  
+42-200 Częstochowa 
+Poland 
+e-mail: pawelk@zim.pcz.pl 
+
+ 
+1. Abstract  
+Nowadays more and more decisions and tasks undertook in companies are accomplished with the use of group work elements, where 
+computer  networks  are  intensively  used.  The  packets  exchange  as  a  form  of  group  transmission  may  function  in  the  area  of  one 
+institution as well as among all cooperating units, which in the case of big companies, concerns business partners and customers who 
+use  corporate  portals  or  communicate  by  using  multimedia  technology  implements.  The  technology  which  facilitates  and  organizes 
+the group work in computer systems is called Computer Supported Collaborative Work (in literature know as CSCW).   
+The  use  of  modern  informatics  technology,  which  improves  information  exchange,  requires  a  specific  network  infrastructure.  The 
+particular  elements  of  this  infrastructure  are:  link  throughput,  assurance  of  QoS  (Quality  of  Service),  adjustment  of  informatics 
+infrastructure  to  group  packets  transmission  in TCP-IP  network  (IP Multicast). The  present  technological  level  of  local  networks  in 
+big  companies  is  strongly  diversified.    Many  of  them  require  optimization  in  the  area  of  their  structure  and  server  software.  The 
+computer  network  optimization  for  group  transmission  is  very  complicated  and  difficult.  It  requires  “s tage  approach ”,  for  which  a 
+proper  implementation  model  is  needed.  This  model  allows  non-invasive  interference  in  information  exchange  structure  of  a 
+company.  
+This article shows model which enables optimization of local network topology regarding the use of CSCW in big companies. It was 
+constructed on the basis of surveys conducted in the local network of Czestochowa University of Technology. This model is adjusted 
+to the use of new solution in the field of multimedia communication known as teleimmersion.  
+ 
+2. Keywords: multimedia, computer, optimization, collaborative work 
+ 
+3. Introduction 
+It  seems  to be  impossible  for most of businesses  to operate properly without use of computer  systems. They have been employed  in 
+virtually all industries, starting from education, through production, civil engineering and commerce. Members of boards of directors 
+in  contemporary  businesses  have  become  aware  of  the  fact  that  assets  of  their  competitiveness  might  depend  on  efficiency  of 
+computers  within  their  companies  and  capability  of  multimedia  communication  system.  IT  systems  ensure  quick  response  to  ever-
+changing  demands  and  expectations  from  the  market.  This  means  that  companies  must  constantly  keep  track  of  their  competitors’ 
+steps in terms of use of computers for business needs. In many cases they must be in readiness for undertaking of particular measures 
+in  order  to maintain  their  leading  role  as  compared  to  the  competitors. Having  access  to  cutting-edge  technologies might  be  a main 
+factor which gives a business additional advantage over competitors  [1]. The proposed model highlights  the  structure of  IT network 
+which ensures modern management in businesses. The described algorithm for procedure during reorganization of IT network makes 
+its implementation possible.  
+Ultimate  goal  for  creation  of  a  model  which  enables  implementation  of  collaborative  work  technologies  was  attempts  to  improve 
+work organization and, in consequence, need for improved results. Systems of collaborative work have proved useful in practice, thus 
+people making up a cooperative group achieve better results.  
+ 
+4. Theoretical aspects of multimedia communication in business 
+ 
+4.1  Multicast in multimedia applications 
+Multimedia communication is characterized by a variety of types and forms of information, mutual interpenetration of areas of media 
+use  as  well  as  possibilities  for  integration  of  methods  and  technologies.  Moreover,  multimedia  communication  requires  intelligent 
+and flexible telecommunication networks, equipment and modern systems of data transfer and processing.  
+General-use  application  of  various  multimedia  services,  including  multimedia  communication,  involves  ensuring  proper  quality  of 
+information  sent  by  means  of  networks.  Application  of  multimedia  is  connected  with  different  requirements  for  bandwidth  and 
+quality of transmission band (LAN or WAN networks) and bit rates.  
+Due  to  simultaneous occurrence of different  types of  information during multimedia broadcast  (voice, graphics,  text, computer data, 
+video etc.) the problem arises of mutual synchronisation of types of data sent simultaneously. Problem of synchronization of services 
+in multimedia system is an essential factor which determines quality and usability of multimedia transmission.   
+There  is a necessity of  total  synchronization of  services during use of multimedia  transmission. Examples  include videoconferences. 
+Audio and video signals, combined with computer data being sent during applications sharing (e.g. desktops or whiteboards), should 
+reach users simultaneously and without remarkable delays [2]. 
+
+ 
+ 
+Synchronization of services is necessary in the following cases: 
+ 
+
+- combination of services (e.g. synchronous broadcast of video and audio with comments in the form of text), 
+- media conversion (exchange of voice into text and vice versa, e.g. in voice recognition systems), 
+- cooperation of media (e.g. audio and video transmission) 
+
+ 
+In  the  case  of  synchronization  errors  (e.g.  caused  by  reduction  in  available  bandwidth  as  a  result  of  clogged  network)  the 
+functionality  of  some multimedia  applications  is  limited. The  best available  solution  is buffering  signals  that  leave  terminals, which 
+gives possibility to retry the sequence of data later or temporary stop transmission.  
+Rising  interest  and popularization  of multimedia  communication  systems  and  new  applications have  led  to  growing  requirements  in 
+relation  to communication networks,  including  the Internet. The most essential parameters which characterize  transmission networks 
+and  determine  quality  of  multimedia  services  include  transmission  rate  (bit  rate)  and  required  bandwidth  for  each  application  (see 
+Tab. 1 and Tab. 2). 
+
+Table 1.  Bit rates for selected multimedia services 
+
+Services 
+
+Interaction data 
+Telephone services 
+Interaction graphics 
+Videoconferences 
+Data (file transfers) 
+Video (after compression) 
+Video (TV quality) 
+Video (HDTV) 
+Source: 
+
+Maximal bit rate 
+Average bit rate 
+[Mbit/s] 
+[Mbit/s] 
+0,1 
+0,0005 
+0,64 
+0,064 
+1 
+0,064 
+2 
+0,4 
+100 
+1 
+10 
+2 
+34 
+20 
+134 
+100 
+Zbigniew Hulicki, Systemy Komunikacji Multimedialnej, WFPT, Kraków, 1998, 
+
+Table 2.  Required bandwidth for different multimedia information 
+
+Media 
+
+Voice 
+Audio 
+Non-coded text  
+Coded text 
+Vector graphics 
+Bitmap  
+(non-coded images) 
+Video 
+
+Quality 
+minimal accepted 
+hi-fi 
+80 x 60 characters/page 
+80 x 60 characters/page 
+500 vector graphics lines 
+resolution: 768 x 512, 256 colours, character: 8 
+x 8 points 
+30 Mbit/s 
+Full video, full action (25/30 fps) 
+Source: Zbigniew Hulicki, Systemy Komunikacji Multimedialnej, WFPT, Kraków, 1998, 
+
+Minimal bandwith (file size) 
+8 kbit/s 
+88 kbit/s 
+38,4 kbit/s 
+18 kbit/page 
+3 kbit 
+384 kbit per image 
+
+Other  requirements  imposed  on  multimedia  systems  concern  ensuring  adequate  level  of  quality  of  provided  services  (Quality  of 
+Service  –  QoS)  (Table  3).  Traditional  information  n etworks  fulfil  these  requirements  only  partially.  ATM  network  (Asynchronous 
+Transfer  Mode),  which  is  employed  in  the  case  of  e.g.  switching  of  Internet  broadband  connections  –  pe rfectly  meets  these 
+requirements.  
+
+Table 3.   QoS requirements for multimedia services 
+
+QOS 
+
+Voice 
+Voice (HDTV) 
+Video (compressed) 
+Data (file transfer) 
+Data (real-time data) 
+Graphics 
+
+Bit error ratio 
+
+Maximal signal 
+Maximal delay 
+phase fluctuation 
+[s] 
+< 10-1 
+10 
+0,25 
+10-2 
+10 
+0,25 
+10-6 
+1 
+0,25 
+0 
+- 
+1 
+0 
+- 
+0,001 – 1 
+10-4 
+- 
+1 
+Source: Zbigniew Hulicki, Systemy Komunikacji Multimedialnej, WFPT, Kraków, 1998, 
+
+Packet error ratio 
+
+< 10-1 
+10-3 
+10-9 
+0 
+0 
+10-9 
+
+ 
+A solution to the problem of low connection bandwidth is application of multicasting. Nowadays, multicasting has become a leading-
+edge  network  solution.  It  enables  multi-point  transmission  and  collection  of  data  in  packet  mode  to/from  unlimited  number  of 
+recipients/senders  in  real  time.  It  uses  IP protocol  for multicasting  packets  transmission  (containing all  types of multimedia data) by 
+means  of  available  network  types,  i.e.  LAN,  WAN,  complex  networks,  the  Internet.  Multicasting  technology,  also  termed  IP 
+Multicast  (Internet Protocol Multicast),  enables  practical  realization  of  large-scale  services  such  as:  interactive  news  television  (e.g. 
+Business TV),  live  transmissions of financial news or meetings of board of directors, transmission of  financial data  to any, unlimited 
+number of users of news bulletins (e.g. stock exchange rates from all over the world). 
+
+ 
+ 
+Mechanism of IP Multicast technology assumes existence of  ‘multicasting groups’ (being a fundamental c oncept in multicasting), i.e. 
+a  group  of  computers which  simultaneously  use  an  application,  defined  (identified)  by  a  common  (multicasting)  class D  IP  address 
+[3]. Each computer can be registered as a component of selected multicasting groups.  
+ 
+
+ 
+
+ 
+
+Figure 1. Information transfer in unicast and multicast networks 
+a)  unicast method 
+b)  multicast method 
+Source: own study 
+ 
+Multicasting  is a  technology which enables organization of multi-location videoconferencing via  Internet  (MBONE) as well as  local 
+and  corporate  Ethernet  networks.  Videoconferencing  belongs  to  a  subset  of  multicasting  applications  [4].  Through  its  unique  data 
+transmission  method  (sending  only  one  copy  of  information  independently  of  a  number  of  recipients),  multicasting  enables  saving 
+available transmission band and network bandwidth and also causes reduction in load on servers (saving computing power) and more 
+efficient  use  of  available  network  resources  (Fig.  1).  This  universal  technology  is  used,  apart  from  the  two  abovementioned 
+applications  using  total  multimedia  transmission,  for  data  transfer  to  multiple-recipients.  Multicasting  has  been  widely  applied  in 
+business  (e.g.  software  updates  in  many  business  branches,  transmission  of  current  data  to  many  computers,  transmission  of 
+multimedia  files  in  the  form  of MP3, MPEG  video  clips  etc.). Group  transmission  is  also  used  as  support  for  network  technologies 
+used  for  Internet  needs  e.g.  storage,  updating  and  transmission  of  content  at  WWW  webpages  (web-cashing),  Internet  directories, 
+transfer  and  automated  software  updates,  discussion  boards,  multi-person  interactive  chat,  virtual  worlds  or  cities,  virtual  reality, 
+multiplayer games and others. 
+ 
+4.2  Systems of collaborative work 
+Collaborative work  is a  term which denotes cooperation of a number, geographically scattered or staying within one room, of people 
+who  make  use  of  facilities  offered  by  their  work  environment  supported  by  technology.  The  support  consists  in  availability  of 
+transfer  and  share  of  documents, mechanisms  for  planning  and  task  assignment,  control over  progress  in  task  execution,  tracking  of 
+time and costs of the performed works.  
+The purpose of implementation of rules and solutions for collaborative work might be [5]: 
+• 
+the need for task management and control over time and costs of realization of the tasks, 
+• 
+systematization and registration of document flow, 
+• 
+improvement in information flow between members of organizations, 
+• 
+need  for  integration  of  flow  of  all  the  forms  of  documents:  faxes,  letters,  e-mails,  paper  documents  which  come  from 
+WWW pages or other sources. 
+Mechanisms  of  collaborative  work  enable  implementation  of  an  idea  of  remote  work,  central management  and  control  over  project 
+teams, regular protection of their results, systematized registration and making use of team members ’  knowledge. Collaborative work 
+forces initiatives from team members, increased sense of duty and efficient time management. It can also be argued that collaborative 
+work is an element of business knowledge management strategies [6].  
+Data  being  in  information  circulation  in  businesses  are  mainly  scattered  around  a  variety  of  physical  locations  (servers  and 
+workstations)  and  written  in  many  formats.  This  situation  is  caused  by  the  fact  that  software  from  many  manufacturers  has  been 
+installed in different organizational units. Such a procedure has its effect in informational chaos which consists in lack of opportunity 
+of  unconstrained  data  exchange  between  each  department  and  between  various  levels  in  a  corporate  ladder.  Incompatibility  of  file 
+formats  impedes  their  processing  by  several  applications.  There  are  often  copies  of  the  same  information  in  computer  networks, 
+which additionally impedes proper and quick decision-making.  
+ 
+ 
+5  Model of implementation of IT infrastructure for support of multicasting 
+Nowadays all bigger businesses have  their own, developed corporate networks. These networks are more or  less adapted  to efficient 
+data exchange. They have  gradually developed  from  smaller networks  to  their present  state. Their  technological advancement  (from 
+
+ 
+ 
+the standpoint of modern equipment being a part of it) is varied and a far cry from perfect. Therefore there is a need for adaptation of 
+the existing teleinformation infrastructure to efficient and flexible data exchange. 
+In  order  not  to  cause  work  disorganization  in  businesses  during  implementation  of  new  information  solutions,  a  model  presenting 
+gradual  transformation of a network  into  the  state which enables use of collaborative work  (Fig. 2) was developed. Presented model 
+is universal and is employed both in businesses with one location or having departments geographically separated from each other.  
+ 
+ 
+
+ 
+Figure 2. General model of IT system in businesses during implementation of group systems of data exchange 
+Source: own study 
+
+ 
+
+ 
+Data exchange during  implementation requires creation of specific mechanisms  for data  transformation (Fig. 3). The most  important 
+component  of  the  structure  presented  in  Fig.  3  is  expert  system,  responsible  for  data  selection  in  terms  of  quality,  format  and 
+adequacy.  Depending  on  a  decision  by  expert  system,  data  are  sent  to  transformation  mechanisms  or  they  are  rejected  as  useless. 
+Detailed tasks of the module are to be described in further part of this work.  
+Implementation  of  the model which  presents  exchange  of  information  in  local  network  connected  to  the  Internet  is  possible  only  in 
+the case of adaptation of  the network  to  interactive  transmission  in group  technology. Process of network adaptation depends mainly 
+on  its  initial  state.  It  can be  carried  out  at  three  levels:  network  infrastructure,  software  for  network management  and  servers within 
+Intranet  networks.  Selection  of  a  level  depends  on which  part  of  infrastructure  requires  modernization.  Extreme  case  appears  when 
+modernization takes place at all the levels. Fig. 4 presents next stages of infrastructure modernization in the form of an algorithm.  
+ 
+First  step  is  recognition  of  the  existing  network  infrastructure  in  an  organization.  This  enables  selection  of  proper  level  of  network 
+modernization.  This  process  is  performed  together  with  network  compatibility  test  in  terms  of  usefulness  for  IP  Multicast 
+transmission.  Lack  of  compatibility  forces  exchange  of  data  exchange  integrators  (routers,  switches,  gatekeepers).  Another  step  is 
+integrator  cooperation  test,  which,  if  successfully  completed,  enables  initiation  of  procedures  of  application  server  creation. 
+Application servers store and make available applications used within a network, simplifying the process of management. Placing all 
+applications in one location enables administrators to update them  
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+
+ 
+ 
+
+ 
+
+Figure 3. Data transformation during implementation of a new information infrastructure 
+Source: own study 
+
+ 
+and  to  control  access  to  them.  Server  can  make  an  application  available  to  a  user  or  a  part  of  the  processing  performed  by  the 
+application can be executed on the server [7]. Positive results of application server operation tests enable next components of network 
+infrastructure  to  be  built,  i.e.:  data  transformation  module,  Knowledge  Database,  corporate  portal.  Transformation  module  is 
+responsible  for  proper  transformation  and  adaptation  of  system  data  to  a  new  infrastructure.  Information  from  other  systems  should 
+be refined, i.e. information value should be increased. There are two types of refinement [8]: 
+• 
+physical:  conversion  of  information  from  one  carrier  to  another,  conversion  from  one  media  to  another  e.g.  written  text, 
+spoken text, cartoon or scanned image, video sequences, digital images in the form of raster or vector graphics.  
+logic: assignment of information, standardization of data, aggregation, disaggregation, redundancy reduction, integration of 
+information sets for selection of most useful information and in order to obtain information synergy effect.  
+
+• 
+
+ 
+Knowledge database serves as a platform which enables quick access to information from each point (computer) within the company 
+through  corporate  portal.  The  portal  also  makes  information  available  within  one,  intuitive  user  interface,  extending  the  scope  of 
+automation for executed business processes over office  limits (site workers, partners, customers, suppliers)  –  through ensuring direct 
+interaction with  selected  functionalities  served within  the  company.  It  also  improves  content management  –  through mechanisms  of 
+personalization,  categorization,  searching  and  information  circulation management  –  through work  flow  mechanisms  and  document 
+management. 
+Phase  of  testing  of  integrity  of  the  abovementioned  modules  is  preceded  by  a  process  of  implementation  of  a  new  information 
+infrastructure ready for implementation of collaborative work systems.  
+ 
+
+ 
+ 
+
+ 
+Figure 4. Algorithm of network transformation into a form which enables use of IP Multicast 
+Source: own study 
+
+ 
+
+ 
+ 
+6 
+Summary 
+Necessity of  transformation  in areas of  information exchange  in bigger businesses has become a determinant of competitiveness of a 
+company  in  domestic  and  international markets. Despite mangers’  awareness  in  terms  of  information  exch ange  in  businesses, many 
+of them do not make use of full potential brought by new technologies. Modern multimedia systems, which support data exchange in 
+businesses, contain information resources collected in a particular way, process them and deliver to particular units in order to make a 
+decision.  Creation  of  proper  information  resources  management  within  a  company  becomes  easier  after  proper  preparation  of 
+information structure.  
+ 
+
+The analysis was conducted according to the assumptions of research project nr N N115 134334 
+
+ 
+ 
+ 
+ 
+ 
+
+ 
+ 
+7  References 
+ 
+1.  A.  Gunasekaran,  P.E.D.  Love,  Current  and  future  directions  of  multimedia  technology  in  business,  International  Journal  of 
+Information Management 19 (1999); 
+2.  Kobis Paweł, Responsibility and Threats Connected wit h Modern Technologies Implementation, TRANSCOM 2003. 5-th 
+European Conference of Young Research and Science Workers in Transport and Telecommunications. Section 3. Information 
+Technologies Communication Systems and their Control, ns.53-56, śilina, 2003 
+3.  Kiełtyka L., Kobis P., Nowe technologie przesyłania  danych w przedsiębiorstwie, VIII Międzynarodowa Konferencja Naukowa 
+nt.  „Restrukturyzacja a procesy rozwoju i kreowania  wartości przedsiębiorstw”, Szwecja-Dania 2002. 
+4.  Kiełtyka  Leszek,  The  Era  of  Virtual  Multicasting  Ne tworks,  W:Proceedings  of  the  IADIS  International  Conference  e-Society 
+2003. Vol.II. , s.1018, Lisbon, Portugal, 2003 
+5.  URL: http://aid.biznesnet.pl 
+6.  Kobis Paweł, Technologie multimedialne wspieraj ące wymianę  informacji w przedsiębiorstwach, W:Zarządzanie przep ływem  i 
+ochroną informacji. Pod red. Mirosława Kwieci ńskiego. s.40-46 Wyd.Krak.Szk.WyŜ. Kraków 2007 
+7.  URL: http://www.i-slownik.pl/1,1292,serwer,aplikacji.html 
+8.  Pańkowska, M.: Zarządzanie zasobami informatycznymi, Wyd. Difin, Warszawa, 2001 
+
+

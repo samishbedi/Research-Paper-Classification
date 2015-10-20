@@ -1,0 +1,856 @@
+Parallel Computing 49 (2015) 1–12
+
+Contents lists available at ScienceDirect
+
+Parallel Computing
+
+journal homepage: www.elsevier.com/locate/parco
+
+Improved strong scaling of a spectral/ﬁnite difference
+gyrokinetic code for multi-scale plasma turbulence
+Shinya Maeyama a,b,∗
+, Tomohiko Watanabe b, Yasuhiro Idomura a, Motoki Nakata c,
+Masanori Nunami d, Akihiro Ishizawa d
+
+a Japan Atomic Energy Agency, 5-1-5 Kashiwanoha, Kashiwa 277-8587, Japan
+b Nagoya University, Furo-cho, Chikusa-ku, Nagoya 464-8602, Japan
+c Japan Atomic Energy Agency, 2-166 Omotedate, Obuchi, Rokkasho, Kamikita-gun 039-3212, Japan
+d National Institute for Fusion Science/The Graduate University for advanced Studies, 322-6 Oroshi-cho, Toki 509-5292, Japan
+
+a r t i c l e
+
+i n f o
+
+a b s t r a c t
+
+Article history:
+Received 16 May 2014
+Revised 20 March 2015
+Accepted 1 June 2015
+Available online 9 June 2015
+
+Keywords:
+Gyrokinetics
+Computational ﬂuid dynamics application
+Parallel scalability
+Spectral method
+Finite difference
+
+Optimization techniques of a plasma turbulence simulation code GKV for improved strong
+scaling are presented. This work is motivated by multi-scale plasma turbulence extending
+over multiple spatio-temporal scales of electrons and ions, whose simulations based on the
+gyrokinetic theory require huge calculations of ﬁve-dimensional (5D) computational ﬂuid dy-
+namics by means of spectral and ﬁnite difference methods. First, we present the multi-layer
+domain decomposition of the multi-dimensional and multi-species problem, and segmented
+MPI-process mapping on 3D torus interconnects, which fully utilizes the bi-section band-
+width for data transpose and reduces the conﬂicts of simultaneous point-to-point commu-
+nications. These techniques reduce the inter-node communication cost drastically. Second,
+pipelined computation-communication overlaps are implemented by using the OpenMP/MPI
+hybrid parallelization, which effectively mask the communication cost. Careful regulations of
+the pipeline length and of the thread granularity respectively suppress latencies of MPI, load
+imbalance and scheduling overheads of OpenMP. Thanks to the above optimizations, GKV
+achieves excellent strong scaling up to ∼600k cores with high computational performance
+782.4 TFlops (8.29% of the theoretical peak) and high effective parallelization rate ∼99.99994%
+on K, which demonstrates its applicability and eﬃciency toward a million of cores. The op-
+timized code realizes multi-scale plasma turbulence simulations covering electron and ion
+scales, and reveals cross-scale interactions of electron- and ion-scale turbulence.
+
+© 2015 Elsevier B.V. All rights reserved.
+
+1. Introduction
+
+Nuclear fusion energy is expected to be a future energy source because of huge resources and manageable environmental
+impacts. The most advanced approach to the fusion energy is based on magnetic conﬁnement of plasma in toroidal devices,
+where turbulent electromagnetic ﬂuctuations strongly inﬂuence the conﬁnement properties. Therefore, plasma turbulent trans-
+(cid:2)
+port is one of the central issues in the magnetic fusion research. The plasma turbulence is inherently a multi-scale phenomenon
+involving electron and ion scales, which are separated by a factor of a square root of the mass ratio when their temperatures
+/me ∼ 43). Additionally, since low collisionality in high temperature plasma makes kinetic
+mi
+are the same (typically, that is
+
+∗
+
+Corresponding author at: Nagoya University, Furo-cho, Chikusa-ku, Nagoya 464-8602, Japan. Tel.: +81 52 789 3930.
+E-mail address: smaeyama@p.phys.nagoya-u.ac.jp (S. Maeyama).
+
+http://dx.doi.org/10.1016/j.parco.2015.06.001
+0167-8191/© 2015 Elsevier B.V. All rights reserved.
+
+2
+
+S. Maeyama et al. / Parallel Computing 49 (2015) 1–12
+
+effects essentially important, plasma turbulence is necessary to be described by means of particle distribution functions de-
+ﬁned on the phase space (the conﬁguration and the particle-velocity spaces). Such multi-dimensional simulations demand huge
+computational costs, and the multi-scale analysis requires further expensive computations.
+Fundamental understandings of the plasma turbulence are established based on analyses of the locally homogeneous tur-
+bulence by using spectral methods [1], as is the case in turbulence in neutral ﬂuids. The spectral methods have excellent nu-
+merical accuracy, such as exponential convergence and no numerical dissipation error. The Fourier expansion is compatible to
+theoretical analysis of energy transfer via triad wave interactions, and its computational cost is saved by applying fast Fourier
+transform (FFT) algorithms. Parallel multi-dimensional FFTs, however, are often implemented with transpose split method [2]
+and introduce global data transpose communications which often degrade parallel scalability. Regarding applications based on
+the spectral method, parallelization on ten thousands of cores (a few thousands of computation nodes) was realized [3], but it
+was considered that the spectral method is hardly scalable as the number of cores is increased up to hundreds of thousands.
+In this paper, we present the parallelization of spectral/ﬁnite difference calculations in gyrokinetic plasma turbulence simu-
+lation code GKV [4,5] for improved strong scaling up to ∼600 k cores. To bring out the application performance under the par-
+allelization on hundreds of thousands of cores, deep understanding of the target problem and its tailored optimizations on hier-
+archical parallel architectures are necessary. We design the multi-layer domain decomposition and topology-aware MPI-process
+mapping to minimize inter-node communications, and communication overlaps with combining various physical computations
+to mask the communication cost effectively. The optimized code, of which performance is strongly accelerated, is applied to
+the analysis of the multi-scale plasma turbulence, revealing the importance of cross-scale interactions between electron- and
+ion-scale turbulence with the real hydrogen-to-electron mass ratio.
+This paper is organized as follows. Section 2 describes the basic simulation model, as well as the hybrid parallelization which
+consists of four-dimensional (4D) and multi-species domain decomposition with MPI and shared memory parallelization with
+OpenMP. Section 3 explains the segmented MPI-process mapping and pipelined computation-communication overlaps which are
+designed for the optimization of the multi-dimensional and multi-species problem to the hierarchical architecture connected by
+3D torus interconnects. These sophisticated parallelization techniques improve strong scaling of the code and enhance computa-
+tional performance, as shown in Section 4. In Section 5, multi-scale turbulence simulations are carried out, which demonstrates
+the practical utility of the developed code as an application to solve physically-motivated problems demanding huge computa-
+tions. Finally, we summarize the developed techniques and give some concluding remarks in Section 6.
+
+2. The GKV code
+
+Turbulence in magnetic fusion plasma is characterized by anisotropy due to the strong conﬁnement magnetic ﬁeld. Perpendic-
+ular and parallel spatial scales of plasma turbulence are respectively in the order of gyroradii of charged particles ρ and the major
+radius of the toroidal device R (as an example ρ /R ∼ 10
+−3 for ions in ITER), where, and hereafter, “parallel” and “perpendicular”
+mean the directions oriented to the conﬁnement magnetic ﬁeld unless otherwise speciﬁed. To investigate the plasma turbulence,
+the gyrokinetic theory [6] has been developed, where rapid gyrations are decoupled from the slow dynamics of turbulent ﬂuc-
+tuations while resolving spatial scales of gyroradii. The GKV code is based on the so-called δ f gyrokinetics [7] and solves time
+evolution of perturbed distribution functions ˜fs of ions and electrons (the subscript s = i, e), the electrostatic potential ˜φ and the
+(cid:3)
+(cid:4)
+parallel component of the vector potential ˜A(cid:4) . The governing equations are the gyrokinetic Vlasov–Poisson–Ampère equations
+v(cid:4) B + ˜B⊥
+· ∇ ˜fs + dv(cid:4)
+∂ ˜fs
++ vsG + vsC + ˜vE
+= Ss + Cs ,
+∂ t
+B
+dt
+(cid:5)
+∇ 2⊥ ˜φ = − 1
+es ( ˜ns + ˜ns,pol
+ε0
+(cid:5)
+s
+∇ 2⊥ ˜A(cid:4) = −μ0
+
+∂ ˜fs
+∂ v(cid:4)
+
++
+
+es ˜u(cid:4)s
+
+,
+
+),
+
+(1)
+
+(2)
+
+(3)
+
+s
+where B, B, ˜B⊥ , v(cid:4) , vsG , vsC , ˜vE , Ss , Cs , ε
+0 and μ
+0 denote the strength and vector of the conﬁnement magnetic ﬁeld, the magnetic
+perturbation, the parallel, grad-B, curvature and E × B drift velocities, the contributions from the equilibrium distribution, the
+model collision operator, the vacuum permittivity and permeability, respectively. dv(cid:4) /dt represents the parallel acceleration,
+where the parallel nonlinearity is neglected [8]. The gyrocenter density ˜ns and the parallel ﬂow velocity ˜u(cid:4)s are given by the
+velocity integration of the perturbed distribution function, while the polarization density ˜ns,pol originates from the deviation of
+the particle and gyrocenter positions and is proportional to the electrostatic potential perturbation ˜φ . For more detailed physical
+descriptions, see [4,5].
+From numerical viewpoints, the code performs computational ﬂuid dynamics (CFD) calculations on the 5D phase space (x,
+y, z, v(cid:4) , μ) for each species (s), where the perpendicular directions x and y and the parallel direction z construct the magnetic
+ﬁeld-aligned spatial coordinates [9], and the parallel velocity v(cid:4) and the magnetic moment μ (which corresponds to the per-
+pendicular velocity) are employed as the velocity space coordinates. By assuming the locality and statistic homogeneities in
+the perpendicular directions x and y, the perturbed quantities are expanded in terms of the Fourier basis: ˜fs (x, y, z, v(cid:4) , μ) =
+k⊥ (z )ei(kx x+ky y) and ˜A(cid:4) (x, y, z ) = (cid:6)
+k⊥ ˆfsk⊥ (z, v(cid:4) , μ)ei(kx x+ky y) , ˜φ (x, y, z ) = (cid:6)
+(cid:6)
+k⊥ ˆA(cid:4)k⊥ (z )ei(kx x+ky y) . Then, the Eqs. (1)–(3) are
+k⊥ ˆφ
+
+S. Maeyama et al. / Parallel Computing 49 (2015) 1–12
+
+3
+
+Fig. 1. An example of the multi-layer domain decomposition in GKV [where the numbers of MPI processes are (Nxy , Nz , Nv , Nμ , Ns ) = (2, 2, 2, 2, 2)]. Arrows and
+framed boxes representatively show required MPI communications: data transpose in x and y, point-to-point communications in z, v(cid:4) and μ, and reduction in
+v(cid:4) , μ and s.
+
+rewritten in the perpendicular wave number space
+(cid:5)
+(cid:5)
+∂ ˆfsk⊥
+(cid:7)
+= L( ˆfsk⊥ ) +
+− v(cid:4) ˆA
+Mk
+⊥ ,k
+k⊥
+∂ t
+(cid:7)(cid:7)
+(cid:7)
+(cid:7) (cid:7)
+⊥
+⊥
+(cid:5)
+
+( ˆφ ∗
+k
+
+(cid:7)(cid:7)
+⊥
+
+(cid:7)
+⊥
+
+k
+
+k
+
+dv(cid:4) dμP
+
+1sk⊥ ˆfsk⊥ ,
+
+k⊥ =
+
+ˆφ
+
+(cid:7) (cid:7)
+
+s
+(cid:5)
+
+∗(cid:4)k
+
+(cid:7)
+⊥
+
+∗
+) ˆf
+sk
+
+(cid:7)(cid:7)
+⊥
+
+δ
+k⊥ +k
+
+(cid:7)
+⊥ +k
+
+(cid:7)(cid:7)
+⊥ ,0
+
+,
+
+(4)
+
+(5)
+
+ˆA(cid:4)k⊥ =
+dv(cid:4) dμP
+2sk⊥ ˆfsk⊥ ,
+(6)
+s
+where L is the linear operator including the partial derivatives in z, v(cid:4) and μ, and the last term in Eq. (4) represents the nonlinear
+advection term corresponding to (v(cid:4) ˜B⊥ /B + ˜vE ) · ∇ ˜fs . The coupling constant of the quadratic nonlinearity and Kronecker’s delta
+(cid:7)(cid:7)
+(cid:7)
+1sk⊥ and P
+i, j . Since P
+are denoted by Mk
+⊥ ,k
+⊥
+and δ
+2sk⊥ are diagonal coeﬃcient matrices determined by the plasma parameters,
+k⊥
+matrix inversions are not required for solving the ﬁeld Eqs. (5) and (6). The remaining coordinates z, v(cid:4) and μ are simply dis-
+cretized on the structured grid. Therefore, computational procedures mainly consist of three parts: spectral methods in x and y
+for the nonlinear advection term calculation (using the 2D FFTs and the 3/2 de-aliasing rule), ﬁnite difference methods in the
+z, v(cid:4) and μ for the linear term calculations, and ﬁeld solvers (including integrations over v(cid:4) , μ and s). Then, time integration is
+performed by means of the fourth-order Runge–Kutta–Gill method. The computations are parallelized by using the OpenMP/MPI
+hybrid parallelization which suites for hierarchical hardware of the nodes having a number of cores with a shared memory and
+connected by an interconnect network [3].
+Taking advantage of the multi-dimensional problem, multi-dimensional domain decomposition is applied for x (or y), z, v(cid:4) , μ
+and s, where 2D FFTs in x and y are parallelized by means of the transpose split method. Then, the required MPI communications
+are data transpose for the parallel 2D FFTs in x and y, point-to-point communications in z, v(cid:4) and μ for ﬁnite difference methods,
+and reduction communications over v(cid:4) , μ and s for velocity-space and species integration. Fig. 1 shows a schematic picture of
+the multi-layer structure of the multi-dimensional domain decomposition, illustrating the case that x (or y), z, v(cid:4) , μ and s are
+respectively split by two MPI processes (and thus 25 = 32 processes in total). Plasma species s are decomposed as rank_s = 0, 1,
+and each species are hierarchically decomposed by the magnetic moment μ (rank_m), the parallel velocity v(cid:4) (rank_v), the paral-
+lel direction z (rank_z), and the perpendicular direction x, y (rank_xy). Thus, data transpose in x and y is performed for different
+subranks of rank_xy, point-to-point communications in z (v or m) are performed between rank_z (rank_v or rank_m), while re-
+duction communications over v, μ and s are performed for ﬁxed rank_z and rank_xy. This multi-layer domain decomposition,
+especially successive MPI process allocation of rank_xy, is advantageous in application of the segmented process mapping in
+Section 3.2.
+In regard to the sheared-memory parallelization with OpenMP, coarse grain parallelism suited to the employed numerical
+algorithm is important to achieve more eﬃcient computations than the conventional loop-level parallelism [10]. In addition,
+asymmetric multi-thread processing by OpenMP enables overlaps of various computations with not only non-blocking but also
+blocking MPI communications. More details are described in Section 3.3.
+
+3. Optimizations
+
+3.1. Target problem
+
+Before moving on to the developed parallelization techniques, it is important to make clear the problem size required for
+describing the physics of multi-scale turbulence and the estimated parallelization to realize its computations. We set the target
+grid size (nx , ny , nz , nv , nμ ) = (1024, 1024, 96, 96, 32) with electrons and ions ns = 2 (totally ∼6 × 1011 grid points) and ∼105
+time steps. Hence the total computational cost is of the order of 100 Exa-ﬂoating point operations. Such a huge computation
+
+4
+
+S. Maeyama et al. / Parallel Computing 49 (2015) 1–12
+
+1
+
+Arrange rank_xy:
+Transpose is performed 
+in a segment.
+
+2
+
+ Arrange rank_z, rank_v, rank_m:
+Point-to-point communications are 
+performed between adjacent segments.
+
+3
+
+Arrange rank_s:
+Reduction is performed 
+in a cross section.
+
+Fig. 2. Segmented MPI-process mapping of the 5D and multi-species problem on 3D torus networks [where the numbers of MPI processes are (Nxy , Nz , Nv , Nμ ,
+Ns ) = (8, 3, 2, 2, 4) as an example]. Arrows and a framed box representatively show MPI communications: data transpose in x and y, point-to-point communica-
+tions in z, v(cid:4) and μ, and reduction in v(cid:4) , μ and s, as same as Fig. 1.
+
+can be realized only on the state-of-the-art supercomputers. Our simulations are performed on the K computer (K) at RIKEN
+Advanced Institute for Computational Science, which consists of 82,944 nodes (2 GHz, 16 GFlops/core, Memory-BW 8 GB/s/core,
+8 cores/node) connected by the Torus fusion (Tofu) interconnect [11] (6D mesh/torus topology, Interconnect-BW 5 GB/s × 4,
+Multi-way simultaneous communications: 4 sends + 4 receives). Assuming ten percent of peak performance, parallelization
+over 100 k cores are desired for executing the target problem in a week. Since the multi-scale plasma turbulence simulations
+require high resolutions in the perpendicular coordinates x and y, the most time consuming calculation in the GKV code is the
+parallel 2D FFTs where data transpose often degrades the scalability in the use of a large number of nodes. Hence, reducing the
+cost of inter-node communications is critically important for the improvement of the strong scaling by overcoming this severe
+bottleneck.
+
+3.2. Segmented mapping on 3D torus networks
+
+In performing stencil-based CFD applications using tens of thousands of nodes, mesh/torus topologies naturally ﬁt the data
+structure of basic equations, and thus, tends to give high scalability. The Tofu interconnect has 6D mesh/torus topology and
+provides a ﬂexible-sized 3D torus network as a user view [12]. To bring its performance out, a topology-aware optimization is
+important but its effectiveness often depends on the target application. We here design the segmented MPI-process mapping on
+the 3D torus network to minimize the communication cost in our multi-dimensional and multi-species problem. Fig. 2 explains
+the segmented mapping in three steps. First, a segment of the nodes, which is involved in a local 3D box shape, is deﬁned so
+that data transpose in x and y is conﬁned only in each segment. They correspond to rank_xy, which is the lowest hierarchy
+of the multi-layer domain decomposition in Fig. 1, and the lengths of the segment are determined so that the volume equals
+Nxy . Second, the segments are piled up so that point-to-point communications in z, v(cid:4) and μ are performed between adjacent
+segments (corresponding to rank_z, rank_v and rank_m). Then, Nz × Nv × Nμ segments construct a segment group for each
+species (rank_s). Finally, Ns segment groups are arranged so that reduction communications over v(cid:4) , μ and s are performed
+through a cross section of the 3D network.
+Table 1 summarizes the employed MPI communications and their message sizes. Because of the large number of commu-
+nicating processes and of grid sizes, MPI_AlltoAll dominates the communication cost. Indeed, a cost measurement of a test
+problem without optimizations shows two MPI_AlltoAll, three MPI_Isend/Irecv and MPI_Allreduce respectively account for
+63%, 32% and 5% of communication costs (these data correspond to the 16,384 core case of Fig 5 in Section 4.2). Therefore, op-
+timizations of the MPI_AlltoAll and MPI_Isend/Irecv are the ﬁrst and second highest priorities. The segmented MPI-process
+mapping is designed in accordance with this concept and has lots of advantages for reducing the communication cost. First, there
+is the high-performance and highly-scalable MPI_AlltoAll on K [13], which fully utilizes the bisection bandwidth of 3D torus
+network but is available only when the communicating processes are arranged in a 3D box shape. Thus, the local 3D box-shaped
+mapping of rank_xy activates the optimized routine and minimizes the cost of the data transpose. Second, the mapping mini-
+mizes the distance of the nodes for point-to-point communications, although the number of hops is affected by the length of the
+segment ∼ N1/3
+xy . In addition, the implementation of point-to-point communication is changed from blocking MPI_Sendrecv to
+non-blocking MPI_Isend/Irecv, to take advantages of the multi-way channels on the Tofu interconnect. Since communications
+in z, v(cid:4) and μ are performed in different directions on the 3D torus network, the segmented mapping reduces the conﬂicts of
+
+S. Maeyama et al. / Parallel Computing 49 (2015) 1–12
+
+5
+
+Table 1
+Main MPI communications and the message sizes for the target problem [Problem
+size is (nx , ny , nz , nv , nμ , ns ) = (1024, 1024, 96, 96, 32, 2) and the numbers of MPI
+processes are (Nxy , Nz , Nv , Nμ , Ns ) = (64, 12, 12, 4, 2)].
+
+Solver
+
+MPI
+
+Communicator
+
+Send count
+
+Call/step
+
+Spectral
+
+MPI_AlltoAll
+MPI_AlltoAll
+Finite diff. MPI_Isend/Irecv
+MPI_Isend/Irecv
+MPI_Isend/Irecv
+MPI_Allreduce
+
+Field
+
+rank_xy
+rank_xy
+
+rank_z
+rank_v
+rank_m
+
+rank_v/m/s
+
+40,960
+5120
+
+410,240
+410,240
+410,240
+
+25,640
+
+12
+16
+
+8
+8
+8
+
+8
+
+Fig. 3. Pipelined computation-communication overlaps (upper row) of FFTs and (lower row) of ﬁnite difference calculations implemented by the OpenMP/MPI
+= 8) and time, respectively. Procedures are pipelined in the
+hybrid parallelization. Vertical and horizontal axes correspond to OpenMP threads (here, Nthreads
+outermost loop μ, and its length in each MPI process is nμ /Nμ = 8.
+
+their simultaneous point-to-point communications. We carry out communications in z and v(cid:4) simultaneously (two sends and
+two receives in each of z and v(cid:4) ), which utilizes all the four interconnect controllers per node. Finally, the mapping conﬁnes
+the reduction communications for the ﬁeld solver in a cross section (v(cid:4) , μ, s) of the 3D network. Since multiple streams of
+MPI_Allreduce are performed independently at each z position on the 3D network, the cost of reduction communications is
+also saved.
+
+3.3. Computation-communication overlaps
+
+To mask the communication cost, we implement computation-communication overlaps for the spectral calculations. Taking
+advantage of independence of the parallel 2D FFTs in the μ direction, the procedures are pipelined in the μ loop, and the data
+transpose and spectral computations with adjacent μ indexes are overlapped by using a communication thread, which is imple-
+mented on the MASTER thread, as shown in Fig. 3 (upper row). Although the parallel 2D FFTs are independent not only of μ but
+also of v(cid:4) and z, the procedures are pipelined only in the outermost loop μ (Appendix A explicitly describes the loop structure) so
+as to avoid increase of latencies of MPI_AlltoAll. Since operations of 1D FFT are parallelized by OpenMP threads, we employ the
+thread-safe 1D FFTs by means of FFTW [14]. The idea of computation-communication overlaps with a communication thread has
+already been tested before [15–17]. However, for eﬃciently masking the communication cost by applying the pipelined overlaps,
+careful implementations are required: rearrangements of multiple computation kernels to keep computations enough to mask
+communications, a proper choice of the pipeline length (ﬁner pipelining reduces unoverlapped parts at the beginning and the
+end of pipelining but increases latencies of MPI), and a regulation of the task granularity for thread parallelization (ﬁner granu-
+larity reduces load imbalance on OpenMP threads but increases scheduling overheads). In these senses, the overlaps of forward
+FFTs with data transpose in Fig. 3 is an example, which does not have enough computations to mask communications, and is
+diﬃcult to pursue excellent strong scaling up to the target concurrency. To improve the strong scaling, it is important that all
+computations of the spectral calculations (not only forward and backward FFTs but also real space calculations, buffer copies,
+and data expansion/truncation for the de-aliasing) are overlapped. Therefore, we implemented an integrated overlaps where
+whole spectral calculation procedures are parallelized by OpenMP and data transpose is overlapped with them [18]. At the same
+time, we use dynamic scheduling and asynchronous parallelization of OpenMP threads so that the master thread also join the
+− 1 during communications and
+computations after the end of communications. Then, computations are parallelized by Nthreads
+− 1 or Nthreads ,
+by Nthreads after communications. Since the length of the outermost loop over the number of threads, Nthreads
+often leaves a remainder, parallelization at the outermost loop leads load imbalance. On the other hand, parallelization at the
+
+6
+
+S. Maeyama et al. / Parallel Computing 49 (2015) 1–12
+
+Fig. 4. Cost analysis of GKV with/without segmented MPI-process mapping, simultaneous point-to-point communications and pipelined computation-
+communication overlaps. Left and right data respectively show elapsed time per step on BX900 and K [Problem size is (nx , ny , nz , nv , nμ , ns ) = (256, 256, 32,
+32, 32, 2) and the numbers of parallelization are (Nxy , Nz , Nv , Nμ , Ns , Nthreads ) = (4, 4, 4, 8, 2, 4) on BX900 and (4, 4, 4, 4, 2, 8) on K]. From the bottom, the boxes
+represent the elapsed time for the ﬁeld solver (including the reduction communication), ﬁnite difference computations, point-to-point communications, spec-
+tral computations, transpose communication, and the others. Half-wadges in the cases with overlaps shows the communication costs measured on the master
+thread, which are overlapped with the computations.
+
+most inner loop increases scheduling overheads. Therefore, we here parallelize the computations at the intermediate loop z with
+the chunk size = 1, which gives modestly-sized granularity and is helpful to suppress load imbalance and overheads.
+In the similar way, the point-to-point communications are also overlapped with the ﬁnite difference calculations. Here again,
+we consider integrated overlaps combining several kinds of physical calculations, as shown in Fig. 3 (lower row). While the
+communications in the μ direction are simply overlapped with the independent x and y space computations, the overlaps of the
+communications in z and v(cid:4) with z, v(cid:4) and μ space computations are realized by using a communication thread and pipelining in
+the μ loop. A pseudo-code of the pipelined overlaps are shown in Appendix A. Although the split of the stencil calculations into
+two parts (i.e., the edge part which refers to the buffer data from neighboring domains and the inner part which can be computed
+without the buffer data) has often been used for the overlaps of ﬁnite difference calculations, we note that this approach is not
+suﬃcient in our case. This is because we are pursuing even better strong scaling. Since the employed array size becomes close
+to the buffer size as the number of the parallelization increases, the inner part of the computations becomes too small to mask
+the communication cost. In fact, the cases shown in the next section have only 8 × 8 grid points in (z, v(cid:4) ) per MPI process,
+where computations for the inner part are only (4 × 4)/(8 × 8) = 25% of the total ﬁnite difference computations in (z, v(cid:4) ) and
+are insuﬃcient to mask the cost of the point-to-point communications. On the other hand, our pipelining approach enables us
+to apply (nμ /Nμ − 1)/(nμ /Nμ ) = 87.5% (at the maximum) of the ﬁnite difference computations in (z, v(cid:4) ) to the overlap with the
+communications (depending on the length of the μ loop in each MPI process, nμ /Nμ = 8 here, as illustrated in Fig. 3.)
+
+4. Performance
+
+4.1. Cost analysis and cross-platform versatility
+
+We measure the detailed computation and communication costs against a test problem, which is scaled down from the
+target multi-scale problem. The elapsed time during the main time advance loop is measured by means of MPI_wtime, and
+thus initializations for MPI and FFTW are not included. Since the techniques of pipelined computation-communication overlaps
+depend on MPI/OpenMP hybrid programing but not on the architecture, we carried out the above tests on K and the BX900
+at Japan Atomic Energy Agency (Nehalem-EP cluster; 2.93 GHz, 11.72 GFlops/core, Memory-BW 6.4 GB/s/core, 4 cores/node,
+Inﬁniband with Fat Tree, Interconnect-BW 4 GB/s × 2, 2134 nodes).
+Fig. 4 analyzes the computation and communication costs in cases with and without the segmented MPI-process mapping,
+simultaneous point-to-point communications, and computation-communication overlaps. The segmented MPI-process map-
+ping and simultaneous point-to-point communications on K eﬃciently reduces the communication cost. The computation-
+communication overlaps effectively mask the communication cost on BX900 and K, which proves the versatility of the pipelined
+overlaps on hierarchical architectures consisting of multi-core processors. The ﬁgure also shows the masking rate of communi-
+cation cost η calculated by
+η = C + T − Coverlapped
+T
+
+(7)
+
+,
+
+where C and T are the elapsed time of computations and communications without overlaps (see, e.g., the spectral computa-
+tion and transpose communication in the leftmost column on BX900) and Coverlapped is the computation time measured in the
+case with overlaps (e.g., the spectral computation in the second left column on BX900). Although the ideal masking rate of the
+
+S. Maeyama et al. / Parallel Computing 49 (2015) 1–12
+
+7
+
+Fig. 5. Computational performance on K with/without segmented MPI-process mapping, simultaneous point-to-point communications and pipelined
+computation-communication overlaps [Problem size is (nx , ny , nz , nv , nμ , ns ) = (1024, 1024, 32, 32, 32, 1) and the numbers of parallelization are (Nxy , Nz , Nv ,
+Nμ , Ns , Nthreads ) = (8 − 64, 4, 4, 4, 1, 8)]. Cross, dagger, triangle, circle and square dots represent the cases with no optimization, mapping, mapping + simultane-
+ous communications, mapping + simultaneous communications + overlaps for spectral calculation, and mapping + simultaneous communications + overlaps
+for spectral and ﬁnite difference calculations, respectively.
+
+= 75% and
+− 1)/Nthreads
+communication cost [yielded by substituting the ideally-overlapped cost Eq. (9) into Eq. (7)] is (Nthreads
+= 4 and 8 respectively, the masking rate on BX900 is limited by η = 63% for data transpose and 36% for point-
+87.5% for Nthreads
+to-point communications. This is because the computation cost is relatively small to that of communications in this severe
+parallelization, and computation threads wait until the communication ﬁnishes. Therefore, the reduction of the communication
+cost by the process mapping and the simultaneous communication becomes critically important. Thanks to the eﬃcient reduc-
+tion by 42% for data transpose and 80% for point-to-point communications on the Tofu interconnect (see Fig. 4), the pipelined
+overlaps on K almost ideally mask the communication cost by η ∼80%.
+
+4.2. Impacts on the strong scaling
+
+The impacts of the above optimizations are examined via the strong scaling test against the number of the wave-number-
+space parallelization Nxy in Fig. 5. The computational performance is measured by using the Fujitsu proﬁler on K. Although the
+unoptimized case begins to saturate over 10 k cores, the segmented MPI-process mapping improves the scalability, and the
+pipelined overlaps for spectral calculations make further speed up. Simultaneous point-to-point communications and overlaps
+for ﬁnite difference calculations also contribute by ∼10% speed up at 32,768 cores. Thus, the developed optimizations signiﬁ-
+cantly enhances the computational performance from 23.8 TFlops to 53.1 TFlops, which are respectively 4.54% and 10.1% of the
+theoretical peak performance. For quantitative comparison of the scalability, the parallel eﬃciency is evaluated by
+ = mTm
+nTn
+
+(8)
+
+,
+
+where Tm and Tn are the elapsed time in the cases with m and n cores (m < n). The parallel eﬃciency is also improved from
+ε = 61.5% for the unoptimized case to ε = 92.8% for the fully-optimized case.
+Comparison of the elapsed time shown in Fig. 6 for the cases without optimizations and with the mapping and simultaneous
+communications (but not overlaps) closely explains the effect of the communication cost reduction. In the unoptimized case, the
+elapsed time for data transpose bottoms at 15k cores (∼ two thousand computation nodes), and both the communication costs
+of spectral and ﬁnite difference calculations exceed their computation costs at 32,768 cores. On the other hand, the optimization
+improves the scalability of data transpose and reduces the costs of transpose and point-to-point communications. Since the
+communication costs are kept less than the computation costs, it is supposed that the computation-communication overlaps
+work well. Fig. 7 shows the elapsed time in the fully-optimized case. Since computations and communications are overlapped,
+total elapsed time for spectral calculations and for ﬁnite difference calculations are plotted. The results are compared with the
+ideally-overlapped cost estimation given by Maeyama et al. [18]
+= C +
+
+(9)
+
+C estimation
+overlapped
+
+T
+Nthreads
+
+,
+
+where C and T are the elapsed time for spectral (or ﬁnite difference) computations and transpose (or point-to-point) communi-
+cations in the case with segmented MPI-process mapping and simultaneous point-to-point communications (but not overlaps).
+The results show computation-communication overlaps are successfully implemented with the smallest overheads.
+A set of strong scaling tests shown in Fig. 8 demonstrates that the GKV code shows good strong scaling up to ∼600k cores.
+Using the measured elapsed time 9.127 and 1.485 s/step for the cases with 73,728 and 589,824 cores, or alternatively the mea-
+sured computational performance 127.3 and 782.4 TFlops (10.79% and 8.29% of the theoretical peak performance), the parallel
+
+8
+
+S. Maeyama et al. / Parallel Computing 49 (2015) 1–12
+
+Fig. 6. Elapsed time as functions of the number of cores in the cases (left) without optimizations and (right) with segmented MPI-process mapping and simul-
+taneous point-to-point communications (where settings are the same as Fig. 5). Circular, square, dagger and triangle dots represent the elapsed time for spectral
+computations, transpose communications, ﬁnite difference computations and point-to-point communications, respectively.
+
+Fig. 7. Elapsed time as functions of the number of cores in the fully-optimized case (where settings are the same as Fig. 5). Square and triangle dots plot the
+spectral and ﬁnite difference calculations, respectively. Their elapsed time estimations evaluated from the results of the case without overlaps are plotted by
+dashed and dotted lines for reference.
+
+Fig. 8. Three strong scalings of GKV [Problem sizes: (nx , ny , nz , nv , nμ , ns ) = (256, 256, 32, 32, 32, 2) for BX900(Small), (1024, 1024, 32, 32, 32, 1) for K(Medium),
+(1024, 1024, 96, 96, 32, 2) for K(Large); Parallelizations: (Nxy , Nz , Nv , Nμ , Ns , Nthreads ) = (2 − 4, 4, 4, 4 − 8, 2, 4) for BX900(Small), (8 − 64, 4, 4, 4, 1, 8) for
+K(Medium), (8 − 64, 12, 12, 4, 2, 8) for K(Large)]. With the target grid size K(Large), GKV shows good scaling up to the full system size of K.
+
+eﬃciency at 5,89,824 cores is  = 76.8%. The effective parallelization rate evaluated from the Amdahl’s law,
+Tm − Tn
+(n − 1)Tm /n − (m − 1)Tn /m
+
+α =
+
+,
+
+(10)
+
+S. Maeyama et al. / Parallel Computing 49 (2015) 1–12
+
+9
+
+Fig. 9. Linear growth rate γ as a function of the poloidal wave number ky (where plasma parameters are set to be the Cyclone-base-case parameters [21] in the
+electrostatic limit assuming the negligibly small plasma β value).
+
+Fig. 10. Snapshots of the electrostatic potential ﬂuctuations φ in multi-scale plasma turbulence covering electron to ion scales at (a) t = 7R/vti , (b) t = 14R/vti
+and (c) t = 94R/vti (where plasma parameters are the same as Fig. 9). The potential is normalized by Ti R/eρ
+ti with the ion temperature Ti and elementary charge
+e, and plotted on the poloidal cross section. Magniﬁed plots with a 8-power are shown at the corner in each panel.
+
+achieves α ∼99.99994%, which is improved by an order of magnitude compared with the previous results (∼99.9998% in Ref.
+[18]). This is because the implementation of the species parallelization increases the number of available cores, and the present
+optimizations improve scalability by reducing and masking the communication cost.
+
+5. Multi-scale plasma turbulence simulations
+
+Multi-scale plasma turbulence simulations covering both of electron- and ion-scale turbulence are previously reported em-
+/me = 400, 900 in the electrostatic limit for the purpose of saving the com-
+ploying the reduced ion-to-electron mass ratio mi
+putation cost [19,20]. A question, however, arises: whether their results are applicable to the real hydrogen-to-ion mass ratio
+/me = 1836, where the ion and electron scales are separated further. Additionally, the real mass ratio is considered to be
+mi
+required for analyzing the trapped electron modes and electromagnetic instabilities because of the importance of the small elec-
+tron inertia. These motivate multi-scale plasma turbulence simulations with the real ion-to-electron mass ratio. Fig. 9 shows the
+linear growth rate of the unstable waves in magnetically conﬁned plasmas as a function of the poloidal wave number ky . There
+∼0.3 and electron-temperature-gradient modes (ETGs) at
+are two clear peaks: ion-temperature-gradient modes (ITGs) at kyρ
+(cid:2)
+∼12, where ρ
+ti
+kyρ
+ti is the ion thermal gyroradius and the growth rate is normalized by using the major radius R and ion thermal
+ti
+/me ∼ 43.
+velocity vti . Their temporal and spatial scales are separated by the square root of the ion-to-electron mass ratio
+mi
+Thanks to the optimization techniques developed here, the scalability and performance of GKV are signiﬁcantly improved, which
+enables us to carry out nonlinear simulations of multi-scale plasma turbulence with the real ion-to-electron mass ratio. A typ-
+ical computational cost for the simulation [(1024, 1024, 64, 96, 16, 2) = 2 × 1011 grid points and ∼3 × 105 time steps] is ∼120
+h using 12,288 nodes (98,304 cores) on K. Fig. 10 shows snapshots of the electrostatic potential ﬂuctuations in multi-scale tur-
+bulence. At ﬁrst in Fig. 10(a) , ETGs rapidly grow up and their growth is saturated with radially-elongated structures, which are
+called streamers and have been considered as a candidate of the electron heat transport from conventional simulation results
+resolving only electron scales [22]. The ITGs slowly grow up as found in Fig. 10(b). Finally, zonal ﬂow structures are generated
+in the saturated ITG turbulence Fig. 10(c), where the electron-scale streamers are eliminated by the ion-scale ﬂuctuations. As a
+result, the ion-scale turbulence dominates not only ion but also electron heat transport. The results clarify the critical importance
+
+10
+
+S. Maeyama et al. / Parallel Computing 49 (2015) 1–12
+
+of the multi-scale interaction of turbulence even when electron and ion scales are widely separated under the real mass ratio.
+More detailed analysis of the physical processes of the multi-scale turbulent transport will be reported elsewhere.
+
+6. Conclusions
+
+We presented the optimization techniques of the gyrokinetic Vlasov simulation code GKV which performs 5D CFD calculations
+by using spectral and ﬁnite difference methods. To realize highly eﬃcient parallel computations on ten thousands of computation
+nodes, the reduction of the inter-node communication cost is critically important. We have designed the segmented MPI-process
+mapping on 3D torus networks, which minimizes the costs of data transpose, point-to-point, and reduction communications on
+our multi-dimensional and multi-species domain decompositions. In addition, the communication cost is effectively masked
+by implementing the pipelined computation-communication overlaps with the OpenMP/MPI hybrid parallelization, where the
+granularity of the computations are carefully chosen to suppress load imbalance and overheads. The highly-optimized code
+shows excellent strong scaling and achieves 782.4 TFlops, which is 8.29% of the theoretical peak, at 589,824 cores (73,728 nodes)
+on K. The effective parallelization rate α ∼99.99994% demonstrates its applicability and eﬃciency toward a million of cores. The
+improvement of the strong scaling is indispensable from the aspect of the application for analyzing multi-scale plasma turbu-
+lence, because a huge number of time steps are required to resolve rapid electron motions together with a slow ion response. The
+improvement of scalability and performance of GKV enable us to carry out multi-scale plasma turbulence simulations covering
+both of the electron and ion scales. The simulation result reveals that the electron-scale streamers are suppressed by ion-scale
+ﬂuctuations even when their scales are separated by the real hydrogen-to-electron mass ratio. The code will be applied to fur-
+ther analyses of multi-scale plasma turbulence. The direct simulations of multi-scale turbulence should provide valuable data
+for modeling cross-scale interactions between electron- and ion-scale turbulence.
+Finally, we emphasize that the presented optimization techniques are not limited to gyrokinetic simulations. Indeed, op-
+timization of MPI-process mapping on a custom network is one of the important aspects on the latest parallel architectures,
+because a number of supercomputers on the TOP500 list in November 2014 employ a kind of torus networks, not only K (Tofu
+6D mesh/torus interconnect), but also Titan (Cray Gemini 3D torus interconnect), Sequoia and Mira (Blue Gene/Q 5D torus in-
+terconnect). Hence, one needs to consider a topology-aware optimization depending on the target application. Additionally, the
+presented computation-communication overlap depends only on MPI/OpenMP hybrid programming and is widely applicable
+on multi- or many-core processors. We have demonstrated the versatility of the overlaps on different numerical algorithms
+(spectral and ﬁnite difference methods) and on different supercomputers (K and BX900). Therefore, the presented optimization
+techniques are useful for various CFD applications on large-scale supercomputers.
+
+Acknowledgments
+
+This work is supported by the HPCI Strategic Programs Field No. 4, the G8 Research Council Initiative (NuFuSE), the JAEA-NIFS
+collaboration program, and the KAKENHI Grant no. 26800283 from the Japanese Ministry of Education, Culture, Sports, Science
+and Technology. This research uses computational resources of K at RIKEN Advanced Institute for Computational Science through
+the HPCI System Research project (Project ID:hp120011). Computations are partially performed on BX900 at Japan Atomic Energy
+Agency (to check cross-platform versatility) and on Helios at Computational Simulation Centre of International Fusion Energy
+Research Centre (for linear instability analysis).
+
+Appendix A. Pseudo-code of pipelined computation-communication overlaps
+
+Followings show a pseudo-code of the pipelined computation-communication overlaps of ﬁnite difference calculations shown
+in Fig. 3.
+
+1. !$OMP PARALLEL
+2.
+3. !$OMP MASTER
+communications in μ
+4.
+5. !$OMP END MASTER
+do iμ = 0, nμ /Nμ − 1
+6.
+do iv = 0, nv /Nv − 1
+7.
+8. !$OMP DO SCHEDULE (DYNAMIC)
+do iz = 0, nz /Nz − 1
+9.
+x, y-space computations
+10.
+end do
+11.
+12. !$OMP END DO NOWAIT
+end do
+13.
+end do
+14.
+15. !$OMP BARRIER
+16.
+
+S. Maeyama et al. / Parallel Computing 49 (2015) 1–12
+
+11
+
+17. !$OMP MASTER
+communications in z, v (iμ = 0)
+18.
+19. !$OMP END MASTER
+do iv = 0, nv /Nv − 1
+20.
+21. !$OMP DO SCHEDULE (DYNAMIC)
+do iz = 0, nz /Nz − 1
+22.
+μ-space computations (iμ = 0)
+23.
+end do
+24.
+25. !$OMP END DO NOWAIT
+end do
+26.
+27. !$OMP BARRIER
+28.
+do iμ = 1, nμ /Nμ − 1
+29.
+30. !$OMP MASTER
+communications in z, v (iμ )
+31.
+32. !$OMP END MASTER
+do iv = 0, nv /Nv − 1
+33.
+34. !$OMP DO SCHEDULE (DYNAMIC)
+do iz = 0, nz /Nz − 1
+35.
+μ-space computations (iμ )
+36.
+z, v-space computations (iμ − 1)
+37.
+end do
+38.
+39. !$OMP END DO NOWAIT
+end do
+40.
+41. !$OMP BARRIER
+42.
+do iv = 0, nv /Nv − 1
+43.
+44. !$OMP DO SCHEDULE (DYNAMIC)
+do iz = 0, nz /Nz − 1
+45.
+z, v-space computations (iμ = nμ /Nμ − 1)
+46.
+end do
+47.
+48. !$OMP END DO NOWAIT
+end do
+49.
+50.
+51. !$OMP END PARALLEL
+
+where the x and y loops inside the z loop are not explicitly described for simplicity. Lines from 3 to 15 describe the overlaps
+of communications in μ with independent xy-space computations, and lines from 17 to 27, from 29 to 41, and from 43 to 49
+respectively correspond to the beginning, middle and end of the pipelined overlaps of communications in z, v with μ-space
+and z, v-space computations. Communications are performed by the master thread, and computations are parallelized by the
+other threads with dynamic scheduling, while the master thread also joins the computations after the end of communications.
+The NOWAIT and BARRIER directives should be inserted properly for controlling synchronization. In addition, we regulate the
+granularity of the tasks by inserting the DO directives at the middle loop z but not the second outer loop v (the outermost loop μ
+is already expanded for pipelining). Because of pursuing the excellent strong scaling, the typical loop length per MPI-process be-
+comes nv /Nv = 8, which is comparable to the number of OpenMP threads Nthreads
+= 8 (1 communication thread + 7 computation
+threads during overlaps). Parallelization at v loop leads to load imbalance and thus should be avoided. Parallelization at z loop
+increases the number of parallelizable tasks with retaining moderate granularity, because the computations have further inner
+x, y loops of the order of ∼ 103 − 104 . Note that in the actual implementation buffer copies for point-to-point communications
+are also overlapped, which is not shown in the pseudo-code.
+
+References
+
+[1] D.G. Fox, S.A. Orszag, Pseudospectral approximation to two-dimensional turbulence, J. Comput. Phys. 11 (1973) 612–619.
+[2] C. Calvin, Implementation of parallel fft algorithms on distributed memory machines with a minimum overhead of communication, Parallel Comput. 22
+(1996) 1255–1279.
+[3] P.D. Mininni, D. Rosenberg, R. Reddy, A. Pouquet, A hybrid mpi-openmp scheme for scalable parallel pseudospectral computations for ﬂuid turbulence,
+Parallel Comput. 37 (2011) 316–326.
+[4] T.-H. Watanabe, H. Sugama, Velocity-space structures of distribution function in toroidal ion temperature gradient turbulence, Nucl. Fusion 46 (2006) 24–32.
+[5] S. Maeyama, A. Ishizawa, T.-H. Watanabe, N. Nakajima, S. Tsuji-Iio, H. Tsutsui, Numerical techniques for parallel dynamics in electromagnetic gyrokinetic
+vlasov simulations, Comput. Phys. Commun. 184 (2013) 2462–2473.
+[6] A.J. Brizard, T.S. Hahm, Foundations of nonlinear gyrokinetic theory, Rev. Modern Phys. 79 (2007) 421–468.
+[7] T.M. Antonsen Jr., B. Lane, Kinetic equations for low frequency instabilities in inhomogeneous plasmas, Phys. Fluids 23 (1980) 1205–1214.
+[8] J. Candy, R.E. Waltz, S.E. Parker, Y. Chen, Relevance of the parallel nonlinearity in gyrokinetic simulations of tokamak plasmas, Phys. Plasmas 13 (2006)
+074501.
+[9] M.A. Beer, S.C. Cowley, G.W. Hammett, Field-aligned coordinates for nonlinear simulations of tokamak turbulence, Phys. Plasmas 2 (1995) 2687–2700.
+
+12
+
+S. Maeyama et al. / Parallel Computing 49 (2015) 1–12
+
+[10] J. Montagnier, A. Cadiou, M. Buffat, L.L. Penven, Towards petascale spectral simulations for transition analysis in wall bounded ﬂow, Int. J. Numer. Methods
+Fluids 72 (2013) 709–723.
+[11] Y. Ajima, S. Sumimoto, T. Shimizu, Tofu: A 6d mesh/torus interconnect for exascale computers, Computer 42 (2009) 36–40.
+[12] Y. Ajima, T. Inoue, S. Hiramoto, T. Shimizu, Tofu: Interconnect for the k computer, Fujitsu Sci. Tech. J. 48 (2012) 280–285.
+[13] T. Adachi, N. Shida, K. Miura, S. Sumimoto, A. Uno, M. Kurokawa, F. Shoji, M. Yokokawa, The design of ultra scalable MPI collective communication on the k
+computer, Comput. Sci. Res. Dev. 28 (2013) 147–155.
+[14] M. Frigo, S.G. Johnson, The design and implementation of FFTW3, in: Proceedings of the IEEE, 93, 2005, pp. 216–231.
+[15] S. Yamada, T. Imamura, M. Machida, 16.447 TFlops and 159-billion-dimensional exact-diagonalization for trapped fermion-Hubbard model on the Earth
+Simulator, in: Proceedings of the international conference for high performance computing, networking, storage and analysis, SC|05, Seattle, USA, 2005,
+p. 44.
+[16] R. Rabenseifner, G. Hager, G. Jost, Hybrid MPI/OpenMP parallel programming on clusters of multi-core SMP nodes, in: Proceedings of the 17th Euromicro
+International conference on Parallel, Distributed and Network-based Processing, Weimar, Germany, 2009, pp. 427–436.
+[17] Y. Idomura, M. Nakata, S. Yamada, M. Machida, T. Imamura, T.-H. Watanabe, M. Nunami, H. Inoue, S. Tsutsumi, I. Miyoshi, N. Shida, Communication-overlap
+techniques for improved strong scaling of gyrokinetic eulerian code beyond 100k cores on the k-computer, Int. J. High Perform. Comput. Appl. 28 (2014)
+73–86.
+[18] S. Maeyama, T.-H. Watanabe, Y. Idomura, M. Nakata, M. Nunami, A. Ishizawa, Computation-communication overlap techniques for parallel spectral calcula-
+tions in gyrokinetic vlasov simulations, Plasma Fusion Res. 8 (2013) 1403150.
+[19] J. Candy, R.E. Waltz, M.R. Fahey, C. Holland, The effect of ion-scale dynamics on electron-temperature-gradient turbulence, Plasma Phys. Control. Fusion 49
+(2007) 1209–1220.
+[20] T. Görler, F. Jenko, Scale separation between electron and ion thermal transport, Phys. Rev. Lett. 100 (2008) 185002.
+[21] A.M. Dimits, G. Bateman, M.A. Beer, B.I. Cohen, W. Dorland, G.W. Hammett, C. Kim, J.E. Kinsey, M. Kotschenreuther, A.H. Kritz, L.L. Lao, J. Mandrekas,
+W.M. Nevins, S.E. Parker, A.J. Redd, D.E. Shumaker, R. Sydora, J. Weiland, Comparisons and physics basis of tokamak transport models and turbulence
+simulations, Phys. Plasmas 7 (2000) 969–983.
+[22] F. Jenko, W. Dorland, M. Kotschenreuther, B.N. Rogers, Electron temperature gradient driven turbulence, Phys. Plasmas 7 (2000) 1904–1910.
+
+

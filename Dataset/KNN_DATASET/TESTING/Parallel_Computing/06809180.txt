@@ -1,0 +1,2024 @@
+IEEE TRANSACTIONS ON PARALLEL AND DISTRIBUTED SYSTEMS, VOL. 26, NO. 5, MAY 2015
+
+1477
+
+Cloud Computing Applications for
+Smart Grid: A Survey
+
+Samaresh Bera, Sudip Misra, Senior Member, IEEE, and
+Joel J.P.C. Rodrigues, Senior Member, IEEE
+
+Abstract—The fast-paced development of power systems necessitates smart grids to facilitate real-time control and monitoring with
+bidirectional communication and electricity ﬂows. Future smart grids are expected to have reliable, efﬁcient, secured, and cost-effective
+power management with the implementation of distributed architecture. To focus on these requirements, we provide a comprehensive
+survey on different cloud computing applications for the smart grid architecture, in three different areas—energy management,
+information management, and security. In these areas, the utility of cloud computing applications is discussed, while giving directions
+on future opportunities for the development of the smart grid. We also highlight different challenges existing in the conventional smart
+grid (without cloud application) that can be overcome using cloud. In this survey, we present a synthesized overview of the current state
+of research on smart grid development. We also identify the current research problems in the areas of cloud-based energy
+management, information management, and security in smart grid.
+
+Index Terms—Smart grid, cloud computing, micro-grid, smart meter, load-shifting, real-time pricing, dynamic demand response, survey
+Ç
+
+applications anytime, and from anywhere, through a con-
+nected device to the network.
+
+1 INTRODUCTION
+A smart grid is conceptualized as a combination of elec-
+trical network and communication infrastructure.
+With the implementation of bidirectional communication
+and power ﬂows, a smart grid is capable of delivering elec-
+tricity more efﬁciently and reliably than the traditional
+power grid. A smart grid consists of a power network with
+‘intelligent’ entities that can operate, communicate, and
+interact autonomously, in order to efﬁciently deliver elec-
+tricity to the customers. This heterogeneity in architecture
+of a smart grid motivates the use of advanced technology
+for overcoming various technical challenges at different lev-
+els. Any smart grid infrastructure should support real-time,
+two-way communication between utilities and consumers,
+and should allow software systems at both the producer
+and consumer ends to control and manage the power usage
+[1]. To manage millions of smart meters in secure, reliable,
+and scalable ways, utilities must extend this communication
+network management system to a distributed data center. In
+this respect, cloud computing is envisaged to play key roles of
+motivation in the design of the future smart grid. Cloud
+computing is an emerging technology advocated for
+enabling reliable and on-demand access to different com-
+puting sources that can be quickly provisioned and released
+in a cost-effective way to the service providers [2], [3]. Using
+cloud infrastructure, a customer can gain access to their
+
+1.1 Motivation
+With the development of the state-of-the-art smart grid sys-
+tems, it needs the support of bi-directional communication
+facility, and processing of the information in real-time as
+well. Additionally, energy demand from the users changes
+dynamically in different time-periods (such as on-peak,
+off-peak, and mid-peak), which in turn requires dynamic
+availability of the communication facility (such as band-
+width, processing units, and storage devices). Therefore,
+there is a need to integrate a common platform with the
+smart grid which is able to support the smart grid require-
+ments as follows:
+a) Energy management. The existing power grids need
+optimal balancing of electricity demand and supply
+between the customers and the utility providers [4]. Smart
+grids are capable of addressing this requirement. Such
+features in a smart grid is realized by the integration of
+various energy management systems (EMS) such as home
+energy management (HEM), demand side management
+(DSM), and building energy management (BEMS) [5], [6].
+A smart grid allows various renewable energy sources
+(such as solar and wind) to have efﬁcient management of
+supply and demand.
+b) Need to support multiple devices in a common platform.
+In a smart grid environment, multiple devices are imple-
+mented. These multiple devices are home appliances,
+smart meters, micro-grids, substations, sensor nodes, and
+communication-network devices [7]. A suitable protocol
+architecture needs to be implemented to support these
+multiple devices in order to have reliable, and efﬁcient
+electric supply.
+c) Information management. Information management is an
+important aspect in the smart grid architecture [8], [9]. In
+1045-9219 ß 2014 IEEE. Personal use is permitted, but republication/redistribution requires IEEE permission.
+See http://www.ieee.org/publications_standards/publications/rights/index.html for more information.
+
+Manuscript received 31 Jan. 2014; revised 6 Apr. 2014; accepted 20 Apr. 2014.
+Date of publication 30 Apr. 2014; date of current version 8 Apr. 2015.
+Recommended for acceptance by J. Lloret.
+For information on obtaining reprints of this article, please send e-mail to:
+reprints@ieee.org, and reference the Digital Object Identiﬁer below.
+Digital Object Identiﬁer no. 10.1109/TPDS.2014.2321378
+
+ S. Bera and S. Misra are with the School of Information Technology,
+Indian Institute of Technology, Kharagpur 721302, India.
+E-mail: {samaresh, smisra}@sit.iitkgp.ernet.in.
+J.J.P.C. Rodrigues is with the Instituto de Telecomunicac¸~oes, University of
+Beira Interior, Portugal. E-mail: joeljr@ieee.org.
+
+
+
+1478
+
+IEEE TRANSACTIONS ON PARALLEL AND DISTRIBUTED SYSTEMS, VOL. 26, NO. 5, MAY 2015
+
+typical city environments, millions of smart meters are
+deployed in the distribution sites. These smart meters gen-
+erate massive data for real-time communication with the
+utilities. A proper data management mechanism is neces-
+sary to be deployed for handling such massive data.
+d) Layered architecture. A smart grid is a combination of
+different layers—network, communication, electricity distri-
+bution, transmission, and generation [10]. The smart grid is
+expected to support the overlay communication network on
+the underlay electricity network.
+e) Heterogeneous architecture. The heterogeneous architec-
+ture is a special characteristic of a smart grid. Demand
+response (DR), distributed generation, resource scheduling,
+and real-time pricing model contribute to the heterogeneity
+of a smart grid [11].
+f) Security. Effective authentication and authorization
+techniques are required for the preservation of users’ pri-
+vacy. Some security aspects in a smart grid are data outage,
+threat detection, and cyber-physical attacks [12], [13]. A
+proper privacy policy needs to be implemented to motivate
+customers’ participation [12], [14].
+Additionally, cloud computing is a useful technique
+which can fulﬁll the requirements of the smart grid in real-
+time adequately, while having the following characteristics
+[15], [16]:
+ Optimizing energy costs enabling online monitoring
+and control of all grid assets.
+
+Providing different software applications to the
+users in the smart grid (such as customers, service
+providers, third parties) for supporting payment
+according to energy consumption.
+ Reduction in carbon emissions through grid access
+of large wind, hydro, and solar power plants [17].
+ Active management of demand and supply curves.
+
+Providing unlimited data storage for storing cus-
+tomer data.
+
+Supporting customers with data access from the
+cloud.
+
+1.2 Contribution
+In this paper, we provide a systematic overview of inte-
+grating cloud computing applications in smart grids, in
+three aspects—energy management, information management,
+and security in the smart grid architecture. For energy
+management in smart grid, different cloud computing
+techniques proposed in the existing literature are dis-
+cussed brieﬂy. Consequently, we discuss several issues to
+apply the cloud computing techniques for energy man-
+agement with some future research directions. On the
+other hand, smart grid is the combination of electrical
+and communication network. Therefore, communication
+network plays an important role for reliable energy man-
+agement. We discuss
+the
+information management
+schemes for smart grid using cloud infrastructure. Addi-
+tionally, we also discuss the security issues in smart grid
+which can be addressed using cloud computing. Several
+future research directions are explained in terms of
+energy management, information management, and secu-
+rity in smart grid. In summary, our objective in this paper
+is to offer the following:
+
+4)
+
+1) A comprehensive overview of smart grid and cloud
+computing in terms of energy management, commu-
+nication, and security.
+2) A clear concept of cloud computing applications in
+smart grid.
+3) An identiﬁed list of key problems that can be over-
+come using cloud applications.
+Some future research directions in terms of cloud
+applications in smart grid.
+The rest of the paper is organized as follows. We give a
+comprehensive overview of smart grid and cloud comput-
+ing in Section 2. We brieﬂy describe the cloud computing
+applications in the context of energy management in smart
+grid in Section 3. In Section 4, we survey the application of
+cloud computing for communication and information man-
+agement systems. In Section 5, we address different security
+aspects in smart grid, which can be overcome with the
+implementation of cloud computing applications. Smart
+grid with and without cloud-based applications are com-
+pared in the context of some existing literature in Section 6.
+Finally, a conclusion is provided in Section 7.
+
+2 OVERVIEW OF SMART GRID AND CLOUD
+COMPUTING
+2.1 Smart Grid
+A smart grid can be conceptualized as an integration of elec-
+tric power grid with the bidirectional communication net-
+work system [18]. With the integration of information and
+communication technology, modern smart grid is capable
+of providing electricity to the end users in an increasingly
+efﬁcient manner. A smart grid architecture spans primarily
+three different
+technical domains—generation system,
+transmission side, and distribution side [19]. The generation
+side consists of traditional power plant generation. The
+transmission side is responsible for delivering electricity to
+the distribution side (customers). An important characteris-
+tic of a smart grid is controlling electricity consumption
+at the customers’ ends by establishing different optimiza-
+tion methods [20], [21]. To achieve this goal, smart metering
+and micro-grid are the most important components that
+have been incorporated in the smart grid architecture.
+Smart metering. Smart metering is one of the most emerg-
+ing technologies used in smart grid to obtain information
+about customers’ real-time energy consumption. It is also
+capable of controlling the advanced metering infrastructure
+(AMI) systems [22]. AMI is supported with bidirectional
+communication mechanism to obtain real-time energy con-
+sumption at the customers’ ends remotely. A smart meter is
+a device deployed at the distribution-end, and capable of
+recording the energy consumption by the customers. Cus-
+tomers and utilities are beneﬁted with smart metering infra-
+structure. For example, a customer can estimate his/her
+energy consumption during the whole day for cost-optimi-
+zation, and utility is able to maintain real-time monitoring
+for the supply-demand curve.
+Micro-grid. In the concept of the smart grid architecture,
+the power distribution side is divided into subgroups simi-
+lar to the step-down transformers. These subgroups have
+self-generation capacity such as combined heat power,
+wind generation, and solar generation. Additionally, they
+
+BERA ET AL.: CLOUD COMPUTING APPLICATIONS FOR SMART GRID: A SURVEY
+
+1479
+
+Fig. 2. Cloud computing infrastructure.
+
+Fig. 1. Smart grid with centralized and decentralized generation, and
+storage systems.
+
+can control and distribute electricity to the end-users. These
+subgroups are known as micro-grids. A micro-grid is the
+integration of low-voltage electricity systems with self-gen-
+erating facilities. A subgroup has an independent power
+supply and control system to provide electricity to the end
+users [23], [24]. In the presence of an intrusion in the entire
+system, a micro-grid acts in the islanding mode. In such a
+situation, a micro-grid is able to control the power ﬂow
+autonomously. Due to the ﬂuctuation in renewable energy
+sources, the primary distributed energy resources are con-
+verted into distributed generation using the micro-grid
+operation. Some of the advantages of a micro-grid are listed
+as follows:
+
+4)
+
+1)
+
+3)
+
+Electricity distribution facility is converted to decen-
+tralized from centralized.
+2) A micro-grid increases the local reliability, and
+energy management mechanisms.
+Improved real-time monitoring system can be
+achieved.
+In the presence of any kind of intrusion, it acts in the
+islanding mode, and supplies electricity in secure
+and efﬁcient ways to the end users.
+5) All the micro-grids can interact with one another
+and exchange energy, when there is an excess or
+deﬁcit of it.
+Fig. 1 illustrates a smart grid architecture with the gener-
+ation, transmission, and distribution components. The tradi-
+tional power plants, and renewable energy sources are
+treated as generation side of a smart grid. Electricity is
+transmitted to the distribution side from the generation side
+using transmission lines. Finally, the distribution side is
+responsible for distributing it to the end users.
+
+2.2 Cloud Computing
+Cloud computing is an emerging computation model that
+provides on-demand facilities, and shared resources over
+the Internet. Cloud computing, based on large storage and
+computational devices, acts as a utility provider [25], [26].
+Cloud computing provides three distinct types of services—
+Platform as a Service (PaaS), Software as a Service (SaaS), and
+Infrastructure as a Service (IaaS) [3], [27], [28].
+Infrastructure as a service. IaaS is the infrastructure service
+model that includes storage and virtual machines. Load bal-
+ancing in cloud computing is performed using IaaS. Users
+can install access to required software through virtual
+machines. These virtual devices provide on-demand facility
+
+to the customers [17], [29], [30]. The IaaS service offers hard-
+ware platform to the users on-demand basis. Therefore,
+users can access the online hardware platform as on-demand
+basis to fulﬁll their requirements. Additionally, the IaaS ser-
+vice also supports vertualization of resources on which a
+guest user can run his/her own operating system [29].
+Platform as a service. PaaS is responsible for the develop-
+ment and delivery of programming models to IaaS. Users
+can access such programming models through cloud and
+execute their programs [29]. PaaS is responsible for the run-
+time execution of users’ given task. Therefore, the PaaS ser-
+vice completes the requirements of building and delivering
+of Web-applications without downloading and installing
+required software as well.
+Software as a service. SaaS supports all the applications in
+the cloud environment. This feature of cloud computing is
+accessible through Web-browsers. The SaaS service provides
+the modeling of software deployment where users can run
+their applications without installing it on his/her own com-
+puter. However, this service is limited to the users, i.e., only
+existing set of services is available to the customers.
+On the other hand, cloud can also be categorized,
+depending on the deployment models, as—private, public,
+community, and hybrid [3].
+
+
+Private cloud. The cloud is owned by a private organi-
+zation, and information is shared only within the
+organization. The purpose of this type of cloud
+application is to serve its own business applications.
+Public cloud: On the other hand, public cloud is
+owned by a service provider, and used by public for
+their purposes.
+ Community cloud. Community cloud is similar to the
+private cloud with some additional features to pro-
+vide services to a group of organizations who have
+similar type of requirements.
+ Hybrid cloud. Hybrid cloud is the extension of cloud
+computing with private, public, and community
+cloud computing techniques [28]. The private, pub-
+lic, and community clouds are integrated together to
+perform several tasks which are capable of handling
+the requirements of private, public, and community
+organizations.
+In Fig. 2, cloud services and properties are shown. Addi-
+tionally, we also show the categorization of cloud comput-
+ing application in Fig. 3. The advantages of using a cloud
+computing model are as follows [31], [32], [33], [34]:
+
+
+Elastic nature. Cloud computing supports elastic
+nature of storage and memory devices. It can expand
+
+
+
+1480
+
+IEEE TRANSACTIONS ON PARALLEL AND DISTRIBUTED SYSTEMS, VOL. 26, NO. 5, MAY 2015
+
+Fig. 3. Classiﬁcation of cloud computing applications [3].
+
+
+
+and reduce itself according to the demand from the
+users, as needed.
+Shared architecture. Cloud computing also supports
+shared architecture.
+Information can be shared
+among the users after meeting the privacy issues,
+and, thereby, reducing service costs [35].
+ Metering architecture. Cloud computing offers meter-
+ing infrastructure to customers [36]. In the metering
+system, cost optimization mechanisms are offered to
+users, enabling them to provision and pay for their
+consumed resources only.
+Internet services. Cloud computing can be imple-
+mented in the existing Internet service system. Thus,
+it supports the existing network infrastructure.
+
+
+
+3 CLOUD APPLICATIONS FOR ENERGY
+MANAGEMENT
+
+Energy management is a major concern in smart grid envi-
+ronments. In the past several years, researchers addressed
+this issue by incorporating the implementation of different
+components such as Home Energy Management System
+(HEMS), building energy management system, dynamic
+pricing, and load shifting [37]. Therefore, the objective of
+the smart grid is to support cost-effective and reliable
+energy management in real-time. In this section, we provide
+a brief overview of the application of cloud computing for
+smart grid energy management. First, we address different
+problems using existing approaches for energy manage-
+ment without cloud applications in smart grid. Then, we
+discuss how these problems can be undertaken with the
+implementation of cloud computing. Finally, we conclude
+this section while proposing some future research directions
+on various aspects of cloud applications for smart grid.
+
+3.1 Problems with Existing Approaches without
+Cloud
+The heterogeneous architecture of smart grids, demand
+response, and micro-grids are the main building blocks in
+the smart grid architecture.
+Demand response. In smart grid, stand-by generators are
+used in order to support the heavy load in on-peak hours.
+These generators are typically based on fossil fuels, and,
+thus, they increase carbonization of the environment. There-
+fore, implementation of virtual energy sources are useful
+than the physical ones. This mechanism is known as
+Demand Response—a mechanism by which the customers
+can actively participate in balancing the supply and
+demand curves [38],
+[39].
+In the presence of demand
+
+Fig. 4. A conceptual view of smart grid with and without cloud
+applications.
+
+response mechanism, customers can schedule their applian-
+ces during off-peak hours to minimize the energy consump-
+tion cost, which in turn minimizes the load on the micro-
+grids during on-peak hours. Customers can take adequate
+decision while they have grid, storage, and self-generated
+energy as well to minimize the energy cost with the help of
+demand response mechanism. On the other hand, virtual
+energy storage is also one of the useful techniques for reli-
+able energy supply. In the presence of virtual energy storage
+platform, the micro-grids can store their excess energy,
+while other micro-grids can consume the storage energy to
+fulﬁll their customers’ demand.
+In Fig. 4a, a conceptual view of the conventional smart
+grid (without cloud) is shown, where customers are ser-
+viced by micro-grids. A micro-grid has some self-generation
+unit such as solar, and wind generation. All the different
+components (substations, micro-grids, and customers) can
+communicate with utility providers over the communica-
+tion network. On the other hand, in Fig. 4b, the integration
+of cloud applications in the smart grid architecture is
+shown. The cloud applications can be served as virtual
+energy storage [40], and data storage devices. In such a sce-
+nario, smart grid components communicate with the cloud
+instead of doing so with one another directly, and taking
+necessary decisions for energy management.
+In the conventional smart grid architecture (without
+cloud), several problems, as detailed below, are addressed
+by researchers [31], [32], [33], [41], [42].
+
+BERA ET AL.: CLOUD COMPUTING APPLICATIONS FOR SMART GRID: A SURVEY
+
+
+
+
+The master-slave architecture causes extensive expo-
+sure to cyber attacks such as the distributed denial-
+of-service (DDoS) attack from the compromised
+nodes in the demand response model [31]. In such
+master-slave architecture, the utility provider acts as
+a master and the customers act as slaves.
+Single failure in master-slave architecture is one of
+the biggest concerns in the existing approaches in
+which cloud is not used.
+
+The maximum number of customers that can be
+served is limited due to the limited server capacity.
+ Demand response is performed in an utility’s energy
+management systems (EMS). As limited memory
+and storage are available, it will be a challenging
+problem for energy management when the number
+of customers increases.
+ Adequate management and control
+is necessary,
+while a micro-grid provides services in islanded
+mode, as different issues (such as stability and voltage
+regulation) are to be met by the micro-grid itself [42].
+In the conventional approaches(without cloud),
+using sensor nodes and intelligent devices, an early
+warning system can be integrated with the grid.
+However, due to limited energy and bandwidth
+resources, real-time implementation is quite difﬁcult.
+These are some of the fundamental issues with the exist-
+ing approaches in the smart grid architecture, as reported in
+the literature [31], [32], [33], [41], [42].
+
+
+
+1481
+
+proposed two smart grid related issues: (a) peak demand
+and (b) dynamic pricing. With the integration of cloud,
+requests from customers are scheduled which are to be exe-
+cuted depending on the available resources, priority, and
+other applicable constraints. During peak hours, the mes-
+sages from smart meters are more than those in the non-
+peak hours [32]. However, in such a scenario, incoming jobs
+from users are scheduled according to their priority, avail-
+able resources, and applicable constraints. With the integra-
+tion of dynamic bandwidth allotment mechanism using
+cloud application, these issues can be addressed conve-
+niently. During the peak-hour, the allotted bandwidth is
+higher than that in the non-peak hour, so as to serve all the
+incoming jobs simultaneously.
+Virtualization is one of the most efﬁcient techniques for
+cost reduction, resource optimization, and server manage-
+ment [41]. Cloud computing can be implemented in the
+form of different strategies of the micro-grids. Rajeev and
+Ashok [41] proposed a framework for integrating cloud
+computing applications for micro-grid management in the
+form of different modules such as infrastructure, power
+management, and service. The infrastructure and power
+management modules are used for task scheduling and
+micro-grid power management, respectively. The different
+operators publish their service description using the service
+module. With the implementation of cloud computing, the
+external computing devices can be integrated with the inter-
+nal ones. Thus,
+the number of supported customers
+increases, as suggested by Rajeev and Ashok [41]. In such a
+manner, integrating virtual energy sources with the existing
+energy storage devices, and the energy exchange mecha-
+nism can be achieved among the micro-grids to meet the
+energy requirements from consumers.
+The smart grid infrastructure needs to be deployed glob-
+ally. Scalable software platform is needed in order to rap-
+idly integrate and analyze information streaming from
+multiple smart meters simultaneously, in order to balance
+the real-time demand and supply curves. Yang et al. [33]
+advocated that cloud platforms are well suited to support
+such huge data and computationally-intensive, always-on
+applications. In such applications, scalable requirements of
+resources are offered by the cloud applications to build a
+software infrastructure to support such dynamic and
+always-on applications. In these environments, cloud plat-
+forms work as intrinsic components due to the diverse bene-
+ﬁts they offer, as mentioned below:
+
+3)
+
+1) Cloud acts elastically to avoid costly capital invest-
+ment by the utility during the peak hours.
+2) Real-time energy usage and pricing information can
+be shared, so that the customers can get beneﬁted
+from the real-time information.
+Some data can be shared with a third party by using
+cloud services, after meeting the data privacy poli-
+cies for developing intelligent applications to cus-
+tomize consumer needs.
+The implementation of specialized data abstraction for data
+streams generated from the different components is one of
+the key technologies for real-time monitoring to take deci-
+sions at different instances. On the other hand, third-party
+vendors are allowed to participate in such real-time
+
+3.2 Solution Concept with Cloud Applications
+For several years, researchers proposed several solution
+concepts for demand response and micro-grid management
+[31], [32], [33], [41], [43], [44], [45].
+Kim et al. [31] proposed the concept of Cloud-Based
+Demand Response (CDR) for fast response times in large
+scale deployment. In this architecture, the master/slave
+demand response model is proposed, in which the smart
+meters and the home EMS act as slaves, and the utility
+acts as the master. In such a scenario, the CDR leverages
+data-centric
+communication, publisher/subscriber
+and
+topic-based group management, instead of IP-centric com-
+munication. Two cloud-based demand response models are
+proposed as follows: (a) data-centric communication and
+(b) topic-based group communication. Secure, scalable and
+reliable demand response can be achieved by using the
+CDR approach. However, the demand-response model dis-
+cussed in [31] has an overhead problem with the implemen-
+tation of private cloud for a small-sized network. Some of
+the overhead problems are the implementation cost, and
+the selection of appropriate strategy. Even for a small-sized
+network, all the features of cloud computing platform
+should be supported in order to have reliable, and secure
+electricity distribution in a smart grid, and, thus, implemen-
+tation cost of cloud applications is higher than the existing
+methods for a small-sized network. So, there is a need for
+developing such a demand-response model using cloud-
+based applications that will facilitate both the large and
+small-scale network.
+Energy management can also be addressed with the
+implementation of dynamic pricing. Xuan Li and Lo [32]
+
+1482
+
+IEEE TRANSACTIONS ON PARALLEL AND DISTRIBUTED SYSTEMS, VOL. 26, NO. 5, MAY 2015
+
+TABLE 1
+Comparison of Cloud Computing Applications for Energy Management
+
+monitoring system. So, deﬁning an effective privacy-policy
+is perceived to be a secure mechanism, while allowing the
+third-party vendors for the real-time monitoring process.
+Cloud-based services are used for communication and
+management schemes in the smart grid by Ji et al. [43],
+while providing the facility of power monitoring and early-
+warning system as well. In such a scenario, service-oriented
+architecture (SOA) and enterprise service bus (ESB) are
+used for providing the real-time support. In this approach,
+ﬂexible, efﬁcient, on-demand, and scalable smart grid
+power monitoring system can be built. The authors pro-
+posed that SOA relies on publishing applications as a ser-
+vice. Standard Web services, interfaces, service registry,
+service ﬁnding, and service access are implemented into a
+single cloud application using SOA. With the implementa-
+tion of cloud applications, resource management, task man-
+agement, and security management activities can be
+performed using the ESB architecture for smart grid energy
+management [43].
+With the fast development of smart grid, implementation
+of higher storage and processing capacity of power system
+is needed. In such a scenario, a mobile agent is used to serve
+the information interaction mechanism in the cloud com-
+puting infrastructure [44] to fulﬁll the requirements of the
+smart grid. This mobile agent combined with cloud comput-
+ing acts as an intermediate device among different levels in
+the smart grid. Different types of mobile agents such as
+Data Mobile Agent (DMA) and State Mobile Agent (SMA)
+can cooperate with one another to fulﬁll users’ requests.
+The work in [44] proposes that the use of a mobile agent is
+more suitable for power system using cloud computing
+platform due to the smart grid’s heterogeneous architecture.
+In the smart grid architecture, multiple users as well as mul-
+tiple energy sources participate together. In the conven-
+tional smart grid system (without integrating cloud), an
+energy source with multiple user energy consumption units
+
+(agents) is studied by Rad et al. [46]. Using this mobile
+agent, it is important to understand how energy information
+interaction can be done while considering multiple users
+and sources.
+In a recent paper [45], cloud computing is used as Soft-
+ware as a Service for smart grid cyber-physical systems. In
+this work, the authors discussed about dynamic demand
+response (D2R) to perform intelligent demand-side man-
+agement and relieve peak-load. In such a scenario, D2R acts
+as an intelligent decision making tool to increase the reli-
+ability of smart grid. In such a model, the implementation
+of a cloud-based software platform is envisioned to be use-
+ful to support all the portable devices of different layers in a
+smart grid. The advantages of dynamic demand response
+(D2R) are as follows:
+ Demand is periodically forecasted.
+ According to the demand and supply information,
+proper strategy is selected in order to achieve a reli-
+able and efﬁcient smart grid architecture.
+We present the comparison of different cloud-based
+applications for smart grid energy management in Table 1
+using different features of a smart grid, as addressed by the
+authors in [31], [32], [33], [41], [43], [44], [45].
+Further, in Table 2, we present a summary of different
+energy management mechanisms, as suggested by the
+authors [31], [32], [33], [41], [43], [44], [45], with some direc-
+tions for future research.
+
+3.3 Future Research Directions with Some
+Research Challenges
+Cloud computing applications are one of the most useful
+techniques for the future smart grid development. Beyond
+the previously discussed cloud applications, various future
+opportunities for cloud-based energy management are dis-
+cussed below with some of the research challenges.
+
+BERA ET AL.: CLOUD COMPUTING APPLICATIONS FOR SMART GRID: A SURVEY
+
+1483
+
+TABLE 2
+Summary of Cloud Computing Applications for Smart Grid Energy Management
+
+1)
+
+2)
+
+3)
+
+Implementation of private cloud computing applica-
+tions for smart grid that will support small-size net-
+works. In such a scenario, a group of users is served
+by the private cloud, which improves the privacy pre-
+serving smart grid architecture. However, it is also a
+challenging issue to support such multiple small-size
+network due to their heterogeneous activities.
+It is useful to give ﬂexibility to the micro-grids to
+operate with/without
+the real-time information.
+Therefore, exchanging energy information between
+cloud and micro-grid is a big challenge, though
+micro-grid acts in the islanded mode. In the presence
+of
+intrusion, allowing islanded micro-grids
+to
+exchange energy from/to the cloud energy storage
+device is an important issue.
+Introducing cloud energy devices
+to maintain
+demand and supply curve during peak hours. How-
+ever, there is no well-established framework that
+will support the virtual energy storage systems.
+Therefore, proposing a framework that will support
+such a virtual energy storage device is a research
+
+4)
+
+5)
+
+challenge, while allowing all the entities (in the
+smart grid) to take part of this.
+Similar to the above, allowing electricity exchange
+from micro-grid to cloud energy device and vice-
+versa can reduce the variation of supply-demand
+curve, when there is an access and deﬁcit of
+energy, respectively. Therefore, online and real-
+time optimization, planning, prediction, and con-
+trol of energy management for future smart grid
+using cloud applications is a trivial task without
+adequate infrastructure.
+Introducing a virtual power ﬂow controller for
+reliable and efﬁcient smart grid operation. The
+optimization of power ﬂow is one of the key tech-
+nologies in smart grid [47]. A power ﬂow control-
+ler is responsible for optimized electricity ﬂow in
+the islanded micro-grids. There is a need for devel-
+oping an optimized power ﬂow controller that will
+work in any mode such as the normal mode, and
+the islanded mode, and also in the presence of any
+ﬂuctuating power generation equipment.
+
+1484
+
+6)
+
+IEEE TRANSACTIONS ON PARALLEL AND DISTRIBUTED SYSTEMS, VOL. 26, NO. 5, MAY 2015
+
+Integrating PHEVs with cloud energy storage to
+relieve the demand from micro-grids. During peak
+hour, charging of PHEVs increases the load on smart
+grid [48], [49]. In such a scenario, customer has to
+pay high price for charging their PHEVs. With the
+implementation of cloud energy storage services this
+issue can be effectively addressed.
+
+4 CLOUD APPLICATIONS FOR COMMUNICATION
+AND INFORMATION MANAGEMENT
+
+As we have seen in the preceding sections, a smart grid con-
+sists of bidirectional electrical as well as communication
+ﬂows, primarily enabled with the help of advanced sensor
+network technology. The smart meters are also deployed at
+the customers’ end to communicate with the service pro-
+vider in order to exchange real-time information. Due to
+this architecture, massive data are generated from both the
+utility and end-users sides. The management of vast amount
+of such data is challenging using the traditional data man-
+agement approaches due to the different constraints (such
+as processing unit storage, and memory). Consequently,
+cloud computing applications are one of the best methods
+to control such vast data in order to have a reliable, robust,
+and efﬁcient smart grid environment [50], [51], [52].
+
+4.1 Need for Cloud Applications for Information
+Management
+In a typical city environment, millions of smart meters are
+deployed at the distribution side. To successfully handle
+such massive data, a useful technique is required. Cloud
+computing is such a useful technology for smart grid infor-
+mation management due to the following reasons:
+
+
+The requirements of information processing in smart
+grid ﬁt well with the computing and storage mecha-
+nisms available for cloud applications.
+In a smart grid, information sharing is one of the most
+important issues. Information from different compo-
+nents, and the supply and demand state conditions
+can be shared with the help of cloud computing.
+Shared information is accessible to the micro-grids,
+end-users, and utilities, though they function in the
+islanded mode.
+ Management of massive data is complex, costly, and
+may be beyond the capacity of existing data manage-
+ment systems in the smart grid.
+Using a cloud-based information management system can
+help in encountering such drawbacks.
+
+
+
+
+
+4.2 Information Management Using Cloud
+Applications
+Several works are proposed to improve communication
+delays, thereby attempting to enable real-time communica-
+tion through cloud data management in smart grid [53],
+[54], [55], [56], [57], [58]. Towards this goal of data manage-
+ment, Lv et al. [53] proposed a cloud data warehouse appli-
+cation in smart grid. Formally, the authors deﬁned a cloud
+data warehouse model in terms of extract transform load
+(ETL), online analytical processing (OLAP), data mining
+(DM), and business intelligence (BI) report technologies.
+
+Fig. 5. A schematic view of smart grid communication with cloud data-
+warehouse.
+
+This cloud data warehouse architecture provides different
+services for smart grid information management such as
+multi-dimensional data analysis, and data mining [53]. In
+multi-dimensional data analysis, the users have different
+rules for energy consumption. However, it is required to
+build a software platform using cloud data-warehouse for
+proving services to the customers as a whole. The mecha-
+nisms of coordination between a smart grid and cloud data-
+warehouse need to be addressed in the future.
+Fig. 5 depicts the schematic view of the cloud data ware-
+house for smart grid, where the warehouse acts as data
+storage for all the components such as smart meters, micro-
+grids, utilities, and substations. A cost-optimization tech-
+nique using cloud based architecture is presented by
+Fang et al. [54], in order to have simple and economical infor-
+mation management for smart grid. The work proposed dif-
+ferent domains (such as smart grid, network, cloud, and
+broker) for cost effective information management. The bro-
+ker domain acts as a programming module to support the
+optimization method as per the demand. However, in such a
+scenario, deﬁning proper cloud-based data models for sup-
+porting the heterogeneous architecture is to be strengthened.
+With the implementation of cost-optimized information
+sharing, electric vehicles such as the plug-in electric vehicles
+(PHEV) can be beneﬁted. PHEV owners can access the real-
+time price, the real-state of the smart grid, and can accord-
+ingly charge and discharge their vehicles. In such a method,
+the utility is also able to know where most of the PHEVs are
+situated, and how much energy is required. The overall
+cost-optimization method in terms of computation and stor-
+age is studied for the smart grid architecture [54].
+The cloud data center is used as communication and infor-
+mation optimization components to support cognitive radio-
+based AMI meters in a smart grid. The home area network
+(enabled with Zig-bee, and Bluetooth) is supported with the
+implementation of an optimization algorithm in the cloud
+data center. A net-AMI for micro-grid infrastructure is pro-
+posed using the cognitive radio network in the cloud data
+center [55]. PHEV can be supported using the net-AMI infra-
+structure, as it supports the cellular technology. The main
+advantage of this net-AMI technology is that it can be inte-
+grated with the existing BTS cellular service with the help of
+cloud computing [55]. In such an infrastructure, the net-AMI
+does not support the Ethernet protocols. So, deﬁning a cloud-
+based proprietary protocol for cloud computing is needed to
+
+BERA ET AL.: CLOUD COMPUTING APPLICATIONS FOR SMART GRID: A SURVEY
+
+1485
+
+TABLE 3
+Comparison of Cloud Computing Applications for Information Management
+
+support such protocols, while ensuring that they can work in
+the presence of radio-waves in the smart grid environments.
+A smart meter is a key component in the smart grid
+architecture, and it supports two-way communication. For
+large-scale development, millions of smart meters are
+deployed in the distribution side. To successfully retrieve
+massive data from smart meters, the cloud technology is
+useful [56]. Lohrman and Kao [56] used cloud as Infrastruc-
+ture as a Service for the processing of smart meter data
+streams. The Nephele Execution Engine framework is used for
+processing the smart meter data given in [56]. In such soft-
+ware platforms, communication latency and processing
+rates can be improved in order to have a real-time monitor-
+ing system in the smart grid.
+Real-time distributed data management and parallel
+processing of information can be utilized using smart grid
+data cloud application, as discussed in [57]. In such smart
+grid data cloud scenario, cloud computing is used as Plat-
+form as a Service. In the smart grid data cloud infrastructure,
+cost and data management are shared. Due to the ﬂexibility
+of cloud computing, information is retrieved from the data
+cloud more conveniently [57]. In the existing smart grid sys-
+tem, a dynamic pricing model is used depending on the
+load on micro-grids [59]. A dynamic pricing model can be
+established according to the load on cloud data services. In
+such a scenario, during peak-hour, load on data-cloud is
+high, and, thus, real-time price will be more, and vice-versa.
+Cloud computing services are used as a dynamic data
+centers to store the real-time information from the smart
+meters [60]. In such a scenario, the cloud-based data centers
+are served as Internet data centers (IDC) which are available
+to the customers through the Internet. The real-time pricing
+policy is also presented as a non-linear function depending
+on the load on the data center.
+Table 3 presents a list showing comparisons of cloud-
+based information management in the smart grid architec-
+ture. Different applications support different cloud services
+such as IaaS, PaaS, and SaaS, as shown in the Table.
+In Table 4, we summarize different cloud-based applica-
+tions for smart grid information management, while giving
+a few research directions [53], [54], [55], [56], [57].
+
+4.3 Future Research Directions with Some
+Research Challenges
+The heterogeneous architecture of a smart grid allows huge
+amount of data that are generated form smart meters, and,
+thus, cloud computing applications are useful for managing
+these data. However, there are some research challenges in
+smart grid, while incorporating the cloud computing appli-
+cations as follows.
+
+1)
+
+2)
+
+Integration of public cloud with the private cloud
+infrastructure for cost-effective communication in
+smart grid. Public cloud can be integrated with the
+private cloud for large-scale development in smart
+grid in a cost-effective manner. However, security
+and privacy are two of the important issues, while
+allowing information exchange between private and
+public cloud.
+Similar to the energy scheduling, data trafﬁc sched-
+uling can also be the important one to maintain ade-
+quate data trafﬁc rate in the smart grid and cloud
+environment. Consequently, with the help of data
+trafﬁc scheduling technique, cyber-physical system
+will also be established in order to maintain the pri-
+vacy of the users.
+3) Use of multi-mobile agent combined with cloud
+computing for proﬁtable smart grid operation. Due
+to heterogeneous communication architecture [11] of
+smart grid, multi-mobile agent can be used to com-
+municate with different layers. Therefore, deﬁning
+an adequate mobile strategy for the agent is required
+for cost-effective information management in the
+smart grid. Otherwise,
+it will be cost-expensive
+rather than the cost-effective one.
+Interactive cooperation using cloud services to support
+not only multiple customers, but also multiple energy
+sources for large-scale development of smart grid for
+energy management, as discussed in Section 3.
+5) Development of a cloud network, in which smart
+elements can improve their delay by changing their
+chosen path. On the other hand, it is also men-
+tioned in [62] that smart elements cannot improve
+
+4)
+
+1486
+
+IEEE TRANSACTIONS ON PARALLEL AND DISTRIBUTED SYSTEMS, VOL. 26, NO. 5, MAY 2015
+
+TABLE 4
+Summary of Cloud Computing Applications for Smart Grid Information Management
+
+6)
+
+their delays by changing their chosen path. There-
+fore, it is also a challenging task to improve the
+delay incurred by the smart meters using cloud
+computing applications.
+The key concept of smart grid is decentralized power
+delivery with the existing centralized infrastructure
+[63]. Development of cloud computing protocol
+architecture will support distributed nature of the
+smart grid. Therefore, enhancement of active partici-
+pation by customers using cloud services, so that the
+customers get reliable, and cost-effective services
+such as billing.
+7) Cloud computing can be used to recover network
+failures. Due to failures in one of the protocol suites
+used for communication,
+the entire system is
+affected in the smart grid technologies, as discussed
+by Wang and Khanna [64].
+8) Using cloud data warehouse, as in [53], for optimiza-
+tion, control, and secure communication for the vir-
+tual power plant (VPP) technology.
+
+5 CLOUD APPLICATIONS FOR SECURITY IN SMART
+GRID
+
+A smart grid can be conceptualized as a cyber-physical
+system that connects physical electricity systems and
+cyber-infrastructure, with the integration of the Internet.
+This service can communicate with the consumer applian-
+ces and also provide the backbone for service providers to
+absorb contents and control operations. With the presence
+of online connectivity, it is a big challenge to prevent
+
+cyber-attacks in the smart grid that can potentially disrupt
+the power supply [65]. One of the important issues is
+power theft by consumers. This can be done by hacking a
+smart meter or modifying the real-time information
+through accessing communication channel to change the
+reported electricity usage. Additionally, data manipula-
+tion is also one of the most security concerns in the smart
+grid. To overcome these issues we need to implement
+proper security for secure and reliable smart grid architec-
+ture. Security can be implemented on the consumer side,
+transmission side, and generation side. The main security
+aspects of smart grid are as follows:
+ With the increase of the grid system complexity and
+their integration, it is difﬁcult to track interactions
+among business systems securely.
+The smart grid architecture is more complex than
+the one for the traditional power grid. The imple-
+mentation of a smart sensor network, wireless
+communication, and smart meters increases the
+complexity in the protection of the information
+security system.
+ With the implementation of millions of smart meters,
+the network is distributed to the end-user systems.
+So, the capacity of the protection at the end-users
+needs further enhancement.
+
+The denial-of-service (DoS) attack to affect the stabil-
+ity of the applications for the smart grid.
+ Utility and third-party can access the user data as
+well as private information, thereby affecting the
+privacy of the users.
+
+
+
+BERA ET AL.: CLOUD COMPUTING APPLICATIONS FOR SMART GRID: A SURVEY
+
+1487
+
+Fig. 6. Main security aspects in smart grid architecture.
+
+In Fig. 6, we show the main security issues in the smart
+grid architecture. Data outage prevention, data manage-
+ment, and users’ privacy are important issues. Additionally,
+Fig. 7 shows the interactions between different components
+of smart grid and cloud computing. Only authorized smart
+grid components can access different cloud services for pro-
+viding adequate security to the end-users.
+
+1. Data leakage. Data outage can be introduced inten-
+tionally or unintentionally. In the presence of cyber-
+physical attack, unintentional data leakage can be
+performed by third-party. Even data outage can take
+place with the help of user for her facility, and is
+known as intentional data leakage.
+2. Data management. The choice between data to be dis-
+carded and the one to be stored is a major concern.
+Proper data management mechanism is needed for
+real-time state monitoring. With the integration of
+proper ﬁltering method, data can be managed
+properly.
+Privacy. Privacy preserving is one of the most impor-
+tant issues in smart grid infrastructure. Due to the
+lack of privacy policies, users’ personal data can be
+disclosed to the utility and also to third party vendors.
+A proper authentication, and authorization process
+needs to be implemented for securing users’ privacy.
+
+3.
+
+5.1 Different Security Technologies in Smart Grid
+Using Cloud Applications
+The existing information protection systems for electric
+power are deﬁcient in handling the ever changing and
+growing nature of security threats [66]. To address these
+issues in the smart grid development, researchers proposed
+several security technologies in terms of cloud computing
+applications [66], [67], [68], [69], [70].
+An electric power information security and protection
+system, based on cloud security, is presented by Yanliang
+et al. [66]. The authors classiﬁed cloud security into two
+parts: server and client. The clients mainly collect data and
+take action according to the server responses. On the con-
+trary, the server uses the cloud computing platform to
+implement the distributed storage, thereby acting as an
+intelligent decision maker. Then the results are transmitted
+to the clients through the Internet.
+Simmhan et al. [67] analyzed different security and pri-
+vacy issues in smart grid software architecture operating on
+different cloud environments. Private cloud platforms are
+
+Fig. 7. Interactions between smart grid and cloud computing.
+
+suitable for scaling out and processing millions of data from
+users. Using the cloud computing platform, the electrical
+utilities can quickly and effectively deal with malicious soft-
+ware, thereby reducing the overall network damage control
+costs and improving the overall safety level.
+The distributed veriﬁcation protocol (DVP) proposed by
+Ugale et al. [68] is focused on guaranteeing data storage
+security in cloud computing. The authors introduced the
+merits of the application ﬁeld of cloud computing to reduce
+users’ cost in the smart grid architecture. Ugale et al. [68]
+also proposed that the implementation of the DVP protocol
+is suitable to support data storage and power management
+mechanisms for smart grid.
+With the construction of power cloud technology for
+smart grid development, many security issues are
+addressed in [69]. Cloud computing expands the trust
+boundary, and makes more stakeholders to join the adop-
+tion of the traditional security techniques. Several cloud
+computing security risks are discussed. For
+instance,
+(a) administrator being able to access personal sensitive
+data, and (b) the location of the cloud required to ensure
+that information is transmitted and kept securely.
+Maheswari et al. [70] focused on the development of a
+cloud-based software platform for state estimation in a
+smart grid environment. With the implementation of the
+public key infrastructure (PKI), issues related to fault-toler-
+ance and intrusion detection are addressed. This state esti-
+mation method utilizes maximum bandwidth that
+is
+available in the cloud, so as to achieve reliable, secure, and
+fault-tolerant smart grid architecture. This software plat-
+form also maximizes the use of cores.
+Wen et al. [71] propose a privacy preserving smart meter-
+ing scheme in the smart grid. In the proposed scheme, each
+individual smart meter stores the real-time information in
+encrypted form on the cloud platform. Therefore, only the
+authorized entities are permissible to access the stored data.
+In such a scenario, users can generate data query upto a pos-
+sible range. Further, the query is transferred into two query
+tokens which are used to ﬁnd the required data, while main-
+taining the users’ privacy.
+In Table 5, the comparison of different security aspects in
+smart grid using cloud applications is shown. The different
+smart security features—cyber-physical, data security and
+privacy, and threat detection are compared.
+
+1488
+
+IEEE TRANSACTIONS ON PARALLEL AND DISTRIBUTED SYSTEMS, VOL. 26, NO. 5, MAY 2015
+
+TABLE 5
+Comparison of Cloud Computing Applications for Smart Grid Security
+
+In Table 7, we synthesize the different security tech-
+nologies adopted in the smart grid architecture using
+cloud applications, as proposed by the authors in [66],
+[67], [68], [69], [70], with some future extensions. Yan-
+gling et al. [66] proposed the server-client mechanism
+for securing smart grid, as discussed earlier. In such a
+mechanism, cloud can be used as SaaS for ensuring data
+privacy issues to motivate customers to be part of the
+smart grid.
+Simmhan et al. also proposed a cloud-based software
+platform to deal with security and privacy issues to prevent
+malicious software attacks [67]. However, in such a soft-
+ware platform, public cloud computing is used. So, strong
+privacy policies need to be formulated while allowing the
+use of public cloud applications.
+The distributed veriﬁcation protocol is proposed for data
+storage security in cloud applications for smart grid [68].
+The DVP mechanism can be used for preventing intentional
+or unintentional data-leakage.
+
+Yang et al. [69] discussed some technical security issues
+in power-cloud computing. With the technical security
+issues, the non-technical issues such as the improvement
+service of quality can also be addressed.
+The real-time state estimation method is proposed by
+Maheshwari et al. [70] using cloud applications. This cloud-
+based state estimation method can be used for target-ori-
+ented security technologies to track the location of electricity
+theft for smart grid development.
+A cloud-based range query information access mecha-
+nism is proposed by Wen et al. [71]. The proposed method
+is useful to maintain the privacy of the users, while using a
+common platform (cloud) as a storage device. Therefore,
+the proposed cloud-based is useful to handle the issues of
+supporting multiple entities in a common platform, while
+maintaining the security and privacy of the users as well.
+In Table 6, we present a summary of the existing cloud-
+based smart grid security technologies with some future
+research directions.
+
+TABLE 6
+Summary of Cloud Computing Applications for Smart Grid Security
+
+BERA ET AL.: CLOUD COMPUTING APPLICATIONS FOR SMART GRID: A SURVEY
+
+1489
+
+TABLE 7
+Existing Literature: Comparison- with and without Cloud in the Smart Grid
+
+5.2 Future Research Directions with Some
+Research Challenges
+Beyond the previously discussed cloud applications in
+order to provide security in the smart grid, various future
+opportunities for cloud-based security are also provided
+with some research challenges.
+
+1)
+
+2)
+
+In smart grid, third parties are also allowed to partic-
+ipate in the real-time monitoring systems. Cloud
+computing applications are expected to provide ade-
+quate security to maintain the privacy of the users
+data. However, it is still not clear from the existing
+technologies that how this security can be provided,
+while allowing third parties to take part into the sys-
+tems. Therefore, providing cloud security to prevent
+outage (third party vendors) to interact with the cus-
+tomers equipment to control and monitor [72], while
+allowing different vendors.
+Implementing coordinated fault protection mecha-
+nism with the help of cloud-based infrastructure in
+smart grid. In this infrastructure, different equip-
+ment are able to perform together efﬁciently.
+3) Using cloud-based state estimation method [70] for
+proactive and adaptive management for micro-grid.
+Therefore, adequate strategy can be taken by service
+providers in order to provide reliable energy services
+to the end-users.
+4) Cloud computing applications are expected to detect
+intentional data leakage in smart grid. However,
+data leakage may take place unintentionally as well.
+Therefore, preventing unintentional data leakage is a
+research challenge, while incorporating cloud com-
+puting applications in the smart grid.
+Privacy preserving data collection for different tasks
+such as billing, and real-time monitoring.
+
+5)
+
+6 OVERALL COMPARISON
+
+We synthesize the studies presented in some of the existing
+pieces of literature which address the issues related to smart
+grid development, in the context of cloud-based, and non-
+cloud-based (conventional) optimization mechanisms. The
+different smart grid features—demand side management,
+micro-grid management,
+load shifting, dynamic pricing,
+
+cost-optimization, data storage, cyber-security, data secu-
+rity, and threat detection—are discussed below.
+a) Demand-side management. Allowing the customers to
+take real-time decisions for modeling their energy con-
+sumption is one of the key aspects of demand-side man-
+agement. In the presence of a demand-side management
+system, peak-hour load is reduced and shifted to the
+non-peak hour. Logenthiran et al.
+[73] presented a
+demand-side management model based on a load shift-
+ing mechanism using a heuristic-based evolutionary algo-
+rithm (EA). Dynamic games model
+is proposed for
+distributed demand-side management in [74]. In such a
+scenario, a two-layer architecture is considered—lower
+layer (one household as one player), and upper layer (to
+store the interaction mechanism among different players).
+A sensor network is used as an emerging tool for smart
+grid real-time monitoring systems [75]. The authors use
+Sensor Web-services for demand-side energy manage-
+ment for large-scale development of smart grid. Due to
+the characteristics of huge storage and computation
+mechanisms, cloud-based applications are proposed as
+useful solutions for demand-side management efﬁciently,
+as discussed in [31], [32], [33], [43], [44], [45].
+b) Micro-grid management. A micro-grid is envisioned as
+capable of distributing electricity to the end-users with
+distributed generation facility, as discussed in Section 2.
+The co-operative control strategy and energy manage-
+ment is discussed in [81]. Jeon et al. [82] proposed a real-
+time digital simulator-based test system for micro-grid
+energy management. However, the autonomous activities
+of micro-grids often lead to information islanding [6],
+and as a consequence of which it is difﬁcult to exchange
+the energy information with the other micro-grids [6].
+These issues can be undertaken using cloud applications,
+as discussed in [54], [55], [57], so that a micro-grid is able
+to exchange energy information in the islanding mode
+as well.
+c) Load shifting. During peak hours, the load on the micro-
+grids is more than that in the non-peak hours. Different load
+shifting mechanisms are proposed in [73], [86], [106] for the
+conventional smart grid environment
+(without cloud).
+Logenthiran et al. [73] proposed that the shift-able devices
+such as washing machines, and refrigerator can be used in
+
+1490
+
+IEEE TRANSACTIONS ON PARALLEL AND DISTRIBUTED SYSTEMS, VOL. 26, NO. 5, MAY 2015
+
+the non-peak hours to relieve the load on the grid during
+peak hours. A phase-based optimal service policy according
+to periodically incoming jobs from end-users is proposed in
+[86]. However, when there is an urgent requirement of
+energy during the peak hours, then the customer is required
+to pay high prices. This problem is addressed by the authors
+in [31], [32], [41], [43], [44] with the implementation of cloud
+energy services.
+d) Cost-optimization. Due to the complex architecture of
+smart grid, resource (energy and data) optimization mecha-
+nisms is a challenging task. Several cost-optimization meth-
+ods are proposed by the authors in [54], [55], [57], [93], [94].
+Georgievski et al. [93] propose different cost-optimization
+methods in the smart grid architecture. Georgievski et al.
+[93] proposed a cost-optimization scheduling algorithm for
+use in an ofﬁce environment and coupled it with the smart
+grid architecture. However, automatic metering infrastruc-
+ture (AMI), smart meters, and micro-grids technologies
+make a complex architecture for large-scale development of
+smart grid. Integrating these systems into cloud application
+is useful, as discussed in Section 2.
+e) Data storage. In Section 2, we discuss the need for
+proper management of
+incoming real-time information
+from smart meters. Wang et al. [95] proposed a hierarchical
+extended storage mechanism for massive dynamic data
+(HES) storage and monitoring of data in different areas
+according to different data types. An agent-based micro-
+storage facility is studied by Vytelingum et al. [21]. How-
+ever, these approaches are cost-prohibitive. The require-
+ments of information processing from smart meters ﬁt well
+with the cloud applications [54]. In the absence of adopting
+cloud applications in smart grid, the computing devices are
+implemented within the end-users’ energy management
+devices. As an example, during the peak hours, utility
+demands more computing and storage devices, and, thus,
+information management and computation is a difﬁcult
+task to handle within the internal computing devices, as it
+has less memory and data storage capacity [67]. So, cloud
+applications are addressed as an useful mechanism for
+large-scale development of smart grid, as the authors sug-
+gested in [53], [54], [55], [56], [57].
+f) Dynamic pricing. Real-time pricing mechanisms are pro-
+posed by the authors in [54], [55], [56], [57], [87], [88], [89],
+[90], [91], [92]. Dynamic price is based on dynamic demand
+from customers and total available power supply. However,
+in the existing dynamic pricing method, dynamic-pricing
+mechanism is modeled according to the load on the micro-
+grids. For this reason, a proper pricing policy may not
+always be maintained. So, using a cloud-based platform,
+dynamic pricing can be modeled according to the load on
+the cloud data center.
+g) Cyber-security. Cyber-security is one of the important
+considerations in a smart grid architecture [12]. Different
+technologies are proposed to establish a secure smart grid
+environment [12], [66], [67], [68], [98], [99]. McKinnon
+et al. [98] proposed the digital-ants framework to identify
+a cyber-attack in the smart grid. The cyber-security issues
+are undertaken with the implementation of a human-
+automation interaction (HAI) method in [99]. However,
+cloud-based security technologies are useful
+for cost-
+effective mechanism, as cyber-security issues for a smart
+
+grid can be handled using the existing cloud security
+mechanisms [66], [67], [68].
+h) Data security and privacy. In the smart grid architec-
+ture, third-parties are allowed to participate in smart grid
+energy and information management mechanisms. To
+address customers’ security and privacy issues, research-
+ers proposed various security and privacy schemes to
+motivate the customers [12], [67], [69], [70], [100], [101],
+[102], [103], [107].
+i) Theft and threat detection. In the traditional power grid
+systems, no automatic methods exist for theft and threat
+detection. In the smart grid environment, automatic theft
+and threat detection mechanisms are proposed for reliable
+power supply to the end-users [12], [65], [66], [67], [69], [70],
+[100], [104], [105]. A distributed fault-tolerant, and theft
+detection mechanism is proposed using linear system of
+equations (LSE) in [100]. In such a mechanism, the status of
+the customers is modeled as unity when they are honest.
+On the other hand, when the status is greater than unity, the
+customers are treated as dishonest, and, thus, theft detection
+mechanism works to have secure smart grid architecture.
+Some cloud-based security applications are proposed in
+[67], [69], [70] for cost-effective security mechanisms in the
+smart grid.
+
+7 CONCLUSION
+
+In this survey, we provided an overview of existing works
+integrating cloud computing in the existing smart grid
+architecture, in order to have reliable, efﬁcient and secure
+energy distribution. Different aspects of smart grid—energy
+management, information management, and security—are dis-
+cussed. We identiﬁed some important technical issues and
+proposed several future research directions on cloud-based
+smart grid.
+From this surveyed work, we can see that the use of
+cloud computing applications in smart grid is one of the
+useful techniques to overcome issues related to tradi-
+tional power grid management, despite the existence of
+some technical challenges inherent of cloud computing
+[108], [109].
+In this paper, we provided several directions for future
+research. We discussed the implementation of cloud energy
+storage devices, and cloud data storage mechanisms for the
+smart grid architecture. Using cloud computing applica-
+tions, energy management techniques in smart grid can be
+evaluated within the cloud, instead of between the end-
+user’s devices. This architecture gives more memory and
+storage to evaluate computing mechanism for energy man-
+agement, and cost-optimization. On the issue of communi-
+cation and information management in smart grid, cloud
+computing is used in different scenarios. Cloud data-ward
+can be used to process massive data from millions of smart
+meters. Further, cloud computing even gives better security
+capability than the conventional, pure IP-based security
+mechanisms.
+Thus, the integration of cloud computing in smart grid is
+envisioned to be useful for evolving the smart grid architec-
+ture further in terms of considerations such as monitoring
+cost, computing, data management, power management,
+and security.
+
+BERA ET AL.: CLOUD COMPUTING APPLICATIONS FOR SMART GRID: A SURVEY
+
+1491
+
+ACKNOWLEDGMENTS
+
+This work has been supported by a project funded by
+Department of Electronics and Information Technology
+(DeitY), grant number 13(16)/2011-CC and BT. This work
+also has been supported by Instituto de Telecomunicac¸ ~oes,
+Next Generation Networks and Applications Group (Net-
+GNA), Covilh~a Delegation, by National Funding from the
+FCT—Fundac¸ ~ao para a Ci^encia e Tecnologia through the Pest-
+OE/EEI/LA0008/2013 Project.
+
+[1]
+
+[3]
+
+[4]
+
+[2]
+
+[9]
+
+[6]
+
+[8]
+
+[5]
+
+REFERENCES
+J. Popeanga, “Cloud computing and smart grids,” Database Syst.
+J., vol. 3, no. 3, pp. 57–66, 2012.
+A. Lakhani, (2011, Feb). The Deﬁnition of Cloud Computing.
+[Online]. Available: http://www.cloudcentrics.com
+P. Mell and T. Grance, (2011). The NIST Deﬁnition of Cloud Com-
+put., US National Institute of Science and Techonology Std., 2011.
+[Online]. Available:
+http://csrc.nist.gov/publications/nist-
+pubs/800-145/SP800-145.pdf
+Y. Guo, M. Pan, and Y. Fang, “Optimal power management of
+residential customers in the smart grid,” IEEE Trans. Parallel Dis-
+trib. Syst., vol. 23, no. 9, pp. 1593–1606, Sep. 2012.
+Y. Nozaki, T. Tominaga, N. Iwasaki, and A. Takeuchi, “A techni-
+cal approach to achieve smart grid advantages using energy
+management systems,” in Proc. IEEE Int. Conf. Wireless Commun.
+Signal Process., 2011, pp. 1–5.
+X. Fang, S. Misra, G. Xue, and D. Yang, “Smart grid—the new
+and improved power grid: A survey,” IEEE Commun. Surv. Tuts.,
+vol. 14, no. 4, pp. 944–980, Fourth Quarter, 2012.
+[7] M. Hashmi, S. Hanninen, and K. Maki, “Survey of smart grid
+concepts,
+architectures,
+and technological demonstrations
+worldwide,” in Proc. IEEE PES Conf. Innovative Smart Grid Tech-
+nol., 2011, pp. 1–7.
+N. Lu, P. Du, P. Paulson, F. Greitzer, X. Guo, and M. Hadley, “A
+multi-layer, hierarchical information management system for the
+smart grid,” in Proc. IEEE Conf. Power Energy Soc. General Meet.,
+2011, pp. 1–8.
+J. Zhou, R. Q. Hu, and Y. Qian, “Scalable distributed communica-
+tion architectures to support advanced metering infrastructure in
+smart grid,” IEEE Trans. Parallel Distrib. Syst., vol. 23, no. 9,
+p. 1632-1642, Sep. 2012.
+[10] Y. Zhang, L. Wang, W. Sun, R. Green, and M. Alam, “Distributed
+intrusion detection system in a multi-layer network architecture
+of smart grids,” IEEE Trans. Smart Grid, vol. 2, no. 4, pp. 796–808,
+Dec. 2011.
+[11] A. Zaballos, A. Vallejo, and J. Selga, “Heterogeneous communi-
+cation architecture for the smart grid,” IEEE Netw., vol. 25, no. 5,
+pp. 30–37, Sep. 2011.
+[12] A. Metke and R. Ekl, “Smart grid security technology,” in Proc.
+IEEE Conf. Innovative Smart Grid Technol., 2010, pp. 1–7.
+[13] R. Lu, X. Liang, X. Li, X. Lin, and X. Shen, “EPPA: An efﬁcient
+and privacy-preserving aggregation scheme for secure smart
+grid communications,” IEEE Trans. Parallel Distrib. Syst., vol. 23,
+no. 9, pp. 1621–1631, Sep. 2012.
+[14] H. Khurana, M. Hadley, N. Lu, and D. Frincke, “Smart-grid secu-
+rity issues,” IEEE Secur. Privacy, vol. 8, no. 1, pp. 81–85, Jan.-Feb.
+2010.
+[15] A. H. Mohsenian-Rad and A. Leon-Garcia, “Coordination of
+cloud computing and smart power grids,” in Proc. IEEE Int. Conf.
+Smart Grid Commun., 2010, pp. 368–372.
+[16] T. Rajeev and S. Ashok, “Operational ﬂexibility in smart grid
+through cloud computing,” in Proc. IEEE Int. Symp. Cloud Serv.
+Comput., 2012, pp. 21–24.
+F. Moghaddam, M. Cheriet, and K. K. Nguyen, “Low carbon vir-
+tual private clouds,” in Proc. IEEE Int. Conf. Cloud Comput., Jul.
+2011, pp. 259–266.
+F. Li, W. Qiao, H. Sun, H. Wan, J. Wang, Y. Xia, Z. Xu, and P.
+Zhang, “Smart transmission grid: Vision and framework,” IEEE
+Trans. Smart Grid, vol. 1, no. 2, pp. 168–177, Aug. 2010.
+[19] Z. Minghan and M. Yun, “Summary of smart grid technology
+and research on smart grid security mechanism,” in Proc.
+IEEE 7th Int. Conf. Wireless Commun., Netw. Mobile Comput,
+2011, pp. 1–4.
+
+[18]
+
+[17]
+
+[21]
+
+[23]
+
+[26]
+
+[30]
+
+[28]
+
+[20]
+
+S. Misra, P. Krishna, V. Saritha, and M. S. Obaidat, “Learning
+automata as a utility for power management in smart grids,”
+IEEE Comm. Mag., vol. 51, no. 1, pp. 98–104, 2013.
+P. Vytelingum, T. D. Voice, S. D. Ramchurn, A. Rogers, and N. R.
+Jennings, “Agent-based micro-storage management for the smart
+grid,” in Proc. 9th Int. Conf. Auton. Agents Multiagent, 2010,
+pp. 39–46.
+[22] D. Hart, “Using AMI to realize the smart grid,” in Proc. IEEE
+Conf. Power Energy Soc. General Meet ., 2008, pp. 1–2.
+I. Atzeni, L. G. Ordonez, G. Scutari, D. P. Palomar, and J. R.
+Fonollosa, “Demand-side management via distributed energy
+generation and storage optimization,” IEEE Trans. Smart Grid,
+vol. 4, no. 2, pp. 866–876, Jun. 2012.
+[24] V. Bakker, M. Bosman, A. Molderink, J. Hurink, and G. Smit,
+“Demand side load management using a three step optimization
+methodology,” in Proc. IEEE Int. Conf. Smart Grid Commun., 2010,
+pp. 431–436.
+[25] L. M. Vaquero, L. Rodero-Merino, J. Caceres, and M. Lindner, “A
+break in the clouds: Towards a cloud deﬁnition,” ACM SIG-
+COMM Comput. Commun. Rev., vol. 39, no. 1, pp. 50–55, Jan. 2009.
+P. V. Krishna, S. Misra, D. Joshi, and M. S. Obaidat, “Learning
+automata based sentiment analysis for recommender system on
+cloud,” in Proc. IEEE Int. Conf. Comput, Inform Telecommun Syst.,
+May 2013, pp. 1–5.
+[27] E. Qaisar, “Introduction to cloud computing for developers: Key
+concepts, the players and their offerings,” in Proc. IEEE TCF
+Inform. Technol. Prof. Conf., 2012, pp. 1–6.
+F. Luo, Z. Y. Dong, Y. Chen, Y. Xu, K. Meng, and K. P. Wong,
+“Hybrid cloud computing platform: The next generation IT back-
+bone for smart grid,” in Proc. IEEE Conf. Power Energy Soc. Gen.
+Meet., 2012, pp. 1–7.
+[29] R. Prodan and S. Ostermann, “A survey and taxonomy of infra-
+structure as a service and web hosting cloud providers,” in Proc.
+Int. Conf. Grid Comput., 2009, pp. 1–10.
+S. Misra, P. Krishna, K. Kalaiselvan, V. Saritha, and M. S. Obaidat,
+“Learning automata-based QoS framework for cloud IaaS,” IEEE
+Trans. Netw. Serv. Manage., vol. 11, no. 1, pp. 15–24, Mar. 2014.
+[31] H. Kim, Y. J. Kim, K. Yang, and M. Thottan, “Cloud-based demand
+response for smart grid-architecture and distributed algorithms,”
+in Proc. IEEE Int. Conf. Smart Grid Commun., 2011, pp. 398–403.
+[32] X. Li and J.-C. Lo, “Pricing and peak aware scheduling algorithm
+for cloud computing,” in Proc. IEEE Conf. Innovative Smart Grid
+Technol., 2012, pp. 1–7.
+[33] C.-T. Yang, W.-S. Chen, K.-L. Huang, J.-C. Liu, W.-H. Hsu, and
+C.-H. Hsu, “Implementation of smart power management and
+service system on cloud computing,” in Proc. IEEE 9th Int. Conf.
+Ubiquitous Intell. Comput., 9th Int. Conf. Autonomic Trusted Com-
+put., 2012, pp. 924–929.
+S. Misra, S. Das, M. Khatua, and S. M. Obaidat, “QoS-guaranteed
+bandwidth shifting and redistribution in mobile cloud envi-
+ronment,” IEEE Trans. Cloud Comput., 2013, DOI: 10.1109/
+TCC.2013.19
+[35] B. C. Tak, B. Urgaonkar, and A. Sivasubramaniam, “Cloudy with
+a chance of cost savings,” IEEE Trans. Parallel Distrib. Syst.,
+vol. 24, no. 6, pp. 1223–1233, Jun. 2013.
+[36] A. Narayan, S. Rao, G. Ranjan, and K. Dheenadayalan, “Smart
+metering of cloud services,” in Proc. IEEE Int. Syst. Conf., 2012,
+pp. 1–7.
+[37] R. C. Green II, L. Wang, and M. Alam, “Applications and trends
+of high performance computing for electric power systems-
+focusing on smart grid,” IEEE Trans. Smart Grid, vol. 4, no. 2,
+pp. 922–931, Jun. 2013.
+[38] U. D. of Energy, Beneﬁts of Demand Response in Electricity Markets
+and Recommendations for Achieving Them, Report to the United
+States Congress, Feb. 2006.
+[39] M. Erol-Kantarci and H. Mouftah, “TOU-aware energy manage-
+ment and wireless sensor networks for reducing peak load in
+smart grids,” in Proc. IEEE 72nd Conf. Veh. Technol. Conf. Fall,
+2010, pp. 1–5.
+P. Nezamabadi and G. Gharehpetian, “Electrical energy manage-
+ment of virtual power plants in distribution networks with
+renewable energy resources and energy storage systems,” in
+Proc. Elect. Power Distrib. Netw., Apr. 2011, pp. 1–5.
+[41] T. Rajeev and S. Ashok, “A cloud computing approach for power
+management of microgrids,” in Proc. IEEE Conf. Innovative Smart
+Grid Technol., 2011, p. 49-52.
+
+[34]
+
+[40]
+
+1492
+
+IEEE TRANSACTIONS ON PARALLEL AND DISTRIBUTED SYSTEMS, VOL. 26, NO. 5, MAY 2015
+
+[47]
+
+[42] N. L. Soultanis, S. A. Papathanasiou, and N. d. Hatziargyriou, “A
+stability algorithm for the dynamic analysis of inverter domi-
+nated unbalanced LV microgrids,” IEEE Trans. Power Syst.,
+vol. 22, no. 1, pp. 294–304, Feb. 2007.
+[43] L. Ji, W. Lifang, and Y. Li, “Cloud service based intelligent power
+monitoring and early-warning system,” in Proc. IEEE Conf. Inno-
+vative Smart Grid Technol., 2012, pp. 1–4.
+[44] L. Tang, J. Li, and R. Wu, “Synergistic model of power system
+cloud computing based on mobile-agent,” in Proc. IEEE Int. Conf.
+Netw. Infrastructure Dig. Content, 2012, pp. 222–226.
+[45] V. Prasanna, S. Aman, A. Kumbhare, R. Liu, S. Stevens, and Q.
+Zhao, “Cloud-based software platform for big data analytics in
+smart grids,” IEEE J. Comput. Sci. Eng., vol. 14, no. 4, pp. 38–47,
+Aug. 2013.
+[46] A.-H. Mohsenian-Rad, V. Wong, J. Jatskevich, R. Schober, and A.
+Leon-Garcia, “Autonomous demand-side management based on
+game-theoretic energy consumption scheduling for the future
+smart grid,” IEEE Trans. Smart Grid, vol. 1, no. 3, pp. 320–331,
+Dec. 2010.
+J. Hu, J. Zhu, and G. Platt, “Smart grid—the next generation elec-
+tricity grid with power ﬂow optimization and high power qual-
+ity,” in Proc. IEEE Int. Conf. Elect. Mach. Syst., 2011, pp. 1–6.
+[48] W. Tushar, W. Saad, H. Poor, and D. Smith, “Economics of elec-
+tric vehicle charging: A game theoretic approach,” IEEE Trans.
+Smart Grid, vol. 3, no. 4, pp. 1767–1778, Dec. 2012.
+[49] C. Xu, F. Zhao, J. Guan, H. Zhang, and G.-M. Muntean, “QoE-
+driven user-centric VoD services in urban multi-homed p2p-
+based vehicular networks,” IEEE Trans. Veh. Tech., vol. 62, no. 5,
+pp. 2273–2289, Jun. 2013.
+[50] X. Fang, S. Misra, G. Xue, and D. Yang, “Managing smart grid
+information
+and
+cloud: Opportunities, model,
+the
+in
+applications,” IEEE Netw., vol. 26, no. 4, pp. 32–38, Jul/Aug.
+2012.
+[51] K. Bilal, M. Manzano, S. U. Khan, E. Calle, K. Li, and A. Y.
+Zomaya, “On the characterization of the structural robustness of
+data center networks,” IEEE Trans. Cloud Comput., vol. 1, no. 1,
+pp. 64–77, Sep. 2013.
+[52] H. Ma and Y. Qiu, “The cloud computing applications in infor-
+mation resource dynamic allocation,” in Proc. 15th Int. Conf.
+Netw.-Based Inform. Syst., Sep. 2012, pp. 14–17.
+[53] H. Lv, F. Wang, A. Yan, and Y. Cheng, “Design of cloud data
+warehouse and its application in smart grid,” in Proc. IEEE Int.
+Conf. Automat. Control Artif. Intell., 2012, pp. 849–852.
+[54] X. Fang, D. Yang, and G. Xue, “Evolving smart grid informa-
+tion management
+cloudward: A cloud
+optimization
+perspective,” IEEE Trans. Smart Grid, vol. 4, no. 1, pp. 111–
+119, Mar. 2013.
+[55] K. Nagothu, B. Kelley, M. Jamshidi, and A. Rajaee, “Persistent
+NET-AMI for microgrid infrastructure using cognitive radio on
+cloud data centers,” IEEE Syst. J., vol. 6, no. 1, pp. 4–15, Mar.
+2012.
+[56] B. Lohrmann and O. Kao, “Processing smart meter data streams
+in the cloud,” in Proc. 2nd IEEE PES Int. Conf. Exhib. Innovative
+Smart Grid Technol., 2011, pp. 1–8.
+S. Rusitschka, K. Eger, and C. Gerdes, “Smart grid data cloud: A
+model for utilizing cloud computing in the smart grid domain,”
+in Proc. IEEE Int. Conf. Smart Grid Commun., 2010, pp. 483–488.
+S. Misra, S. Bera, A. Mondal, R. Tirkey, H.-C. Chao, and S. Chat-
+topadhyay, “Optimal gateway selection in sensorcloud frame-
+work for health monitoring,” IET Wireless Sens. Syst., vol. 3, no. 4,
+p. 8, Dec. 2013.
+[59] H. Goudarzi, S. Hatami, and M. Pedram, “Demand-side load
+scheduling incentivized by dynamic energy prices,” in Proc.
+IEEE Int. Conf. Smart Grid Commun., 2011, pp. 351–356.
+P. Wang, L. Rao, X. Liu, and Y. Qi, “D-Pro: Dynamic data center
+operations with demand-responsive electricity prices in smart
+grid,” IEEE Trans. Smart Grid, vol. 3, no. 4, pp. 1743–1754, Dec.
+2012.
+[61] M. Ghamkhari and H. Mohsenian-Rad, “Energy and perfor-
+mance management of green data centers: A proﬁt maximization
+approach,” IEEE Trans. Smart Grid, vol. 4, no. 2, pp. 1017–1025,
+Jun. 2013.
+[62] W. Saad, Z. Han, and H. V. Poor, “A game theoretic approach for
+multi-hop power line communications,” in Proc. Int. Conf. Game-
+Nets, Apr. 2011, pp. 546–561.
+
+[58]
+
+[57]
+
+[60]
+
+[65]
+
+[72]
+
+[63] B. Panajotovic, M. Jankovic, and B. Odadzic, “ICT and smart
+grid,” in Proc. IEEE 10th Int. Conf. Telecommun. Modern Satellite
+Cable Broadcast. Serv., 2011, pp. 118–121.
+[64] W. Wang and Y. X. M. Khanna, “A survey on the communication
+architectures in smart grid,” Comput. Netw., vol. 55, pp. 3604–
+3629, 2011.
+J. Liu, Y. Xiao, S. Li, W. Liang, and C. L. P. Chen, “Cyber security
+and privacy issues in smart grids,” IEEE Comm. Surv. Tut.,
+vol. 14, no. 4, pp. 981–997, 2012.
+[66] W. Yanliang, D. Song, L. Wei-Min, Z. Tao, and Y. Yong,
+“Research of electric power information security protection on
+cloud security,” in Proc. Int. Conf. IEEE Power Syst. Technol., 2010,
+pp. 1–6.
+[67] Y. Simmhan, A. Kumbhare, B. Cao, and V. Prasanna, “An analy-
+sis of security and privacy issues in smart grid software architec-
+tures on clouds,” in Proc. IEEE Int. Conf. Cloud Comput., 2011,
+pp. 582–589.
+[68] B. Ugale, P. Soni, T. Pema, and A. Patil, “Role of cloud comput-
+ing for smart grid of India and its cyber security,” in Proc. IEEE
+Nirma Univ. Int. Conf. Eng., 2011, pp. 1–5.
+[69] Y. Yang, L. Wu, and W. Hu, “Security architecture and key tech-
+nologies for power cloud computing,” in Proc. IEEE Int. Conf.
+Transp., Mech., Electr. Eng., 2011, pp. 1717–1720.
+[70] K. Maheshwari, M. Lim, L. Wang, K. Birman, and R. van
+Renesse, “Toward a reliable, secure and fault tolerant smart grid
+state estimation in the cloud,” in Proc. IEEE PES Innovative Smart
+Grid Technol., 2013, pp. 1–6.
+[71] M. Wen, R. Lu, K. Zhang, J. Lei, X. Liang, and X. Shen, “PaRQ: A
+privacy-preserving range query scheme over encrypted metering
+data for smart grid,” IEEE Trans. Emerging Topics Comput., vol. 1,
+no. 1, pp. 178–191, Jun. 2013.
+S. Subashini and V. Kavitha, “A survey on security issues in ser-
+vice delivery models of cloud computing,” J. Netw. Comput.
+Appl., vol. 34, no. 1, pp. 1–11, 2011.
+[73] T. Logenthiran and D.Srinivasan, T. Z. Shun, “Demand side
+management
+in smart grid using heuristic optimization,”
+IEEE Trans. Smart Grid, vol. 3, no. 3, pp. 1244–1252, Sep.
+2012.
+[74] Q. Zhu, Z. Han, and T. Basar, “A differential game approach to
+distributed demand side management in smart grid,” in Proc.
+IEEE Int. Conf. Commun., 2012, pp. 3345–3350.
+[75] O. Asad, M. Erol-Kantarci, and H. Mouftah, “Sensor network
+web services for demand-side energy management applications
+in the smart grid,” in Proc. IEEE Consum. Commun. Netw. Conf.,
+2011, pp. 1176–1180.
+[76] Z. Zhu, J. Tang, S. Lambotharan, W. Chin, and Z. Fan, “An inte-
+ger linear programming and game theory based optimization for
+demand-side management in smart grid,” in Proc. IEEE Global
+Telecommun. Conf. Workshops, 2011, pp. 1205–1210.
+I. Klavsuts, D. Klavsuts, and S. Levinzon, “Integration innovative
+method of demand side management in smart grid,” in Proc.
+IEEE 47th Int. Univ. Power Eng. Conf., 2012, pp. 1–4.
+P. Samadi, H. Mohsenian-Rad, R. Schober, and V. Wong,
+“Advanced demand side management for the future smart grid
+using mechanism design,” IEEE Trans. Smart Grid, vol. 3, no. 3,
+pp. 1170–1180, Sep. 2012.
+S. Misra, A. Mondal, S. Banik, M. Khatua, S. Bera, and M. S. Obai-
+dat, “Residential energy management in smart grid: A Markov
+decision process-based approach,” in Proc. IEEE Conf. GreenCom/
+iThings/CPSCom, Aug. 2013, pp. 1152–1157.
+S. Misra, S. Bera, and M. S. Obaidat, “Economics of custom-
+er’s decisions in smart grid,” IET Netw., vol. 3, no. 1, p. 7,
+Mar. 2014.
+[81] N. Zhi, H. Zhang, and J. Liu, “Overview of microgrid manage-
+ment and control,” in Proc. IEEE Int. Conf. Elect. Control Eng.,
+2011, pp. 4598–4601.
+J.-H. Jeon, J.-Y. Kim, S.-K. Kim, C.-H. Cho, K.-Y. Nam, and J.-M.
+Kim, “Real time digital simulator based test system for microgrid
+management system,” in Proc. IEEE Conf. Trans. Distrib. Expo.,
+2009, pp. 1–4.
+[83] A. Bagherian and S. M. M. Tafreshi, “A developed energy man-
+agement system for a microgrid in the competitive electricity
+market,” in Proc. IEEE Conf. Bucharest PowerTech, 2009, pp. 1–6.
+[84] R. Enrich, P. Skovron, M. Tolos, and M. Torrent-Moreno,
+“Microgrid management based on economic and technical
+criteria,” in Proc. IEEE Int. Energy Conf. Exhib., 2012, pp. 551–
+556.
+
+[77]
+
+[82]
+
+[78]
+
+[79]
+
+[80]
+
+BERA ET AL.: CLOUD COMPUTING APPLICATIONS FOR SMART GRID: A SURVEY
+
+1493
+
+[88]
+
+[93]
+
+[85] A. Parisio and L. Glielmo, “Energy efﬁcient microgrid manage-
+ment using model predictive control,” in Proc. 50th IEEE Conf.
+Decision Control Eur. Control Conf., 2011, pp. 5449–5454.
+[86] G. Koutitas and L. Tassiulas, “A delay based optimization
+scheme for peak load reduction in the smart grid,” in Proc. IEEE
+Int. Conf. Future Energy Syst., 2012, pp. 1–4.
+[87] M. Roozbehani, M. Dahleh, and S. Mitter, “Dynamic pricing and
+stabilization of supply and demand in modern electric power
+grids,” in Proc. IEEE Int. Conf. Smart Grid Commun., 2010,
+pp. 543–548.
+S. Bu, F. R. Yu, and P. X. Liu, “Dynamic pricing for demand-side
+management in the smart grid,” in Proc. IEEE Conf. GreenCom,
+2011, pp. 47–51.
+[89] Q. Wang, M. Liu, and R. Jain, “Dynamic pricing of power in
+smart-grid networks,” in Proc. IEEE 51st Annu. Conf. Decision
+Control, 2012, pp. 1099–1104.
+[90] X. Liang, X. Li, R. Lu, X. Lin, and X. Shen, “UDP: Usage-based
+dynamic pricing with privacy preservation for smart grid,” IEEE
+Trans. Smart Grid, vol. 4, no. 1, pp. 141–150, Mar. 2013.
+[91] M. Erol-Kantarci and H. Mouftah, “Prediction-based charging of
+PHEVs from the smart grid with dynamic pricing,” in Proc. IEEE
+35th Conf. Local Comput. Netw., 2010, pp. 1032–1039.
+[92] K. Kok, B. Roossien, P. MacDougall, O. van Pruissen, G. Vene-
+kamp, R. Kamphuis, J. Laarakkers, and C. Warmer, “Dynamic
+pricing by scalable energy management systems ﬁeld experien-
+ces and simulation results using PowerMatcher,” in Proc. IEEE
+Power Energy Soc. Gen. Meet., 2012, pp. 1–8.
+I. Georgievski, V. Degeler, G. Pagani, T. A. Nguyen, A. Lazovik,
+and M. Aiello, “Optimizing energy costs for ofﬁces connected to
+the smart grid,” IEEE Trans. Smart Grid, vol. 3, no. 4, pp. 2273–
+2285, Dec. 2012.
+[94] D. Niyato, P. Wang, Z. Han, and E. Hossain, “Impact of packet
+loss on power demand estimation and power supply cost in
+smart grid,” in Proc. IEEE Wireless Commun. Netw. Conf., 2011,
+pp. 2024–2029.
+[95] Y. Wang, Q. Deng, W. Liu, and B. Song, “A data-centric storage
+approach for efﬁcient query of large-scale smart grid,” in Proc.
+IEEE Conf. Web Inform. Syst. Appl., 2012, pp. 193–197.
+[96] M. Arenas-Martinez, S. Herrero-Lopez, A. Sanchez, J. R. Wil-
+liams, P. Roth, P. Hofmann, and A. Zeier, “A comparative study
+of data storage and processing architectures for the smart grid,”
+in Proc. IEEE Int. Conf. Smart Grid Commun., 2010, pp. 285–290.
+S. Misra, S. Bera, and T. Ojha, “D2P: Distributed dynamic pricing
+policy in smart grid for PHEVs management,” IEEE Trans. Paral-
+lel Distrib. Syst., 2014, DOI: 10.1109/TPDS.2014.2315195
+[98] A. McKinnon, S. R. Thompson, R. A. Doroshchuk, G. A. Fink,
+and E. W. Fulp, “Bio-inspired cyber security for smart grid
+deployments,” in Proc. IEEE PES Innovative Smart Grid Technol.,
+2013, pp. 1–6.
+F. Boroomand, A. Fereidunian, M. Zamani, M. Amozegar, H.
+Jamalabadi, H. Nasrollahi, M. Moghimi, H. Lesani, and C. Lucas,
+“Cyber security for smart grid: A human-automation interaction
+framework,” in Proc. IEEE PES Innovative Smart Grid Technol.
+Conf. Eur., 2010, pp. 1–6.
+[100] S. Salinas, M. Li, and P. Li, “Privacy-preserving energy theft
+detection in smart grids,” in Proc. 9th Annu. IEEE Commun. Sen-
+sor, Mesh Ad Hoc Commun Netw., 2012, pp. 605–613.
+[101] Z. Yang, S. Yu, W. Lou, and C. Liu, “Privacy-preserving commu-
+nication and precise reward architecture for V2G networks in
+smart grid,” IEEE Trans. Smart Grid, vol. 2, no. 4, pp. 697–706,
+Dec. 2011.
+[102] C. Efthymiou and G. Kalogridis, “Smart grid privacy via ano-
+nymization of smart metering data,” in Proc. IEEE Int. Conf.
+Smart Grid Commun., 2010, pp. 238–243.
+[103] M. Salehie, L. Pasquale,
+I. Omoronyia, and B. Nuseibeh,
+“Adaptive security and privacy in smart grids: A software engi-
+neering vision,” in Proc. IEEE Int. Workshop Softw. Eng. Smart
+Grid, 2012, pp. 46–49.
+[104] D. Grochocki, J. H. Huh, R. Berthier, R. Bobba, W. H. Sanders, A.
+A. Cardenas, and J. G. Jetcheva, “AMI threats, intrusion detec-
+tion requirements and deployment recommendations,” in Proc.
+IEEE Int. Conf. Smart Grid Commun., 2012, pp. 395–400.
+[105] S. McLaughlin, B. Holbert, S. Zonouz, and R. Berthier, “AMIDS:
+A multi-sensor energy theft detection framework for advanced
+metering infrastructures,” in Proc. IEEE Int. Conf. Smar tGrid
+Commun., 2012, pp. 354–359.
+
+[97]
+
+[99]
+
+[106] M. Giuntoli and D. Poli, “Optimized thermal and electrical
+scheduling of a large scale virtual power plant in the presence of
+energy storages,” IEEE Trans. Smart Grid, vol. 4, no. 2, pp. 942–
+955, Jun. 2013.
+[107] M. Zhou, R. Zhang, W. Xie, W. Qian, and A. Zhou, “Security and
+privacy in cloud computing: A survey,” in Proc. Int. Conf. Seman-
+tics, Knowl. Grids, 2010, pp. 105–112.
+[108] C. Rong, S. T. Nguyen, and M. G. Jaatun, “Beyond lightning: A
+survey on security challenges in cloud computing,” Comput.
+Elect. Eng., vol. 39, pp. 47–54, 2013.
+[109] A. Verma and S. Kaushal, “Cloud computing security issues and
+challenges: A survey,” Commun. Comput. Inform. Sci., vol. 193,
+pp. 445–454, 2011.
+
+Samaresh Bera received the BTech degree in
+electronics and communication engineering from
+the West Bengal University of Technology, India,
+in 2011. He is currently working toward the MS
+degree from the School of Information Technol-
+ogy, Indian Institute of Technology Kharagpur,
+India. Besides, he is working as a junior project
+ofﬁcer in Development of Feasibility Assessment
+Model for Adaption of Underground Coal Gasiﬁ-
+cation Technology in North-Eastern Region of
+India funded by DeitY, Government of India. His
+current research interests include smart grid communications and net-
+working, and cloud computing.
+
+Dr Sudip Misra is an Associate Professor in the
+School of Information Technology at the Indian
+Institute of Technology Kharagpur. Prior to this
+he was associated with Cornell University (USA),
+Yale University (USA), Nortel Networks (Canada)
+and the Government of Ontario (Canada). He
+received his PhD degree in Computer Science
+from Carleton University, in Ottawa, Canada, and
+the masters and bachelors degrees respectively
+from the University of New Brunswick, Frederic-
+ton, Canada, and the Indian Institute of Technol-
+ogy, Kharagpur, India. He has several years of experience working in
+the academia, government, and the private sectors in research, teach-
+ing, consulting, project management, architecture, software design and
+product engineering roles. His current research interests include algo-
+rithm design for emerging communication networks. He is the author of
+over 180 scholarly research papers (including 90 journal papers). He
+has won eight research paper awards in different conferences. He was
+awarded the IEEE ComSoc Asia Paciﬁc Outstanding Young Researcher
+Award at IEEE GLOBECOM 2012, Anaheim, California, USA. He was
+also the recipient of several academic awards and fellowships such as
+the Young Scientist Award (National Academy of Sciences,
+India),
+Young Systems Scientist Award (Systems Society of India), Young Engi-
+neers Award (Institution of Engineers, India), (Canadian) Governor Gen-
+erals Academic Gold Medal at Carleton University,
+the University
+Outstanding Graduate Student Award in the Doctoral level at Carleton
+University and the National Academy of Sciences, India Swarna Jayanti
+Puraskar (Golden Jubilee Award). He was also awarded the Canadian
+Governments prestigious NSERC Post Doctoral Fellowship and the
+Humboldt Research Fellowship in Germany. He is the Editor-in-Chief of
+the International Journal of Communication Networks and Distributed
+Systems (IJCNDS), Inderscience, U.K. He has also been serving as the
+Associate Editor of the Telecommunication Systems Journal (Springer),
+Security and Communication Networks Journal (Wiley), International
+Journal of Communication Systems (Wiley), and the EURASIP Journal
+of Wireless Communications and Networking. He is also an Editor/Edito-
+rial Board Member/Editorial Review Board Member of the IET Communi-
+cations Journal, IET Wireless Sensor Systems, and Computers and
+Electrical Engineering Journal (Elsevier). He has edited 6 books in the
+areas of wireless ad hoc networks, wireless sensor networks, wireless
+mesh networks, communication networks and distributed systems, net-
+work reliability and fault tolerance, and information and coding theory,
+published by reputed publishers such as Springer, Wiley, and World Sci-
+entiﬁc. He was invited to chair several international conference/work-
+shop pro-2 grams and sessions. He served in the program committees
+of several international conferences. He was also invited to deliver key-
+note/invited lectures in over 20 international conferences in USA, Can-
+ada, Europe, Asia and Africa.
+
+1494
+
+IEEE TRANSACTIONS ON PARALLEL AND DISTRIBUTED SYSTEMS, VOL. 26, NO. 5, MAY 2015
+
+Joel
+J.P.C. Rodrigues
+[S01-M06-SM06]
+received a PhD degree in informatics engineer-
+ing, an MSc degree from the University of Beira
+Interior, and a ﬁve-year BSc degree (licentiate) in
+informatics engineering from the University of
+Coimbra, Portugal. He is currently a Professor in
+the Department of Informatics of the University of
+Beira Interior, Covilh, Portugal, and a Researcher
+at the Instituto de Telecomunicaes, Portugal. His
+main research interests include sensor networks,
+e-health, e-learning, vehicular communications,
+mobile and ubiquitous computing, and cloud technologies. He is the
+leader of NetGNA Research Group (http://netgna.it.ubi.pt), the Chair of
+the IEEE ComSoc Technical Committee on eHealth, the Past-chair of
+the IEEE ComSoc Technical Committee on Communications Software,
+Member Representative of the IEEE Communications Society on the
+IEEE Biometrics Council, Steering Committee member of the IEEE Life
+Sciences Technical Community, and ofﬁcer of the IEEE 1907.1 stan-
+dard. He is the editor-in-chief of the International Journal on E-Health
+and Medical Communications, the editor-in-chief of the Recent Advan-
+ces on Communications and Networking Technology, and editorial
+board member of several
+journals, including IEEE Communications
+Magazine, IEEE Communications Surveys and Tutorials, Elsevier Jour-
+nal of Computer Networks and Applications, Elsevier Computer Net-
+works, Elsevier
+Journal
+of Vehicular Communications, Wiley
+Transactions on Emerging Telecommunications Technologies, and
+Wiley International Journal of Communications Systems. He has served
+as a guest editor for a number of journals and has been General Chair
+and TPC Chair of many international conferences. He is a member of
+many international TPCs and participated in several international confer-
+ences organisation. He has authored or coauthored over 350 papers in
+refereed international journals and conferences, a book, and 2 patents.
+He had been awarded the Outstanding Leadership Award of IEEE
+GLOBECOM 2010 as CSSMA Symposium Co-Chair and several best
+papers awards. He is a licensed professional engineer (as senior mem-
+ber), member of the Internet Society, an IARIA fellow, and a senior mem-
+ber of ACM and IEEE.
+
+" For more information on this or any other computing topic,
+please visit our Digital Library at www.computer.org/publications/dlib.
+
+

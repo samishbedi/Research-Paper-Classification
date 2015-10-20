@@ -1,0 +1,367 @@
+Design and Implementation of Graphical User 
+Interface for Relational Database Management 
+System  
+ 
+Manoj E. Patil,, Ravi N. Mulchandani, Ravikumar R. Ahuja 
+Department of Computer, SSBT’s COET Bambhori,, Jalgaon. (MS) India 
+ 
+
+ 
+
+working  with  different  RDBMS  like  SQL  Server,  Oracle  etc. 
+The main objective of the system is to enable a user work with 
+the  databases  and  tables  in  a  RDBMS  even  if  he/she  doesn’t 
+have any knowledge of SQL.                              
+The product is aimed at accomplishing the following: 
+  Create, rename and drop databases  
+  View  and  work  with  database  objects  like  tables, 
+queries, forms and reports 
+  View  the  database  profile  and  table  that  exists  in  a 
+particular RDBMS 
+  Preparing  and  printing  various  reports  containing 
+information  about  existing databases  and objects  in a 
+database, if needed 
+  Provide  a  provision  i.e.  a  SQL  query  analyzer  for 
+executing queries in SQL mode, if required  
+
+Abstract-This  paper  will  explain  the  concept  of  creating  a 
+Graphical  User  Interface 
+for 
+three  Relational  Database 
+Management  Systems.  This  is  a  general-level GUI, which  can  be 
+connected to any database residing on the system such as Oracle, 
+MS  SQL  Server,  and  MS  Access.  As  a  result,  any  database 
+manipulation can be performed using single interface. Moreover, 
+the  queries  can  be  executed  very  easily,  since  the  user  needs  not 
+to type any queries, but can simply select the appropriate options 
+according  to  their  requirements. Thus,  this  software  can  be  used 
+by  a  person  with  no  knowledge  of  SQL.  This  software  is 
+developed  using  Java  as  front  end  and  Oracle,  MS  SQL  Server 
+and MS Access as backend. 
+ 
+Keywords: Relational Database  
+ 
+
+I. 
+INTRODUCTION 
+Database  Management  Systems  or  DBMS  has  evolved 
+from  a  specialized  computer  application 
+to  a  central 
+component  of  modern  computing  environment.  DBMS 
+consists  of  a  collection  of  interrelated  data  and  a  set  of 
+programs  to  access  those  data.  This  collection  of  data  is 
+referred  to  as  a  database.  Database  Management  System 
+involves  both  the  definition  of  structures  for  the  storage  of 
+information 
+and  provision  of  mechanisms 
+for 
+the 
+manipulation of information. 
+A  collection  of  conceptual  tools  for  describing  data,  data 
+relationships,  data  semantics  and  consistency  constraints  is 
+called  a  data  model.  There  are  different  data  models,  among 
+which  Relational Database Management  System  (RDBMS)  is 
+the most popular choice for large scale application. 
+The RDBMS uses a collection of  tables  to  represent both data 
+and  the  relationships  among  those  data.  Each  table  has 
+multiple columns and each column has unique name and fixed 
+data  type.  Each  table  in  the  database  has  a  unique  name 
+assigned to it.                   
+The  RDBMS  has  established  itself  as  the  primary  data 
+model  for  commercial  data  processing  applications.  RDBMS 
+is  now  being  used  in  numerous  applications  outside  the 
+domain of traditional data processing. 
+To  interact  with  the  database  and  work  with  the  tables  in  it, 
+one  need  to  use  Structured  Query  Language  (SQL)  which 
+includes  features  on  defining  structure  of  the  data,  for 
+modifying  data  in  the  database  and  for  specifying  security 
+constraints.           
+The  project  entitled  ‘Graphical  user  interface  for  RDBMS 
+is  aimed  at  providing  a  user  friendly  and  single  interface  for 
+
+ 
+ 
+
+II. 
+STUDY OF EXISTING SYSYTEM 
+We  have  many  database  management  systems  available  in 
+the  market,  many  of  them  with  friendly  Graphical  User 
+Interfaces,  using  which  the  users  can  execute  queries  and 
+handle  tables  and  other  objects.  However,  the  GUIs  provided 
+by  each  database  server  are  exclusive  to  its  own  database.  
+Moreover, a person with little technical knowledge will find it 
+difficult to use one. 
+ 
+Limitations of the Existing System 
+  GUIs  provided  by  most  of  the  database  is  exclusive 
+to its own database 
+  Working  with  different  databases  through  a  single 
+friendly interface is impossible 
+  The  features  and  functionality  provided  by  each 
+GUIs differ from one RDBMS to another 
+  A GUI  that provides a friendly environment  to a user 
+with  little  knowledge  of  SQL  in  such  a  way  that  he 
+can  work  with  more  than  one  type  of  databases  is 
+hard to find. 
+The  RDBMS  uses  a  collection  of  tables  to  represent  both 
+data  and  the  relationships  among  those  data.  Each  table  has 
+multiple columns and each column has unique name and fixed 
+data  type.  Each  table  in  the  database  has  a  unique  name 
+assigned to it. 
+The  software  is  developed  using  Java  as  front  end  using 
+MSSQL  Server,  MS  Access  and  Oracle.    The  software  is 
+
+Manoj E. Patil et al, / (IJCSIT) International Journal of Computer Science and Information Technologies, Vol. 3 (3) , 2012,3871-38743871the 
+
+developed with the keen intention of creating a Graphical User 
+Interface for 3 Relational Database Management System. 
+ 
+III. 
+STUDY OF PROPOSED SYSTEM 
+The  product  entitled  GUI  for  RDBMS  is  developed  with 
+the  keen  intention  of  creating  a  Graphical  User  Interface  for 
+commonly used Relational Database Management System like 
+MSSQL Server, Oracle etc. This is a general-level GUI, which 
+can  be  connected  to  more  than  one  database  residing  on  the 
+system.  As  a  result,  any  database  manipulation  can  be 
+performed  using  a  single  product.  Moreover,  the  queries  can 
+be  executed  very  easily,  since  the  user  need  not  type  any 
+queries,  but  can  simply  select  the  appropriate  options 
+according  to  their  requirements.  Thus,  this  product  can  be 
+used by a person with no knowledge of SQL 
+  Database Creation 
+In  case  of  MS  SQL  Server,  by  clicking  on 
+corresponding icon, a new database can be created. 
+  Database Login 
+Once  a  database  is  created,  a  user  can  login  to  his/her 
+database  and,  after which  he/she  can work with  the  objects  in 
+the  database.  In  case  of  Oracle,  we  are  always  automatically 
+logged  into  the  default  database  of  Oracle  and  we  can  login 
+into the same as different users. 
+  Database Rename 
+A  database  in MSSQL  server  can  be  renamed  by  selecting 
+the corresponding option. 
+  Database Drop 
+There  is  an  option  provided  for  dropping  an  already 
+existing  database  when  the  GUI  is  connected  to  the  MSSQL 
+Server. 
+ 
+Database Profile  
+The user can monitor and view the database properties, like 
+name, owner, and size, date of creation, status and contents. 
+ 
+Objects  
+ 
+ 
+The  user  can  access  the  opened  database  through  a 
+Graphical User Interface. Through this   interface, the user can 
+view  and  work  with  the  database  objects  like  tables,  queries 
+and reports. 
+  Create Table 
+The  user  can  create  tables  in  the  selected  database.  A 
+design  view  is  provided,  through  which  the  user  can  simply 
+enter  the  field  name,  select  the  data  type  from  a  select  list. 
+There  are  separate  options  for  setting  a  field  as  primary, 
+unique,  or  not  null.  There  is  also  an  option  for  adding 
+checking constraint on a field or a default value in a field.  
+ 
+  View Table 
+This  option  enables  the  user  to  view  the  contents  (rows)  in 
+a table.   
+  Execute Queries 
+The  user  can  execute  any  query  on  the  database  using  the 
+user-friendly graphical interface. All the tables in the database 
+are  listed,  from  which  the  user  can  select  the  one(s)  in  which 
+he/she has to execute the query. The user can select the type of 
+query  to  be  executed  (like  select,  update,  make-table  and 
+delete).    The  field(s)  in  the  table(s)  in which  the  query  has  to 
+
+be executed can be  selected  from a  list and  the conditions can 
+be  input,  all  using  the  graphical  interface.  The  conditions  can 
+include  sorting  (ascending,  descending  or  none),  fields  to  be 
+displayed,  criteria  and  any  other  specification,  if  any.  The 
+result of the query action is exhibited. 
+ 
+  Select  
+User can first select a  table, and  then execute select queries 
+on it. Select query can be executed in different ways: 
+  Specific  fields  or  all  fields  in  a  table  can  be 
+displayed. 
+  Only distinct fields can be displayed if required 
+  Aggregate function can be applied to a field selected 
+  Field  or  fields  satisfying  a  specific  condition  can  be 
+selected 
+  Selection  can  also  be made  using Order  by  or Group  
+by clause  
+
+ 
+                                           
+  Alter 
+Any  alteration on  the  table  can be made on a  selected  table 
+using  this  option.  Alterations  that  can  be  made  includes  the 
+following 
+  Alter  the  data  type  of  a  existing  field  in  the  selected 
+table 
+  Altering  the  selected  table  by  adding  a  new  field  to 
+the table 
+  Altering  the  selected  table  by  dropping    an  existing 
+field in the table 
+  Altering the selected table by adding a constraint to a 
+field in the table 
+  Altering  the  selected  table  by  dropping    a  constraint 
+specified on the field in the table 
+ 
+  Update 
+This  option  is  used  for  making  any  updating  on  a  selected 
+table.  Any  condition  for  updating  can  also  be  specified  if 
+required. 
+  Delete 
+This  option  is  used  for  deleting  rows  from  a  selected  table. 
+Deletion  can  also  be  performed  by  specifying  condition  so 
+that only rows satisfying that condition is deleted.  
+  Drop 
+This  option  allows  a  user  to  drop  an  already  existing  table 
+from a database 
+ 
+Insert 
+Using  this  option  the  user  can  insert  rows  into  an  existing 
+table. 
+ 
+ 
+  SQL query analyzer 
+If  required,  the  user  can  execute  queries  in  SQL mode,  not 
+using  the  graphical  interface.  A  separate      workspace  is 
+provided, where the query can be typed and executed. 
+ 
+ 
+
+ 
+
+Manoj E. Patil et al, / (IJCSIT) International Journal of Computer Science and Information Technologies, Vol. 3 (3) , 2012,3871-38743872IV. 
+
+SYSTEM DESIGN 
+
+Fig. 3 Connection Dialog 
+ 
+In GUI for RDBMS, there is a dialog box for user using 
+which he/she can select the database system such as Oracle, 
+SQL Server, and MS Access. 
+ 
+
+ 
+
+Fig. 1 System Architecture 
+
+ 
+
+ 
+
+User  selects  appropriate  database  system  such  as  Oracle, 
+MS  access,  MS  SQL  server.  After  selecting  database  system 
+user  will  perform  either  DDL  or  DML  commands.  Query 
+execution  unit  will  execute  a  query  and  make  changes  to 
+databases.  Query  execution  unit  will  also  provide  result  to 
+user. 
+ 
+
+ 
+
+Fig. 4 Main Window 
+ 
+In GUI for RDBMS, there is a panel on the left hand side of 
+the  window  which  shows  the  name  of  tables  existing  in  the 
+database.  By  clicking  on  a  particular  table  user  can  view  the 
+contents of that table.  
+ 
+
+ 
+
+Fig. 2 User Interface Design 
+ 
+ 
+ 
+ 
+ 
+ 
+
+V. 
+
+SCREEN LAYOUTS 
+
+ 
+
+ 
+
+Fig. 5 Query Analyzer 
+
+ 
+In GUI  for RDBMS,  there  is  an option  for Query Analyzer 
+using  which  user  can  type  and  execute  different  queries  if 
+he/she  is  having  knowledge  of  SQL  (Structured  Query 
+Language). 
+
+ 
+
+Manoj E. Patil et al, / (IJCSIT) International Journal of Computer Science and Information Technologies, Vol. 3 (3) , 2012,3871-38743873 
+
+Fig. 6 Table Create 
+ 
+In GUI  for  RDBMS,  there  in  an  option  for  a  user  to  create 
+table.  In  this  user  have  to  specify  the  name  of  table,  columns 
+and can apply constraints. 
+ 
+
+ 
+
+the  requirements, we can write  separate program modules and 
+combine  them  to  the  main  program.  For  e.g.:  the  system  can 
+be  further  enhanced  to  handle  nested  queries,  sub  queries  etc 
+.An  option  for  backing  up  databases  and  restoring  them  is 
+another enhancement. 
+ 
+
+REFERENCES 
+[1] Roger S. Pressman,“Software Engineering”, Fifth Edition,                
+McGraw-Hill Companies 
+[2] Herbert Schildit, “ Java 2 The Complete Reference “,           
+Fifth Edition , McGraw-Hill. 
+[3] Robert Eckstein, Mare Loy & Dave Wood “Java Swing”  , 
+O’Reilly 
+  Sudarshan,”  Database  System 
+[4]  Silberschatz  Korth, 
+Concepts”, Fourth Edition, Foxit PDF  
+[5]  Carlos  Eduardo  Rojas,”Microsoft  SQL  Server  2000 
+Programming by Example”, Que Publication 
+ 
+
+Fig.7 Edit Table 
+ 
+In GUI for RDBMS, there in an option for a user to edit 
+table. In this user can insert new row, delete an existing row 
+and modify row. 
+ 
+
+ 
+
+VI.  CONCLUSIONS 
+The  system  is  developed  aiming  at  helping  a  user  easily 
+access  and  work  with  databases  in  different    RDBMS,  even 
+he/she  have  little  knowledge  of  SQL.  Also  the  developed 
+system  provides  a  single  interface  for  communicating  with 
+more  than one type of RDBMS. The new system  is developed 
+in  Java  using  MS  SQL  Server,  MS  Access  and  Oracle.  MS 
+SQL  Server  and  Oracle  are  two  commonly  used  RDBMS, 
+very efficient back end tool for handling databases. The Swing 
+class of  Java helped  to  create many user  friendly  features  like 
+menus, buttons, messages etc in the system. 
+ 
+
+VII.  FUTURE DEVELOPMENT 
+the  changing 
+to 
+the  system  adaptive 
+For  making 
+environment,  it  will  be  necessary  that  the  system  will  be 
+required to handle some more functions in the future to satisfy 
+
+Manoj E. Patil et al, / (IJCSIT) International Journal of Computer Science and Information Technologies, Vol. 3 (3) , 2012,3871-38743874

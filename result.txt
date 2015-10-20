@@ -1,0 +1,80 @@
+
+
+***************Running Naive Bayesian Classifier*************
+
+Orignal            Predicted             File_Name
+-----------------------------------------------------
+Parallel_Computing Parallel_Computing 1-s2.0-S0167819115001064-main.txt
+Parallel_Computing Parallel_Computing 06809180.txt
+Parallel_Computing Database_Systems yu-sosp09.txt
+Parallel_Computing Computer_Networks 06464257.txt
+Parallel_Computing Parallel_Computing 06714480.txt
+ 
+Database_Systems Database_Systems vldb.txt
+Database_Systems Database_Systems anand_tripathi.txt
+Database_Systems Database_Systems p378-mohan.txt
+Database_Systems Database_Systems p15-jagadish.txt
+Database_Systems Computer_Networks P688.txt
+ 
+Computer_Networks Computer_Networks SLAOverview.txt
+Computer_Networks Computer_Networks mnt071.txt
+Computer_Networks Computer_Networks Whitepaperonbenchmarking_V2.txt
+Computer_Networks Computer_Networks webOS.tech97.txt
+Computer_Networks Computer_Networks file1.txt
+ 
+Computer_Architecture Computer_Architecture isa-power-struggles-tr.txt
+Computer_Architecture Computer_Architecture V12-I1-P5-8.txt
+Computer_Architecture Computer_Architecture design-of-bit-risc-cpu-based-on-mips-20-24.txt
+Computer_Architecture Computer_Architecture sim_computer_aug03b.txt
+Computer_Architecture Computer_Architecture V3I2-0107.txt
+ 
+Machine_Learning Machine_Learning rakhlin15a.txt
+Machine_Learning Machine_Learning yan15a.txt
+Machine_Learning Machine_Learning franc08a.txt
+Machine_Learning Machine_Learning thon15a.txt
+Machine_Learning Machine_Learning nandan14a.txt
+ 
+
+
+**************Running K-Nearest Neighbour Classifier**********
+
+Orignal            Predicted             File_Name
+-----------------------------------------------------
+Parallel_Computing Parallel_Computing 1-s2.0-S0167819115001064-main.txt
+Parallel_Computing Parallel_Computing 06809180.txt
+Parallel_Computing Database_Systems yu-sosp09.txt
+Parallel_Computing Computer_Networks 06464257.txt
+Parallel_Computing Parallel_Computing 06714480.txt
+ 
+Database_Systems Database_Systems vldb.txt
+Database_Systems Database_Systems anand_tripathi.txt
+Database_Systems Database_Systems p378-mohan.txt
+Database_Systems Database_Systems p15-jagadish.txt
+Database_Systems Database_Systems P688.txt
+ 
+Computer_Networks Computer_Networks SLAOverview.txt
+Computer_Networks Computer_Networks mnt071.txt
+Computer_Networks Computer_Networks web.tech97.txt
+Computer_Networks Computer_Networks web.tech97.txt~
+Computer_Networks Computer_Networks Whitepaperonbenchmarking_V2.txt
+Computer_Networks Computer_Networks file1.txt
+ 
+Computer_Architecture Computer_Architecture isa-power-struggles-tr.txt
+Computer_Architecture Computer_Architecture V12-I1-P5-8.txt
+Computer_Architecture Computer_Architecture design-of-bit-risc-cpu-based-on-mips-20-24.txt
+Computer_Architecture Computer_Architecture sim_computer_aug03b.txt
+Computer_Architecture Computer_Architecture V3I2-0107.txt
+ 
+Machine_Learning Machine_Learning rakhlin15a.txt
+Machine_Learning Machine_Learning yan15a.txt
+Machine_Learning Machine_Learning franc08a.txt
+Machine_Learning Machine_Learning thon15a.txt
+Machine_Learning Machine_Learning nandan14a.txt
+ 
+
+
+**************************Accuracy*****************************
+ 
+Naive Bayesian Classifier: 88.0 %
+K-Nearest Neighbour Classifier: 92.3076923077 %
+ 

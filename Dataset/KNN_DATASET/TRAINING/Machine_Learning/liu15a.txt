@@ -1,0 +1,3276 @@
+Journal of Machine Learning Research 16 (2015) 285-322
+
+Submitted 6/14; Published 2/15
+
+An Asynchronous Parallel Stochastic Coordinate Descent
+Algorithm
+
+Ji Liu
+Stephen J. Wright
+Department of Computer Sciences
+University of Wisconsin-Madison
+Madison, WI 53706-1685
+
+Christopher R´e
+Department of Computer Science
+Stanford University
+353 Serra Mal l
+Stanford, CA 94305-9025
+
+Victor Bittorf
+Srikrishna Sridhar
+Department of Computer Sciences
+University of Wisconsin-Madison
+Madison, WI 53706-1685
+
+Editor: Leon Bottou
+
+ji.liu.uwisc@gmail.com
+swright@cs.wisc.edu
+
+chrismre@cs.stanford.edu
+
+bittorf@cs.wisc.edu
+srikris@cs.wisc.edu
+
+Abstract
+We describe an asynchronous parallel stochastic coordinate descent algorithm for mini-
+mizing smooth unconstrained or separably constrained functions. The method achieves a
+linear convergence rate on functions that satisfy an essential strong convexity property and
+a sublinear rate (1/K ) on general convex functions. Near-linear speedup on a multicore
+system can be expected if the number of processors is O(n1/2 ) in unconstrained optimiza-
+tion and O(n1/4 ) in the separable-constrained case, where n is the number of variables. We
+describe results from implementation on 40-core processors.
+Keywords: asynchronous parallel optimization, stochastic coordinate descent
+
+1. Introduction
+
+Consider the convex optimization problem
+
+f (x),
+
+min
+x∈Ω
+where Ω ⊂ Rn is a closed convex set and f is a smooth convex mapping from an open neigh-
+borhood of Ω to R. We consider two particular cases of Ω in this paper: the unconstrained
+case Ω = Rn , and the separable case
+Ω = Ω1 × Ω2 × . . . × Ωn ,
+
+(1)
+
+(2)
+
+where each Ωi , i = 1, 2, . . . , n is a closed subinterval of the real line.
+
+c(cid:13)2015 Liu, Wright, R´e, Bittorf, Sridhar.
+
+Liu, Wright, R´e, Bittorf, and Sridhar
+
+Formulations of the type (1,2) arise in many data analysis and machine learning prob-
+lems, for example, support vector machines (linear or nonlinear dual formulation) (Cortes
+and Vapnik, 1995), LASSO (after decomposing x into positive and negative parts) (Tib-
+shirani, 1996), and logistic regression. Algorithms based on gradient and approximate or
+partial gradient information have proved eﬀective in these settings. We mention in partic-
+ular gradient pro jection and its accelerated variants (Nesterov, 2004), accelerated proximal
+gradient methods for regularized ob jectives (Beck and Teboulle, 2009), and stochastic gra-
+dient methods (Nemirovski et al., 2009; Shamir and Zhang, 2013). These methods are
+inherently serial, in that each iteration depends on the result of the previous iteration. Re-
+cently, parallel multicore versions of stochastic gradient and stochastic coordinate descent
+have been described for problems involving large data sets; see for example Niu et al. (2011);
+Richt´arik and Tak´aˇc (2012b); Avron et al. (2014).
+This paper proposes an asynchronous stochastic coordinate descent (AsySCD) algo-
+rithm for convex optimization. Each step of AsySCD chooses an index i ∈ {1, 2, . . . , n} and
+subtracts a short, constant, positive multiple of the ith partial gradient ∇if (x) := ∂ f /∂xi
+from the ith component of x. When separable constraints (2) are present, the update is
+“clipped” to maintain feasibility with respect to Ωi . Updates take place in parallel across
+the cores of a multicore system, without any attempt to synchronize computation between
+cores. We assume that there is a bound τ on the age of the updates, that is, no more than
+τ updates to x occur between the time at which a processor reads x (and uses it to evaluate
+one element of the gradient) and the time at which this processor makes its update to a
+single element of x. (A similar model of parallel asynchronous computation was used in
+Hogwild! (Niu et al., 2011).) Our implementation, described in Section 6, is a little more
+complex than this simple model would suggest, as it is tailored to the architecture of the
+Intel Xeon machine that we use for experiments.
+We show that linear convergence can be attained if an “essential strong convexity”
+property (3) holds, while sublinear convergence at a “1/K ” rate can be proved for general
+convex functions. Our analysis also deﬁnes a suﬃcient condition for near-linear speedup
+in the number of cores used. This condition relates the value of delay parameter τ (which
+relates to the number of cores / threads used in the computation) to the problem dimension
+n. A parameter that quantiﬁes the cross-coordinate interactions in ∇f also appears in
+this relationship. When the Hessian of f is nearly diagonal, the minimization problem can
+almost be separated along the coordinate axes, so higher degrees of parallelism are possible.
+We review related work in Section 2. Section 3 speciﬁes the proposed algorithm. Con-
+vergence results for unconstrained and constrained cases are described in Sections 4 and 5,
+respectively, with proofs given in the appendix. Computational experience is reported in
+Section 6. We discuss several variants of AsySCD in Section 7. Some conclusions are given
+in Section 8.
+
+1.1 Notation and Assumption
+
+We use the following notation.
+• ei ∈ Rn denotes the ith natural basis vector (0, . . . , 0, 1, 0, . . . , 0)T with the ‘”1” in the
+ith position.
+• (cid:107) · (cid:107) denotes the Euclidean norm (cid:107) · (cid:107)2 .
+
+286
+
+AsySCD
+
+• S ⊂ Ω denotes the set on which f attains its optimal value, which is denoted by f ∗ .
+• PS (·) and PΩ (·) denote Euclidean pro jection onto S and Ω, respectively.
+• We use xi for the ith element of x, and ∇if (x) for the ith element of the gradient
+vector ∇f (x).
+• We deﬁne the following essential strong convexity condition for a convex function f
+with respect to the optimal set S , with parameter l > 0:
+f (x) − f (y) ≥ (cid:104)∇f (y), x − y(cid:105) +
+(cid:107)x − y(cid:107)2
+for all x, y ∈ Ω with PS (x) = PS (y). (3)
+
+l
+2
+
+This condition is signiﬁcantly weaker than the usual strong convexity condition, which
+requires the inequality to hold for al l x, y ∈ Ω. In particular, it allows for non-singleton
+solution sets S , provided that f increases at a uniformly quadratic rate with distance
+from S .
+(This property is noted for convex quadratic f in which the Hessian is
+rank deﬁcient.) Other examples of essentially strongly convex functions that are not
+strongly convex include:
+– f (Ax) with arbitrary linear transformation A, where f (·) is strongly convex;
+– f (x) = max(aT x − b, 0)2 , for a (cid:54)= 0.
+• Deﬁne Lres as the restricted Lipschitz constant for ∇f , where the “restriction” is to
+the coordinate directions: We have
+(cid:107)∇f (x)−∇f (x+tei )(cid:107) ≤ Lres |t|,
+for all i = 1, 2, . . . , n and t ∈ R, with x, x + tei ∈ Ω.
+• Deﬁne Li as the coordinate Lipschitz constant for ∇f in the ith coordinate direction:
+We have
+f (x + tei ) − f (x) ≤ (cid:104)∇if (x), t(cid:105) +
+
+for i ∈ {1, 2, . . . , n}, and x, x + tei ∈ Ω,
+
+Li
+2
+
+t2 ,
+
+or equivalently
+
+|∇if (x) − ∇if (x + tei )| ≤ Li |t|.
+
+• Lmax := maxi=1,2,...,n Li .
+Note that Lres ≥ Lmax .
+We use {xj }j=0,1,2,... to denote the sequence of iterates generated by the algorithm from
+starting point x0 . Throughout the paper, we make the following assumption.
+
+Assumption 1
+• The optimal solution set S of (1) is nonempty.
+• The radius of the iterate set {xj }j=0,1,2,... deﬁned by
+(cid:107)xj − PS (xj )(cid:107)
+
+R := sup
+j=0,1,2,...
+
+is bounded, that is, R < +∞.
+
+287
+
+Liu, Wright, R´e, Bittorf, and Sridhar
+
+1.2 Lipschitz Constants
+
+n.
+
+The nonstandard Lipschitz constants Lres , Lmax , and Li , i = 1, 2, . . . , n deﬁned above are
+crucial in the analysis of our method. Besides bounding the nonlinearity of f along various
+directions, these quantities capture the interactions between the various components in the
+gradient ∇f , as quantiﬁed in the oﬀ-diagonal terms of the Hessian ∇2f (x) — although the
+stated conditions do not require this matrix to exist.
+We have noted already that Lres/Lmax ≥ 1. Let us consider upper bounds on this ratio
+under certain conditions. When f is twice continuously diﬀerentiable, we have
+[∇2f (x)]ii .
+max
+Li = sup
+x∈Ω
+i=1,2,...,n
+|[∇2f (x)]ij | ≤ (cid:112)LiLj ≤ Lmax ,
+Since ∇2f (x) (cid:23) 0 for x ∈ Ω, we have that
+∀ i, j = 1, 2, . . . , n.
+Thus Lres , which is a bound on the largest column norm for ∇2f (x) over all x ∈ Ω, is
+√
+nLmax , so that
+bounded by
+≤ √
+Lres
+Lmax
+argument leads to Lres/Lmax ≤ √
+If the Hessian is structurally sparse, having at most p nonzeros per row/column, the same
+p.
+If f (x) is a convex quadratic with Hessian Q, we have
+(cid:107)Q·i(cid:107)2 ,
+Qii , Lres = max
+Lmax = max
+i
+i
+(cid:88)
+where Q·i denotes the ith column of Q. If Q is diagonally dominant, we have for any column
+i that
+|Qj i | ≤ 2Qii ,
+(cid:107)Q·i(cid:107)2 ≤ Qii + (cid:107)[Qj i ]j (cid:54)=i(cid:107)2 ≤ Qii +
+j (cid:54)=i
+which, by taking the maximum of both sides, implies that Lres/Lmax ≤ 2 in this case.
+2 (cid:107)Ax − b(cid:107)2 and assume that A ∈ Rm×n is a
+Finally, consider the ob jective f (x) = 1
+random matrix whose entries are i.i.d from N (0, 1). The diagonals of the Hessian are AT·i A·i
+(where A·i is the ith column of A), which have expected value m, so we can expect Lmax
+to be not less than m. Recalling that Lres is the maximum column norm of AT A, we have
+(cid:115)(cid:88)
+E((cid:107)AT A·i(cid:107)) ≤ E(|AT·i A·i |) + E((cid:107)[AT·j A·i ]j (cid:54)=i(cid:107))
+|AT·j A·i |2
+= m + E
+(cid:115)(cid:88)
+j (cid:54)=i
+≤ m +
+E|AT·j A·i |2
+= m + (cid:112)(n − 1)m,
+j (cid:54)=i
+where the second inequality uses Jensen’s inequality and the ﬁnal equality uses
+We can thus estimate the upper bound on Lres/Lmax roughly by 1 + (cid:112)n/m for this case.
+E(|AT·j A·i |2 ) = E(AT·j
+E(A·iAT·i )A·j ) = E(AT·j I A·j ) = E(AT·j A·j ) = m.
+288
+
+AsySCD
+
+2. Related Work
+
+This section reviews some related work on coordinate relaxation and stochastic gradient
+algorithms.
+
+Among cyclic coordinate descent algorithms, Tseng (2001) proved the convergence of
+a block coordinate descent method for nondiﬀerentiable functions with certain conditions.
+Local and global linear convergence were established under additional assumptions, by Luo
+and Tseng (1992) and Wang and Lin (2014), respectively. Global linear (sublinear) conver-
+gence rate for strongly (weakly) convex optimization was proved by Beck and Tetruashvili
+(2013). Block-coordinate approaches based on proximal-linear subproblems are described
+by Tseng and Yun (2009, 2010). Wright (2012) uses acceleration on reduced spaces (cor-
+responding to the optimal manifold) to improve the local convergence properties of this
+approach.
+
+Stochastic coordinate descent is almost identical to cyclic coordinate descent except
+selecting coordinates in a random manner. Nesterov (2012) studied the convergence rate for
+a stochastic block coordinate descent method for unconstrained and separably constrained
+convex smooth optimization, proving linear convergence for the strongly convex case and a
+sublinear 1/K rate for the convex case. Extensions to minimization of composite functions
+are described by Richt´arik and Tak´aˇc (2012a) and Lu and Xiao (2013).
+
+Synchronous paral lel methods distribute the workload and data among multiple proces-
+sors, and coordinate the computation among processors. Ferris and Mangasarian (1994)
+proposed to distribute variables among multiple processors and optimize concurrently over
+each subset. The synchronization step searches the aﬃne hull formed by the current iterate
+algorithm for functions of the form f (x) = (cid:80)N
+and the points found by each processor. Similar ideas appeared in (Mangasarian, 1995), with
+a diﬀerent synchronization step. Goldfarb and Ma (2012) considered a multiple splitting
+k=1 fk (x) in which N models are optimized
+separately and concurrently, then combined in an synchronization step. The alternating
+direction method-of-multiplier (ADMM) framework (Boyd et al., 2011) can also be imple-
+mented in parallel. This approach dissects the problem into multiple subproblems (possibly
+after replication of primal variables) and optimizes concurrently, then synchronizes to up-
+date multiplier estimates. Duchi et al. (2012) described a subgradient dual-averaging algo-
+rithm for partially separable ob jectives, with subgradient evaluations distributed between
+cores and combined in ways that reﬂect the structure of the ob jective. Parallel stochastic
+gradient approaches have received broad attention; see Agarwal and Duchi (2011) for an
+approach that allows delays between evaluation and update, and Cotter et al. (2011) for
+a minibatch stochastic gradient approach with Nesterov acceleration. Shalev-Shwartz and
+Zhang (2013) proposed an accelerated stochastic dual coordinate ascent method.
+
+Among synchronous paral lel methods for (block) coordinate descent, Richt´arik and Tak´aˇc
+(2012b) described a method of this type for convex composite optimization problems. All
+processors update randomly selected coordinates or blocks, concurrently and synchronously,
+at each iteration. Speedup depends on the sparsity of the data matrix that deﬁnes the loss
+functions. Several variants that select blocks greedily are considered by Scherrer et al.
+(2012) and Peng et al. (2013). Yang (2013) studied the parallel stochastic dual coordinate
+ascent method and emphasized the balance between computation and communication.
+
+289
+
+Liu, Wright, R´e, Bittorf, and Sridhar
+
+We turn now to asynchronous paral lel methods. Bertsekas and Tsitsiklis (1989) intro-
+duced an asynchronous parallel implementation for general ﬁxed point problems x = q(x)
+over a separable convex closed feasible region. (The optimization problem (1) can be formu-
+lated in this way by deﬁning q(x) := PΩ [(I − α∇f )(x)] for some ﬁxed α > 0.) Their analysis
+allows inconsistent reads for x, that is, the coordinates of the read x have diﬀerent “ages.”
+Linear convergence is established if all ages are bounded and ∇2f (x) satisﬁes a diagonal
+dominance condition guaranteeing that the iteration x = q(x) is a maximum-norm contrac-
+the contraction condition requires diagonal dominance of the Hessian: Aii > (cid:80)
+tion mapping for suﬃcient small α. However, this condition is strong — stronger, in fact,
+than the strong convexity condition. For convex quadratic optimization f (x) = 1
+2 xT Ax+ bx,
+i (cid:54)=j |Aij | for
+all i = 1, 2, . . . , n. By comparison, AsySCD guarantees linear convergence rate under the
+essential strong convexity condition (3), though we do not allow inconsistent read. (We
+require the vector x used for each evaluation of ∇if (x) to have existed at a certain point
+in time.)
+Hogwild! (Niu et al., 2011) is a lock-free, asynchronous parallel implementation of
+a stochastic-gradient method, targeted to a multicore computational model similar to the
+one considered here. Its analysis assumes consistent reading of x, and it is implemented
+without locking or coordination between processors. Under certain conditions, convergence
+of Hogwild! approximately matches the sublinear 1/K rate of its serial counterpart, which
+is the constant-steplength stochastic gradient method analyzed in Nemirovski et al. (2009).
+We also note recent work by Avron et al. (2014), who proposed an asynchronous linear
+solver to solve Ax = b where A is a symmetric positive deﬁnite matrix, proving a linear
+convergence rate. Both inconsistent- and consistent-read cases are analyzed in this paper,
+with the convergence result for inconsistent read being slightly weaker.
+
+3. Algorithm
+
+In AsySCD, multiple processors have access to a shared data structure for the vector x, and
+each processor is able to compute a randomly chosen element of the gradient vector ∇f (x).
+Each processor repeatedly runs the following coordinate descent process (the steplength
+parameter γ is discussed further in the next section):
+R: Choose an index i ∈ {1, 2, . . . , n} at random, read x, and evaluate ∇if (x);
+U: Update component i of the shared x by taking a step of length γ /Lmax in the direction
+−∇if (x).
+Since these processors are being run concurrently and without synchronization, x may
+change between the time at which it is read (in step R) and the time at which it is updated
+(step U). We capture the system-wide behavior of AsySCD in Algorithm 1. There is a
+global counter j for the total number of updates; xj denotes the state of x after j updates.
+The index i(j ) ∈ {1, 2, . . . , n} denotes the component updated at step j . k(j ) denotes the
+x-iterate at which the update applied at iteration j was calculated. Obviously, we have
+k(j ) ≤ j , but we assume that the delay between the time of evaluation and updating is
+bounded uniformly by a positive integer τ , that is, j − k(j ) ≤ τ for all j . The value of τ
+captures the essential parallelism in the method, as it indicates the number of processors
+that are involved in the computation.
+
+290
+
+AsySCD
+
+Algorithm 1 Asynchronous Stochastic Coordinate Descent Algorithm xK+1 =
+AsySCD(x0 , γ , K )
+Require: x0 ∈ Ω, γ , and K
+Ensure: xK+1
+1: Initialize j ← 0;
+2: while j ≤ K do
+(cid:16)
+(cid:17)
+Choose i(j ) from {1, . . . , n} with equal probability;
+3:
+xj+1 ← PΩ
+ei(j )∇i(j )f (xk(j ) )
+xj − γ
+;
+Lmax
+j ← j + 1;
+5:
+6: end while
+
+4:
+
+The pro jection operation PΩ onto the feasible set is not needed in the case of uncon-
+strained optimization. For separable constraints (2), it requires a simple clipping operation
+on the i(j ) component of x.
+We note several diﬀerences with earlier asynchronous approaches. Unlike the asyn-
+chronous scheme in Bertsekas and Tsitsiklis (1989, Section 6.1), the latest value of x is
+updated at each step, not an earlier iterate. Although our model of computation is similar
+to Hogwild! (Niu et al., 2011), the algorithm diﬀers in that each iteration of AsySCD
+evaluates a single component of the gradient exactly, while Hogwild!
+computes only
+a (usually crude) estimate of the full gradient. Our analysis of AsySCD below is com-
+prehensively diﬀerent from that of Niu et al. (2011), and we obtain stronger convergence
+results.
+
+4. Unconstrained Smooth Convex Case
+
+This section presents results about convergence of AsySCD in the unconstrained case
+Ω = Rn . The theorem encompasses both the linear rate for essentially strongly convex
+f and the sublinear rate for general convex f . The result depends strongly on the delay
+parameter τ . (Proofs of results in this section appear in Appendix A.) In Algorithm 1, the
+indices i(j ), j = 0, 1, 2, . . . are random variables. We denote the expectation over all random
+variables as E, the conditional expectation in term of i(j ) given i(0), i(1), · · · , i(j − 1) as
+Ei(j ) .
+A crucial issue in AsySCD is the choice of steplength parameter γ . This choice involves
+a tradeoﬀ: We would like γ to be long enough that signiﬁcant progress is made at each step,
+but not so long that the gradient information computed at step k(j ) is stale and irrelevant
+by the time the update is applied at step j . We enforce this tradeoﬀ by means of a bound
+on the ratio of expected squared norms on ∇f at successive iterates; speciﬁcally,
+ρ−1 ≤ E(cid:107)∇f (xj+1 )(cid:107)2
+E(cid:107)∇f (xj )(cid:107)2 ≤ ρ,
+
+(4)
+
+where ρ > 1 is a user deﬁned parameter. The analysis becomes a delicate balancing act in
+the choice of ρ and steplength γ between aggression and excessive conservatism. We ﬁnd,
+however, that these values can be chosen to ensure steady convergence for the asynchronous
+
+291
+
+Liu, Wright, R´e, Bittorf, and Sridhar
+
+method at a linear rate, with rate constants that are almost consistent with vanilla short-
+step full-gradient descent.
+
+Theorem 1 Suppose that Ω = Rn in (1) and that Assumption 1 is satisﬁed. For any ρ > 1,
+deﬁne the quantity ψ as fol lows:
+
+ψ := 1 +
+
+2τ ρτ Lres
+√
+nLmax
+
+.
+
+Suppose that the steplength parameter γ > 0 satisﬁes the fol lowing three upper bounds:
+
+γ ≤ 1
+,
+√
+ψ
+γ ≤ (ρ − 1)
+nLmax
+√
+2ρτ +1Lres
+γ ≤ (ρ − 1)
+nLmax
+Lresρτ (2 + Lres√
+nLmax
+
+,
+
+.
+
+)
+
+Then we have that for any j ≥ 0 that
+ρ−1E((cid:107)∇f (xj )(cid:107)2 ) ≤ E((cid:107)∇f (xj+1 )(cid:107)2 ) ≤ ρE((cid:107)∇f (xj )(cid:107)2 ).
+(cid:18)
+(cid:19)(cid:19)j
+(cid:18)
+Moreover, if the essential ly strong convexity property (3) holds with l > 0, we have
+1 − 2lγ
+1 − ψ
+nLmax
+2
+
+E(f (xj ) − f ∗ ) ≤
+
+(f (x0 ) − f ∗ ),
+
+γ
+
+while for general smooth convex functions f , we have
+
+E(f (xj ) − f ∗ ) ≤
+
+1
+(f (x0 ) − f ∗ )−1 + j γ (1 − ψ
+2 γ )/(nLmaxR2 )
+
+.
+
+(5)
+
+(6a)
+
+(6b)
+
+(6c)
+
+(7)
+
+(8)
+
+(9)
+
+This theorem demonstrates linear convergence (8) for AsySCD in the unconstrained es-
+sentially strongly convex case. This result is better than that obtained for Hogwild! (Niu
+et al., 2011), which guarantees only sublinear convergence under the stronger assumption
+of strict convexity.
+The following corollary proposes an interesting particular choice of the parameters for
+which the convergence expressions become more comprehensible. The result requires a
+condition on the delay bound τ in terms of n and the ratio Lmax/Lres .
+
+Corollary 2 Suppose that Assumption 1 holds, and that
+√
+
+τ + 1 ≤
+
+nLmax
+2eLres
+
+.
+
+Then if we choose
+
+ρ = 1 +
+
+√
+2eLres
+nLmax
+
+,
+
+292
+
+(10)
+
+(11)
+
+AsySCD
+
+(cid:19)j
+(cid:18)
+deﬁne ψ by (5), and set γ = 1/ψ , we have for the essential ly strongly convex case (3) with
+l > 0 that
+1 −
+
+(f (x0 ) − f ∗ ),
+
+(12)
+
+E(f (xj ) − f ∗ ) ≤
+
+l
+2nLmax
+while for the case of general convex f , we have
+E(f (xj ) − f ∗ ) ≤
+
+.
+
+(13)
+
+1
+(f (x0 ) − f ∗ )−1 + j /(4nLmaxR2 )
+We note that the linear rate (12) is broadly consistent with the linear rate for the
+classical steepest descent method applied to strongly convex functions, which has a rate
+constant of (1 − 2l/L), where L is the standard Lipschitz constant for ∇f . If we assume (not
+unreasonably) that n steps of stochastic coordinate descent cost roughly the same as one step
+of steepest descent, and note from (12) that n steps of stochastic coordinate descent would
+achieve a reduction factor of about (1 − l/(2Lmax )), a standard argument would suggest
+that stochastic coordinate descent would require about 4Lmax/L times more computation.
+(Note that Lmax/L ∈ [1/n, 1].) The stochastic approach may gain an advantage from the
+parallel implementation, however. Steepest descent requires synchronization and careful
+division of gradient evaluations, whereas the stochastic approach can be implemented in an
+asynchronous fashion.
+For the general convex case, (13) deﬁnes a sublinear rate, whose relationship with the
+rate of the steepest descent for general convex optimization is similar to the previous para-
+graph.
+As noted in Section 1, the parameter τ is closely related to the number of cores that
+can be involved in the computation, without degrading the convergence performance of the
+algorithm. In other words, if the number of cores is small enough such that (10) holds, the
+convergence expressions (12), (13) do not depend on the number of cores, implying that
+linear speedup can be expected. A small value for the ratio Lres/Lmax (not much greater
+than 1) implies a greater degree of potential parallelism. As we note at the end of Section 1,
+√
+this ratio tends to be small in some important applications — a situation that would allow
+O(
+n) cores to be used with near-linear speedup.
+We conclude this section with a high-probability estimate for convergence of the sequence
+of function values.
+
+Theorem 3 Suppose that the assumptions of Corol lary 2 hold, including the deﬁnitions of
+ρ and ψ . Then for any  ∈ (0, f (x0 ) − f ∗ ) and η ∈ (0, 1), we have that
+P (f (xj ) − f ∗ ≤ ) ≥ 1 − η ,
+(cid:12)(cid:12)(cid:12)(cid:12)log
+(cid:12)(cid:12)(cid:12)(cid:12) ,
+provided that either of the fol lowing suﬃcient conditions hold for the index j . In the essen-
+tial ly strongly convex case (3) with l > 0, it suﬃces to have
+f (x0 ) − f ∗
+j ≥ 2nLmax
+η
+l
+(cid:18) 1
+while in the general convex case, a suﬃcient condition is
+−
+j ≥ 4nLmaxR2
+η
+
+1
+f (x0 ) − f ∗
+
+(cid:19)
+
+(16)
+
+(14)
+
+(15)
+
+.
+
+293
+
+Liu, Wright, R´e, Bittorf, and Sridhar
+
+5. Constrained Smooth Convex Case
+
+(17)
+
+This section considers the case of separable constraints (2). We show results about conver-
+gence rates and high-probability complexity estimates, analogous to those of the previous
+section. Proofs appear in Appendix B.
+As in the unconstrained case, the steplength γ should be chosen to ensure steady progress
+while ensuring that update information does not become too stale. Because constraints are
+present, the ratio (4) is no longer appropriate. We use instead a ratio of squares of expected
+diﬀerences in successive primal iterates:
+E(cid:107)xj−1 − ¯xj (cid:107)2
+E(cid:107)xj − ¯xj+1(cid:107)2 ,
+where ¯xj+1 is the hypothesized full update obtained by applying the single-component
+update to every component of xj , that is,
+(cid:104)∇f (xk(j ) ), x − xj (cid:105) +
+Lmax
+¯xj+1 := arg min
+x∈Ω
+2γ
+In the unconstrained case Ω = Rn , the ratio (17) reduces to
+E(cid:107)∇f (xk(j−1) )(cid:107)2
+E(cid:107)∇f (xk(j ) )(cid:107)2 ,
+which is evidently related to (4), but not identical.
+We have the following result concerning convergence of the expected error to zero.
+√
+Theorem 4 Suppose that Ω has the form (2), that Assumption 1 is satisﬁed, and that
+(cid:19)
+(cid:18)
+−1 , and deﬁne the quantity ψ as fol lows:
+n ≥ 5. Let ρ be a constant with ρ > (1 − 2/
+n)
+Lres τ ρτ
+Lmax√
+√
+2τ
++
+2 +
+n
+nLmax
+nLres
+(cid:18)
+(cid:19) √
+Suppose that the steplength parameter γ > 0 satisﬁes the fol lowing two upper bounds:
+− 2√
+1 − 1
+γ ≤ 1
+γ ≤
+nLmax
+4Lres τ ρτ .
+ψ
+ρ
+n
+
+(cid:107)x − xj (cid:107)2 .
+
+ψ := 1 +
+
+(18)
+
+(19)
+
+.
+
+,
+
+Then we have
+
+E(cid:107)xj−1 − ¯xj (cid:107)2 ≤ ρE(cid:107)xj − ¯xj+1(cid:107)2 ,
+If the essential strong convexity property (3) holds with l > 0, we have for j = 1, 2, . . . that
+(cid:19)
+(cid:19)j (cid:18)
+(cid:18)
+E(cid:107)xj − PS (xj )(cid:107)2 +
+(Ef (xj ) − f ∗ )
+2γ
+Lmax
+(f (x0 ) − f ∗ )
+R2 +
+
+j = 1, 2, . . . .
+
+1 −
+
+(21)
+
+(20)
+
+≤
+
+.
+
+l
+n(l + γ−1Lmax )
+For general smooth convex function f , we have
+Ef (xj ) − f ∗ ≤ n(R2Lmax + 2γ (f (x0 ) − f ∗ ))
+2γ (n + j )
+
+2γ
+Lmax
+
+.
+
+(22)
+
+294
+
+AsySCD
+
+Similarly to the unconstrained case, the following corollary proposes an interesting par-
+ticular choice for the parameters for which the convergence expressions become more com-
+prehensible. The result requires a condition on the delay bound τ in terms of n and the
+ratio Lmax/Lres .
+Corollary 5 Suppose that Assumption 1 holds, that τ ≥ 1 and n ≥ 5, and that
+√
+
+τ (τ + 1) ≤
+
+nLmax
+4eLres
+
+.
+
+(23)
+
+If we choose
+
+√
+4eτ Lres
+nLmax
+then the steplength γ = 1/2 wil l satisfy the bounds (19). In addition, for the essential ly
+(cid:18)
+(cid:19)j
+strongly convex case (3) with l > 0, we have for j = 1, 2, . . . that
+
+ρ = 1 +
+
+(24)
+
+,
+
+E(f (xj ) − f ∗ ) ≤
+
+1 −
+
+l
+n(l + 2Lmax )
+
+(LmaxR2 + f (x0 ) − f ∗ ),
+
+while for the case of general convex f , we have
+E(f (xj ) − f ∗ ) ≤ n(LmaxR2 + f (x0 ) − f ∗ )
+j + n
+
+.
+
+(25)
+
+(26)
+
+Similarly to Section 4, and provided τ satisﬁes (23), the convergence rate is not aﬀected
+appreciably by the delay bound τ , and near-linear speedup can be expected for multicore
+implementations when (23) holds. This condition is more restrictive than (10) in the uncon-
+strained case, but still holds in many problems for interesting values of τ . When Lres/Lmax
+is bounded independently of dimension, the maximal number of cores allowed is of the the
+order of n1/4 , which is smaller than the O(n1/2 ) value obtained for the unconstrained case.
+We conclude this section with another high-probability bound, whose proof tracks that
+of Theorem 3.
+
+Theorem 6 Suppose that the conditions of Corol lary 5 hold, including the deﬁnitions of ρ
+and ψ . Then for  > 0 and η ∈ (0, 1), we have that
+P (f (xj ) − f ∗ ≤ ) ≥ 1 − η ,
+provided that one of the fol lowing conditions holds: In the essential ly strongly convex case (3)
+(cid:12)(cid:12)(cid:12)(cid:12) ,
+(cid:12)(cid:12)(cid:12)(cid:12)log
+with l > 0, we require
+while in the general convex case, it suﬃces that
+j ≥ n(LmaxR2 + f (x0 ) − f ∗ )
+η
+
+LmaxR2 + f (x0 ) − f ∗
+η
+
+j ≥ n(l + 2Lmax )
+l
+
+− n.
+
+295
+
+Liu, Wright, R´e, Bittorf, and Sridhar
+
+6. Experiments
+
+We illustrate the behavior of two variants of the stochastic coordinate descent approach
+on test problems constructed from several data sets. Our interests are in the eﬃciency of
+multicore implementations (by comparison with a single-threaded implementation) and in
+performance relative to alternative solvers for the same problems.
+All our test problems have the form (1), with either Ω = Rn or Ω separable as in (2).
+The ob jective f is quadratic, that is,
+
+f (x) =
+
+1
+2
+
+xT Qx + cT x,
+
+with Q symmetric positive deﬁnite.
+Our implementation of AsySCD is called DIMM-WITTED (or DW for short). It runs
+on various numbers of threads, from 1 to 40, each thread assigned to a single core in our 40-
+core Intel Xeon architecture. Cores on the Xeon architecture are arranged into four sockets
+— ten cores per socket, with each socket having its own memory. Non-uniform memory ac-
+cess (NUMA) means that memory accesses to local memory (on the same socket as the core)
+are less expensive than accesses to memory on another socket. In our DW implementation,
+we assign each socket an equal-sized “slice” of Q, a row submatrix. The components of x
+are partitioned between cores, each core being responsible for updating its own partition of
+x (though it can read the components of x from other cores). The components of x assigned
+to the cores correspond to the rows of Q assigned to that core’s socket. Computation is
+grouped into “epochs,” where an epoch is deﬁned to be the period of computation during
+which each component of x is updated exactly once. We use the parameter p to denote
+the number of epochs that are executed between reordering (shuﬄing) of the coordinates
+of x. We investigate both shuﬄing after every epoch (p = 1) and after every tenth epoch
+(p = 10). Access to x is lock-free, and updates are performed asynchronously. This update
+scheme does not implement exactly the “sampling with replacement” scheme analyzed in
+previous sections, but can be viewed as a high performance, practical adaptation of the
+AsySCD method.
+To do each coordinate descent update, a thread must read the latest value of x. Most
+components are already in the cache for that core, so that it only needs to fetch those
+components recently changed. When a thread writes to xi , the hardware ensures that this
+xi is simultaneously removed from other cores, signaling that they must fetch the updated
+version before proceeding with their respective computations.
+Although DW is not a precise implementation of AsySCD, it largely achieves the
+consistent-read condition that is assumed by the analysis. Inconsistent read happens on
+a core only if the following three conditions are satisﬁed simultaneously:
+• A core does not ﬁnish reading recently changed coordinates of x (note that it needs
+to read no more than τ coordinates);
+• Among these recently changed coordinates, modiﬁcations take place both to coordi-
+nates that have been read and that are stil l to be read by this core;
+• Modiﬁcation of the already-read coordinates happens earlier than the modiﬁcation of
+the still-unread coordinates.
+
+296
+
+AsySCD
+
+Inconsistent read will occur only if at least two coordinates of x are modiﬁed twice during
+a stretch of approximately τ updates to x (that is, iterations of Algorithm 1). For the
+DW implementation, inconsistent read would require repeated updating of a particular
+component in a stretch of approximately τ iterations that straddles two epochs. This event
+would be rare, for typical values of n and τ . Of course, one can avoid the inconsistent read
+issue altogether by changing the shuﬄing rule slightly, enforcing the requirement that no
+coordinate can be modiﬁed twice in a span of τ iterations. From the practical perspective,
+this change does not improve performance, and detracts from the simplicity of the approach.
+From the theoretical perspective, however, the analysis for the inconsistent-read model
+would be interesting and meaningful, and we plan to study this topic in future work.
+The ﬁrst test problem QP is an unconstrained, regularized least squares problem con-
+structed with synthetic data. It has the form
+
+(27)
+
+f (x) :=
+
+(cid:107)x(cid:107)2 .
+
+(cid:107)Ax − b(cid:107)2 +
+
+1
+α
+min
+x∈Rn
+2
+2
+All elements of A ∈ Rm×n , the true model ˜x ∈ Rn , and the observation noise vector δ ∈ Rm
+are generated in i.i.d. fashion from the Gaussian distribution N (0, 1), following which each
+column in A is scaled to have a Euclidean norm of 1. The observation b ∈ Rm is constructed
+from A ˜x + δ(cid:107)A ˜x(cid:107)/(5m). We choose m = 6000, n = 20000, and α = 0.5. We therefore have
+≈ 1 + (cid:112)n/m + α
+Lmax = 1 + α = 1.5 and
+Lres
+1 + α
+Lmax
+This problem is diagonally dominant, and the condition (10) is satisﬁed when delay param-
+eter τ is less than about 95. In Algorithm 1, we set the steplength parameter γ to 1, and we
+choose initial iterate to be x0 = 0. We measure convergence of the residual norm (cid:107)∇f (x)(cid:107).
+Our second problem QPc is a bound-constrained version of (27):
+
+≈ 2.2.
+
+min
+x∈Rn
++
+
+f (x) :=
+
+1
+2
+
+(x − ˜x)T (AT A + αI )(x − ˜x).
+
+(28)
+
+The methodology for generating A and ˜x and for choosing the values of m, n, γ , and x0 is
+the same as for (27). We measure convergence via the residual (cid:107)x − PΩ (x − ∇f (x))(cid:107), where
+Ω is the nonnegative orthant Rn
++ . At the solution of (28), about half the components of x
+are at their lower bound of 0.
+Our third and fourth problems are quadratic penalty functions for linear programming
+relaxations of vertex cover problems on large graphs. The vertex cover problem for an
+(cid:88)
+undirected graph with edge set E and vertex set V can be written as a binary linear
+program:
+sub ject to yu + yv ≥ 0,
+v∈V
+By relaxing each binary constraint to the interval [0, 1], introducing slack variables for the
+(cid:88)
+cover inequalities, we obtain a problem of the form
+sub ject to yu + yv − suv = 0,
+v∈V
+
+min
+yv ∈[0,1], suv ∈[0,1]
+
+∀ (u, v) ∈ E .
+
+∀ (u, v) ∈ E .
+
+min
+y∈{0,1}|V |
+
+yv
+
+yv
+
+297
+
+Liu, Wright, R´e, Bittorf, and Sridhar
+
+This has the form
+
+cT x sub ject to Ax = b,
+min
+x∈[0,1]n
+for n = |V | + |E |. The test problem (29) is a regularized quadratic penalty reformulation
+of this linear program for some penalty parameter β :
+(cid:107)Ax − b(cid:107)2 +
+
+(cid:107)x(cid:107)2 ,
+
+(29)
+
+1
+2β
+
+min
+x∈[0,1]n
+
+cT x +
+
+β
+2
+
+with β = 5. Two test data sets Amazon and DBLP have dimensions n = 561050 and n =
+520891, respectively.
+We tracked the behavior of the residual as a function of the number of epochs, when
+executed on diﬀerent numbers of cores. Figure 1 shows convergence behavior for each of our
+four test problems on various numbers of cores with two diﬀerent shuﬄing periods: p = 1
+and p = 10. We note the following points.
+• The total amount of computation to achieve any level of precision appears to be
+almost independent of the number of cores, at least up to 40 cores. In this respect,
+the performance of the algorithm does not change appreciably as the number of cores
+is increased. Thus, any deviation from linear speedup is due not to degradation of
+convergence speed in the algorithm but rather to systems issues in the implementation.
+• When we reshuﬄe after every epoch (p = 1), convergence is slightly faster in synthetic
+unconstrained QP but slightly slower in Amazon and DBLP than when we do occasional
+reshuﬄing (p = 10). Overall, the convergence rates with diﬀerent shuﬄing periods
+are comparable in the sense of epochs. However, when the dimension of the variable
+is large, the shuﬄing operation becomes expensive, so we would recommend using a
+large value for p for large-dimensional problems.
+
+Results for speedup on multicore implementations are shown in Figures 2 and 3 for DW
+with p = 10. Speedup is deﬁned as follows:
+
+runtime a single core using DW
+runtime on P cores
+
+.
+
+Near-linear speedup can be observed for the two QP problems with synthetic data. For
+Problems 3 and 4, speedup is at most 12-14; there are few gains when the number of cores
+exceeds about 12. We believe that the degradation is due mostly to memory contention.
+Although these problems have high dimension, the matrix Q is very sparse (in contrast to
+the dense Q for the synthetic data set). Thus, the ratio of computation to data movement
+/ memory access is much lower for these problems, making memory contention eﬀects more
+signiﬁcant.
+Figures 2 and 3 also show results of a global-locking strategy for the parallel stochastic
+coordinate descent method, in which the vector x is locked by a core whenever it performs
+a read or update. The performance curve for this strategy hugs the horizontal axis; it is
+not competitive.
+Wall clock times required for the four test problems on 1 and 40 cores, to reduce residuals
+below 10−5 are shown in Table 1. (Similar speedups are noted when we use a convergence
+tolerance looser than 10−5 .)
+
+298
+
+AsySCD
+
+Figure 1: Residuals vs epoch number for the four test problems. Results are reported for
+variants in which indices are reshuﬄed after every epoch (p = 1) and after every
+tenth epoch (p = 10).
+
+299
+
+5101520253010−410−310−210−1100101Synthetic Unconstrained QP: n = 20000 p = 1# epochsresidual  thread= 1thread=10thread=20thread=30thread=4051015202530354010−410−310−210−1100101Synthetic Unconstrained QP: n = 20000 p = 10# epochsresidual  thread= 1thread=10thread=20thread=30thread=4051015202510−510−410−310−210−1100101Synthetic Constrained QP: n = 20000 p = 1# epochsresidual  thread= 1thread=10thread=20thread=30thread=4024681012141618202210−410−310−210−1100101Synthetic Constrained QP: n = 20000 p = 10# epochsresidual  thread= 1thread=10thread=20thread=30thread=4010203040506070809010−410−310−210−1100101102Amazon: n = 561050 p = 1# epochsresidual  thread= 1thread=10thread=20thread=30thread=401020304050607010−410−310−210−1100101102Amazon: n = 561050 p = 10# epochsresidual  thread= 1thread=10thread=20thread=30thread=40510152025303540455010−310−210−1100101102DBLP: n = 520891 p = 1# epochsresidual  thread= 1thread=10thread=20thread=30thread=4051015202530354010−310−210−1100101102DBLP: n = 520891 p = 10# epochsresidual  thread= 1thread=10thread=20thread=30thread=40Liu, Wright, R´e, Bittorf, and Sridhar
+
+Figure 2: Test problems 1 and 2: Speedup of multicore implementations of DW on up to
+40 cores of an Intel Xeon architecture. Ideal (linear) speedup curve is shown for
+reference, along with poor speedups obtained for a global-locking strategy.
+
+Figure 3: Test problems 3 and 4: Speedup of multicore implementations of DW on up to
+40 cores of an Intel Xeon architecture. Ideal (linear) speedup curve is shown for
+reference, along with poor speedups obtained for a global-locking strategy.
+
+Problem 1 core
+98.4
+QP
+59.7
+QPc
+17.1
+Amazon
+11.5
+DBLP
+
+40 cores
+3.03
+1.82
+1.25
+.91
+
+Table 1: Runtimes (seconds) for the four test problems on 1 and 40 cores.
+
+All problems reported on above are essentially strongly convex. Similar speedup prop-
+erties can be obtained in the weakly convex case as well. We show speedups for the QPc
+problem with α = 0. Table 2 demonstrates similar speedup to the essentially strongly
+convex case shown in Figure 2.
+Turning now to comparisons between AsySCD and alternative algorithms, we start
+by considering the basic gradient descent method. We implement gradient descent in a
+
+300
+
+510152025303540510152025303540Synthetic Unconstrained QP: n = 20000threadsspeedup  IdealAsySCD−DWGlobal Locking510152025303540510152025303540Synthetic Constrained QP: n = 20000threadsspeedup  IdealAsySCD−DWGlobal Locking510152025303540510152025303540Amazon: n = 561050threadsspeedup  IdealAsySCD−DWGlobal Locking510152025303540510152025303540DBLP: n = 520891threadsspeedup  IdealAsySCD−DWGlobal LockingAsySCD
+
+#cores Time(sec) Speedup
+55.9
+1
+1
+10.8
+10
+5.19
+20.2
+2.77
+20
+27.2
+2.06
+30
+40
+1.81
+30.9
+
+Table 2: Runtimes (seconds) and speedup for multicore implementations of DW on diﬀerent
+number of cores for the weakly convex QPc problem (with α = 0) to achieve a
+residual below 0.06.
+
+#cores
+
+1
+10
+20
+30
+40
+
+Speedup
+Time(sec)
+SynGD / AsySCD SynGD / AsySCD
+121. / 27.1
+0.22 / 1.00
+2.38 / 10.5
+11.4 / 2.57
+4.51 / 19.9
+6.00 / 1.36
+4.44 / 1.01
+6.10 / 26.8
+6.93 / 30.8
+3.91 / 0.88
+
+Table 3: Eﬃciency comparison between SynGD and AsySCD for the QP problem. The
+running time and speedup are based on the residual achieving a tolerance of 10−5 .
+
+Dataset
+
+adult
+news
+rcv
+reuters
+w8a
+
+# of
+Train time(sec)
+# of
+Samples Features LIBSVM AsySCD
+1.39
+32561
+16.15
+123
+7.22
+214.48
+1355191
+19996
+16.06
+40.33
+47236
+20242
+8293
+18930
+1.63
+0.81
+5.86
+33.62
+300
+49749
+
+Table 4: Eﬃciency comparison between LIBSVM and AsySCD for kernel SVM using 40
+cores using homogeneous kernels (K (xi , xj ) = (xT
+i xj )2 ). The running time and
+speedup are calculated based on the “residual” 10−3 . Here, to make both algo-
+rithms comparable, the “residual” is deﬁned by (cid:107)x − PΩ (x − ∇f (x))(cid:107)∞ .
+
+parallel, synchronous fashion, distributing the gradient computation load on multiple cores
+and updates the variable x in parallel at each step. The resulting implementation is called
+SynGD. Table 3 reports running time and speedup of both AsySCD over SynGD, showing
+a clear advantage for AsySCD.
+Next we compare AsySCD to LIBSVM (Chang and Lin, 2011) a popular parallel solver
+for kernel support vector machines (SVM). Both algorithms are run on 40 cores to solve the
+dual formulation of kernel SVM, without an intercept term. All data sets used in 4 except
+
+301
+
+Liu, Wright, R´e, Bittorf, and Sridhar
+
+reuters were obtained from the LIBSVM data set repository.1 The data set reuters is a sparse
+binary text classiﬁcation data set constructed as a one-versus-all version of Reuters-2159.2
+Our comparisons, shown in Table 4, indicate that AsySCD outperforms LIBSVM on these
+test sets.
+
+7. Extension
+
+The AsySCD algorithm can be extended by partitioning the coordinates into blocks, and
+modifying Algorithm 1 to work with these blocks rather than with single coordinates. If
+Li , Lmax , and Lres are deﬁned in the block sense, as follows:
+(cid:107)∇f (x) − ∇f (x + Ei t)(cid:107) ≤ Lres(cid:107)t(cid:107) ∀x, i, t ∈ R|i| ,
+(cid:107)∇if (x) − ∇if (x + Ei t)(cid:107) ≤ Li(cid:107)t(cid:107) ∀x, i, t ∈ R|i| ,
+Lmax = max
+Li ,
+i
+where Ei is the pro jection from the ith block to Rn and |i| denotes the number of components
+in block i, our analysis can be extended appropriately.
+To make the AsySCD algorithm more eﬃcient, one can redeﬁne the steplength in
+γ
+γ
+Algorithm 1 to be
+rather than
+. Our analysis can be applied to this variant by
+Lmax
+Li(j )
+doing a change of variables to ˜x, with xi = Li
+Lmax
+of ˜x.
+
+˜xi and deﬁning Li , Lres , and Lmax in terms
+
+8. Conclusion
+
+This paper proposes an asynchronous parallel stochastic coordinate descent algorithm for
+minimizing convex ob jectives, in the unconstrained and separable-constrained cases. Sub-
+linear convergence (at rate 1/K ) is proved for general convex functions, with stronger linear
+convergence results for functions that satisfy an essential strong convexity property. Our
+analysis indicates the extent to which parallel implementations can be expected to yield
+near-linear speedup, in terms of a parameter that quantiﬁes the cross-coordinate inter-
+actions in the gradient ∇f and a parameter τ that bounds the delay in updating. Our
+computational experience conﬁrms the theory.
+
+Acknowledgments
+
+This pro ject is supported by NSF Grants DMS-0914524, DMS-1216318, and CCF-1356918;
+NSF CAREER Award IIS-1353606; ONR Awards N00014-13-1-0129 and N00014-12-1-0041;
+AFOSR Award FA9550-13-1-0138; a Sloan Research Fellowship; and grants from Oracle,
+Google, and ExxonMobil.
+
+Appendix A. Proofs for Unconstrained Case
+
+This section contains convergence proofs for AsySCD in the unconstrained case.
+
+1. http://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/
+2. http://www.daviddlewis.com/resources/testcollections/reuters21578/
+
+302
+
+AsySCD
+
+We start with a technical result, then move to the proofs of the three main results of
+Section 4.
+
+Lemma 7 For any x, we have
+(cid:107)x − PS (x)(cid:107)2(cid:107)∇f (x)(cid:107)2 ≥ (f (x) − f ∗ )2 .
+If the essential strong convexity property (3) holds, we have
+(cid:107)∇f (x)(cid:107)2 ≥ 2l(f (x) − f ∗ ).
+
+Proof The ﬁrst inequality is proved as follows:
+f (x) − f ∗ ≤ (cid:104)∇f (x), x − PS (x)(cid:105) ≤ (cid:107)∇f (x)(cid:107)(cid:107)PS (x) − x(cid:107).
+For the second bound, we have from the deﬁnition (3), setting y ← x and x ← PS (x), that
+(cid:107)x − PS (x)(cid:107)2
+f ∗ − f (x) ≥ (cid:104)∇f (x), PS (x) − x(cid:105) +
+l
+2
+(cid:107)∇f (x)(cid:107)2 ≥ − 1
+∇f (x)(cid:107)2 − 1
+(cid:107)PS (x) − x +
+1
+l
+2
+l
+2l
+2l
+
+(cid:107)∇f (x)(cid:107)2 ,
+
+=
+
+as required.
+
+(Theorem 1) We prove each of the two inequalities in (7) by induction. We start
+Proof
+E (cid:0)(cid:107)∇f (xj )(cid:107)2 − (cid:107)∇f (xj+1 )(cid:107)2(cid:1)
+with the left-hand inequality. For all values of j , we have
+= E(cid:104)∇f (xj ) + ∇f (xj+1 ), ∇f (xj ) − ∇f (xj+1 )(cid:105)
+= E(cid:104)2∇f (xj ) + ∇f (xj+1 ) − ∇f (xj ), ∇f (xj ) − ∇f (xj+1 )(cid:105)
+≤ 2E(cid:104)∇f (xj ), ∇f (xj ) − ∇f (xj+1 )(cid:105)
+≤ 2E((cid:107)∇f (xj )(cid:107)(cid:107)∇f (xj ) − ∇f (xj+1 )(cid:107))
+≤ 2LresE((cid:107)∇f (xj )(cid:107)(cid:107)xj − xj+1(cid:107))
+≤ 2Lresγ
+E((cid:107)∇f (xj )(cid:107)(cid:107)∇i(j )f (xk(j ) )(cid:107))
+Lmax
+E(n−1/2(cid:107)∇f (xj )(cid:107)2 + n1/2(cid:107)∇i(j )f (xk(j ) )(cid:107)2 )
+≤ Lresγ
+Lmax
+E(n−1/2(cid:107)∇f (xj )(cid:107)2 + n1/2Ei(j ) ((cid:107)∇i(j )f (xk(j ) )(cid:107)2 ))
+Lresγ
+Lmax
+E(n−1/2(cid:107)∇f (xj )(cid:107)2 + n−1/2(cid:107)∇f (xk(j ) )(cid:107)2 )
+Lresγ
+E (cid:0)(cid:107)∇f (xj )(cid:107)2 + (cid:107)∇f (xk(j ) )(cid:107)2(cid:1) .
+=
+Lmax
+≤ Lresγ√
+nLmax
+We can use this bound to show that the left-hand inequality in (7) holds for j = 0. By
+E (cid:0)(cid:107)∇f (x0 )(cid:107)2 − (cid:107)∇f (x1 )(cid:107)2(cid:1) ≤ Lresγ√
+setting j = 0 in (30) and noting that k(0) = 0, we obtain
+nLmax
+
+2E((cid:107)∇f (x0 )(cid:107)2 ).
+
+(30)
+
+=
+
+(31)
+
+303
+
+Liu, Wright, R´e, Bittorf, and Sridhar
+
+From (6b), we have
+
+= 1 − ρ−1 ,
+
+√
+2Lresγ
+nLmax
+
+ρτ ≤ ρ − 1
+≤ ρ − 1
+ρ
+where the second inequality follows from ρ > 1. By substituting into (31), we obtain
+ρ−1E((cid:107)∇f (x0 )(cid:107)2 ) ≤ E((cid:107)∇f (x1 )(cid:107)2 ), establishing the result for j = 1. For the inductive
+step, we use (30) again, assuming that the left-hand inequality in (7) holds up to stage j ,
+and thus that
+E((cid:107)∇f (xk(j ) )(cid:107)2 ) ≤ ρτ E((cid:107)∇f (xj )(cid:107)2 ),
+provided that 0 ≤ j − k(j ) ≤ τ , as assumed. By substituting into the right-hand side of
+E (cid:0)(cid:107)∇f (xj )(cid:107)2(cid:1) .
+E (cid:0)(cid:107)∇f (xj )(cid:107)2 − (cid:107)∇f (xj+1 )(cid:107)2(cid:1) ≤ 2Lresγ ρτ
+(30) again, and using ρ > 1, we obtain
+√
+nLmax
+By substituting (6b) we conclude that the left-hand inequality in (7) holds for all j .
+E (cid:0)(cid:107)∇f (xj+1 )(cid:107)2 − (cid:107)∇f (xj )(cid:107)2(cid:1)
+We now work on the right-hand inequality in (7). For all j , we have the following:
+= E(cid:104)∇f (xj ) + ∇f (xj+1 ), ∇f (xj+1 ) − ∇f (xj )(cid:105)
+≤ E((cid:107)∇f (xj ) + ∇f (xj+1 )(cid:107)(cid:107)∇f (xj ) − ∇f (xj+1 )(cid:107))
+≤ LresE((cid:107)∇f (xj ) + ∇f (xj+1 )(cid:107)(cid:107)xj − xj+1(cid:107))
+≤ LresE((2(cid:107)∇f (xj )(cid:107) + (cid:107)∇f (xj+1 ) − ∇f (xj )(cid:107))(cid:107)xj − xj+1(cid:107))
+(cid:18) 2γ
+≤ LresE(2(cid:107)∇f (xj )(cid:107)(cid:107)xj − xj+1(cid:107) + Lres(cid:107)xj − xj+1(cid:107)2 )
+(cid:18) γ
+Lresγ 2
+≤ LresE
+(cid:107)∇i(j )f (xk(j ) )(cid:107)2
+(cid:107)∇f (xj )(cid:107)(cid:107)∇i(j )f (xk(j ) )(cid:107) +
+L2
+Lmax
+max
+(cid:18) γ
+Lresγ 2
+≤ LresE
+(cid:107)∇i(j )f (xk(j ) )(cid:107)2
+(n−1/2(cid:107)∇f (xj )(cid:107)2 + n1/2(cid:107)∇i(j )f (xk(j ) )(cid:107)2 +
+L2
+Lmax
+max
+(cid:19)
+(n−1/2(cid:107)∇f (xj )(cid:107)2 + n1/2Ei(j ) ((cid:107)∇i(j )f (xk(j ) )(cid:107)2 ))+
+= LresE
+Lmax
+(cid:18) γ
+Lresγ 2
+Ei(j ) ((cid:107)∇i(j )f (xk(j ) )(cid:107)2 )
+L2
+max
+Lresγ 2
+(cid:107)∇f (xk(j ) )(cid:107)2
+(n−1/2(cid:107)∇f (xj )(cid:107)2 + n−1/2(cid:107)∇f (xk(j ) )(cid:107)2 ) +
+= LresE
+E (cid:0)(cid:107)∇f (xj )(cid:107)2 + (cid:107)∇f (xk(j ) )(cid:107)2(cid:1) +
+nL2
+Lmax
+max
+(cid:18) γLres
+(cid:19)
+γ 2L2
+√
+E((cid:107)∇f (xk(j ) )(cid:107)2 )
+γLres
+res
+nL2
+nLmax
+max
+γL2
+√
+√
+E((cid:107)∇f (xj )(cid:107)2 ) +
+≤ γLres
+E((cid:107)∇f (xk(j ) )(cid:107)2 ),
+res
++
+nL2
+nLmax
+nLmax
+max
+where the last inequality is from the observation γ ≤ 1. By setting j = 0 in this bound,
+(cid:18) 2γLres
+(cid:19)
+E (cid:0)(cid:107)∇f (x1 )(cid:107)2 − (cid:107)∇f (x0 )(cid:107)2(cid:1) ≤
+and noting that k(0) = 0, we obtain
+√
+nLmax
+
+E((cid:107)∇f (x0 )(cid:107)2 ).
+
+(32)
+
+(33)
+
+(cid:19)
+
+(cid:19)
+
+(cid:19)
+
+=
+
++
+
+γL2
+res
+nL2
+max
+
+304
+
+AsySCD
+
+By using (6c), we have
+
+√
+2γLres
+nLmax
+
++
+
+γL2
+res
+nL2
+max
+
+=
+
+Lresγ√
+nLmax
+
+(cid:18)
+2 +
+
+(cid:19)
+
+Lres√
+nLmax
+
+≤ ρ − 1
+ρτ < ρ − 1,
+
+where the last inequality follows from ρ > 1. By substituting into (33), we obtain E((cid:107)∇f (x1 )(cid:107)2 ) ≤
+ρE((cid:107)∇f (x0 )(cid:107)2 ), so the right-hand bound in (7) is established for j = 0. For the inductive
+step, we use (32) again, assuming that the right-hand inequality in (7) holds up to stage j ,
+and thus that
+
+E((cid:107)∇f (xj )(cid:107)2 ) ≤ ρτ E((cid:107)∇f (xk(j ) )(cid:107)2 ),
+
+provided that 0 ≤ j − k(j ) ≤ τ , as assumed. From (32) and the left-hand inequality in (7),
+we have by substituting this bound that
+(cid:18) 2γLresρτ
+(cid:19)
+E (cid:0)(cid:107)∇f (xj+1 )(cid:107)2 − (cid:107)∇f (xj )(cid:107)2(cid:1) ≤
+√
+nLmax
+
+E((cid:107)∇f (xj )(cid:107)2 ).
+
+γL2
+resρτ
+nL2
+max
+
+(34)
+
++
+
+It follows immediately from (6c) that the term in parentheses in (34) is bounded above by
+ρ − 1. By substituting this bound into (34), we obtain E((cid:107)∇f (xj+1 )(cid:107)2 ) ≤ ρE((cid:107)∇f (xj )(cid:107)2 ),
+as required.
+
+=
+
+f
+
+1
+n
+
+(cid:19)
+ei(j )∇i(j )f (xk(j ) )
+ei∇if (xk(j ) )
+
+At this point, we have shown that both inequalities in (7) are satisﬁed for all j .
+Next we prove (8) and (9). Take the expectation of f (xj+1 ) in terms of i(j ):
+(cid:18)
+(cid:19)
+(cid:18)
+xj − γ
+Lmax
+xj − γ
+Lmax
+f (xj ) − γ
+Li
+2L2
+Lmax
+max
+γ 2
+(cid:107)∇f (xk(j ) )(cid:107)2
+(cid:104)∇f (xj ), ∇f (xk(j ) )(cid:105) +
+2nLmax
+(cid:123)(cid:122)
+(cid:124)
+(cid:125)
+(cid:104)∇f (xk(j ) ) − ∇f (xj ), ∇f (xk(j ) )(cid:105)
+(cid:19)
+T1
+− γ 2
+(cid:107)∇f (xk(j ) )(cid:107)2 .
+2nLmax
+
+Ei(j )f (xj+1 ) = Ei(j )f
+n(cid:88)
+n(cid:88)
+i=1
+≤ 1
+n
+i=1
+≤ f (xj ) − γ
+nLmax
+γ
+= f (xj ) +
+(cid:18) γ
+nLmax
+nLmax
+
+(cid:104)∇f (xj ), ei∇if (xk(j ) )(cid:105) +
+
+−
+
+γ 2(cid:107)∇if (xk(j ) )(cid:107)2
+
+(35)
+
+305
+
+Liu, Wright, R´e, Bittorf, and Sridhar
+
+E
+
+=
+
+Lresγ
+Lmax
+
+The second term T1 is caused by delay. If there is no the delay issue, T1 should be 0
+because of ∇f (xj ) = ∇f (xk(j ) ). We estimate the upper bound of (cid:107)∇f (xk(j ) ) − ∇f (xj )(cid:107):
+(cid:107)∇f (xk(j ) ) − ∇f (xj )(cid:107) ≤ j−1(cid:88)
+(cid:107)∇f (xd+1 ) − ∇f (xd )(cid:107)
+j−1(cid:88)
+d=k(j )
+(cid:107)xd+1 − xd(cid:107)
+≤ Lres
+j−1(cid:88)
+(cid:13)(cid:13)∇i(d)f (xk(d) )(cid:13)(cid:13) .
+d=k(j )
+d=k(j )
+Then E(|T1 |) can be bounded by
+ j−1(cid:88)
+
+E(|T1 |) ≤ E((cid:107)∇f (xk(j ) ) − ∇f (xj )(cid:107)(cid:107)∇f (xk(j ) )(cid:107))
+≤ Lresγ
+(cid:107)∇i(d)f (xk(d) )(cid:107)(cid:107)∇f (xk(j ) )(cid:107)
+ j−1(cid:88)
+
+Lmax
+d=k(j )
+n1/2(cid:107)∇i(d)f (xk(d) )(cid:107)2 + n−1/2(cid:107)∇f (xk(j ) )(cid:107)2
+E
+ j−1(cid:88)
+d=k(j )
+n1/2Ei(d) ((cid:107)∇i(d)f (xk(d) )(cid:107)2 ) + n−1/2(cid:107)∇f (xk(j ) )(cid:107)2
+ j−1(cid:88)
+
+d=k(j )
+j−1(cid:88)
+d=k(j )
+√
+Lresγ
+nLmax
+2
+d=k(j )
+≤ τ ρτ Lresγ
+√
+E((cid:107)∇f (xk(j ) )(cid:107)2 )
+nLmax
+
+n−1/2(cid:107)∇f (xk(d) )(cid:107)2 + n−1/2(cid:107)∇f (xk(j ) )(cid:107)2
+
+E((cid:107)∇f (xk(d) )(cid:107)2 + (cid:107)∇f (xk(j ) )(cid:107)2 )
+
+≤ Lresγ
+2Lmax
+
+Lresγ
+2Lmax
+
+E
+
+Lresγ
+2Lmax
+
+E
+
+
+
+=
+
+=
+
+=
+
+(36)
+
+(37)
+
+where the second line uses (36), and the ﬁnal inequality uses the fact for d between k(j )
+and j − 1, k(d) lies in the range k(j ) − τ and j − 1, so we have |k(d) − k(j )| ≤ τ for all d.
+Taking expectation on both sides of (35) in terms of all random variables, together with
+(37), we obtain
+(cid:19)
+(cid:18) γ
+E(f (xj+1 ) − f ∗ )
+(cid:19)
+(cid:18) γ
+− γ 2
+E(|T1 |) −
+E((cid:107)∇f (xk(j ) )(cid:107)2 )
+≤ E(f (xj ) − f ∗ ) +
+γ
+nLmax
+nLmax
+2nLmax
+(cid:18)
+(cid:19)
+− τ ρτ Lresγ 2
+− γ 2
+E((cid:107)∇f (xk(j ) )(cid:107)2 )
+n3/2L2
+nLmax
+2nLmax
+max
+E((cid:107)∇f (xk(j ) )(cid:107)2 ),
+1 − ψ
+= E(f (xj ) − f ∗ ) − γ
+nLmax
+2
+
+≤ E(f (xj ) − f ∗ ) −
+
+γ
+
+306
+
+AsySCD
+
+,
+
+.
+
+(cid:41)
+
+≥ max
+
+which implies
+
+E((cid:107)∇f (xk(j ) )(cid:107)2 ) ≥ max
+
+which (because of (6a)) implies that E(f (xj ) − f ∗ ) is monotonically decreasing. From
+(cid:41)
+(cid:40)
+Lemma 7 and the assumption (cid:107)xj − PS (xj )(cid:107) ≤ R for all j , we have
+(f (xk(j ) ) − f ∗ )2
+2l(f (xk(j ) ) − f ∗ ),
+(cid:107)∇f (xk(j ) )(cid:107)2 ≥ max
+(cid:41)
+(cid:40)
+(cid:107)xk(j ) − PS (xk(j ) )(cid:107)2
+(f (xk(j ) ) − f ∗ )2
+2l(f (xk(j ) ) − f ∗ ),
+R2
+(cid:40)
+E(f (xk(j ) − f ∗ )2
+2lE(f (xk(j ) − f ∗ ),
+(cid:26)
+(cid:27)
+R2
+E(f (xj ) − f ∗ )2
+2lE(f (xj ) − f ∗ ),
+≥ max
+R2
+(cid:19)
+(cid:18)
+From the ﬁrst upper bound (cid:107)∇f (xk(j ) )(cid:107)2 ≥ 2lE(f (xj ) − f ∗ ), we have
+(cid:19)(cid:19)
+(cid:18)
+(cid:18)
+E((cid:107)∇f (xk(j ) )(cid:107)2 )
+1 − ψ
+E(f (xj+1 ) − f ∗ ) ≤ E(f (xj ) − f ∗ ) − γ
+nLmax
+2
+E(f (xj ) − f ∗ ),
+1 − ψ
+1 − 2lγ
+nLmax
+2
+form which the linear convergence claim (8) follows by an obvious induction. From the
+(cid:19)
+(cid:18)
+other bound (cid:107)∇f (xk(j ) )(cid:107)2 ≥ (f (xk(j ) )−f ∗ )2
+, we have
+R2
+(cid:18)
+(cid:19)
+E(f (xj+1 ) − f ∗ ) ≤ E(f (xj ) − f ∗ ) − γ
+E((cid:107)∇f (xk(j ) )(cid:107)2 )
+1 − ψ
+nLmax
+2
+(cid:18)
+(cid:19)
+1 − ψ
+E((f (xj ) − f ∗ )2 )
+γ
+nLmaxR2
+2
+≤ E(f (xj ) − f ∗ ) −
+1 − ψ
+(E(f (xj ) − f ∗ ))2 ,
+γ
+γ
+nLmaxR2
+2
+(cid:18)
+(cid:19)
+where the third line uses the Jensen’s inequality E(v2 ) ≥ (E(v))2 . Deﬁning
+1 − ψ
+γ
+nLmaxR2
+2
+
+≤ E(f (xj ) − f ∗ ) −
+
+C :=
+
+≤
+
+γ
+
+,
+
+γ
+
+γ
+
+γ
+
+γ
+
+we have
+
+⇒
+
+⇒
+
+E(f (xj+1 ) − f ∗ ) ≤ E(f (xj ) − f ∗ ) − C (E(f (xj ) − f ∗ ))2
+E(f (xj ) − f ∗ )
+− C
+≤
+1
+1
+E(f (xj+1 ) − f ∗ )
+E(f (xj+1 ) − f ∗ )
+E(f (xj ) − f ∗ )
+E(f (xj ) − f ∗ )
+−
+1
+1
+E(f (xj ) − f ∗ )
+E(f (xj+1 ) − f ∗ )
+E(f (xj+1 ) − f ∗ )
+1
+1
+E(f (xj+1 ) − f ∗ )
+f (x0 ) − f ∗ + C (j + 1)
+⇒ E(f (xj+1 ) − f ∗ ) ≤
+1
+(f (x0 ) − f ∗ )−1 + C (j + 1)
+
+≥ C
+
+⇒
+
+≥
+
+,
+
+≥ C
+
+307
+
+Liu, Wright, R´e, Bittorf, and Sridhar
+
+ψ = 1 +
+
+√
+2eLres
+nLmax
+
+ρτ ≤ ρτ +1 =
+
+nLmax ≤ e,
+√
+2eLres (τ +1)
+
+which completes the proof of the sublinear rate (9).
+ 2eLres (τ +1)
+(cid:18)
+(cid:19) √
+Proof (Corollary 2) Note ﬁrst that for ρ deﬁned by (11), we have
+√
+nLmax
+nLmax ≤ e
+2eLres
+1 +
+and thus from the deﬁnition of ψ (5) that
+2τ ρτ Lres
+√
+√
+2τ eLres
+nLmax
+nLmax
+We show now that the steplength parameter choice γ = 1/ψ satisﬁes all the bounds in
+(6), by showing that the second and third bounds are implied by the ﬁrst. For the second
+bound (6b), we have
+√
+√
+(ρ − 1)
+≥ (ρ − 1)
+nLmax
+nLmax
+2ρτ +1Lres
+2eLres
+where the second inequality follows from (11). For the third bound (6c), we have
+√
+(ρ − 1)
+≥
+nLmax
+2eLres
+2eLres
+2
+Lresρτ (2 + Lres√
+Lresρτ (2 + Lres√
+Lrese(2 + Lres√
+2 + Lres√
+nLmax
+nLmax
+nLmax
+nLmax
+We can thus set γ = 1/ψ , and by substituting this choice into (8) and using (38), we obtain
+(12). We obtain (13) by making the same substitution into (9).
+
+≥ 1 ≥ 1
+ψ
+
+,
+
+≥ 1
+ψ
+
+.
+
+≤ 1 +
+
+≤ 2.
+
+(38)
+
+=
+
+)
+
+)
+
+=
+
+)
+
+Proof (Theorem 3) From Markov’s inequality, we have
+(cid:18)
+(cid:19)j
+P(f (xj ) − f ∗ ≥ ) ≤ −1E(f (xj ) − f ∗ )
+(f (x0 ) − f ∗ )
+≤ −1
+1 −
+l
+(cid:12)(cid:12)(cid:12) (f (x0 ) − f ∗ ) with c = l/(2nLmax )
+(cid:12)(cid:12)(cid:12)log f (x0 )−f ∗
+2nLmax
+≤ −1 (1 − c)
+−(cid:12)(cid:12)(cid:12)log f (x0 )−f ∗
+(cid:12)(cid:12)(cid:12)
+(1/c)
+η
+≤ −1 (f (x0 ) − f ∗ )e
+(cid:12)(cid:12)(cid:12)
+−(cid:12)(cid:12)(cid:12)log f (x0 )−f ∗
+η
+= ηelog (f (x0 )−f ∗ )
+e
+η
+η
+≤ η ,
+where the second inequality applies (12), the third inequality uses the deﬁnition of j (15),
+and the second last inequality uses the inequality (1 − c)1/c ≤ e−1 ∀ c ∈ (0, 1), which proves
+(cid:17) ≤ η ,
+(cid:16)
+the essentially strongly convex case. Similarly, the general convex case is proven by
+f (x0 ) − f ∗
+P(f (xj ) − f ∗ ≥ ) ≤ −1E(f (xj ) − f ∗ ) ≤
+1 + j f (x0 )−f ∗
+4nLmaxR2
+where the second inequality uses (13) and the last inequality uses the deﬁnition of j (16).
+
+
+
+308
+
+AsySCD
+
+Appendix B. Proofs for Constrained Case
+
+We start by introducing notation and proving several preliminary results. Deﬁne
+(∆j )i(j ) := (xj − xj+1 )i(j ) ,
+
+(39)
+
+and formulate the update in Step 4 of Algorithm 1 in the following way:
+(cid:107)x − xj (cid:107)2 .
+(cid:104)∇i(j )f (xk(j ) ), (x − xj )i(j ) (cid:105) +
+Lmax
+xj+1 = arg min
+x∈Ω
+2γ
+(Note that (xj+1 )i = (xj )i for i (cid:54)= i(j ).) From the optimality condition for this formulation,
+(cid:28)
+(cid:29)
+we have
+(x − xj+1 )i(j ) , ∇i(j )f (xk(j ) ) − Lmax
+≥ 0,
+for all x ∈ Ω.
+(∆j )i(j )
+γ
+This implies in particular that for all x ∈ Ω, we have
+(cid:10)(PS (x) − xj+1 )i(j ) , ∇i(j )f (xk(j ) )(cid:11) ≥ Lmax
+(cid:10)(PS (x) − xj+1 )i(j ) , (∆j )i(j )
+γ
+From the deﬁnition of Lmax , and using the notation (39), we have
+f (xj+1 ) ≤ f (xj ) + (cid:104)∇i(j )f (xj ), −(∆j )i(j ) (cid:105) +
+(cid:107)(∆j )i(j )(cid:107)2 ,
+
+(cid:11) .
+
+(40)
+
+Lmax
+2
+
+which indicates that
+(cid:104)∇i(j )f (xj ), (∆j )i(j ) (cid:105) ≤ f (xj ) − f (xj+1 ) +
+(cid:28)
+From optimality conditions for this deﬁnition, we have
+
+Lmax
+2
+(cid:29)
+
+(cid:107)(∆j )i(j )(cid:107)2 .
+
+(41)
+
+( ¯xj+1 − xj )
+
+x − ¯xj+1 , ∇f (xk(j ) ) +
+Lmax
+γ
+We now deﬁne ∆j := xj − ¯xj+1 , and note that this deﬁnition is consistent with (∆)i(j )
+deﬁned in (39). It can be seen that
+Ei(j ) ((cid:107)xj+1 − xj (cid:107)2 ) =
+
+(cid:107) ¯xj+1 − xj (cid:107)2 .
+
+≥ 0 ∀ x ∈ Ω.
+
+(42)
+
+1
+n
+
+We now proceed to prove the main results of Section 5.
+Proof (Theorem 4) We prove (20) by induction. First, note that for any vectors a and b,
+we have
+(cid:107)a(cid:107)2 − (cid:107)b(cid:107)2 = 2(cid:107)a(cid:107)2 − ((cid:107)a(cid:107)2 + (cid:107)b(cid:107)2 ) ≤ 2(cid:107)a(cid:107)2 − 2(cid:104)a, b(cid:105) ≤ 2(cid:104)a, a − b(cid:105) ≤ 2(cid:107)a(cid:107)(cid:107)a − b(cid:107),
+
+Thus for all j , we have
+(cid:107)xj−1 − ¯xj (cid:107)2 − (cid:107)xj − ¯xj+1(cid:107)2 ≤ 2(cid:107)xj−1 − ¯xj (cid:107)(cid:107)xj − ¯xj+1 − xj−1 + ¯xj (cid:107).
+
+(43)
+
+309
+
+Liu, Wright, R´e, Bittorf, and Sridhar
+
+=
+
+≤
+
+≤
+
+The second factor in the r.h.s. of (43) is bounded as follows:
+(cid:13)(cid:13)(cid:13)(cid:13)
+(cid:13)(cid:13)(cid:13)(cid:13)xj − PΩ (xj − γ
+(cid:107)xj − ¯xj+1 − xj−1 + ¯xj (cid:107)
+(cid:13)(cid:13)(cid:13)(cid:13)xj − γ
+∇f (xk(j−1) )))
+∇f (xk(j ) )) − (xj−1 − PΩ (xj−1 − γ
+Lmax
+Lmax
+(cid:13)(cid:13)(cid:13)(cid:13) +
+∇f (xk(j ) )) − (xj−1 − γ
+∇f (xk(j ) ) − PΩ (xj − γ
+∇f (xk(j−1) )
+(cid:13)(cid:13)∇f (xk(j−1) ) − ∇f (xk(j ) )(cid:13)(cid:13)
+Lmax
+Lmax
+Lmax
+(cid:13)(cid:13)(cid:13)(cid:13)xj − γ
+(cid:13)(cid:13)(cid:13)(cid:13)
+∇f (xk(j−1) )))
+−PΩ (xj−1 − γ
+γ
+Lmax
+Lmax
+(cid:13)(cid:13)∇f (xk(j−1) ) − ∇f (xk(j ) )(cid:13)(cid:13)
+∇f (xk(j−1) )
+∇f (xk(j ) ) − xj−1 +
+γ
+Lmax
+Lmax
+(cid:13)(cid:13)∇f (xk(j ) ) − ∇f (xk(j−1) )(cid:13)(cid:13)
+γ
++
+Lmax
+≤ (cid:107)xj − xj−1(cid:107) + 2
+γ
+max{k(j−1),k(j )}−1(cid:88)
+Lmax
+(cid:107)∇f (xd ) − ∇f (xd+1)(cid:107)
+max{k(j−1),k(j )}−1(cid:88)
+d=min{k(j−1),k(j )}
+d=min{k(j−1),k(j )}
+
+≤ (cid:107)xj − xj−1(cid:107) + 2
+
+≤ (cid:107)xj − xj−1(cid:107) + 2
+
+(cid:107)xd − xd+1(cid:107),
+
+γLres
+Lmax
+
+γ
+Lmax
+
+(44)
+
+where the ﬁrst inequality follows by adding and subtracting a term, and the second inequal-
+ity uses the nonexpansive property of pro jection:
+
+(cid:107)(z − PΩ (z )) − (y − PΩ (y))(cid:107) ≤ (cid:107)z − y(cid:107).
+One can see that j − 1 − τ ≤ k(j − 1) ≤ j − 1 and j − τ ≤ k(j ) ≤ j , which implies that
+j − 1 − τ ≤ d ≤ j − 1 for each index d in the summation in (44). It also follows that
+
+max{k(j − 1), k(j )} − 1 − min{k(j − 1), k(j )} ≤ τ .
+
+(45)
+
+We set j = 1, and note that k(0) = 0 and k(1) ≤ 1. Thus, in this case, we have that
+the lower and upper limits of the summation in (44) are 0 and 0, respectively. Thus, this
+(cid:19)
+(cid:18)
+summation is vacuous, and we have
+
+(cid:107)x1 − ¯x2 + x0 − ¯x1(cid:107) ≤
+γLres
+Lmax
+(cid:18)
+(cid:19)
+By substituting this bound in (43) and setting j = 1, we obtain
+2 + 4
+
+E((cid:107)x0 − ¯x1(cid:107)2 ) − E((cid:107)x1 − ¯x2(cid:107)2 ) ≤
+
+1 + 2
+
+(cid:107)x1 − x0(cid:107),
+
+γLres
+Lmax
+
+E((cid:107)x1 − x0(cid:107)(cid:107) ¯x1 − x0(cid:107)).
+
+(46)
+
+310
+
+AsySCD
+
+For any j , we have
+
+E(n1/2(cid:107)xj − xj−1(cid:107)2 + n−1/2(cid:107) ¯xj − xj−1(cid:107)2 )
+E((cid:107)xj − xj−1(cid:107)(cid:107) ¯xj − xj−1(cid:107)) ≤ 1
+2
+E(n1/2Ei(j−1) ((cid:107)xj − xj−1(cid:107)2 ) + n−1/2(cid:107) ¯xj − xj−1(cid:107)2 )
+1
+2
+E(n−1/2(cid:107) ¯xj − xj−1(cid:107)2 + n−1/2(cid:107) ¯xj − xj−1(cid:107)2 )
+1
+=
+2
+= n−1/2E(cid:107) ¯xj − xj−1(cid:107)2 .
+
+=
+
+(47)
+
+Returning to (46), we have
+
+E((cid:107)x0 − ¯x1(cid:107)2 ) − E((cid:107)x1 − ¯x2(cid:107)2 ) ≤ 2n−1/2E(cid:107) ¯x1 − x0(cid:107)2
+
+which implies that
+
+E((cid:107)x0 − ¯x1(cid:107)2 ) ≤
+
+(cid:18)
+1 − 2√
+n
+
+√
+− 4γLres
+nLmax
+
+(cid:19)−1
+
+E((cid:107)x1 − ¯x2(cid:107)2 ) ≤ ρE((cid:107)x1 − ¯x2(cid:107)2 ).
+
+To see the last inequality above, we only need to verify that
+(cid:19) √
+(cid:18)
+1 − ρ−1 − 2√
+nLmax
+4Lres
+n
+
+γ ≤
+
+.
+
+This proves that (20) holds for j = 1.
+To take the inductive step, we assume that show that (20) holds up to index j − 1. We
+have for j − 1 − τ ≤ d ≤ j − 2 that
+
+=
+
+E((cid:107)xd − xd+1(cid:107)(cid:107) ¯xj − xj−1(cid:107)) ≤ 1
+E(n1/2(cid:107)xd − xd+1(cid:107)2 + n−1/2(cid:107) ¯xj − xj−1(cid:107)2 )
+2
+E(n1/2Ei(d) ((cid:107)xd − xd+1(cid:107)2 ) + n−1/2(cid:107) ¯xj − xj−1(cid:107)2 )
+1
+2
+E(n−1/2(cid:107)xd − ¯xd+1(cid:107)2 + n−1/2(cid:107) ¯xj − xj−1(cid:107)2 )
+1
+=
+2
+≤ 1
+E(n−1/2ρτ (cid:107)xj−1 − ¯xj (cid:107)2 + n−1/2(cid:107) ¯xj − xj−1(cid:107)2 )
+2
+≤ ρτ
+E((cid:107) ¯xj − xj−1(cid:107)2 ),
+n1/2
+
+(48)
+
+311
+
+Liu, Wright, R´e, Bittorf, and Sridhar
+
+≤ 2E
+
+where the second inequality uses the inductive hypothesis. By substituting (44) into (43)
+and taking expectation on both sides of (43), we obtain
+E((cid:107)xj−1 − ¯xj (cid:107)2 ) − E((cid:107)xj − ¯xj+1(cid:107)2 )
+(cid:107)xj − xj−1(cid:107) + 2
+(cid:107) ¯xj − xj−1(cid:107)
+≤ 2E((cid:107) ¯xj − xj−1(cid:107)(cid:107) ¯xj − ¯xj+1 + xj − xj−1(cid:107))
+= 2E((cid:107) ¯xj − xj−1(cid:107)(cid:107)xj − xj−1(cid:107))+
+max{k(j−1),k(j )}−1(cid:88)
+E((cid:107) ¯xj − xj−1(cid:107)(cid:107)xd − xd+1(cid:107))
+γLres
+(cid:18)
+(cid:19)
+Lmax
+d=min{k(j−1),k(j )}
+4γLres τ ρτ
+E((cid:107)xj−1 − ¯xj (cid:107)2 ),
+≤ n−1/2
+Lmax
+
+max{k(j−1),k(j )}−1(cid:88)
+d=min{k(j−1),k(j )}
+
+
+(cid:107)xd − xd+1(cid:107)
+
+γLres
+Lmax
+
+2 +
+
+4
+
+(cid:19)(cid:19)−1
+(cid:18)
+(cid:18)
+where the last line uses (45), (47), and (48). It follows that
+2 +
+
+E((cid:107)xj−1 − ¯xj (cid:107)2 ) ≤
+
+4γLres τ ρτ
+E((cid:107)xj − ¯xj+1(cid:107)2 ) ≤ ρE((cid:107)xj − ¯xj+1(cid:107)2 ).
+1 − n−1/2
+Lmax
+(cid:19) √
+(cid:18)
+(cid:18)
+(cid:19)
+To see the last inequality, one only needs to verify that
+1 − ρ−1 − 2√
+nLmax
+4Lres τ ρτ ,
+2 +
+n
+
+ρ−1 ≤ 1 − 1√
+n
+
+4γLres τ ρτ
+Lmax
+
+⇔ γ ≤
+
+≤ n−1
+
+f (xj + (∆j )i )
+
+and the last inequality is true because of the upper bound of γ in (19). It proves (20).
+Next we will show the expectation of ob jective is monotonically decreasing. We have
+using the deﬁnition (39) that
+n(cid:88)
+Ei(j ) (f (xj+1 )) = n−1
+(cid:20)
+n(cid:88)
+i=1
+f (xj ) + (cid:104)∇if (xj ), ( ¯xj+1 − xj )i (cid:105) +
+(cid:18)
+i=1
+(cid:18)
+(cid:104)∇f (xj ), ¯xj+1 − xj (cid:105) +
+= f (xj ) + n−1
+(cid:18) Lmax
+(cid:104)∇f (xk(j ) ), ¯xj+1 − xj (cid:105) +
+1
+n
+(cid:18) 1
+(cid:19) Lmax
+(cid:107) ¯xj+1 − xj (cid:107)2 − Lmax
+1
+n
+2
+γ
+(cid:107) ¯xj+1 − xj (cid:107)2 +
+− 1
+γ
+2
+n
+
+Lmax
+2
+(cid:104)∇f (xj ) − ∇f (xk(j ) ), ¯xj+1 − xj (cid:105)
+1
+Lmax
+n
+2
+(cid:104)∇f (xj ) − ∇f (xk(j ) ), ¯xj+1 − xj (cid:105)
+(cid:107) ¯xj+1 − xj (cid:107)2
+1
+n
+(cid:104)∇f (xj ) − ∇f (xk(j ) ), ¯xj+1 − xj (cid:105),
+
+Lmax
+2
+(cid:107) ¯xj+1 − xj (cid:107)2
+(cid:19)
+(cid:107) ¯xj+1 − xj (cid:107)2
+
+(cid:107)(xj+1 − xj )i(cid:107)2
+(cid:19)
+(cid:19)
+
+= f (xj ) −
+
+≤ f (xj ) +
+
+= f (xj ) +
+
+(cid:21)
+
+(49)
+
++
+
++
+
+1
+n
+
+312
+
+AsySCD
+
+where the second inequality uses (42). Consider the expectation of the last term on the
+right-hand side of this expression. We have
+
+E
+
+≤ Lres
+2
+
+(cid:107)xd − xd+1(cid:107)(cid:107) ¯xj+1 − xj (cid:107)
+
+E(cid:104)∇f (xj ) − ∇f (xk(j ) ), ¯xj+1 − xj (cid:105)
+≤ E(cid:107)∇f (xj ) − ∇f (xk(j ) )(cid:107)(cid:107) ¯xj+1 − xj (cid:107)
+j−1(cid:88)
+(cid:107)∇f (xd ) − ∇f (xd+1 )(cid:107)(cid:107) ¯xj+1 − xj (cid:107)
+≤ E
+j−1(cid:88)
+d=k(j )
+≤ LresE
+j−1(cid:88)
+d=k(j )
+(n1/2(cid:107)xd − xd+1(cid:107)2 + n−1/2(cid:107) ¯xj+1 − xj (cid:107)2 )
+j−1(cid:88)
+d=k(j )
+(n1/2Ei(d) ((cid:107)xd − xd+1(cid:107)2 ) + n−1/2(cid:107) ¯xj+1 − xj (cid:107)2 )
+j−1(cid:88)
+d=k(j )
+(n−1/2(cid:107)xd − ¯xd+1(cid:107)2 + n−1/2(cid:107) ¯xj+1 − xj (cid:107)2 )
+j−1(cid:88)
+d=k(j )
+(1 + ρτ )(cid:107) ¯xj+1 − xj (cid:107)2
+d=k(j )
+E(cid:107) ¯xj+1 − xj (cid:107)2 ,
+
+≤ Lres
+2n1/2
+≤ Lres τ ρτ
+n1/2
+
+Lres
+2
+
+Lres
+2
+
+E
+
+E
+
+=
+
+=
+
+E
+
+(50)
+
+where the ﬁfth inequality uses (20). By taking expectation on both sides of (49) and
+substituting (50), we have
+(cid:19)
+(cid:19)
+(cid:18)(cid:18) 1
+γ
+
+Lmax − Lres τ ρτ
+n1/2
+
+E(cid:107) ¯xj+1 − xj (cid:107)2 .
+
+− 1
+2
+
+E(f (xj+1 )) ≤ E(f (xj )) − 1
+n
+(cid:16) 1
+(cid:17)
+γ − 1
+2
+
+To see
+
+n1/2 ≥ 0, we only need to verify
+Lmax − Lres τ ρτ
+(cid:18) 1
+(cid:19)−1
+2
+
+Lres τ ρτ
+√
+nLmax
+
+γ ≤
+
++
+
+which is implied by the ﬁrst upper bound of γ (19). Therefore, we have proved the mono-
+tonicity E(f (xj+1 )) ≤ E(f (xj )).
+
+313
+
+Liu, Wright, R´e, Bittorf, and Sridhar
+
+Next we prove the sublinear convergence rate for the constrained smooth convex case
+in (22). We have
+
+(cid:107)xj+1 − PS (xj+1 )(cid:107)2 ≤ (cid:107)xj+1 − PS (xj )(cid:107)2
+= (cid:107)xj − (∆j )i(j )ei(j ) − PS (xj )(cid:107)2
+= (cid:107)xj − PS (xj )(cid:107)2 − |(∆j )i(j ) |2 − 2 (cid:0)(xj − PS (xj ))i(j ) − (∆j )i(j )
+(cid:1) (∆j )i(j )
+= (cid:107)xj − PS (xj )(cid:107)2 + |(∆j )i(j ) |2 − 2(xj − PS (xj ))i(j ) (∆j )i(j )
+= (cid:107)xj − PS (xj )(cid:107)2 − (cid:107)(∆j )i(j )(cid:107)2 + 2(PS (xj ) − xj+1 )i(j ) (∆j )i(j )
+≤ (cid:107)xj − PS (xj )(cid:107)2 − |(∆j )i(j ) |2 +
+(PS (xj ) − xj+1 )i(j )∇i(j )f (xk(j ) )
+2γ
+Lmax
+= (cid:107)xj − PS (xj )(cid:107)2 − |(∆j )i(j ) |2 +
+(PS (xj ) − xj )i(j )∇i(j )f (xk(j ) )+
+2γ
+(cid:0)(∆j )i(j )∇i(j )f (xj ) + (∆j )i(j )
+(cid:0)∇i(j )f (xk(j ) ) − ∇i(j )f (xj )(cid:1)(cid:1)
+Lmax
+2γ
+Lmax
+(cid:18)
+(PS (xj ) − xj )i(j )∇i(j )f (xk(j ) )+
+≤ (cid:107)xj − PS (xj )(cid:107)2 − |(∆j )i(j ) |2 +
+2γ
+Lmax
+(cid:0)∇i(j )f (xk(j ) ) − ∇i(j )f (xj )(cid:1) (cid:19)
+f (xj ) − f (xj+1 ) +
+|(∆j )i(j ) |2
+Lmax
+2γ
+2
+Lmax
++ (∆j )i(j )
+(cid:124)
+(cid:123)(cid:122)
+(cid:125)
+(PS (xj ) − xj )i(j )∇i(j )f (xk(j ) )
+= (cid:107)xj − PS (xj )(cid:107)2 − (1 − γ )|(∆j )i(j ) |2 +
+2γ
+(cid:0)∇i(j )f (xk(j ) ) − ∇i(j )f (xj )(cid:1)
+Lmax
+T1
+(cid:125)
+(cid:123)(cid:122)
+(cid:124)
+(∆j )i(j )
+,
+T2
+
+(f (xj ) − f (xj+1 )) +
+
+2γ
+Lmax
+
+2γ
+Lmax
+
++
+
+(51)
+
+314
+
+AsySCD
+
+where the second inequality uses (40) and the third inequality uses (41). We now seek upper
+bounds on the quantities T1 and T2 in the expectation sense. For T1 , we have
+
+(cid:19)
+
+Lmax
+2
+
+(cid:107)xd − xd+1(cid:107)2
+
+j−1(cid:88)
+(cid:104)xd − xd+1 , ∇f (xk(j ) )(cid:105)
+d=k(j )
+
+E(T1 ) = n−1E(cid:104)PS (xj ) − xj , ∇f (xk(j ) )(cid:105)
+= n−1E(cid:104)PS (xj ) − xk(j ) , ∇f (xk(j ) )(cid:105) + n−1E
+= n−1E(cid:104)PS (xj ) − xk(j ) , ∇f (xk(j ) )(cid:105)
+j−1(cid:88)
+(cid:104)xd − xd+1 , ∇f (xd )(cid:105) + (cid:104)xd − xd+1 , ∇f (xk(j ) ) − ∇f (xd )(cid:105)
++ n−1E
+(cid:18)
+j−1(cid:88)
+d=k(j )
+≤ n−1E(f ∗ − f (xk(j ) )) + n−1E
+f (xd ) − f (xd+1 ) +
+j−1(cid:88)
+d=k(j )
+(cid:104)xd − xd+1 , ∇f (xk(j ) ) − ∇f (xd )(cid:105)
+j−1(cid:88)
+d=k(j )
+= n−1E(f ∗ − f (xj )) +
+j−1(cid:88)
+d=k(j )
+(cid:104)xd − xd+1 , ∇f (xk(j ) ) − ∇f (xd )(cid:105)
+j−1(cid:88)
+d=k(j )
+= n−1E(f ∗ − f (xj )) +
+j−1(cid:88)
+d=k(j )
+(cid:104)xd − xd+1 , ∇f (xk(j ) ) − ∇f (xd )(cid:105)
+d=k(j )
+Lmax τ ρτ
+≤ n−1E(f ∗ − f (xj )) +
+E(cid:107)xj − ¯xj+1(cid:107)2
+j−1(cid:88)
+2n2
+(cid:123)(cid:122)
+(cid:125)
+(cid:124)
+E(cid:104)xd − xd+1 , ∇f (xk(j ) ) − ∇f (xd )(cid:105)
+,
+d=k(j )
+T3
+
+(cid:107)xd − ¯xd+1(cid:107)2
+
+(cid:107)xd − xd+1(cid:107)2
+
+Lmax
+2n
+
+E
+
+Lmax
+2n2
+
+E
+
++ n−1E
+
++ n−1
+
++ n−1E
+
++ n−1E
+
+315
+
+Liu, Wright, R´e, Bittorf, and Sridhar
+
+where the last inequality uses (20). The upper bound of E(T3 ) is estimated by
+
+E(T3 ) = E(cid:104)xd − xd+1 , ∇f (xk(j ) ) − ∇f (xd )(cid:105)
+= E(Ei(d) (cid:104)xd − xd+1 , ∇f (xk(j ) ) − ∇f (xd )(cid:105))
+= n−1E(cid:104)xd − ¯xd+1 , ∇f (xk(j ) ) − ∇f (xd )(cid:105)
+≤ n−1E(cid:107)xd − ¯xd+1(cid:107)(cid:107)∇f (xk(j ) ) − ∇f (xd )(cid:107)
+≤ n−1E((cid:107)xd − ¯xd+1(cid:107) d−1(cid:88)
+(cid:107)∇f (xt ) − ∇f (xt+1 )(cid:107))
+d−1(cid:88)
+t=k(j )
+E((cid:107)xd − ¯xd+1(cid:107)(cid:107)xt − xt+1(cid:107))
+≤ Lres
+d−1(cid:88)
+n
+t=k(j )
+d−1(cid:88)
+t=k(j )
+E(n−1/2(cid:107)xd − ¯xd+1(cid:107)2 + n−1/2(cid:107)xt − ¯xt+1(cid:107)2 )
+d−1(cid:88)
+t=k(j )
+≤ Lresρτ
+n3/2
+t=k(j )
+≤ Lres τ ρτ
+E((cid:107)xj − ¯xj+1(cid:107)2 ).
+n3/2
+
+E(n−1/2(cid:107)xd − ¯xd+1(cid:107)2 + n1/2(cid:107)xt − xt+1(cid:107)2 )
+
+E((cid:107)xj − ¯xj+1(cid:107)2 )
+
+≤ Lres
+2n
+
+≤ Lres
+2n
+
+where the second last inequality uses (20). Therefore, E(T1 ) can be bounded by
+
+E(T1 ) = E(cid:104)(PS (xj ) − xj )i(j ) , ∇i(j )f (xk(j ) )(cid:105)
+Lmax τ ρτ
+E(f ∗ − f (xj )) +
+E(cid:107)xj − ¯xj+1(cid:107)2 +
+≤ 1
+(cid:18)
+(cid:18) Lmax τ ρτ
+(cid:19)
+2n2
+n
+f ∗ − Ef (xj ) +
+2n
+
+Lres τ 2ρτ
+n3/2
+
+1
+n
+
+=
+
+j−1(cid:88)
+E((cid:107)xj − ¯xj+1(cid:107)2 )
+(cid:19)
+d=k(j )
+E((cid:107)xj − ¯xj+1(cid:107)2 )
+
+Lres τ ρτ
+n5/2
+
+.
+
++
+
+316
+
+(52)
+
+AsySCD
+
+E
+
+Lres
+2n
+
+≤ Lres
+n
+
+(cid:0)∇i(j )f (xk(j ) ) − ∇i(j )f (xj )(cid:1)
+For T2 , we have
+E(T2 ) = E(∆j )i(j )
+= n−1E(cid:104)∆j , ∇f (xk(j ) ) − ∇f (xj )(cid:105)
+
+ j−1(cid:88)
+≤ n−1E((cid:107)∆j (cid:107)(cid:107)∇f (xk(j ) ) − ∇f (xj )(cid:107))
+(cid:107)∆j (cid:107)(cid:107)∇f (xd ) − ∇f (xd+1 )(cid:107)
+≤ n−1E
+
+ j−1(cid:88)
+d=k(j )
+(cid:107)∆j (cid:107)(cid:107)xd − xd+1(cid:107)
+E
+ j−1(cid:88)
+d=k(j )
+n−1/2(cid:107)∆j (cid:107)2 + n1/2(cid:107)xd − xd+1(cid:107)2
+ j−1(cid:88)
+d=k(j )
+ j−1(cid:88)
+d=k(j )
+ j−1(cid:88)
+d=k(j )
+E(cid:107)xj − ¯xj+1(cid:107)2 + E(cid:107)xd − ¯xd+1(cid:107)2
+j−1(cid:88)
+d=k(j )
+≤ Lres (1 + ρτ )
+2n3/2
+d=k(j )
+≤ Lres τ ρτ
+E(cid:107)xj − ¯xj+1(cid:107)2 ,
+n3/2
+
+
+n−1/2(cid:107)xj − ¯xj+1(cid:107)2 + n1/2Ei(d)(cid:107)xd − xd+1(cid:107)2
+
+n−1/2(cid:107)xj − ¯xj+1(cid:107)2 + n−1/2(cid:107)xd − ¯xd+1(cid:107)2
+
+
+E(cid:107)xj − ¯xj+1(cid:107)2
+
+E
+
+Lres
+2n
+
+E
+
+Lres
+2n
+
+=
+
+=
+
+Lres
+2n3/2
+
+=
+
+=
+
+
+
+(53)
+
+where the second last inequality uses (20).
+By taking the expectation on both sides of (51), using Ei(j ) (|(∆j )i(j ) |2 ) = n−1(cid:107)xj −
+¯xj+1(cid:107)2 , and substituting the upper bounds from (52) and (53), we obtain
+(cid:19)
+(cid:18)
+E(cid:107)xj+1 − PS (xj+1 )(cid:107)2 ≤ E(cid:107)xj − PS (xj )(cid:107)2
+1 − γ − 2γLres τ ρτ
+− 2γLres τ 2ρτ
+− γ τ ρτ
+− 1
+E(cid:107)xj − ¯xj+1(cid:107)2
+Lmaxn3/2
+Lmaxn1/2
+n
+n
+(f ∗ − Ef (xj )) +
+(Ef (xj ) − Ef (xj+1 ))
+2γ
+2γ
++
+Lmaxn
+Lmax
+(Ef (xj ) − Ef (xj+1 )).
+(f ∗ − Ef (xj )) +
+≤ E(cid:107)xj − PS (xj )(cid:107)2 +
+2γ
+2γ
+(54)
+Lmax
+Lmaxn
+In the second inequality, we were able to drop the term involving E(cid:107)xj − ¯xj+1(cid:107)2 by using
+the fact that
+
+1 − γ − 2γLres τ ρτ
+Lmaxn1/2
+
+− γ τ ρτ
+n
+
+− 2γLres τ 2ρτ
+Lmaxn3/2
+
+= 1 − γψ ≥ 0,
+
+317
+
+Liu, Wright, R´e, Bittorf, and Sridhar
+
+which follows from the deﬁnition (18) of ψ and from the ﬁrst upper bound on γ in (19). It
+follows that
+E(cid:107)xj+1 − PS (xj+1 )(cid:107)2 +
+(Ef (xj+1 ) − f ∗ )
+2γ
+Lmax
+≤ E(cid:107)xj − PS (xj )(cid:107)2 +
+(Ef (xj ) − f ∗ ) − 2γ
+(Ef (xj ) − f ∗ )
+2γ
+j(cid:88)
+Lmax
+Lmaxn
+(f (x0 ) − f ∗ ) − 2γ
+Lmaxn
+t=0
+(Ef (xj+1 ) − f ∗ ),
+
+2γ
+Lmax
+(f (x0 ) − f ∗ ) − 2γ (j + 1)
+Lmaxn
+
+≤ (cid:107)x0 − PS (x0 )(cid:107)2 +
+
+(Ef (xt ) − f ∗ )
+
+≤ R2 +
+
+2γ
+Lmax
+
+(55)
+
+where the second inequality follows by applying induction to the inequality
+Sj+1 ≤ Sj − 2γ
+E(f (xj ) − f ∗ ),
+Lmaxn
+
+where
+
+E(f (xj ) − PS (xj )),
+Sj := E((cid:107)xj − PS (xj )(cid:107)2 ) +
+2γ
+Lmax
+and the last line uses the monotonicity of Ef (xj ) (proved above) and the assumed bound
+(cid:107)x0 − PS (x0 )(cid:107) ≤ R. It implies that
+E(cid:107)xj+1 − PS (xj+1 )(cid:107)2 +
+2γ
+Lmax
+≤ R2 +
+(f (x0 ) − f ∗ )
+2γ
+Lmax
+⇒ 2γ (n + j + 1)
+(f (x0 ) − f ∗ )
+(Ef (xj+1 ) − f ∗ ) ≤ R2 +
+2γ
+Lmax
+Lmaxn
+⇒ Ef (xj+1 ) − f ∗ ≤ n(R2Lmax + 2γ (f (x0 ) − f ∗ ))
+2γ (n + j + 1)
+
+(Ef (xj+1 ) − f ∗ ) +
+
+(Ef (xj+1 ) − f ∗ )
+
+2γ (j + 1)
+Lmaxn
+
+.
+
+This completes the proof of the sublinear convergence rate (22).
+Finally, we prove the linear convergence rate (21) for the essentially strongly convex
+case. All bounds proven above hold, and we make use the following additional property:
+f (xj ) − f ∗ ≥ (cid:104)∇f (PS (xj )), xj − PS (xj )(cid:105) +
+(cid:107)xj − PS (xj )(cid:107)2 ,
+(cid:107)xj − PS (xj )(cid:107)2 ≥ l
+l
+2
+2
+due to feasibility of xj and (cid:104)∇f (PS (xj )), xj − PS (xj )(cid:105) ≥ 0. By using this result together
+(cid:19)
+(cid:18)
+with some elementary manipulation, we obtain
+(cid:19)
+(cid:18)
+(f (xj ) − f ∗ ) +
+f (xj ) − f ∗ =
+1 − Lmax
+lγ + Lmax
+(cid:18)
+1 − Lmax
+lγ + Lmax
+(cid:107)xj − PS (xj )(cid:107)2 +
+Lmax l
+2(lγ + Lmax )
+
+(f (xj ) − f ∗ )
+Lmax
+lγ + Lmax
+(cid:19)
+(cid:107)xj − PS (xj )(cid:107)2
+Lmax l
+2(lγ + Lmax )
+(f (xj ) − f ∗ )
+2γ
+Lmax
+
+(f (xj ) − f ∗ ) +
+
+(56)
+
+≥
+
+=
+
+.
+
+318
+
+AsySCD
+
+Recalling (55), we have
+
+E(cid:107)xj+1 − PS (xj+1 )(cid:107)2 +
+2γ
+Lmax
+≤ E(cid:107)xj − PS (xj )(cid:107)2 +
+2γ
+Lmax
+
+(Ef (xj+1 ) − f ∗ )
+(Ef (xj ) − f ∗ ) − 2γ
+Lmaxn
+
+(Ef (xj ) − f ∗ ).
+
+(57)
+
+,
+
+=
+
+≤
+
+1 −
+
+which yields (21).
+
+(cid:19)(cid:19)
+(cid:19)
+(Ef (xj ) − f ∗ )
+(cid:19)
+
+By taking the expectation of both sides in (56) and substituting in the last term of (57),
+we obtain
+(Ef (xj+1 ) − f ∗ )
+E(cid:107)xj+1 − PS (xj+1 )(cid:107)2 +
+2γ
+Lmax
+(cid:18)
+(cid:18)
+≤ E(cid:107)xj − PS (xj )(cid:107)2 +
+(Ef (xj ) − f ∗ )
+2γ
+Lmax
+(cid:18)
+(cid:19) (cid:18)
+− 2γ
+E(cid:107)xj − PS (xj )(cid:107)2 +
+Lmax l
+2(lγ + Lmax )
+Lmaxn
+(cid:19)j+1 (cid:18)
+(cid:18)
+E(cid:107)xj − PS (xj )(cid:107)2 +
+1 −
+l
+n(l + γ−1Lmax )
+l
+n(l + γ−1Lmax )
+
+2γ
+Lmax
+(Ef (xj ) − f ∗ )
+2γ
+Lmax
+(cid:107)x0 − PS (x0 )(cid:107)2 +
+2γ
+Lmax
+(cid:16)
+. Using the bound
+Proof (Corollary 5) To apply Theorem 4, we ﬁrst show ρ >
+(cid:19) 2√
+(cid:18)
+(cid:19)
+(cid:18)
+(cid:19)
+(cid:19) (cid:18)
+(cid:18)
+(23), together with Lres/Lmax ≥ 1, we obtain
+(cid:19) 2√
+(cid:19) 2√
+(cid:18)
+(cid:18)
+(cid:19)
+(cid:18)
+√
+1 − 2√
+√
+√
+4eτ Lres
+4eτ Lres
+4eτ Lres
+1 +
+1 +
+1 +
+nLmax
+n
+nLmax
+n
+nLmax
+4eτ√
+2eτ − 1 − 1
+−
+1
+> 1,
+1 +
+= 1 +
+τ + 1
+τ + 1
+n
+n
+n
+where the last inequality uses τ ≥ 1. Note that for ρ deﬁned by (24), and using (23), we
+ 4eτ Lres (τ +1)
+(cid:18)
+(cid:19) √
+have
+√
+nLmax
+nLmax ≤ e
+4eτ Lres
+(cid:18)
+(cid:19)
+Thus from the deﬁnition of ψ (18), we have that
+(cid:19)
+(cid:18)
+2τ
+2 +
+n
+≤ 1 +
+2 +
+
+nLmax ≤ e.
+√
+4eτ Lres (τ +1)
+(cid:18)
+2 +
+
+(f (x0 ) − f ∗ )
+(cid:17)−1
+
+ρτ ≤ ρτ +1 =
+
+√
+4eτ Lres
+nLmax
+
+1 − 2√
+n
+
+(cid:19)
+
+1 +
+
++
+
+ψ = 1 +
+
+(cid:19)
+(cid:18) 1
+Lres τ ρτ
+Lres τ ρτ
+Lmax√
+√
+≤ 1 +
+4eLres τ (τ + 1)
+nLres
+nLmax
+1√
+≤ 2.
+1
+1
+2τ
+1
+16
+4
+n
+4(τ + 1)
+10
+n
+(The second last inequality uses n ≥ 5 and τ ≥ 1.) Thus, the steplength parameter choice
+γ = 1/2 satisﬁes the ﬁrst bound in (19). To show that the second bound in (19) holds also,
+
+≤ 1 +
+
+1√
+n
+
+2τ
+n
+
+(58)
+
++
+
++
+
++
+
++
+
+=
+
+−
+
+≥
+
+1 +
+
+319
+
+Liu, Wright, R´e, Bittorf, and Sridhar
+
+we have
+
+(cid:18)
+(cid:19) √
+(cid:18) ρ − 1
+− 2√
+− 2√
+1 − 1
+nLmax
+4Lres τ ρτ =
+ρ
+ρ
+n
+n
+2Lres τ ρτ ≥ 1 − 1
+4Lres τ ρτ +1 − Lmax
+4eτ Lres
+1
+2
+2
+We can thus set γ = 1/2, and by substituting this choice into (21), we obtain (25). We
+obtain (26) by making the same substitution into (22).
+
+(cid:19) √
+nLmax
+4Lres τ ρτ
+
+=
+
+=
+
+.
+
+References
+
+A. Agarwal and J. C. Duchi. Distributed delayed stochastic optimization. In Advances in
+Neural Information Processing Systems 24, pages 873–881. 2011. URL http://papers.
+nips.cc/paper/4247-distributed-delayed-stochastic-optimization.pdf.
+
+H. Avron, A. Druinsky, and A. Gupta. Revisiting asynchronous linear solvers: Provable
+convergence rate through randomization. IPDPS, 2014.
+
+A. Beck and M. Teboulle. A fast iterative shrinkage-thresholding algorithm for linear inverse
+problems. SIAM J. Imaging Sciences, 2(1):183–202, 2009.
+
+A. Beck and L. Tetruashvili. On the convergence of block coordinate descent type methods.
+SIAM Journal on Optimization, 23(4):2037–2060, 2013.
+
+D. P. Bertsekas and J. N. Tsitsiklis. Paral lel and Distributed Computation: Numerical
+Methods. Pentice Hall, 1989.
+
+S. Boyd, N. Parikh, E. Chu, B. Peleato, and J. Eckstein. Distributed optimization and
+statistical learning via the alternating direction method of multipliers. Foundations and
+Trends in Machine Learning, 3(1):1–122, 2011.
+
+C.-C. Chang and C.-J. Lin. LIBSVM: A library for support vector machines, 2011. URL
+http://www.csie.ntu.edu.tw/~cjlin/libsvm/.
+
+C. Cortes and V. Vapnik. Support vector networks. Machine Learning, pages 273–297,
+1995.
+
+A. Cotter, O. Shamir, N. Srebro, and K. Sridharan. Better mini-batch algorithms
+In Advances in Neural Information Process-
+via accelerated gradient methods.
+ing Systems 24, pages 1647–1655. 2011.
+URL http://papers.nips.cc/paper/
+4432-better-mini-batch-algorithms-via-accelerated-gradient-methods.pdf.
+
+J. C. Duchi, A. Agarwal, and M. J. Wainwright. Dual averaging for distributed optimization:
+Convergence analysis and network scaling. IEEE Transactions on Automatic Control, 57
+(3):592–606, 2012.
+
+M. C. Ferris and O. L. Mangasarian. Parallel variable distribution. SIAM Journal on
+Optimization, 4(4):815–832, 1994.
+
+320
+
+AsySCD
+
+D. Goldfarb and S. Ma. Fast multiple-splitting algorithms for convex optimization. SIAM
+Journal on Optimization, 22(2):533–556, 2012.
+
+Z. Lu and L. Xiao. On the complexity analysis of randomized block-coordinate descent
+methods. Technical Report arXiv:1305.4723, Simon Fraser University, 2013.
+
+Z. Q. Luo and P. Tseng. On the convergence of the coordinate descent method for convex
+diﬀerentiable minimization. Journal of Optimization Theory and Applications, 72:7–35,
+1992.
+
+O. L. Mangasarian. Parallel gradient distribution in unconstrained optimization. SIAM
+Journal on Optimization, 33(1):916–1925, 1995.
+
+A. Nemirovski, A. Juditsky, G. Lan, and A. Shapiro. Robust stochastic approximation
+approach to stochastic programming. SIAM Journal on Optimization, 19:1574–1609,
+2009.
+
+Y. Nesterov.
+Introductory Lectures on Convex Optimization: A Basic Course. Kluwer
+Academic Publishers, 2004.
+
+Y. Nesterov. Eﬃciency of coordinate descent methods on huge-scale optimization problems.
+SIAM Journal on Optimization, 22(2):341–362, 2012.
+
+F. Niu, B. Recht, C. R´e, and S. J. Wright. Hogwild!: A lock-free approach to parallelizing
+stochastic gradient descent. Advances in Neural Information Processing Systems 24, pages
+693–701, 2011.
+
+Z. Peng, M. Yan, and W. Yin. Parallel and distributed sparse optimization. Preprint, 2013.
+
+P. Richt´arik and M. Tak´aˇc. Iteration complexity of randomized block-coordinate descent
+methods for minimizing a composite function. Mathematrical Programming, 144:1–38,
+2012a.
+
+P. Richt´arik and M. Tak´aˇc. Parallel coordinate descent methods for big data optimization.
+Technical Report arXiv:1212.0873, 2012b.
+
+C. Scherrer, A. Tewari, M. Halappanavar, and D. Haglin. Feature clustering for accelerating
+parallel coordinate descent. Advances in Neural Information Processing Systems 25, pages
+28–36, 2012.
+
+S. Shalev-Shwartz and T. Zhang. Accelerated mini-batch stochastic dual coordinate ascent.
+Advances in Neural Information Processing Systems 26, pages 378–385, 2013.
+
+O. Shamir and T. Zhang. Stochastic gradient descent for non-smooth optimization: Con-
+vergence results and optimal averaging schemes. In Proceedings of the 30th International
+Conference on Machine Learning, 2013.
+
+R. Tibshirani. Regression shrinkage and selection via the lasso. Journal of the Royal
+Statistical Society, Series B, 58:267–288, 1996.
+
+321
+
+Liu, Wright, R´e, Bittorf, and Sridhar
+
+P. Tseng. Convergence of a block coordinate descent method for nondiﬀerentiable mini-
+mization. Journal of Optimization Theory and Applications, 109:475–494, 2001.
+
+P. Tseng and S. Yun. A coordinate gradient descent method for nonsmooth separable
+minimization. Mathematical Programming, Series B, 117:387–423, June 2009.
+
+P. Tseng and S. Yun. A coordinate gradient descent method for linearly constrained smooth
+optimization and support vector machines training. Computational Optimization and
+Applications, 47(2):179–206, 2010.
+
+P.-W. Wang and C.-J. Lin.
+Iteration complexity of feasible descent methods for convex
+optimization. Journal of Machine Learning Research, 15:1523–1548, 2014.
+
+S. J. Wright. Accelerated block-coordinate relaxation for regularized optimization. SIAM
+Journal on Optimization, 22(1):159–186, 2012.
+
+T. Yang. Trading computation for communication: Distributed stochastic dual coordinate
+ascent. Advances in Neural Information Processing Systems 26, pages 629–637, 2013.
+
+322
+
+

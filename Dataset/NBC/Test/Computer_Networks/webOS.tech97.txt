@@ -1,0 +1,1840 @@
+WebOS: Operating System Services for Wide Area Applications
+
+Amin Vahdat, Paul Eastham, Chad Yoshikawa, Eshwar Belani, Thomas Anderson, David Culler
+Computer Science Division
+University of California, Berkeley
+and
+Michael Dahlin
+University of Texas, Austin
+
+Abstract
+In this paper, we argue for the power of providing a com-
+mon set of OS services to wide area applications, including
+mechanisms for resource discovery, a global namespace, re-
+mote process execution, resource management, authentica-
+tion, and security. On a single machine, application developers
+can rely on the local operating system to provide these abstrac-
+tions. In the wide area, however, application developers are
+forced to build these abstractions themselves or to do without.
+This ad-hoc approach wastes programmer effort and system
+resources. To address these problems, WebOS provides basic
+operating systems services needed to build applications that
+are geographically distributed, highly available, incrementally
+scalable, and dynamically reconﬁguring. Experience with a
+number of applications developed under WebOS indicates that
+it simpliﬁes system development and improves resource uti-
+lization. In particular, we use WebOS to implement Rent-A-
+Server to provide dynamic replication of overloaded services
+across the wide area in response to client demands.
+
+1 Introduction
+
+Operating systems were originally developed to provide
+a set of common system services, such as I/O, commu-
+nication, and persistent storage, to simplify application
+programming. With the advent of multiprogramming,
+this charter expanded to include abstracting shared re-
+sources so that they were as easy to use (and sometimes
+easier) as dedicated physical resources. The introduc-
+tion of local area networks in the 80’s expanded this
+role even further. A goal of network operating systems
+such as Locus [Popek et al. 1981], Mach [Accetta et al.
+1986], Sprite [Nelson et al. 1988], Amoeba [Mullen-
+der et al. 1990], and V [Cheriton 1988] was to make re-
+
+This work was supported in part by the Defense Advanced Research
+Projects Agency (N00600-93-C-2481, F30602-95-C-0014), the National Sci-
+ence Foundation (CDA 9401156), Sun Microsystems, California MICRO,
+Novell, Hewlett Packard, Intel, Microsoft, and Mitsubishi. Anderson was
+also supported by a National Science Foundation Presidential Faculty Fellow-
+ship. The source code for our system is publically available at http://-
+now.cs.berkeley.edu/WebOS.
+
+mote resources over the LAN as easy to use as local re-
+sources, in the process simplifying the development of
+distributed applications.
+With analogy to these systems, this paper argues that
+it is time to provide a common set of services for wide
+area applications, in effect to make wide area resources
+as easy to use as those on a LAN. The past few years
+has seen a dramatic increase in the number and variety
+of services that are available over the Internet, beyond
+simple documents to a wide variety of on-line services,
+such as search engines, real-time news, weather fore-
+casts, interactive games and chat rooms, airplane reser-
+vations and ticketing, to name just a few.
+Today, although the World Wide Web has made ge-
+ographically distributed read-only data easy to use, ge-
+ographically distributed computing resources are not.
+The result is that wide area applications that require
+access to remote CPU cycles, memory, or disk must
+be programmed in an ad hoc and application-speciﬁc
+manner. For example, many popular services, such as
+Digital’s Alta Vista [Dig 1995] or Netscape’s download
+page [Net 1994], are geographically replicated to im-
+prove bandwidth, reduce latency, and improve availabil-
+ity – no single connection onto the Internet can support
+tens of millions of users. This replication is managed by
+hand on both the server and the client side – users are
+forced to do manual polling between essentially equiv-
+alent services. This situation will only get worse; it is
+currently predicted that the number of Internet users will
+increase by an order of magnitude to over 100 million in
+less than 5 years [Rutkowski 1995].
+To address these problems, we have built WebOS,
+a framework for supporting applications that are geo-
+graphically distributed, highly available, incrementally
+scalable, and dynamically reconﬁguring. WebOS in-
+cludes mechanisms for resource discovery, a global
+namespace, remote process execution, resource man-
+agement, authentication and security. We use WebOS
+to demonstrate the synergy of these services in simpli-
+fying the development of wide area distributed applica-
+
+tions and in providing more efﬁcient global resource uti-
+lization.
+The WebOS framework enables a new paradigm for
+Internet services.
+Instead of being ﬁxed to a single
+location, services can dynamically push parts of their
+responsibilities out onto Internet computing resources,
+and even even all the way to the client. These dynami-
+cally reconﬁguring and geographically mobile services
+provide a number of advantages, including: (i) better
+end-to-end availability (service-speciﬁc extensions run-
+ning in the client mask Internet or server failures), (ii)
+better cost-performance (by dynamically moving infor-
+mation closer to clients, network latency, congestion,
+and cost can all be reduced while maintaining server
+control), and (iii) better burst behavior (by dynami-
+cally recruiting resources to handle spikes in demand).
+For example, many Internet news services were over-
+whelmed on the night of the last U.S. presidential elec-
+tion; our framework would enable those services to han-
+dle the demand through dynamic replication. Note that
+many popular Internet services already are statically set
+up to run at third party sites to pro-rate the cost of a fault
+tolerant, high bandwidth Internet connection over mul-
+tiple services [Brewer 1997]; we are merely arguing that
+with the right support, these arrangements can be made
+dynamically.
+In addition to demonstrating the synergy of a com-
+mon framework for wide area distributed applications,
+we make a number of speciﬁc contributions. First,
+we demonstrate an extensible mechanism for running
+service-speciﬁc functionality on client machines and
+show that this allows for more ﬂexible implementation
+of name resolution, load balancing, and fault tolerance.
+Second, we provide a ﬁle system abstraction that com-
+bines persistent storage with efﬁcient wide-area com-
+munication patterns; we demonstrate that this simpliﬁes
+the implementation of a number of wide area applica-
+tions. Next, we present a methodology for coherently
+caching program results through the ﬁle system, speed-
+ing the performance of applications which must repeat-
+edly execute programs with common inputs. Finally, we
+demonstrate how Rent-A-Server, an application devel-
+oped in our framework, both improves system perfor-
+mance and more efﬁciently utilizes system resources for
+Web server access.
+Of course, the point can be made that the growth of
+the Internet can be partially attributed to its lack of cen-
+tral control, making the whole concept of an Internet
+operating system a contradiction in terms. Tradition-
+ally, Internet applications and protocols are developed
+and deployed without the intervention of any central-
+ized authority. We are not arguing for strict central con-
+trol. Rather, we believe that OS services should abstract
+the requirements of wide area applications. For exam-
+
+ple, TCP provides ﬂow control, in-order, and reliable
+delivery over congested, unreliable medium without re-
+quiring each application programmer to understand ex-
+ponential backoff, slow start, or round-trip time vari-
+ance estimation [Jacobson 1988]. TCP’s success is a tes-
+tament to the ability to win widespread acceptance by
+providing a simple, convenient interface to network re-
+sources. We believe that system abstractions to other
+global resources can be adopted in a similar fashion,
+hiding the details of cache consistency, load balancing,
+fault tolerance, authentication, replication, resource al-
+location, and so on.
+The rest of this paper discusses these issues in more
+detail. We present an overview of WebOS system com-
+ponents in Section 2, before delving into more detail
+in Sections 3-6, which describe: (i) Smart Clients for
+fault tolerant, load balanced access to Web services, (ii)
+WebFS, a global cache coherent ﬁlesystem, (iii) authen-
+tication for secure access to global Web resources, and
+(iv) a process control model supporting secure program
+execution and mechanisms for resource allocation. Sec-
+tion 7 demonstrates how this framework simpliﬁes the
+implementation of four sample wide area applications.
+Section 8 describes in detail the design, implementation,
+and performance of one application built on WebOS,
+Rent-A-Server. Section 9 presents related work, lead-
+ing to our discussion of future work in Section 10 and
+our conclusions in Section 11.
+
+2 WebOS Overview
+
+In this section, we provide a brief overview of the ma-
+jor WebOS components; together, they provide the wide
+area analogue to local area operating system services,
+to make using geographically remote resources easier to
+use. Each of these components is operational in our cur-
+rent prototype.
+
+  Resource Discovery: Many wide area services
+are geographically distributed. To provide the
+best overall system performance, a client applica-
+tion must be able to dynamically locate the server
+able to deliver the highest quality of service.
+In
+WebOS, resource discovery includes mapping a
+service name to multiple servers, an algorithm for
+balancing load among available servers, and main-
+taining enough state to perform fail-over if a server
+becomes unavailable. These operations are per-
+formed through Smart Clients, which ﬂexibly ex-
+tend service-speciﬁc functionality to the client ma-
+chine.
+
+  Wide Area File System: To support replication
+and wide-scale sharing, WebOS provides a cache
+
+coherent wide area ﬁle system. WebOS extends
+to wide area applications running in a secure
+HTTP name space the same interface, caching,
+and performance of existing distributed ﬁle sys-
+tems [Walsh et al. 1985, Nelson et al. 1988,
+Howard et al. 1988, Kistler & Satyanarayanan
+1992, Terry et al. 1995, Anderson et al. 1995]. In
+addition, we demonstrate the beneﬁt of integrating
+the ﬁle system with application-controlled efﬁcient
+wide area communication.
+
+  Security and Authentication: To support applica-
+tions operating across organizational boundaries,
+WebOS deﬁnes a model of trust providing both se-
+curity guarantees and an interface for authenticat-
+ing the identity of principals. A key enabling fea-
+ture is ﬁne-grained control of capabilities provided
+to remote processes executing on behalf of princi-
+pals.
+
+  Process Control: In WebOS, executing a process
+on a remote node should be as simple as the corre-
+sponding local operation. The underlying system is
+responsible for authenticating the identity of the re-
+quester and determining if the proper access rights
+are held. Precautions must be taken to ensure that
+the process does not violate local system integrity
+and that it does not consume more resources than
+allocated to it by local system administrators.
+
+As an explicit design choice, we leverage as much
+functionality as possible from existing low level ser-
+vices. For example, for compatibility with existing ap-
+plications, we adopt IP address and URL’s for the global
+name space. TCP is used to provide reliable communi-
+cation, while SSL [Freier et al. 1996] is used for link
+level security.
+
+3 Resource Discovery
+
+In this section, we discuss how WebOS clients locate
+representatives of geographically distributed and dy-
+namically reconﬁguring services, while providing load
+balancing and end-to-end high availability.
+Our approach consists of a number of components.
+First, a service name must be mapped onto the repli-
+cated service representatives. Next, a load balancing de-
+cision must be made to determine which server is able
+to deliver the best performance; this evaluation is dy-
+namic and non-binding to cope with potentially bursty
+client access patterns. Finally, enough state (e.g.
+re-
+quest content) is maintained to perform fail over if a
+service provider becomes unavailable. This section de-
+scribes limitations associated with current approaches
+
+to resource discovery and shows how WebOS addresses
+these limitations through the use of Smart Clients. Our
+discussion focuses on resource discovery in the context
+of HTTP service accessed through URL’s. However, our
+techniques extend to other domains in a straightforward
+manner.
+
+3.1 Current Approaches
+
+To address increasing demand, some popular services
+such as the Alta Vista search engine [Dig 1995] or
+the Netscape download page [Net 1994] are geograph-
+ically distributed by being replicated manually by the
+service provider. Load balancing across the wide area
+is achieved by instructing users to access a particu-
+lar “mirror site” based on their location. To distribute
+load across servers, techniques such as HTTP redi-
+rect [Berners-Lee 1995] or DNS Aliasing [Brisco 1995,
+Katz et al. 1994] can be used to send user requests to
+individual machines. With HTTP redirect, a front end
+machine redirects the client to resend the request to an
+available worker machine. This approach has the disad-
+vantage of either adding a round trip message latency to
+each request or of binding the client to a single server
+for the duration of a session. Further, the front-end ma-
+chine serving redirects is both a single point of failure
+and a central bottleneck for very popular services.
+DNS Aliasing allows the Domain Name Service to
+map a single hostname (URL) to multiple IP addresses
+in a round robin fashion. Thus, DNS aliasing does
+not suffer from the added latency and central bottle-
+necks associated with HTTP redirect. However, cur-
+rently load balancing with DNS aliasing is restricted to
+round-robin, making it difﬁcult to use service-speciﬁc
+knowledge such as load information. Further, because
+clients cache hostname to IP address mappings, a single
+server can become overloaded with multiple requests
+while other servers remain relatively idle [Dias et al.
+1996].
+
+3.2 Smart Clients
+
+In WebOS, we address the shortcomings of exist-
+ing solutions for resource discovery through Smart
+Clients [Anonymous 1997]. Smart Clients enable exten-
+sions of server functionality to be dynamically loaded
+onto the client machine. Java’s [Gosling & McGilton
+1995] portability and availability in all major Internet
+browsers allow us to distribute these extensions as Java
+applets. We believe that performing naming, load bal-
+ancing, and fail over from the perspective of the client
+has a number of fundamental advantages over server-
+side implementations. We demonstrate these advan-
+tages by using our Smart Clients prototype to implement
+
+User
+Requests
+
+Client-Side Applet
+GUI
+Director
+Thread
+Thread
+
+Request
+
+Nearby
+Mirror
+
+Response/
+State update
+
+Distant
+Mirror
+
+service://chat
+1
+
+User Request
+
+2
+
+Certificate
+Request
+
+Search
+Engine
+
+Java
+Browser
+
+Applet
+Request
+
+3
+
+site1
+
+site2
+
+Chat Certificate
+Site: site1
+Location: CA
+Capacity: 100
+
+Site: site2
+Location: MA
+Capacity: 24
+...
+
+Figure 1: Two cooperating threads make up the Smart
+Client architecture. The GUI thread presents the ser-
+vice interface and passes user requests to the Director
+Thread. The Director is responsible for picking a ser-
+vice provider likely to provide best service to the user.
+The decision is made in a service-speciﬁc manner. In
+this case, the nearest mirror site is chosen.
+
+scalable access to services such as FTP, chat, and the
+Rent-A-Server application described in Section 8.
+The Smart Client architecture is summarized in Fig-
+ure 1. A typical applet’s code is composed of two co-
+operating threads: a customizable graphical interface
+thread implementing the user ’s view of the service and
+a director thread responsible for performing load bal-
+ancing among service representatives and maintaining
+the necessary state to transparently mask individual fail-
+ures. Both the interface and director threads are exten-
+sible in a service-speciﬁc manner.
+One outstanding issue with this architecture is the
+choice of load balancing algorithm. For example, a front
+end machine serving HTTP redirects to clients has the
+advantage of current knowledge of load on each worker
+process.
+In the case of Smart Clients, it is impracti-
+cal to keep all clients abreast of changes in load of all
+servers. Given the high variability of load in the con-
+text of the Internet, clients using out of date information
+may make strictly worse choices than clients making
+random decisions [Mitzenmacher 1996]. Fortunately,
+Smart Clients can use more static state information to
+inﬂuence the load balancing decision, such as available
+servers, server capacity, server network connectivity,
+server location, and client location.
+While the speciﬁc load balancing algorithm is
+service-speciﬁc, we implement the following algorithm
+by default. Service state is piggybacked with some
+percentage of server responses (i.e. as part of the HTTP
+header). The client then chooses a server based on
+distance from the client, biased by server load. The
+inﬂuence of load information is decayed as the infor-
+mation becomes stale, with the fallback to random load
+balancing in the case where load information is stale
+and all other considerations are equal. Thus, clients
+
+Figure 2: Bootstrapping applet retrieval
+in Smart
+Clients. A new service name space is introduced. In step
+1, a name is translated into a certiﬁcate request from
+highly-available search engines in step 2. The certiﬁ-
+cate contains hints as to initial service group member-
+ship. The Smart Client applet is retrieved from one of
+these sites in step 3. Both the certiﬁcate and applet are
+cached to disk to avoid future bootstrapping.
+
+actively interacting with a service can use current
+information to make load balancing decisions, while
+inactive clients must initially discount their outdated
+notion of load.
+
+3.3 Bootstrapping Applet Retrieval
+
+While the Smart Client architecture provides a portable
+mechanism for fault tolerant and load balanced access
+to Web services, bootstrapping Smart Client startup re-
+mains to be described. Naively, services would be
+named through URL’s, with the applet downloaded each
+time the service is to be accessed. This would imply a
+central bottleneck, a single point of failure, and effec-
+tively doubling latency for small requests.
+Figure 2 summarizes our approach to addressing
+these issues. A meta-applet runs in a Java enabled
+browser and is responsible for bootstrapping access-
+ing to Web services. A new service namespace is in-
+troduced, allowing users to make requests of the form
+service://URL; we leverage the URL name space
+to simplify integration with existing browsers. The
+meta-applet translates these names into requests to a
+well-known and highly available Internet name service
+to fetch a service certiﬁcate—the list of servers capa-
+ble of providing the service, along with individual server
+characteristics. Currently, we use Alta Vista to per-
+form this operation, however we plan to switch to a
+more lightweight technique, such as DNS [Mockapetris
+& Dunlap 1988]. The service’s Smart Client applet is
+downloaded from one of these sites and operation pro-
+ceeds normally as described in Section 3.2. The service
+
+certiﬁcate, the Smart Client applet, and any service state
+are cached to disk (with timeouts) by the meta-applet to
+avoid bootstrapping on subsequent accesses.
+
+4 Global Namespace
+
+Today, many distributed applications share state and
+transfer control using the network communication ab-
+straction. Using the analogy that it is often simpler
+to program parallel applications using shared memory
+as opposed to message passing, the implementation of
+many applications can be simpliﬁed by the use of a
+global cache coherent ﬁlesystem for communication and
+synchronization. As empirical evidence, the implemen-
+tation of chat (section 7.1) was simpliﬁed by the encap-
+sulation of current conversations in secure globally ac-
+cessible ﬁles. Combining caching with this interface has
+the added beneﬁt of improving performance for appli-
+cations accessing popular ﬁles. In this section, we dis-
+cuss the implementation of our global ﬁle system and its
+integration with Transparent Result Caching (TREC),
+which allows the caching of dynamically generated Web
+content.
+
+4.1 WebFS
+
+WebFS is our prototype of a URL-based cache coher-
+ent ﬁle system. WebFS has been in day to day use for
+approximately six months by twenty users at the au-
+thors’ site. It is publically available for download and
+has been successfully installed by a number of users un-
+afﬁliated with the authors. WebFS allows UNIX pro-
+grams to take URL’s (and URL’s in a pathname syntax)
+in place of conventional ﬁle names (e.g., ls /http-
+/www.cs.washington.edu/sosp16). We chose
+to use URL’s as the global namespace because of
+its wide deployment and our desire to provide back-
+ward compatibility with existing distributed applica-
+tions. Once a more scalable, fault tolerant naming
+mechanism, such as URNs [Sollins & Masinter 1994], is
+deﬁned and widely deployed, it will be straightforward
+to incorporate the new mechanism into WebFS.
+A fundamental difference between WebFS and ex-
+isting Internet naming and caching proposals is that
+WebFS is designed to be used by programs, not just by
+individuals accessing widely-shared, infrequently up-
+dated data. Web users have demonstrated tolerance
+for out-of-date data with manual revalidation. By con-
+trast, we believe distributed applications require com-
+plete and well-deﬁned ﬁle system semantics. Since
+the choice of consistency semantics implies tradeoffs in
+performance, consistency, and availability, WebFS pro-
+vides application-controllable and dynamically adapt-
+
+Phase
+Create
+Copy
+Stat
+Scan
+Compile
+
+I
+II
+III
+IV
+V
+Total
+
+NFS(s) WebFS(s)
+1
+1
+7
+7
+10
+3
+5
+6
+14
+15
+31
+38
+
+Table 1: This table describes the performance of WebFS
+relative to the performance of NFS on the Modiﬁed An-
+drew Benchmark suite.
+
+able cache consistency policies. For example, invalida-
+tion driven optimistic consistency could be used for ﬁles
+shared between two geographically distributed sites im-
+plementing a service [Kistler & Satyanarayanan 1992,
+Terry et al. 1995], while weaker consistency could be
+used for widely-shared ﬁles at client machines. As an-
+other example, to support service migration, WebFS
+may initially use large block sizes or prefetching to
+reduce cold-start misses and then convert to smaller
+blocks for minimizing false sharing. Finally, a list
+of user-extensible properties is associated with each
+WebFS ﬁle, extending basic properties such as owner
+and permissions with cache consistency policy and en-
+cryption policy. These properties are set and accessed
+through the UNIX ioctl system call.
+Currently, WebFS implements
+the last writer
+wins [Howard et al. 1988] cache consistency proto-
+col to support traditional ﬁle access as well as an IP
+multicast-based [Deering 1991] update/invalidate pro-
+tocol for widely-shared, frequently updated data ﬁles.
+Once IP multicast becomes widely deployed, its use
+will increase the efﬁciency of popular “Internet push”
+applications [Poi 1996]. We believe that providing
+IP multicast support at the ﬁlesystem interface will
+simplify the development of these applications. To
+demonstrate this point, we have implemented a stock
+ticker application that regularly distributes (through
+multicast ﬁle writes) updated stock prices to interested
+clients performing blocking read operations. In addition
+to last-writer wins and IP multicast updates, we are in
+the process of extending WebFS to support optimistic
+reintegration [Kistler & Satyanarayanan 1992] to deal
+with the disconnected operation endemic to today’s
+Internet.
+WebFS is implemented as a dynamically loadable
+Solaris ﬁle system extension interfacing at the vnode
+layer [Kleiman 1986]. The vnode layer makes upcalls to
+a user level WebFS daemon for ﬁle accesses not cached
+in virtual memory. The WebFS daemon uses HTTP for
+access to standard Web sites. If the remote site is also
+running WebFS, then authenticated read/write access is
+
+enabled through our own custom extensions to HTTP.
+To validate the performance of our system, we ran the
+modiﬁed Andrew Benchmark suite [Ousterhout 1990]
+for both WebFS and NFS [Walsh et al. 1985]. The NFS
+measurements were taken on a Sun Ultra Server making
+requests to an Auspex NFS server over Ethernet. For
+WebFS, a Sun Ultra Server made requests to a WebFS
+server running on a second Ultra Server also over Ether-
+net. The performance results are summarized in Table 1.
+Given the largely untuned nature of the code and the ex-
+tra overhead associated with making upcalls to the user
+level, the performance of WebFS is reasonable for most
+phases of the benchmark. Signiﬁcant slowdown is ap-
+parent in phase III, which executes a stat operation on 70
+ﬁles. The factor of 3 slowdown is caused by the upcall
+that is made to the user level for every operation. We are
+in the process of modifying the code to store these val-
+ues in the kernel when the ﬁle is initially copied, which
+should result in improved WebFS performance.
+
+4.2 Transparent Result Caching
+
+In developing WebFS, we observe that one fundamen-
+tal obstacle to aggressive caching in the Internet is the
+widespread use of dynamic objects. These objects are
+generated on the ﬂy by HTTP servers (e.g.
+through
+CGI-bin programs) and are marked uncacheable by both
+caching proxies and clients. Caching dynamic objects
+can result in a performance improvement when there is
+locality of reference and the objects are fairly expen-
+sive to generate. We have implemented transparent re-
+sult caching (TREC) to enable caching of a certain class
+of dynamic objects. TREC allows program results to
+be stored as WebFS ﬁles, as in the Semantic File Sys-
+tem [Gifford et al. 1991]. After the initial request for
+a particular program result, WebOS is able to return the
+cached contents of the ﬁle rather than re-executing the
+program.
+Using the Solaris /proc ﬁlesystem, TREC gener-
+ates dependency graphs of target programs by record-
+ing the name, environment, parent process, child pro-
+cesses, input, and output ﬁles. Once an object’s proﬁle is
+complete (the process and its children exit), TREC com-
+mits the proﬁle to persistent storage and then executes
+a blocking WebFS system call to put “watchpoints” on
+both the program executable and its input ﬁles [Bershad
+& Pinkerton 1988]. The system call returns on modiﬁca-
+tion to any of the target ﬁles, allowing TREC to inform
+WebFS of the change. On notiﬁcation, WebFS unlinks
+the dynamic object results and sends invalidation mes-
+sages to all sites caching the object.
+Of course, TREC cannot cache all classes of dynamic
+objects. For example, programs may base results on ran-
+dom numbers or interaction with remote servers, mak-
+
+ing program results uncacheable. We use a WebFS ﬁle
+property to allow administrators to mark such program
+results as uncacheable. However, we believe that a sig-
+niﬁcant class of Web dynamic objects can be cached
+using TREC. Further, if sites using TREC demonstrate
+performance improvements, structuring dynamic ob-
+jects to be “TREC compliant” (cacheable) is straightfor-
+ward. For example, a news service might generate its
+“front page” as HTML referencing the most timely ar-
+ticle blurbs. The front page can be cached by remote
+proxies, and invalidated when the front page changes.
+This front page can be cached at both clients and prox-
+ies, potentially resulting in reductions in both server
+load and Internet congestion.
+Our measurements of TREC show a uniform 30%
+overhead in performance for three benchmarks executed
+on an Ultra Server running Solaris 2.5.1: the modiﬁed
+Andrew Benchmark, compilation of 4000 lines of C
+code, and running latex on a 20 page document. The
+slowdown is caused by the multiple context switches as-
+sociated with bouncing necessary system calls to TREC.
+We believe that this overhead can be largely eliminated
+by integrating TREC with an in-kernel system call inter-
+position tool [Jones 1993, Bershad et al. 1995].
+To demonstrate the utility of TREC, we take the com-
+mon example of performing a query to an Internet search
+engine such as Alta Vista or HotBot [Brewer & Gauthier
+1995]. Queries returning a large number of results are
+by default truncated to display the ﬁrst 10-20 matches.
+However, if the next
+matches are later requested, the
+entire query is re-executed [Brewer 1997]. Using TREC
+to cache search results for a short period of time can im-
+prove search overhead. To demonstrate this point, we
+measured the overhead of executing a simple CGI-bin
+program that returns 10 KB of HTML. For the Apache
+HTTP server, this operation took approximately 200 ms
+between 2 Ultra Servers on shared Ethernet. After mod-
+ifying apache to check for TREC-generated program re-
+sults before executing CGI bin programs, the same op-
+eration averaged 110 ms. The performance improve-
+ment results from avoiding the fork and exec oper-
+ations Apache executes for CGI programs. The perfor-
+mance improvement assumes a no-op CGI program; the
+improvements would be more dramatic if the CGI pro-
+gram did real work. To further investigate this, we plan
+to take TREC measurements for search queries to an in-
+dex of our local site produced by Excite [Exc 1997], a
+publically available indexing tool and search engine.
+We note that TREC may also be useful outside of
+the context of WebOS. For example, it can be used to
+build a transparent make utility: by observing a program
+compilation once, TREC can generate the appropriate
+dependencies to automatically recompile program exe-
+cutables (perhaps with a user prompt) if any of the input
+
+
+5.1 Link Layer
+
+WebOS relies upon a hierarchy of certiﬁcation author-
+ities (CA’s). These authorities are responsible for pro-
+ducing X.509 certiﬁcates [CCITT 1988] mapping prin-
+cipals to their public keys [Difﬁe & Hellman 1977,
+Rivest et al. 1978]. These certiﬁcates are generated by
+the CA and contain the following information: the iden-
+tity of the CA, the name of the principal, its public key,
+the period during which the mapping is valid, and a digi-
+tal signature of the entire certiﬁcate by the CA. By using
+these certiﬁcates and by placing trust in the CA’s, we are
+able to guarantee that any data successfully decrypted by
+a given public key was in fact generated by the associ-
+ated principal.
+We use the Secure Socket Layer (SSL) [Freier et al.
+1996] to authenticate the identity of communicating
+servers to one another. SSL uses the public keys from
+a WebOS server ’s X.509 certiﬁcate to establish an RC4
+symmetric key for session communication, and an MD5
+hash of chunks of the byte stream to allow the principals
+to determine if an adversary is attempting to patch their
+communication. Symmetric keys are used for encryp-
+tion because of their computational simplicity relative
+to public key cryptography. WebOS manages a cache
+of available connections to remote servers to avoid the
+overhead of establishing a secure connection for each
+logical operation.
+
+5.2 Transfer of Rights
+
+Principals register with WebOS and are able to control
+the transfer of portions of their rights to servers acting
+on their behalf [Burrows et al. 1989, Lampson et al.
+1991, Wobber et al. 1993]. For example, a principal
+might register with a remote WebOS compute engine,
+transferring to the server the right to access a particu-
+lar sub-directory containing the relevant data ﬁles. The
+server would be able to access the ﬁles necessary to
+carry out any computation on the principal’s behalf but
+would be prevented from accessing the principal’s pri-
+vate ﬁnancial information located in another directory.
+A WebOS server can recursively transfer rights to a sec-
+ond server by signing the appropriate transfer certiﬁcate,
+unless a transfer right is not granted by the user.
+In WebOS, principals transfer rights by creating a
+transfer certiﬁcate that speciﬁes the resources in ques-
+tion (for example, all ﬁles in a particular WebFS sub-
+directory), the identity of the target WebOS server, and
+a time period during which the transfer certiﬁcate is
+valid. This transfer certiﬁcate is attached to the princi-
+pal’s X.509 certiﬁcate (identifying the principal) and an
+MD5 hash [Rivest 1992] of both the X.509 and transfer
+certiﬁcates encrypted in the user ’s private key. This en-
+
+Figure 3: WebOS Security Model. First, users transfer
+some portion of their access rights to a WebOS server.
+When attempting to access a remote resource, WebOS
+servers communicate using SSL (step 2). Finally, the re-
+mote server checks if the proper credentials are held in
+local ACL’s.
+
+ﬁles change, including any nested ones, such as include
+ﬁles, or implicit dependencies, such as the executables
+for the compiler and assembler. As another example, if
+TREC were used to proﬁle all local programs, it would
+allow users to query the ﬁle system for the origins of a
+given data ﬁle (e.g. determine the program and inputs
+used to generate the ﬁle in question). However, the use
+and implementation of TREC in such contexts is beyond
+the scope of this paper.
+
+5 Security and Authentication
+
+Applications operating across the wide area are suscep-
+tible to a variety of potential attacks by sophisticated ad-
+versaries. For users to trust their sensitive computation
+to WebOS, a well-deﬁned and easily validated model of
+trust must be deﬁned and implemented. The goal of our
+implementation is to make issues of security as transpar-
+ent as possible for common operations while still allow-
+ing for arbitrary levels of paranoia for programs that re-
+quire it. In this section, will describe such a a model and
+show how it is used for secure, authenticated access to
+global resources.
+WebOS provides security at a number of levels. First,
+two principals communicating at the link layer believe
+one another ’s identity and trust that the data cannot be
+compromised by a third party. Next, principals are able
+to have ﬁne-grained control over which capabilities are
+transferred to remote WebOS processes running on their
+behalf. Finally, WebOS provides an interface for reg-
+istering users and for specifying access rights to indi-
+vidual system resources. The WebOS security model is
+summarized in Figure 3.
+
+crypted hash certiﬁes that the user actually created the
+transfer certiﬁcate. Using this scheme, a WebOS server
+is able to prove to other sites that it is authorized to act
+on the principal’s behalf when accessing the resources
+speciﬁed in the transfer certiﬁcate. Note that the pro-
+gram generating the transfer certiﬁcate requires the prin-
+cipal’s private key; however, this registration program is
+distributed as source and runs on a principal’s local ma-
+chine.
+
+5.3 Specifying and Validating Rights
+
+WebOS access rights are speciﬁed through Access Con-
+trol Lists (ACL’s). These access rights specify the list
+of principals which possess read, write, modify, and ex-
+ecute permission on a given resource. When a princi-
+pal attempts to access a resource, WebOS sends the re-
+quest with the proper transfer certiﬁcate to the site that
+owns the resource. The destination site takes the follow-
+ing steps in validating access to the resource in question:
+(i) it checks for a valid timestamp in the transfer certiﬁ-
+cate, (ii) it determines if the requesting WebOS server
+has the proper authority to act on the principal’s behalf
+for the requested resource, as described in the transfer
+certiﬁcate, and (iii) it checks its local ACL’s to deter-
+mine whether the principal has the proper access permis-
+sions for the requested resource.
+We chose to use ACL’s because of their relative con-
+ceptual simplicity both from the principal’s and imple-
+mentor ’s point of view. A capability based system is
+more manageable in a global context where the access
+rights of potentially millions of users must be moni-
+tored. However, capabilities present complications for
+rights revocation and transfer. To partially address the
+issues of scale associated with ACL’s, WebOS allows
+for global group access rights and implements an efﬁ-
+cient storage/lookup mechanism for its ACL’s. Based
+on the assumption that many resources will have iden-
+tical groups of principals associated with them, WebFS
+resources point to unique “buckets” containing the ap-
+propriate rights speciﬁcation. Lookups are executed by
+performing a hash of the requesting principal into the
+buckets.
+
+complished through local operating system scheduling
+mechanisms.
+A resource manager on each WebOS machine is re-
+sponsible for job requests from remote sites. Before ex-
+ecuting any job, the resource manager authenticates the
+remote principal’s identity and determines if the proper
+access rights are held. To maintain local system in-
+tegrity and to ensure that running processes do not in-
+terfere with one another, the resource manager creates a
+virtual machine for process execution.
+We use Janus [Goldberg et al. 1996] to create such
+a virtual machine. Processes in the virtual machine ex-
+ecute with limited privileges, preventing them from in-
+terfering with the operation of processes in other virtual
+machines. Janus uses the Solaris /proc ﬁlesystem to
+intercept the subset of system calls that could potentially
+violate system integrity, forcing failure if a dangerous
+operation is attempted. A Janus conﬁguration script de-
+termines access rights to the local ﬁle system, network,
+and devices. These conﬁguration scripts are set by the
+local system administrator on a per-principal basis.
+WebOS also uses the virtual machine abstraction as
+the basis for local resource allocation. On startup, a
+process’s runtime priority is set using the System V
+priocntl system call, and setrlimit is used to set
+the maximum amount of memory and maximum CPU
+usage. In the future, we hope to integrate more robust
+policies allowing ﬁne-grained control over allocation,
+allowing WebOS to provide quality of service guaran-
+tees. For example, techniques such as reverse lotter-
+ies [Waldspurger & Weihl 1994] might be used to more
+ﬂexibly allocate physical memory pages.
+
+7 WebOS Applications
+
+This section provides an overview of four applications
+built using the WebOS framework. The applications
+demonstrate that WebOS services enable and simplify
+their implementation. The ﬁrst two applications have
+been completed, while the last two are under develop-
+ment.
+In the next section, we describe in detail the
+design and performance of a ﬁfth application, Rent-A-
+Server.
+
+6 Process Control
+
+7.1 Internet Chat
+
+To simplify development of wide area applications,
+WebOS makes execution of processes on remote nodes
+as simple as forking a process on the local processor. As
+with the local case, the WebOS process control model
+addresses issues with safety and fairness. On local ma-
+chines, safety is provided by execution in a separate
+address space, while fair allocation of resources is ac-
+
+Internet chat allows for individuals to enter and leave
+chat rooms to converse with others co-located in the
+same logical room. In our implementation, chat rooms
+are modeled as WebFS ﬁles accessed by Smart Clients.
+The ﬁle system interface is well-matched to chat seman-
+tics in a number of ways: (i) A simple ﬁle append ab-
+stracts the required network communication necessary
+
+to send messages, (ii) the chat ﬁle provides a persis-
+tent log of chat activity, and (iii) access control lists
+allow for private and secure (through WebFS encryp-
+tion) chat rooms. For scalability, we allow multiple
+WebFS servers to handle client requests for a single
+ﬁle (room). Each WebFS server accumulates updates,
+and periodically propagates the updates to other servers
+in the WebFS group, who in turn transmit the updates
+to local clients. Smart Clients choose the least loaded
+WebFS server for load balancing and connect to alterna-
+tive servers on host failure or network partition for fault
+transparency.
+To quantify the beneﬁts available from the WebOS
+framework, we implemented two versions of chat with
+identical semantics, both with and without WebOS. The
+initial implementation consisted of 1200 lines of Java
+code in the client and 4200 lines of C++ code in the
+server. By using WebFS to handle message transmis-
+sion, failure detection, and storage, the size of the chat
+client code was reduced to 850 lines, while the WebFS
+interface entirely replaced the 4200 lines of chat server
+code. The main reason for this savings in complex-
+ity was the replacement of separate code for managing
+communication and persistent storage of chat room con-
+tents with a single ﬁle. As an added beneﬁt, the WebFS
+interface becomes available for similarly structured dis-
+tributed applications. For example, we are currently im-
+plementing a shared distributed whiteboard application
+using this interface.
+
+7.2 Remote Compute Engine
+
+Sites with unique computing resources, such as super-
+computer centers, often wish to make their resources
+available over the Internet. Using WebOS, we allow re-
+mote programs to be invoked in the same way as local
+programs and can allow access to the same ﬁles as lo-
+cal programs. WebOS functionality is used to address a
+number of issues associated with such access: the iden-
+tity of requesting agents is authenticated, programs are
+provided secure access to private ﬁles on both local and
+remote systems, and programs run in a restricted virtual
+machine isolated from other programs to protect the lo-
+cal system from malicious users. At our site, WebOS
+provides compute access to a research cluster of 100 ma-
+chines. Resource allocation within the virtual machine
+allows external users to take advantage of the aggregate
+computing resources, while ensuring system developers
+have the requisite priority.
+
+to both validate our design and to provide an imme-
+diate beneﬁt to the Internet by doing more intelligent
+caching of Web content. Existing proposals for hierar-
+chical caching of the Web suffer from an inability to dra-
+matically grow the cache size and processing power at
+each level of the hierarchy [Chankhunthod et al. 1996].
+With cooperative caching among peer servers, the ag-
+gregate capacity grows dramatically with the distance
+from the client. Thus, while caches above the ﬁrst level
+in existing hierarchical designs have very low hit rates
+and simply increase the latency to end clients, a coop-
+erative cache is more likely to successfully retrieve a
+cached copy from a peer. We plan to explore tradeoffs
+associated with maintaining directories of peer cache
+contents [Anderson et al. 1995, Feeley et al. 1995],
+hints [Sarkar & Hartman 1996], or using simple IP
+muilticasts or broadcasts.
+WebOS simpliﬁes the implementation of the cooper-
+ative cache in a number of ways. First, Smart Clients
+are used to determine the appropriate proxy cache to
+contact. WebFS is used to transport cache ﬁles among
+the proxies and to securely share any necessary (pri-
+vate) state among the proxies. Finally, the authenti-
+cation model allows proxies to validate their identities
+both to one another and to the client.
+
+7.4 Internet Weather
+
+A number of sites are currently attempting to provide
+regular updates of congestion, latency, and partitions in
+the Internet [Mat 1996, Int 1997]. Such information
+is invaluable for services making placement and load
+balancing decisions. However, all current efforts take
+network measurements from a centralized site, mak-
+ing it difﬁcult to measure network characteristics be-
+tween two arbitrary sites. We are addressing this limi-
+tation by using the WebOS framework to generate more
+comprehensive snapshots of Internet conditions. In our
+implementation, a centralized server provides Smart
+Client applets for those wishing to view the current
+Internet weather. In exchange for the weather report,
+the user implicitly agrees to allow the applet to exe-
+cute traceroute to a subset of server-determined
+sites and to transmit the result back to the server. Us-
+ing these results from multiple sites, the service is able
+to construct fairly comprehensive snapshots of Internet
+weather.
+
+8 Rent-A-Server
+
+7.3 Wide Area Cooperative Cache
+
+We are using WebOS to build a geographically dis-
+tributed Web cooperative cache [Dahlin et al. 1994]
+
+This section describes the design, implementation, and
+performance of Rent-A-Server, an application demon-
+strating the power of using a uniﬁed system interface to
+
+wide area resources and of moving a service out across
+the Internet.
+
+scripts (such as CGI programs) without violating
+the surrogate’s system integrity.
+
+8.1 Motivation
+
+Rent-A-Server is a general model for graceful scaling
+across temporal and geographic spikes in client demand
+for a particular service. Our particular implementation
+focuses on Web service, and enables overloaded HTTP
+servers to shed load onto idle third-party servers called
+surrogates that use the WebOS framework to coherently
+cache data from the primary server. The surrogate is
+able to satisfy the same HTTP requests as the original
+server, including requests for both static and dynami-
+cally generated objects (e.g. data pages vs. CGI script
+results).
+Rent-A-Server allows sites to deal with peak loads
+that are much higher than their average loads by “rent-
+ing” hardware to deal with peaks. For example, the
+Internal Revenue Service site (http://www.irs.-
+ustreas.gov) is overwhelmed by requests around
+April 15, but providing the computation power and net-
+work bandwidth necessary to handle peak levels of de-
+mand year round is a waste of resources. The beneﬁts
+for Rent-A-Server can be summarized as follows:
+
+  Geographic Locality: In addition to distributing
+load, Rent-A-Server improves performance by in-
+creasing locality. Rather than satisfying requests
+from a centralized site, a system can distribute its
+requests across geographically distributed servers,
+each of which satisﬁes nearby clients.
+
+  Dynamic Reconﬁguration: The location and num-
+ber of sites representing a service can be deter-
+mined dynamically in response to client access pat-
+terns. Rent-A-Servers can be spawned to locations
+“near” current spikes in client demand, and torn
+down once client activity subsides.
+
+  Transparent End-to-End Availability: Once a ser-
+vice is replicated with Rent-A-Server, users can
+transparently access whichever replica is available,
+routing around both Internet and service failures.
+
+  Secure Coherent Data Access: To address limita-
+tions associated with caching proxies which are un-
+able to generate dynamic Web pages (e.g. results
+of cgi-bin programs) and often serve stale data,
+Rent-A-Server uses WebOS to provide authenti-
+cated, coherent global ﬁle access to data pages,
+CGI scripts, and internal server state needed by
+CGI scripts.
+
+  Safe Remote Execution: Surrogate sites securely
+execute service programs and associated service
+
+8.2 Current Approaches
+
+Current efforts to distribute HTTP server load focus on
+either distributing load across a ﬁxed set of machines
+maintained by the owner of the data or distributing data
+across (proxy) caches under client (not server) control.
+Many HTTP server implementations achieve scalabil-
+ity by replicating their data across a ﬁxed set of servers
+at a single site and then using the Domain Name Ser-
+vice (DNS) to randomly distribute requests across the
+servers [Katz et al. 1994]. Unfortunately, this ap-
+proach requires that each site purchase enough comput-
+ing power and network bandwidth to satisfy peak de-
+mand.
+“Mirror sites” are also used to improve locality and to
+distribute load, but this manual approach requires more
+effort to set up the mirrors and to maintain data con-
+sistency across the mirrors. Further, users must specify
+which mirror to use, which is both inconvenient and un-
+likely to yield a balanced load across sites. Finally, as
+with the approach of running multiple servers at one site,
+mirror sites are allocated statically. The system must
+always maintain enough mirrors to deal with its peak
+loads, and the location of mirrors cannot be shifted to
+address shifts in geographic hotspots.
+Another approach to distributing load, caching prox-
+ies, is used to reduce server load and to improve net-
+work locality. To use a proxy, groups of clients send
+all of their requests to their proxy machine. The proxy
+machine attempts to satisfy the requests from its local
+cache, sending the requests to the remote server if the
+cache cannot supply the data. If proxies satisfy many
+requests to the server through their caches, both server
+load and network congestion are reduced.
+However, proxies are conceptually agents of Web
+clients rather than of Web servers. Thus, in some in-
+stances they provide a poor match to the requirements
+of overloaded services. First, proxy servers cache only
+data pages. A proxy must send all requests for CGI
+scripts to the original server. Second, because servers
+regard proxies as ordinary clients, the proxy can sup-
+ply stale data to its clients because of the limitations of
+HTTP cache consistency protocols. As an example of
+the importance of having server-controlled rather than
+client-controlled load distribution, some sites have re-
+cently asserted that proxy caches violate copyright laws
+by storing site content [Luotonen & Atlis 1994]. In ef-
+fect, the proxies are reducing generated advertising rev-
+enues by hiding page access counts.
+
+load daemon. For software engineering reasons, the
+load daemon is currently a separate process, however its
+functionality could be rolled into an elected member of
+the server group. The load daemon is responsible for
+determining the need to spawn or to tear down Rent-A-
+Servers based on current load information and client ac-
+cess patterns. It also transmits server group state (e.g.
+membership and load information) to each member of
+the server group, which is in turn piggybacked by the
+servers to Smart Clients as part of HTTP replies, as de-
+scribed above.
+Once the load daemon determines the need to spawn
+an additional server, it ﬁrst determines a location for the
+new Rent-A-Server. The new server should be located
+close to any hotspots in client access patterns to both
+conserve bandwidth and to minimize client latency (this
+policy has not yet been implemented). Once the tar-
+get machine is selected, the load daemon establishes an
+SSL channel with the surrogate’s resource manager. The
+load daemon then adds the surrogate to the necessary
+ACL’s allowing it access to WebFS ﬁles containing the
+executables (e.g. HTTP server) or internal service state
+(e.g. CGI scripts or internal database). In addition, the
+load daemon provides a signed certiﬁcate (with an expi-
+ration date) granting the surrogate the right to serve data
+on behalf of the service. This certiﬁcate is transmitted to
+Smart Clients on demand to prevent spooﬁng of the ser-
+vice by malicious sites.
+When setup negotiation is completed, the surrogate
+site builds a Janus virtual machine to execute the neces-
+sary programs (in our case an arbitrary HTTP server) to
+establish a service identity at the surrogate. The virtual
+machine ensures that the surrogate’s system integrity
+is not violated by a buggy executable or a malicious
+server. Both the service executable and any necessary
+service state are securely accessed and cached on de-
+mand through WebFS. The load daemon propagates the
+identity of the new surrogate to other members of the
+server group, which in turn transmit the identity and lo-
+cation of the new server to Smart Clients. Tear down of a
+surrogate is accomplished when client demand subsides
+and the load daemon decides not to renew leases with a
+surrogate. The load daemon removes the surrogate from
+the appropriate ACL’s.
+
+8.4 Performance
+
+To demonstrate the power of dynamic resource recruit-
+ment available from our approach, we measure the per-
+formance of Rent-A-Server when placed under a heavy
+synthetic load. Our experiments are conducted on a
+cluster of Sun Ultra Servers interconnected by 10 Mbps
+switched Ethernet. Seven Ultra Servers are designated
+as surrogates available to provide HTTP service on be-
+
+Figure 4: Rent-A-Server Architecture. HTTP servers
+periodically send load information to a load daemon. In
+response to an update, the load daemon transmits the
+state of all servers. In turn, the HTTP servers trans-
+mit this state information as part of the HTTP header
+to Smart Clients. The Smart Clients can use this infor-
+mation to determine which server to contact for its next
+request. When the load daemon notices that the service
+as a whole is becoming overloaded, it contacts the re-
+source manager on an available surrogate to create an-
+other server replica. WebFS is used to securely transmit
+any executables or data ﬁles needed to start the server.
+
+8.3 System Design
+
+In this subsection, we demonstrate how WebOS services
+simplify the implementation of this application. The
+architecture of the Rent-A-Server is described in Fig-
+ure 4. Smart Clients access HTTP services. Periodically
+(currently every tenth response), servers piggyback ser-
+vice state information to Smart Clients in the HTTP re-
+ply header. This state information includes a list of all
+servers currently providing the service. The following
+information is included for each server: its geographic
+location, an estimate of its processing power, an esti-
+mate of current load, and a time period during which the
+server is guaranteed to be active. The last ﬁeld is de-
+termined with short term leases that are periodically re-
+newed if high demand persists. The short leases prevent
+clients with stale state information from trying to access
+inactive surrogates (or worse, surrogates acting on be-
+half of a different service).
+Each Rent-A-Server maintains information about
+client geographic locations (location is sent by Smart
+Clients as part of the HTTP request) and its own load in-
+formation in the form of requests per second and bytes
+transmitted per second. Each Rent-A-Server periodi-
+cally transmits this state information to a centralized
+
+1.2
+
+1
+
+0.8
+
+0.6
+
+0.4
+
+0.2
+
+)
+s
+(
+ 
+y
+c
+n
+e
+t
+a
+L
+
+0
+
+0
+
+100
+
+200
+
+300
+
+400
+
+500
+
+Time (s)
+(a) Rent-A-Server
+
+)
+s
+(
+ 
+y
+c
+n
+e
+t
+a
+L
+
+1.2
+
+1
+
+0.8
+
+0.6
+
+0.4
+
+0.2
+
+0
+
+0
+
+100
+
+200
+
+300
+
+Time (s)
+
+400
+
+500
+
+(b) Fixed Server
+
+Figure 5: Rent-A-Server Performance. The graphs plot average client latency as a function of time for the operation
+of retrieving a 2.5 KB HTML ﬁle over HTTP. In the Rent-A-Server graph, dark columns correspond to spawning of
+Rent-A-Servers onto surrogates while the lighter lines mark the start of a new group of 8 clients. The same experiment
+is run for the Fixed Server graph with static allocation of 6 HTTP servers.
+
+half of an eighth machine designated as the primary. All
+eight server machines run WebOS, including the ﬁle sys-
+tem and the resource manager responsible for process
+control. Another 32 machines are used to generate grad-
+ually increasing load to the HTTP service. All machines
+are running Solaris 2.5.1, and Apache 1.2b6 is used for
+the HTTP server.
+During the experiment, each client machine starts 15
+Smart Client processes that continuously retrieve copies
+of the same 2.5 KB (a typical size today) HTML ﬁle.
+Smart Clients use random load balancing to pick from a
+changing list of available HTTP servers. To simulate in-
+creasing load, all 32 client machines do not begin mak-
+ing requests at the same time. Rather, clients start in
+four groups of eight machines each, with the start time
+of each group staggered by two minutes. Thus, all 32
+clients are running after six minutes.
+The results of our tests are summarized in Figure 5.
+The graphs plot average client-perceived latency in sec-
+onds as a function of elapsed time, also in seconds.
+Initially, only a single HTTP server is available; how-
+ever, the load daemon spawns new servers onto avail-
+able surrogates as service load increases. The thick dark
+columns correspond to execution of new HTTP servers,
+while the lighter thin lines correspond to the startup of a
+new group of eight client machines, with the ﬁrst eight
+clients starting at time 0. For example, the Rent-A-
+Server graph shows that a third surrogate server was
+started at  	 , shortly after the second group of
+eight clients start. The experiment reaches steady state
+at approximately 
+		 seconds after the last group
+
+seconds.
+of client machines start running at 		
+The graph is truncated at 	 seconds. In summary,
+Figure 5(a) shows that Rent-A-Server is able to dynami-
+cally recruit resources in response to increased client de-
+mands. As clients increase server load over time, Rent-
+A-Server is able to dynamically recruit needed surro-
+gates to maintain relatively steady quality of service, de-
+livering 800 ms average latency.
+While the number of active HTTP servers varies from
+between one and eight, on average 5.7 servers are ac-
+tive. To contrast the performance of Rent-A-Server with
+static server allocation, the experiment is executed with
+identical parameters, with the exception that 6 ﬁxed
+servers are allocated for the duration. Figure 5(b) de-
+picts the results. Between  and  with rela-
+tively light client demand, static allocation outperforms
+Rent-A-Server, delivering an average latency of approx-
+imately 600 ms. However, it can be argued that re-
+sources are wasted because measurements indicate that
+three servers could deliver the same performance for
+eight clients. When all 32 clients are running between
+	 and 	 , Rent-A-Server ’s ability to dy-
+namically recruit resources results in improved perfor-
+mance. During this time period, clients see 850 ms av-
+erage latency while the statically allocated resources be-
+come constrained, delivering 965 ms average latency.
+Thus, Rent-A-Server outperforms static resource alloca-
+tion even when the average amount of consumed service
+resources stays constant.
+The performance of Rent-A-Server demonstrates the
+power of dynamically recruiting resources for wide
+
+area services. However, it is equally important to pro-
+vide a convenient interface for application development.
+Our implementation of Rent-A-Server in WebOS con-
+sists solely of the load daemon and additions to the
+Apache HTTP server to transmit state information to the
+load daemon and to transmit aggregate service state (in
+HTTP headers) to Smart Clients. The load daemon con-
+sists of 1000 lines of C++ code, and we added 150 lines
+of C code to Apache. Beginning with the WebOS frame-
+work, our prototype of Rent-A-Server was operational
+in less than one week.
+
+9 Related Work
+
+A number of recent efforts exploit computational re-
+sources available on the Internet for wide area par-
+allel programming, including Wax [Stout 1994], Le-
+gion [Grimshaw et al. 1995], Atlas [Baldeschwieler
+et al. 1996], Globus [Foster & Kesselman 1996], and
+NetSolve [Casanova & Dongarra 1996]. WebOS shares
+a need for similar underlying technology with these sys-
+tems (such as the need for a global name space and ﬁle
+system). However, these systems focus on a program-
+ming model for computing across the wide area, while
+our work focuses on system level support for building
+and running wide area applications.
+Our work draws upon a large body of previous work
+in ﬁle systems exporting a global namespace, includ-
+ing AFS [Howard et al.
+1988], Alex [Cate 1992],
+Coda [Kistler & Satyanarayanan 1992], Bayou [Terry
+et al. 1995], and UFO [Alexandrov et al. 1997]. The
+main differentiating point between WebFS and these
+earlier works is backward compatibility with the HTTP
+name space and a security model appropriate for wide
+area access. We plan to build on the work done in Coda
+and Bayou to address issues of replication and fault tol-
+erance in the wide area.
+Harvest [Chankhunthod et al. 1996], Squid [Squ
+1996], and other Web caching efforts have focused on
+methods of extending the client cache across the Inter-
+net to caching proxies. Caching proxies in general are
+limited by a number of ways. Proxies are unable to pro-
+duce dynamic Web content (i.e.
+the results of cgi-bin
+programs). Further, proxies are logical extensions of the
+client making it difﬁcult for service providers to track
+such things as hit counts. Rent-A-Server addresses the
+limitations of proxy caching mechanisms by allowing
+full replication of overloaded services at locations deter-
+mined by client access patterns.
+The V kernel [Cheriton 1988] uses multicast for client
+communication to multiple members of a server group
+for load balancing and fault tolerance. This mecha-
+nism is related to our use of Smart Clients for extending
+
+service functionality onto the client. However, Smart
+Clients allow service-speciﬁc naming and load balanc-
+ing algorithms. For example, the quality of the network
+fabric is non-uniform in the wide area, making it im-
+portant to distinguish sites based on the client’s latency
+to each of the sites. Further, our approach enables mi-
+gration of more general service functionality as demon-
+strated by the Internet Weather application described in
+Section 7.4.
+The recent Active Networks proposal is to modify
+Internet routers to be dynamically programmable, ei-
+ther at the connection or packet level [Tennenhouse &
+Wetherall 1996]. The goal is to make it easier to ex-
+tend network protocols to provide new services, such as
+minimizing network bandwidth consumed by multicast
+video streams. As in our work, a major motivation is to
+move computation into the Internet to minimize network
+latency and congestion. WebOS can be seen as a logical
+extension of Active Networks, where the active comput-
+ing elements in the Internet can be servers in addition to
+the individual processors inside of routers operating on
+packet streams.
+
+10 Future Work
+
+The goal of our work is to demonstrate that providing
+operating system services across the wide area will both
+simplify application development and more efﬁciently
+manage global resources. However, the WebOS proto-
+type is only a single point in a large space of possible de-
+sign alternatives. Preliminary results from the applica-
+tions we have built demonstrate that WebOS is capable
+of simplifying application development and of efﬁcient
+resource utilization. However, many questions remain
+before determining the “correct” organization for a wide
+area operating system.
+To explore this design space, it is necessary to de-
+ploy our system in the wide area. While we believe our
+fundamental design decisions to be sound, their rami-
+ﬁcations and their impact on application performance
+can only be determined when taking measurements in
+real-world situations. To this end, we are making our
+software publically available; a number of sites have al-
+ready agreed to participate in our wide area testbed.
+Using this testbed, we plan to determine ﬁlesystem
+consistency requirements in the face of host/network
+failure. We will begin with the Coda model of opti-
+mistic concurrency. Another avenue we will explore is
+Smart Client load balancing algorithms that efﬁciently
+utilize network resources (e.g. bandwidth), minimize
+server load, and deliver the highest performance to the
+end clients. We also plan to explore placement policies
+of dynamically spawned Rent-A-Servers when clients
+
+are geographically distributed. Finally, our implementa-
+tion is currently restricted to Solaris machines. To truly
+support wide area applications, WebOS services must be
+ported to support heterogenous platforms.
+
+11 Conclusions
+
+In this paper, we have demonstrated the synergy avail-
+able from exporting traditional operating system func-
+tionality to wide area applications. Our prototype imple-
+mentation, WebOS, describes one possible organization
+of these system services. In this framework, we make
+the following contributions. First, we show that ex-
+tending server functionality onto client machines allows
+for more ﬂexible implementation of name resolution,
+load balancing, and fault tolerance. Second, by pro-
+viding a ﬁle system abstraction combining communica-
+tion and persistence, we simplify the implementation of
+a number of wide area applications. Next, we present
+a methodology for coherently caching program results
+through the ﬁle system, speeding the performance of ap-
+plications which must repeatedly execute programs with
+common inputs. Finally, we demonstrate how Rent-A-
+Server, an application developed in our framework, both
+improves system performance and more efﬁciently uti-
+lizes system resources for Web server access.
+
+Acknowledgments
+
+Both the content and presentation of this paper has
+greatly beneﬁted from many discussions with members
+of the UC Berkeley NOW project.
+In addition, we
+would like to speciﬁcally thank Eric Anderson, Remzi
+Arpaci-Dusseau, Doug Ghormley, Ken Goldberg, Steve
+Lumetta, Steve McCanne, John Ousterhout, Dave Pat-
+terson, and Marvin Theimer for their feedback on the
+ideas presented in this paper.
+
+References
+
+[Accetta et al. 1986] M. Accetta, R. Baron, W. Bolosky, D.
+Golub, R. Rashid, A. Tevanian, and M. Young.
+“Mach: A New Kernel Foundation For UNIX
+Development”.
+In Proceedings of the 1986
+USENIX Summer Conference, pp. 93–112, June
+1986.
+
+[Alexandrov et al. 1997] A. D. Alexandrov, M. Ibel, K. E.
+Schauser, and C. J. Scheiman. “Ufo: A Personal
+Global File System Based on User-Level Exten-
+sions to the Operating System”. In Proceedings
+of the 1997 USENIX Technical Conference, Ana-
+heim, CA, January 1997.
+
+[Anderson et al. 1995] T. E. Anderson, M. D. Dahlin, J. M.
+Neefe, D. A. Patterson, D. S. Roselli, and R. Y.
+Wang. “Serverless Network File Systems”.
+In
+Proceedings of the 15th ACM Symposium on Op-
+erating Systems Principles, pp. 109–126, De-
+cember 1995.
+
+[Anonymous 1997] Anonymous, 1997. This reference de-
+scribes the initial Smart Clients architecture, but
+was omitted to maintain anonymity.
+
+[Baldeschwieler et al. 1996] E. Baldeschwieler, R. Blumofe,
+and E. Brewer.
+“Atlas: An Infrastructure for
+Global Computing”. In Proc. of the Seventh ACM
+SIGOPS European Workshop: Systems Support
+for Worldwide Applcations, September 1996.
+
+“Hypertext Transfer
+[Berners-Lee 1995] T. Berners-Lee.
+Protocol HTTP/1.0”, October 1995.
+HTTP
+Working Group Internet Draft.
+
+[Bershad & Pinkerton 1988] B. N. Bershad and C. B. Pinker-
+ton. “Watchdogs — Extending the UNIX File
+System”. Computing Systems, 1(2):169–188,
+Spring 1988.
+
+[Bershad et al. 1995] B. N. Bershad, S. Savage, E. G. S.
+P. Pardyak, M. Fiuczynski, D. Becker, C. Cham-
+bers, and S. Eggers. “Extensibility, Safety and
+Performance in the SPIN Operating System”. In
+Proceedings of the 15th ACM Symposium on Op-
+erating Systems Principles, December 1995.
+
+and P. Gauthier.
+[Brewer & Gauthier 1995] E. Brewer
+“The Inktomi Search Engine”.
+http://-
+www.inktomi.com, 1995.
+
+[Brewer 1997] E. Brewer. Personal Communication, March
+1997.
+
+[Brisco 1995] T. Brisco. “DNS Support for Load Balancing”,
+April 1995. Network Working Group RFC 1794.
+
+[Burrows et al. 1989] M. Burrows, M. Abadi, and R. Need-
+ham.
+“A Logic of Authentication”.
+In Pro-
+ceedings of the Twelfth ACM Symposium on Op-
+erating Systems Principles, pp. 1–13, December
+1989.
+
+[Casanova & Dongarra 1996] H. Casanova and J. Dongarra.
+“NetSolve: A Network Server for Solving Com-
+putational Science Problems”. In Proceedings of
+Supercomputing ’96, November 1996.
+
+[Cate 1992] V. Cate. “Alex – a Global Filesystem”. In Pro-
+ceedings of the 1992 USENIX File System Work-
+shop, pp. 1–12, May 1992.
+
+[CCITT 1988] CCITT.
+“The Directory — Authentication
+Framework”. Recommendation X.509, 1988.
+
+[Chankhunthod et al. 1996] A. Chankhunthod, P. Danzig, C.
+Neerdaels, M. Schwartz, and K. Worrell. “A Hi-
+erarchical Internet Object Cache”.
+In Proceed-
+ings of the 1996 USENIX Technical Conference,
+January 1996.
+
+“The V Distributed Sys-
+[Cheriton 1988] D. R. Cheriton.
+tem”. In Communications of the ACM, pp. 314–
+333, March 1988.
+[Dahlin et al. 1994] M. Dahlin, R. Wang, T. Anderson, and D.
+Patterson. “Cooperative Caching: Using Remote
+Client Memory to Improve File System Perfor-
+mance”. In Proceedings of the 1st USENIX Sym-
+posium on Operating Systems Design and Imple-
+mentation, pp. 267–280, November 14–17 1994.
+[Deering 1991] S. E. Deering. “Multicast Routing in a Data-
+gram Internetwork”. PhD thesis, Stanford Uni-
+versity, December 1991.
+[Dias et al. 1996] D. Dias, W. Kish, R. Mukherjee, and R.
+Tewari. “A Scalable and Highly Available Web
+Server”. In Proceedings of COMPCON, March
+1996.
+[Difﬁe & Hellman 1977] W. Difﬁe and M. Hellman. “New
+Directons in Cryptography”.
+In IEEE Trans-
+actions on Information Theory, pp. 74–84, June
+1977.
+[Dig 1995] Digital Equipment Corporation. Alta Vista, 1995.
+http://www.altavista.digital.com/.
+[Exc 1997] Excite Corporation.
+Excite for Web Servers,
+1997.
+http://www.excite.com/navigate/AT-
+helpdoc.html.
+[Feeley et al. 1995] M. M. Feeley, W. E. Morgan, F. H.
+Pighin, A. R. Karlin, H. M. Levy, and C. A.
+Thekkath. “Implementing Global Memory Man-
+agement in a Workstation Cluster”. In Proceed-
+ings of the 15th ACM Symposium on Operating
+Systems Principles, December 1995.
+[Foster & Kesselman 1996] I. Foster and C. Kesselman.
+A Metacomputing Infrastructure
+“Globus:
+Toolkit”.
+In Proc. Workshop on Environments
+and Tools, 1996.
+[Freier et al. 1996] A. Freier, P. Karlton, and P. Kocher. Se-
+cure Socket Layer. Netscape, March 1996.
+[Gifford et al. 1991] D. K. Gifford, P. Jouvelot, M. Sheldon,
+and J. O’Toole. “Semantic File Systems”. In 13th
+ACM Symposium on Operating Systems Princi-
+ples, October 1991.
+[Goldberg et al. 1996] I. Goldberg, D. Wagner, R. Thomas,
+and E. Brewer. “A Secure Environment for Un-
+trusted Helper Applications”.
+In Proceedings
+of the Sixth USENIX Security Symposium, July
+1996.
+[Gosling & McGilton 1995] J. Gosling and H. McGilton.
+“The Java(tm) Language Environment: A White
+Paper”. http://java.dimensionx.com/whitePaper-
+/java-whitepaper-1.html, 1995.
+[Grimshaw et al. 1995] A. Grimshaw, A. Nguyen-Tuong,
+and W. Wulf.
+“Campus-Wide Computing:
+Results Using Legion at the University of Vir-
+ginia”. Technical Report CS-95-19, University
+of Virginia, March 1995.
+
+[Int 1997]
+
+[Howard et al. 1988] J. Howard, M. Kazar, S. Menees, D.
+Nichols, M. Satyanarayanan, R. Sidebotham, and
+M. West.
+“Scale and Performance in a Dis-
+tributed File System”. ACM Transactions on
+Computer Systems, 6(1):51–82, February 1988.
+Internet Weather Report, 1997.
+http://-
+www.internetweather.com/.
+[Jacobson 1988] V. Jacobson.
+“Congestion avoidance and
+control”.
+In Proceedings of ACM SIGCOMM
+’88, pp. 314–329, August 1988.
+[Jones 1993] M. B. Jones. “Interposition Agents: Transpar-
+ently Interposing User Code at the System Inter-
+face”. In Proceedings of the 14th ACM Sympo-
+sium on Operating Systems Principles, pp. 80–
+93, December 1993.
+[Katz et al. 1994] E. D. Katz, M. Butler, and R. McGrath. “A
+Scalable HTTP Server: The NCSA Prototype”.
+In First International Conference on the World-
+Wide Web, April 1994.
+[Kistler & Satyanarayanan 1992] J. J. Kistler and M. Satya-
+narayanan. “Disconnected Operation in the Coda
+File System”. ACM Transactions on Computer
+Systems, 10(1):3–25, February 1992.
+[Kleiman 1986] S. R. Kleiman. “Vnodes: An Architecture
+For Multiple File System Types in SUN UNIX”.
+In Proceedings of the 1986 USENIX Summer
+Technical Conference, pp. 238–247, 1986.
+[Lampson et al. 1991] B. Lampson, M. Abadi, M. Burrows,
+and E. Wobber. “Authentication in Distributed
+Systems: Theory and Practice”.
+In The 13th
+ACM Symposium on Operating Systems Princi-
+ples, pp. 165–182, October 1991.
+[Luotonen & Atlis 1994] A. Luotonen and K. Atlis. “World-
+Wide Web Proxies”. In First International Con-
+ference on the World-Wide Web, April 1994.
+[Mat 1996] Matrix Information and Directory Services, Inc.
+MIDS Internet Weather Report, 1996. See http://-
+www2.mids.org/weather/index.html.
+[Mitzenmacher 1996] M. Mitzenmacher. The Power of Two
+Choices in Randomized Load Balancing. PhD
+dissertation, University of California, Berkeley,
+1996.
+[Mockapetris & Dunlap 1988] P. Mockapetris and K. Dun-
+lap. “Development of the Domain Name Sys-
+tem”.
+In Proc. SIGCOMM 88, volume 18, pp.
+123–133, April 1988.
+[Mullender et al. 1990] S. J. Mullender, G. van Rossum,
+A. S. Tanenbaum, R. van Renesse, and H. van
+Staveren.
+“Amoeba: A Distributed Operating
+System for the 1990s”. IEEE Computer Maga-
+zine, 23(5):44–54, May 1990.
+[Nelson et al. 1988] M. Nelson, B. Welch, and J. Ouster-
+hout. “Caching in the Sprite Network File Sys-
+tem”. ACM Transactions on Computer Systems,
+6(1):134–154, February 1988.
+
+[Walsh et al. 1985] D. Walsh, B. Lyon, G. Sager, J. M. Chang,
+D. Goldberg, S. Kleiman, T. Lyon, R. Sandberg,
+and P. Weiss. “Overview of the Sun Network File
+System”.
+In Proceedings of the 1985 USENIX
+Winter Conference, pp. 117–124, January 1985.
+[Wobber et al. 1993] E. Wobber, M. Abadi, M. Burrows, and
+B. Lampson. “Authentication in the Taos Oper-
+ating System”. In Proceedings of the Fourteenth
+ACM Symposium on Operating Systems Princi-
+ples, pp. 256–269, December 1993.
+
+Communications
+[Net 1994] Netscape
+Netscape Navigator, 1994.
+netscape.com.
+
+Corporation.
+http://www.-
+
+[Ousterhout 1990] J. Ousterhout. “Why aren’t operating sys-
+tems getting faster as fast as hardware?”. In Pro-
+ceedings of the 1990 Summer U SE N IX Confer-
+ence, pp. 247–256, Anaheim, CA, June 1990.
+
+[Poi 1996] PointCast.
+The PointCast Network, 1996.
+http://www.pointcast.com.
+
+[Popek et al. 1981] G. Popek, B. Walker, J. Chow, D. Ed-
+wards, C. Kline, G. Rudisin, and G. Thiel. “LO-
+CUS: A Network Transparent, High Reliability
+Distributed System”. In Proceedings of the 8th
+ACM Symposium on Operating Systems Princi-
+ples, pp. 169–177, December 1981.
+
+[Rivest 1992] R. L. Rivest. “The MD5 Message Digest Al-
+gorithm”. RFC 1321, April 1992.
+
+[Rivest et al. 1978] R. L. Rivest, A. Shamir, and L. Adelman.
+“A Method for Obtaining Digital Signatures and
+Public-Key Cryptosystems”. In Communications
+of the ACM, volume 21, February 1978.
+
+[Rutkowski 1995] A. Rutkowski.
+“Testimony Before the
+U.S. House of Representatives Committee on
+Science”. Available as http://www.isoc.org/-
+rutkowski/ht hearing html, July 26 1995.
+
+“Efﬁ-
+[Sarkar & Hartman 1996] P. Sarkar and J. Hartman.
+cient cooperative caching using hints”.
+In Op-
+erating Systems Design and Implementation, pp.
+35–46, October 1996.
+
+[Sollins & Masinter 1994] K. Sollins
+and L. Masinter.
+“Functional Requirements for Uniform Re-
+source Names”. RFC 1737, December 1994.
+
+[Squ 1996] Squid Internet Object Cache, 1996.
+squid.nlanr.net/Squid/.
+
+http://-
+
+[Stout 1994] P. D. Stout. Wax: A Wide Area Computation Sys-
+tem. PhD dissertation, Carnegie Mellon Univer-
+sity, 1994. CMU-CS-94-230.
+
+[Tennenhouse & Wetherall 1996] D. Tennenhouse and D.
+“Towards an Active Network Ar-
+Wetherall.
+chitecture”.
+In ACM SIGCOMM Computer
+Communication Review, pp. 5–18, April 1996.
+
+[Terry et al. 1995] D. B. Terry, M. M. Theimer, K. Petersen,
+A. J. Demers, M. J. Spreitzer, and C. H. Hauser.
+“Managing Update Conﬂicts in Bayou, a Weakly
+Connected Replicated Storage System”. In Pro-
+ceedings of the Fifteenth ACM Symposium on
+Operating Systems Principles, pp. 172–183, De-
+cember 1995.
+
+[Waldspurger & Weihl 1994] C. A. Waldspurger
+and
+“Lottery Scheduling: Flexible
+W. E. Weihl.
+Proportional-Share Resource Management”. In
+Operating Systems Design and Implementation,
+pp. 1–11, Novemeber 1994.
+
+
